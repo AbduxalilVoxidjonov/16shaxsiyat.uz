@@ -22,10 +22,10 @@
 | P02 | Domain qatlami | backend-dotnet | 🟡 | — | branch `feat/P02-domain-qatlami` |
 | P03 | EF Core, DbContext, migratsiya | backend-dotnet | 🟡 | — | Docker yo'q — jonli DB tekshiruvlari P04 ga qoldi |
 | P04 | Katalog va seed infratuzilmasi | backend-dotnet | ⬜ | — | |
-| P05 | 16 tip savol banki (60) | scoring-psychometrics | 🔵 | — | JSON tayyor; seed integratsiyasi P04 da |
-| P06 | Big Five savol banki (50) | scoring-psychometrics | 🔵 | — | JSON tayyor; naqsh 2 marta qaytarildi |
-| P07 | RIASEC savol banki (48) | scoring-psychometrics | 🔵 | — | JSON tayyor |
-| P08 | Aktivlik anketasi (32) | scoring-psychometrics | 🔵 | — | JSON tayyor; shkalalar aralashtirildi |
+| P05 | 16 tip savol banki (60) | scoring-psychometrics | ✅ | — | QA: PASS · JSON tayyor; seed integratsiyasi P04 da |
+| P06 | Big Five savol banki (50) | scoring-psychometrics | ✅ | — | QA: PASS · JSON tayyor; naqsh 2 marta qaytarildi |
+| P07 | RIASEC savol banki (48) | scoring-psychometrics | ✅ | — | QA: PASS · JSON tayyor |
+| P08 | Aktivlik anketasi (32) | scoring-psychometrics | ✅ | — | QA: PASS · JSON tayyor; shkalalar aralashtirildi |
 | P09 | Scoring engine + oltin testlar | scoring-psychometrics | ⬜ | — | **Kritik** — 100% qoplama |
 | P10 | Application skeleti + sessiya API | backend-dotnet | ⬜ | — | |
 | P11 | Savol va javob API | backend-dotnet | ⬜ | — | |
@@ -108,7 +108,13 @@
 - **Muhit muammosi:** bu mashinada Docker ishlamayapti, PostgreSQL yo'q. P03 migratsiyani
   yozadi, lekin `docker compose up -d db` / `dotnet ef database update` / `psql` tekshiruvlari
   bajarilmaydi. Egasiga aytildi; bandlar P04 da qaytib tekshiriladi.
-- **Keyingi:** P02 testlari + P03 tugashi → QA → commit.
+- **P02 commit qilindi** (`84ebaed`): Domain 43 fayl + 193 test (PM o'zi ishga tushirdi, 193/193 yashil).
+  Testlarni alohida agent yozdi — TOPILGAN XATO: yo'q.
+- **P05–P08 commit qilindi** (`a2f7e6d`) va **QA verdikti: PASS** (4 bank ham).
+  QA barcha 190 savolning yo'nalish mantiqini `docs/03` konvensiyasi bilan solishtirdi —
+  scoring'ni buzadigan xato yo'q. Til, brend nomlari, taqiqlangan mavzular, gender stereotip,
+  litsenziya riski — hammasi toza. 5 ta zaif savol texnik qarz sifatida yozildi.
+- **Keyingi:** P03 tugashi → QA → commit; keyin P04 (seed infratuzilmasi) va P09 (scoring).
 
 ---
 
@@ -119,6 +125,7 @@
 | Savol banklari (190 savol) sifati — real o'quvchida sinalmagan | Natija ishonchliligi | Pilotdan keyin matnlarni tuzatish (`docs/14` 5-bo'lim) |
 | AI prompt sifati faqat mock bilan sinaladi | Hisobot sifati | P17 dan keyin 10 ta oltin namuna bilan qo'lda baholash |
 | `answers` jadvali tez o'sadi (190 qator/sessiya) | Ishlash | 100k sessiyadan keyin partitsiya (v2) |
+| QA topgan 5 ta zaif savol (cross-loading): `MB-Q58` (SN↔JP), `B5-Q36` (O↔E), `B5-Q49` (A↔ish uslubi), `AC-Q15` (SOCA↔SELF), va `MB-Q01`≈`AC-Q27` deyarli bir xil misol | Omillar orasida ortiqcha korrelyatsiya; ball biroz aniqroq bo'lishi mumkin edi | Bloklovchi emas (professional testlarda ham uchraydi). Pilotdan keyin real ma'lumot bilan qayta ko'riladi — `docs/14` 5-bo'lim |
 | EF Core 9.x paketlari net10.0 loyihada (Npgsql EF10 provayderi yo'q) | P03 da runtime muammosi bo'lishi mumkin | P03 boshida DbContext bilan haqiqiy so'rov sinab ko'riladi; provayder chiqqach yangilanadi |
 | `/health` va `/health/ready` hozir bir xil (bog'liqlik tekshiruvi yo'q) | Orkestrator noto'g'ri "ready" deb o'ylashi mumkin | P03 da DB health check qo'shilib, `tag` bo'yicha ajratiladi |
 | Push qilinmaydi (egasining qarori) — PR oqimi ishlamaydi | Ko'rikni faqat `qa-reviewer` beradi, tashqi review yo'q | Repo: `AbduxalilVoxidjonov/salohiyat`. Egasi aytganda `origin` qayta qo'shilib, barcha branch birdan push qilinadi |

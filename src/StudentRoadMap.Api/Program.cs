@@ -1,4 +1,9 @@
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
+using StudentRoadMap.Application;
+using StudentRoadMap.Infrastructure;
+using StudentRoadMap.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,9 +43,20 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddHealthChecks();
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
+
+// --- `--migrate`: migratsiyani bajarib ilovani to'xtatadi (docs/05 4-bo'lim: production'da
+// `Database.Migrate()` avtomatik emas — alohida step/konteyner) ---------------------------
+if (args.Contains("--migrate"))
+{
+    using var migrationScope = app.Services.CreateScope();
+    var dbContext = migrationScope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await dbContext.Database.MigrateAsync();
+    return;
+}
 
 // --- HTTP quvuri ---------------------------------------------------------------
 if (app.Environment.IsDevelopment())
@@ -62,9 +78,17 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Konteyner/orkestrator uchun jonlik va tayyorlik tekshiruvlari.
-app.MapHealthChecks("/health");
-app.MapHealthChecks("/health/ready");
+// Konteyner/orkestrator uchun jonlik va tayyorlik tekshiruvlari — ikkisi `tag` bilan ajratilgan:
+// `/health` — DB'siz jonlik (hech qanday tekshiruv bajarilmaydi), `/health/ready` — faqat
+// `ready` tegli tekshiruvlar (hozircha DB ulanishi, `AddDbContextCheck` orqali).
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    Predicate = _ => false,
+});
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready"),
+});
 
 app.Run();
 
