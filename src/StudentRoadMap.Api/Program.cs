@@ -4,6 +4,7 @@ using Serilog;
 using StudentRoadMap.Application;
 using StudentRoadMap.Infrastructure;
 using StudentRoadMap.Infrastructure.Persistence;
+using StudentRoadMap.Infrastructure.Persistence.Seeding;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,6 +57,25 @@ if (args.Contains("--migrate"))
     var dbContext = migrationScope.ServiceProvider.GetRequiredService<AppDbContext>();
     await dbContext.Database.MigrateAsync();
     return;
+}
+
+// --- `--seed`: test bankini/tip katalogini/kasb xaritasini/superadminni yuklab ilovani
+// to'xtatadi (`docs/05` 4-bo'lim: seed migratsiyaga qo'yilmaydi, idempotent `DbSeeder`)
+if (args.Contains("--seed"))
+{
+    using var seedScope = app.Services.CreateScope();
+    var seeder = seedScope.ServiceProvider.GetRequiredService<DbSeeder>();
+    await seeder.SeedAsync();
+    return;
+}
+
+// `App:SeedOnStartup=true` bo'lsa har ishga tushishda idempotent seed bajariladi
+// (masalan, docker-compose'da birinchi marta ko'tarilganda).
+if (app.Configuration.GetValue<bool>("App:SeedOnStartup"))
+{
+    using var startupSeedScope = app.Services.CreateScope();
+    var startupSeeder = startupSeedScope.ServiceProvider.GetRequiredService<DbSeeder>();
+    await startupSeeder.SeedAsync();
 }
 
 // --- HTTP quvuri ---------------------------------------------------------------

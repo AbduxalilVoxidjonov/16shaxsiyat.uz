@@ -20,4 +20,14 @@
     <ProjectReference Include="..\..\src\StudentRoadMap.Application\StudentRoadMap.Application.csproj" />
   </ItemGroup>
 
+  <!-- `SeedDataLoaderTests` haqiqiy seed JSON'larini sinaydi (P04) — fayllarning yagona manbai
+       `Infrastructure/Persistence/SeedData/test-definitions/` da, bu yerda faqat chiqish
+       katalogiga nusxa ko'chiriladi (fayllar tahrirlanmaydi/dublikat qilinmaydi). -->
+  <ItemGroup>
+    <Content Include="..\..\src\StudentRoadMap.Infrastructure\Persistence\SeedData\test-definitions\*.json">
+      <Link>SeedData\test-definitions\%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

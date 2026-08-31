@@ -21,4 +21,21 @@
     <ProjectReference Include="..\StudentRoadMap.Application\StudentRoadMap.Application.csproj" />
   </ItemGroup>
 
+  <!-- `Pbkdf2PasswordHasher` (va boshqa `internal` sinflar) faqat sinov sborkasiga ochiladi —
+       ochiq (public) API sirtini kengaytirmasdan to'g'ridan-to'g'ri unit-test qilish uchun. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="StudentRoadMap.Infrastructure.Tests" />
+  </ItemGroup>
+
+  <!-- Seed JSON'lari (test bankiga tegishli — 4 metodika, tip katalogi, kasb xaritasi) chiqish
+       katalogiga ko'chiriladi (`DbSeeder` `AppContext.BaseDirectory/SeedData` dan o'qiydi). -->
+  <ItemGroup>
+    <!-- `Link` chiqish katalogidagi joyni "SeedData/..." ga tekislaydi (manba yo'li
+         "Persistence/SeedData/..." bo'lsagsa ham) — `DbSeeder` shu yo'ldan o'qiydi. -->
+    <Content Include="Persistence\SeedData\**\*.json">
+      <Link>SeedData\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

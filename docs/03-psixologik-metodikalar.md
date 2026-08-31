@@ -340,6 +340,33 @@ Sessiya darajasida 0–100 ball, 100 dan quyidagi jarimalar ayriladi:
 ReliabilityScore = clamp(0, 100, 100 − Σ penalties)
 ```
 
+### 7.1 Aniqlashtirishlar (P09 da qat'iylashtirildi)
+
+Yuqoridagi jadval qisqa bo'lgani uchun quyidagilar aniq belgilanadi — implementatsiya shularga amal qiladi:
+
+1. **`To'liq bir xil javob` va `Straight-lining` bir-birini istisno qiladi.** Barcha javoblar bir
+   xil bo'lsa faqat 50 jarima qo'llanadi, straight-lining qo'shimcha jarimasi qo'shilmaydi.
+   Sabab: bu bitta xatti-harakat, ikki marta jarimalanmasligi kerak; aks holda shu jadvalning
+   o'z holati ("barchasi bir xil → 50") 80 ga aylanib ketardi.
+
+2. **Straight-lining bloklarini sanash:** har **to'liq 12 talik** ketma-ket bir xil qiymat alohida
+   blok hisoblanadi (24 ta ketma-ket → 2 blok → 20; 36 ta → 3 blok → 30). Umumiy chegara 30.
+
+3. **Ketma-ketlik butun sessiya bo'ylab hisoblanadi**, 4 test blokining javoblari
+   `(test, DisplayOrder)` bo'yicha tartiblanib birlashtiriladi. Faqat `DisplayOrder` bo'yicha
+   tartiblash **noto'g'ri**: har testda tartib `1..N` dan boshlanadi va testlar aralashib ketadi,
+   natijada bitta blokni to'liq bir xil javob bilan to'ldirgan o'quvchi aniqlanmay qoladi.
+
+4. **Teskari savollar ziddiyati `d` qanday hisoblanadi:** har shkala uchun alohida —
+   `direction = +1` savollarning normallashgan o'rtachasi va `direction = −1` savollarning
+   teskari tuzatilgan (`6 − v`) normallashgan o'rtachasi olinadi, ularning ayirmasi moduli
+   `d_shkala` bo'ladi; `d` — ikkala yo'nalish ham mavjud bo'lgan shkalalar bo'yicha o'rtacha.
+   `d ∈ [0, 1]`, demak jarima ≤ 25. Teskari savoli yo'q test (`RIASEC`) hissa qo'shmaydi.
+
+5. **`Juda tez javoblar` ulushi `p`** — `DurationMs < 900` bo'lgan javoblar soni **berilgan
+   javoblar umumiy soniga** bo'linadi (vaqt yozilgan javoblar soniga emas). Aks holda klient
+   vaqtlarni qisman yuborsa `p` sun'iy oshib ketadi.
+
 | Ball | Bayroq |
 |------|--------|
 | ≥ 70 | `Reliable` |

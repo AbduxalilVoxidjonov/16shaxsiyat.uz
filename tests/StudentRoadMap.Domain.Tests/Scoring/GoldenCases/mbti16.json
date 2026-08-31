@@ -1,0 +1,157 @@
+[
+  {
+    "name": "MBTI16 — aniq INTJ (qo'lda hisob: har o'qda 2 ijobiy + 2 teskari savol)",
+    "_comment": "EI: v=(2,2,-4,-4) => axisRaw=2+2-4-4=-4; axisMin=2*1+2*(-5)=-8; axisMax=2*5+2*(-1)=8; pct=(-4-(-8))/16*100=25 => I. SN: v=(4,4,-2,-2) => axisRaw=4+4-2-2=4; pct=(4-(-8))/16*100=75 => N. TF xuddi EI kabi => 25 => T. JP xuddi SN kabi => 75 => J (pole100=J). ResultCode=INTJ.",
+    "strategyCode": "MBTI16",
+    "tolerance": 0.1,
+    "questions": [
+      { "code": "EI-P1", "scale": "EI", "direction": 1, "displayOrder": 1, "answer": 2 },
+      { "code": "EI-P2", "scale": "EI", "direction": 1, "displayOrder": 2, "answer": 2 },
+      { "code": "EI-N1", "scale": "EI", "direction": -1, "displayOrder": 3, "answer": 4 },
+      { "code": "EI-N2", "scale": "EI", "direction": -1, "displayOrder": 4, "answer": 4 },
+      { "code": "SN-P1", "scale": "SN", "direction": 1, "displayOrder": 5, "answer": 4 },
+      { "code": "SN-P2", "scale": "SN", "direction": 1, "displayOrder": 6, "answer": 4 },
+      { "code": "SN-N1", "scale": "SN", "direction": -1, "displayOrder": 7, "answer": 2 },
+      { "code": "SN-N2", "scale": "SN", "direction": -1, "displayOrder": 8, "answer": 2 },
+      { "code": "TF-P1", "scale": "TF", "direction": 1, "displayOrder": 9, "answer": 2 },
+      { "code": "TF-P2", "scale": "TF", "direction": 1, "displayOrder": 10, "answer": 2 },
+      { "code": "TF-N1", "scale": "TF", "direction": -1, "displayOrder": 11, "answer": 4 },
+      { "code": "TF-N2", "scale": "TF", "direction": -1, "displayOrder": 12, "answer": 4 },
+      { "code": "JP-P1", "scale": "JP", "direction": 1, "displayOrder": 13, "answer": 4 },
+      { "code": "JP-P2", "scale": "JP", "direction": 1, "displayOrder": 14, "answer": 4 },
+      { "code": "JP-N1", "scale": "JP", "direction": -1, "displayOrder": 15, "answer": 2 },
+      { "code": "JP-N2", "scale": "JP", "direction": -1, "displayOrder": 16, "answer": 2 }
+    ],
+    "expected": {
+      "resultCode": "INTJ",
+      "normalizedScores": { "EI": 25.0, "SN": 75.0, "TF": 25.0, "JP": 75.0 },
+      "levels": { "EI": "I", "SN": "N", "TF": "T", "JP": "J" },
+      "flags": [],
+      "interpretationKey": "MBTI16.INTJ"
+    }
+  },
+  {
+    "name": "MBTI16 — aniq ESFP (barcha o'q qutblari teskari)",
+    "_comment": "EI: v=(4,4,-2,-2) => pct=75 => E. SN: v=(2,2,-4,-4) => pct=25 => S. TF: v=(4,4,-2,-2) => pct=75 => F. JP: v=(2,2,-4,-4) => pct=25 => P. ResultCode=ESFP.",
+    "strategyCode": "MBTI16",
+    "tolerance": 0.1,
+    "questions": [
+      { "code": "EI-P1", "scale": "EI", "direction": 1, "displayOrder": 1, "answer": 4 },
+      { "code": "EI-P2", "scale": "EI", "direction": 1, "displayOrder": 2, "answer": 4 },
+      { "code": "EI-N1", "scale": "EI", "direction": -1, "displayOrder": 3, "answer": 2 },
+      { "code": "EI-N2", "scale": "EI", "direction": -1, "displayOrder": 4, "answer": 2 },
+      { "code": "SN-P1", "scale": "SN", "direction": 1, "displayOrder": 5, "answer": 2 },
+      { "code": "SN-P2", "scale": "SN", "direction": 1, "displayOrder": 6, "answer": 2 },
+      { "code": "SN-N1", "scale": "SN", "direction": -1, "displayOrder": 7, "answer": 4 },
+      { "code": "SN-N2", "scale": "SN", "direction": -1, "displayOrder": 8, "answer": 4 },
+      { "code": "TF-P1", "scale": "TF", "direction": 1, "displayOrder": 9, "answer": 4 },
+      { "code": "TF-P2", "scale": "TF", "direction": 1, "displayOrder": 10, "answer": 4 },
+      { "code": "TF-N1", "scale": "TF", "direction": -1, "displayOrder": 11, "answer": 2 },
+      { "code": "TF-N2", "scale": "TF", "direction": -1, "displayOrder": 12, "answer": 2 },
+      { "code": "JP-P1", "scale": "JP", "direction": 1, "displayOrder": 13, "answer": 2 },
+      { "code": "JP-P2", "scale": "JP", "direction": 1, "displayOrder": 14, "answer": 2 },
+      { "code": "JP-N1", "scale": "JP", "direction": -1, "displayOrder": 15, "answer": 4 },
+      { "code": "JP-N2", "scale": "JP", "direction": -1, "displayOrder": 16, "answer": 4 }
+    ],
+    "expected": {
+      "resultCode": "ESFP",
+      "normalizedScores": { "EI": 75.0, "SN": 25.0, "TF": 75.0, "JP": 25.0 },
+      "levels": { "EI": "E", "SN": "S", "TF": "F", "JP": "P" },
+      "flags": [],
+      "interpretationKey": "MBTI16.ESFP"
+    }
+  },
+  {
+    "name": "MBTI16 — chegaraviy EI=50 → tie-break 'I'",
+    "_comment": "EI: barcha javob 3 (2 ijobiy+2 teskari) => axisRaw=3+3-3-3=0; axisMin=-8,axisMax=8 => pct=(0-(-8))/16*100=50 => tie-break harfi 'I' (docs/03 §2.2), BorderlineAxes=['EI']. SN/TF/JP aniq N/T/J (birinchi holatdagi kabi).",
+    "strategyCode": "MBTI16",
+    "tolerance": 0.1,
+    "questions": [
+      { "code": "EI-P1", "scale": "EI", "direction": 1, "displayOrder": 1, "answer": 3 },
+      { "code": "EI-P2", "scale": "EI", "direction": 1, "displayOrder": 2, "answer": 3 },
+      { "code": "EI-N1", "scale": "EI", "direction": -1, "displayOrder": 3, "answer": 3 },
+      { "code": "EI-N2", "scale": "EI", "direction": -1, "displayOrder": 4, "answer": 3 },
+      { "code": "SN-P1", "scale": "SN", "direction": 1, "displayOrder": 5, "answer": 4 },
+      { "code": "SN-P2", "scale": "SN", "direction": 1, "displayOrder": 6, "answer": 4 },
+      { "code": "SN-N1", "scale": "SN", "direction": -1, "displayOrder": 7, "answer": 2 },
+      { "code": "SN-N2", "scale": "SN", "direction": -1, "displayOrder": 8, "answer": 2 },
+      { "code": "TF-P1", "scale": "TF", "direction": 1, "displayOrder": 9, "answer": 2 },
+      { "code": "TF-P2", "scale": "TF", "direction": 1, "displayOrder": 10, "answer": 2 },
+      { "code": "TF-N1", "scale": "TF", "direction": -1, "displayOrder": 11, "answer": 4 },
+      { "code": "TF-N2", "scale": "TF", "direction": -1, "displayOrder": 12, "answer": 4 },
+      { "code": "JP-P1", "scale": "JP", "direction": 1, "displayOrder": 13, "answer": 4 },
+      { "code": "JP-P2", "scale": "JP", "direction": 1, "displayOrder": 14, "answer": 4 },
+      { "code": "JP-N1", "scale": "JP", "direction": -1, "displayOrder": 15, "answer": 2 },
+      { "code": "JP-N2", "scale": "JP", "direction": -1, "displayOrder": 16, "answer": 2 }
+    ],
+    "expected": {
+      "resultCode": "INTJ",
+      "normalizedScores": { "EI": 50.0, "SN": 75.0, "TF": 25.0, "JP": 75.0 },
+      "levels": { "EI": "I", "SN": "N", "TF": "T", "JP": "J" },
+      "flags": ["Borderline:EI"],
+      "interpretationKey": "MBTI16.INTJ"
+    }
+  },
+  {
+    "name": "MBTI16 — barcha javob 3 → hamma o'q 50 (tie-break ISTJ)",
+    "_comment": "Har qanday o'qda (pos/neg soni teng bo'lmasa ham) v=3 bo'lsa axisPct=50 ekanligi umumiy isbotlangan: axisRaw-axisMin=2*(pos+neg), axisMax-axisMin=4*(pos+neg) => nisbat 0.5. Tie-break harflari EI->I, SN->S, TF->T, JP->J => ResultCode=ISTJ, barcha o'q Borderline.",
+    "strategyCode": "MBTI16",
+    "tolerance": 0.1,
+    "questions": [
+      { "code": "EI-P1", "scale": "EI", "direction": 1, "displayOrder": 1, "answer": 3 },
+      { "code": "EI-P2", "scale": "EI", "direction": 1, "displayOrder": 2, "answer": 3 },
+      { "code": "EI-N1", "scale": "EI", "direction": -1, "displayOrder": 3, "answer": 3 },
+      { "code": "EI-N2", "scale": "EI", "direction": -1, "displayOrder": 4, "answer": 3 },
+      { "code": "SN-P1", "scale": "SN", "direction": 1, "displayOrder": 5, "answer": 3 },
+      { "code": "SN-P2", "scale": "SN", "direction": 1, "displayOrder": 6, "answer": 3 },
+      { "code": "SN-N1", "scale": "SN", "direction": -1, "displayOrder": 7, "answer": 3 },
+      { "code": "SN-N2", "scale": "SN", "direction": -1, "displayOrder": 8, "answer": 3 },
+      { "code": "TF-P1", "scale": "TF", "direction": 1, "displayOrder": 9, "answer": 3 },
+      { "code": "TF-P2", "scale": "TF", "direction": 1, "displayOrder": 10, "answer": 3 },
+      { "code": "TF-N1", "scale": "TF", "direction": -1, "displayOrder": 11, "answer": 3 },
+      { "code": "TF-N2", "scale": "TF", "direction": -1, "displayOrder": 12, "answer": 3 },
+      { "code": "JP-P1", "scale": "JP", "direction": 1, "displayOrder": 13, "answer": 3 },
+      { "code": "JP-P2", "scale": "JP", "direction": 1, "displayOrder": 14, "answer": 3 },
+      { "code": "JP-N1", "scale": "JP", "direction": -1, "displayOrder": 15, "answer": 3 },
+      { "code": "JP-N2", "scale": "JP", "direction": -1, "displayOrder": 16, "answer": 3 }
+    ],
+    "expected": {
+      "resultCode": "ISTJ",
+      "normalizedScores": { "EI": 50.0, "SN": 50.0, "TF": 50.0, "JP": 50.0 },
+      "levels": { "EI": "I", "SN": "S", "TF": "T", "JP": "J" },
+      "flags": ["Borderline:EI", "Borderline:SN", "Borderline:TF", "Borderline:JP"],
+      "interpretationKey": "MBTI16.ISTJ"
+    }
+  },
+  {
+    "name": "MBTI16 — hamma savol teskari (direction=-1) → ENFJ",
+    "_comment": "Har o'qda 4 ta savol, hammasi direction=-1, javob=2. axisMin=4*(-5)=-20, axisMax=4*(-1)=-4, range=16. axisRaw=-1*(2*4)=-8. pct=(-8-(-20))/16*100=12/16*100=75 => har o'qda ikkinchi qutb: EI->E, SN->N, TF->F, JP->J. ResultCode=ENFJ. Teskari formulaning to'g'ri ishlashini alohida tekshiradi.",
+    "strategyCode": "MBTI16",
+    "tolerance": 0.1,
+    "questions": [
+      { "code": "EI-N1", "scale": "EI", "direction": -1, "displayOrder": 1, "answer": 2 },
+      { "code": "EI-N2", "scale": "EI", "direction": -1, "displayOrder": 2, "answer": 2 },
+      { "code": "EI-N3", "scale": "EI", "direction": -1, "displayOrder": 3, "answer": 2 },
+      { "code": "EI-N4", "scale": "EI", "direction": -1, "displayOrder": 4, "answer": 2 },
+      { "code": "SN-N1", "scale": "SN", "direction": -1, "displayOrder": 5, "answer": 2 },
+      { "code": "SN-N2", "scale": "SN", "direction": -1, "displayOrder": 6, "answer": 2 },
+      { "code": "SN-N3", "scale": "SN", "direction": -1, "displayOrder": 7, "answer": 2 },
+      { "code": "SN-N4", "scale": "SN", "direction": -1, "displayOrder": 8, "answer": 2 },
+      { "code": "TF-N1", "scale": "TF", "direction": -1, "displayOrder": 9, "answer": 2 },
+      { "code": "TF-N2", "scale": "TF", "direction": -1, "displayOrder": 10, "answer": 2 },
+      { "code": "TF-N3", "scale": "TF", "direction": -1, "displayOrder": 11, "answer": 2 },
+      { "code": "TF-N4", "scale": "TF", "direction": -1, "displayOrder": 12, "answer": 2 },
+      { "code": "JP-N1", "scale": "JP", "direction": -1, "displayOrder": 13, "answer": 2 },
+      { "code": "JP-N2", "scale": "JP", "direction": -1, "displayOrder": 14, "answer": 2 },
+      { "code": "JP-N3", "scale": "JP", "direction": -1, "displayOrder": 15, "answer": 2 },
+      { "code": "JP-N4", "scale": "JP", "direction": -1, "displayOrder": 16, "answer": 2 }
+    ],
+    "expected": {
+      "resultCode": "ENFJ",
+      "normalizedScores": { "EI": 75.0, "SN": 75.0, "TF": 75.0, "JP": 75.0 },
+      "levels": { "EI": "E", "SN": "N", "TF": "F", "JP": "J" },
+      "flags": [],
+      "interpretationKey": "MBTI16.ENFJ"
+    }
+  }
+]

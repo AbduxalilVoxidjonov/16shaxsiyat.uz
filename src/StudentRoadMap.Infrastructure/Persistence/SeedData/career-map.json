@@ -1,0 +1,220 @@
+[
+  {
+    "hollandCode": "IR",
+    "fieldNameUz": "Muhandislik va axborot texnologiyalari",
+    "descriptionUz": "Aniq fanlarga qiziqish va amaliy-texnik ko'nikmalarni birlashtiruvchi yo'nalish.",
+    "exampleProfessions": [
+      "Dasturiy injiniring",
+      "Kompyuter tarmoqlari muhandisi",
+      "Biotibbiy texnika muhandisi",
+      "Ma'lumotlar tahlilchisi",
+      "Robototexnika muhandisi"
+    ],
+    "relevanceOrder": 1
+  },
+  {
+    "hollandCode": "RI",
+    "fieldNameUz": "Texnika va amaliy tadqiqot",
+    "descriptionUz": "Qo'l ishi va texnik tizimlarni tahlil qilishni birga olib boruvchi yo'nalish.",
+    "exampleProfessions": [
+      "Qurilish-montaj muhandisi",
+      "Avtomobilsozlik texnigi",
+      "Energetika muhandisi",
+      "Sanoat avtomatikasi mutaxassisi"
+    ],
+    "relevanceOrder": 1
+  },
+  {
+    "hollandCode": "IA",
+    "fieldNameUz": "Ilmiy-tadqiqot va loyihalash",
+    "descriptionUz": "Tahliliy fikrlash va ijodiy yondashuvni talab qiluvchi ilmiy va loyihaviy ish.",
+    "exampleProfessions": [
+      "Arxitektor-loyihachi",
+      "Ilmiy-tadqiqot xodimi",
+      "Sanoat dizayneri",
+      "Shahar rejalashtiruvchisi"
+    ],
+    "relevanceOrder": 1
+  },
+  {
+    "hollandCode": "AI",
+    "fieldNameUz": "Dizayn, arxitektura va media",
+    "descriptionUz": "Ijodiy g'oyalarni tahliliy asos bilan birlashtirib amalga oshiruvchi yo'nalish.",
+    "exampleProfessions": [
+      "Grafik dizayner",
+      "Arxitektor",
+      "UX/UI dizayner",
+      "Video va kontent prodyuseri",
+      "Interyer dizayneri"
+    ],
+    "relevanceOrder": 1
+  },
+  {
+    "hollandCode": "SA",
+    "fieldNameUz": "Pedagogika, psixologiya va ijtimoiy ish",
+    "descriptionUz": "Insonlarga yordam berish va ularning rivojlanishiga hissa qo'shishga qaratilgan yo'nalish.",
+    "exampleProfessions": [
+      "Maktab o'qituvchisi",
+      "Amaliy psixolog",
+      "Ijtimoiy pedagog",
+      "Logoped",
+      "Bolalar rivojlanishi mutaxassisi"
+    ],
+    "relevanceOrder": 1
+  },
+  {
+    "hollandCode": "AS",
+    "fieldNameUz": "Ijodiy ta'lim va san'at terapiyasi",
+    "descriptionUz": "San'at orqali insonlarga ta'lim berish va ularni qo'llab-quvvatlashga qaratilgan yo'nalish.",
+    "exampleProfessions": [
+      "San'at (IZO) o'qituvchisi",
+      "Musiqa pedagogi",
+      "Ijodiy rivojlantirish murabbiyi",
+      "Bolalar teatri rahbari"
+    ],
+    "relevanceOrder": 1
+  },
+  {
+    "hollandCode": "SE",
+    "fieldNameUz": "Ta'lim boshqaruvi va ijtimoiy loyihalar",
+    "descriptionUz": "Odamlar bilan ishlash va tashkiliy yetakchilikni birlashtiruvchi yo'nalish.",
+    "exampleProfessions": [
+      "Ta'lim muassasasi rahbari",
+      "Ijtimoiy loyihalar menejeri",
+      "NNT dasturlar koordinatori",
+      "Kasb-hunar markazi rahbari"
+    ],
+    "relevanceOrder": 1
+  },
+  {
+    "hollandCode": "ES",
+    "fieldNameUz": "Savdo, turizm va mijozlarga xizmat",
+    "descriptionUz": "Odamlar bilan faol muloqot va tashkilotchilikni talab qiluvchi xizmat sohasi.",
+    "exampleProfessions": [
+      "Turizm menejeri",
+      "Mijozlarga xizmat ko'rsatish rahbari",
+      "Sotuv bo'yicha mutaxassis",
+      "Mehmonxona xizmati menejeri"
+    ],
+    "relevanceOrder": 1
+  },
+  {
+    "hollandCode": "EC",
+    "fieldNameUz": "Biznes boshqaruvi, moliya va logistika",
+    "descriptionUz": "Tashkilotchilik va tizimli hisob-kitobni birlashtiruvchi boshqaruv yo'nalishi.",
+    "exampleProfessions": [
+      "Biznes menejeri",
+      "Moliyaviy tahlilchi",
+      "Logistika mutaxassisi",
+      "Savdo bo'limi boshlig'i",
+      "Kichik biznes egasi"
+    ],
+    "relevanceOrder": 1
+  },
+  {
+    "hollandCode": "CE",
+    "fieldNameUz": "Buxgalteriya va moliyaviy nazorat",
+    "descriptionUz": "Aniqlik, tartib va hisobotga asoslangan moliyaviy yo'nalish.",
+    "exampleProfessions": [
+      "Buxgalter",
+      "Auditor",
+      "Soliq bo'yicha mutaxassis",
+      "Moliyaviy nazoratchi"
+    ],
+    "relevanceOrder": 1
+  },
+  {
+    "hollandCode": "RC",
+    "fieldNameUz": "Texnik nazorat va xavfsizlik",
+    "descriptionUz": "Amaliy ko'nikma va aniq qoidalarga rioya qilishni talab qiluvchi texnik yo'nalish.",
+    "exampleProfessions": [
+      "Mehnat muhofazasi muhandisi",
+      "Qurilish nazoratchisi",
+      "Sifat nazorati muhandisi",
+      "Texnik xavfsizlik inspektori"
+    ],
+    "relevanceOrder": 1
+  },
+  {
+    "hollandCode": "CR",
+    "fieldNameUz": "Ishlab chiqarish sifat nazorati",
+    "descriptionUz": "Tartibli jarayonlarni amaliy texnik ish bilan bog'laydigan yo'nalish.",
+    "exampleProfessions": [
+      "Sifat nazorati mutaxassisi",
+      "Ishlab chiqarish texnologi",
+      "Standartlashtirish mutaxassisi"
+    ],
+    "relevanceOrder": 1
+  },
+  {
+    "hollandCode": "IC",
+    "fieldNameUz": "Ma'lumotlar tahlili va statistika",
+    "descriptionUz": "Tahliliy fikrlash va tartibli ma'lumot bilan ishlashni birlashtiruvchi yo'nalish.",
+    "exampleProfessions": [
+      "Ma'lumotlar tahlilchisi (data analyst)",
+      "Statistik",
+      "Iqtisodiy tahlilchi",
+      "Biznes-tahlilchi"
+    ],
+    "relevanceOrder": 1
+  },
+  {
+    "hollandCode": "CI",
+    "fieldNameUz": "Arxiv, kutubxonashunoslik va hujjatlashtirish",
+    "descriptionUz": "Aniqlik va tizimlashtirishni tahliliy yondashuv bilan birlashtiruvchi yo'nalish.",
+    "exampleProfessions": [
+      "Kutubxonachi",
+      "Arxiv mutaxassisi",
+      "Hujjat aylanishi menejeri",
+      "Ilmiy kotib"
+    ],
+    "relevanceOrder": 1
+  },
+  {
+    "hollandCode": "RE",
+    "fieldNameUz": "Agrotexnika va transport boshqaruvi",
+    "descriptionUz": "Amaliy-texnik ish bilan tashkilotchilikni birlashtiruvchi yo'nalish.",
+    "exampleProfessions": [
+      "Qishloq xo'jaligi muhandisi",
+      "Transport logistikasi boshqaruvchisi",
+      "Ishlab chiqarish uchastka boshlig'i"
+    ],
+    "relevanceOrder": 1
+  },
+  {
+    "hollandCode": "ER",
+    "fieldNameUz": "Tadbirkorlik va ishlab chiqarish boshqaruvi",
+    "descriptionUz": "Amaliy ishni tashkil etish va yetakchilikni birlashtiruvchi yo'nalish.",
+    "exampleProfessions": [
+      "Ishlab chiqarish menejeri",
+      "Qurilish tadbirkori",
+      "Fermer xo'jaligi rahbari",
+      "Sex boshlig'i"
+    ],
+    "relevanceOrder": 1
+  },
+  {
+    "hollandCode": "AE",
+    "fieldNameUz": "Kreativ marketing va reklama",
+    "descriptionUz": "Ijodiy g'oyalarni tashkilotchilik va targ'ibot bilan birlashtiruvchi yo'nalish.",
+    "exampleProfessions": [
+      "Kreativ direktor",
+      "Reklama mutaxassisi",
+      "Brend menejeri",
+      "SMM mutaxassisi"
+    ],
+    "relevanceOrder": 1
+  },
+  {
+    "hollandCode": "EA",
+    "fieldNameUz": "Media menejmenti va tadbirlar tashkiloti",
+    "descriptionUz": "Yetakchilik va ijodiy fikrlashni birlashtirgan media-tadbirkorlik yo'nalishi.",
+    "exampleProfessions": [
+      "Tadbirlar menejeri (event-manager)",
+      "Media loyihalar rahbari",
+      "PR-mutaxassis",
+      "Kontent-strategiyachi"
+    ],
+    "relevanceOrder": 1
+  }
+]

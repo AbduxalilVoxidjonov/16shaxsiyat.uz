@@ -4,7 +4,7 @@
 > PM har vazifa boshlanganda va tugaganda **darhol** yangilaydi.
 
 **Loyiha:** Salohiyat (`salohiyat.uz`) · ichki nom `StudentRoadMap`
-**Oxirgi yangilanish:** 2026-08-31 · **Joriy bosqich:** B0 (Poydevor) · **Joriy vazifa:** P04 ‖ P09
+**Oxirgi yangilanish:** 2026-08-31 · **Joriy bosqich:** B0 (Poydevor) · **Joriy vazifa:** B2 (P10 — ommaviy sessiya API)
 
 ---
 
@@ -21,12 +21,12 @@
 | P01 | Solution'ni Clean Architecture ga o'tkazish | backend-dotnet | 🔵 | branch `feat/P01-clean-architecture` | QA: PASS · build 0 ogohlantirish · 4 test yashil |
 | P02 | Domain qatlami | backend-dotnet | ✅ | `84ebaed` | 43 fayl · 193 test · QA testlari alohida agentda |
 | P03 | EF Core, DbContext, migratsiya | backend-dotnet | ✅ | `9bb42d2` | QA: PASS (3 topilma tuzatildi) · jonli DB tekshiruvi qoldi |
-| P04 | Katalog va seed infratuzilmasi | backend-dotnet | 🟡 | — | P09 bilan parallel |
+| P04 | Katalog va seed infratuzilmasi | backend-dotnet | ✅ | — | QA: FAIL→PASS · SQLite in-memory bilan 18 test |
 | P05 | 16 tip savol banki (60) | scoring-psychometrics | ✅ | — | QA: PASS · JSON tayyor; seed integratsiyasi P04 da |
 | P06 | Big Five savol banki (50) | scoring-psychometrics | ✅ | — | QA: PASS · JSON tayyor; naqsh 2 marta qaytarildi |
 | P07 | RIASEC savol banki (48) | scoring-psychometrics | ✅ | — | QA: PASS · JSON tayyor |
 | P08 | Aktivlik anketasi (32) | scoring-psychometrics | ✅ | — | QA: PASS · JSON tayyor; shkalalar aralashtirildi |
-| P09 | Scoring engine + oltin testlar | scoring-psychometrics | 🟡 | — | **Kritik** · 1-urinish agent qotib qoldi, qayta boshlandi |
+| P09 | Scoring engine + oltin testlar | scoring-psychometrics | ✅ | — | **Kritik** · QA: FAIL→PASS · 2 bloklovchi tuzatildi · 127 scoring testi |
 | P10 | Application skeleti + sessiya API | backend-dotnet | ⬜ | — | |
 | P11 | Savol va javob API | backend-dotnet | ⬜ | — | |
 | P12 | Yakunlash va scoring ulash | backend-dotnet | ⬜ | — | |
@@ -124,7 +124,31 @@
   fayl o'chirish va `rm` qat'iy taqiqlandi.
 - **P04 ‖ P09 parallel boshlandi.** P09 ning birinchi agenti hech narsa yozmasdan qotib qoldi
   (ish daraxti toza qoldi), qayta ishga tushirildi.
-- **Keyingi:** P04 va P09 → QA → commit; keyin B2 (P10–P12, ommaviy API).
+- **P04 tayyor** (commit kutmoqda): `SeedDataLoader` (DB'siz, sinaladigan), `DbSeeder` (idempotent
+  upsert, BR-8 himoyasi — `scale`/`direction` farq qilsa xato bilan to'xtaydi), `type-catalog.json`
+  (16 tip), `career-map.json` (18 juftlik), PBKDF2 parol xeshi, `--seed` va `App:SeedOnStartup`.
+  38 ta yangi test. Qamrovdan chiqish: Domain `Catalog/TestDefinition.cs` va `Question.cs` ga
+  metod qo'shildi (`CreateSystemPublished`, `UpdateMetadata`, `UpdateOrder`) — seed uchun zarur edi,
+  QA ko'rigida tekshiriladi.
+- **Domain tozaligi testi ish berdi:** P09 agentining `ReliabilityCalculator.cs` fayli tizim
+  soatidan foydalangani uchun `DomainSourceFiles_DoNotUseSystemClockDirectly` qizil bo'ldi.
+  Agentga qaytarildi — scoring deterministik bo'lishi shart.
+- **P04 va P09 tugadi. QA: FAIL → tuzatildi → PASS.** Bu ko'rik o'zini oqladi:
+  - **Bloklovchi 1:** MBTI borderline bayrog'i `pct = 55` da qo'yilmasdi (IEEE-754: `55.00000000000001`).
+    Tuzatishda **xuddi shu xato yana 4 joyda** topildi — BIG5 (20/40/60/80), ACTIVITY (30/50/70/85/31),
+    CompositeScorer (35/55/75), SUM. Endi hamma chegara `ScorePercent.FromClamped` bilan
+    yaxlitlangan qiymatdan hisoblanadi.
+  - **Bloklovchi 2:** `ReliabilityCalculator` javoblarni faqat `DisplayOrder` bo'yicha tartiblardi,
+    4 test esa `1..N` dan boshlanadi → bloklar aralashib, bitta testni to'liq bir xil javob bilan
+    to'ldirgan o'quvchi `Reliable` chiqardi. Endi kalkulyator tartibni buzmaydi;
+    javobgarlik chaqiruvchida va `prompts/12` ga **P12-R1/P12-R2** majburiy talab qilib yozildi.
+  - M1–M13: javob diapazoni validatsiyasi, `Weight != 1.0` xatosi, RIASEC `direction` tekshiruvi,
+    `SUM` min 4 savol, tez javob maxraji, `ScoringVersion` — hammasi tuzatildi.
+  - P04: `DbSeeder` uchun SQLite in-memory testlari (idempotentlik, BR-8, tranzaksiya rollback),
+    yangi Domain metodlariga testlar, `Pbkdf2PasswordHasher` mustahkamlandi (iteratsiya chegarasi).
+- **Hujjatlar yangilandi:** `docs/03` §7.1 (ishonchlilik qoidalarining 5 ta aniqlashtirilishi),
+  `docs/08` (PBKDF2-HMACSHA256 210k), `docs/06` §8 (3 yangi qaror).
+- **Keyingi:** B2 — P10 (ommaviy sessiya API) → P11 → P12.
 
 ---
 
@@ -135,6 +159,11 @@
 | Savol banklari (190 savol) sifati — real o'quvchida sinalmagan | Natija ishonchliligi | Pilotdan keyin matnlarni tuzatish (`docs/14` 5-bo'lim) |
 | AI prompt sifati faqat mock bilan sinaladi | Hisobot sifati | P17 dan keyin 10 ta oltin namuna bilan qo'lda baholash |
 | `answers` jadvali tez o'sadi (190 qator/sessiya) | Ishlash | 100k sessiyadan keyin partitsiya (v2) |
+| `type-catalog.json` dagi 16 tip nomi (Strateg, Mantiqchi, Munozarachi, Konsul, Qo'mondon…) 16Personalities (NERIS) rol nomlarining o'zbekcha muqobili | `docs/03` §0 aynan litsenziyalangan materialdan qochishni talab qiladi — nomlar to'plami himoyalangan bo'lishi mumkin | `docs/03` ning o'zi 2 ta misolni (Strateg, Ilhomlantiruvchi) shu uslubda bergan, shuning uchun bloklanmadi. **Egasidan huquqiy tasdiq kerak** yoki nomlar mustaqil qayta o'ylanadi (P25/P29 kontent ko'rigida) |
+| `type-catalog.json` (16 tip tavsifi) va `career-map.json` (18 Holland juftligi, kasb nomlari) agent tavsiyasi | O'quvchi ko'radigan asosiy kontent — sifati tekshirilmagan | Kasb yo'riqchisi/egasi ko'rib chiqishi kerak (P25 individual profil sahifasidan oldin) |
+| `ReliabilityInput.Questions` tartibi shartnoma bilan himoyalangan, kod bilan emas | Noto'g'ri tartibda berilsa straight-lining signali **jimgina o'chadi**, hech narsa ushlamaydi | `prompts/12` ga **P12-R1** (aniq LINQ) va **P12-R2** (majburiy regressiya testi) yozildi. Yagona himoya — o'sha test |
+| `ReliabilityCalculator` da dublikat `QuestionId` tekshirilmaydi | Soxta straight-lining hosil qilish mumkin | Kichik; P10–P12 da kirish validatsiyasi bilan birga yopiladi |
+| `SUM` talqin oraliqlari 3+ kasrli belgilansa `pct` bo'shliqqa tushishi mumkin | Superadmin anketasida `SUM_INTERPRETATION_BAND_NOT_FOUND` | P33 nashr validatsiyasida oraliqlar 2 kasr bilan cheklansin |
 | QA topgan 5 ta zaif savol (cross-loading): `MB-Q58` (SN↔JP), `B5-Q36` (O↔E), `B5-Q49` (A↔ish uslubi), `AC-Q15` (SOCA↔SELF), va `MB-Q01`≈`AC-Q27` deyarli bir xil misol | Omillar orasida ortiqcha korrelyatsiya; ball biroz aniqroq bo'lishi mumkin edi | Bloklovchi emas (professional testlarda ham uchraydi). Pilotdan keyin real ma'lumot bilan qayta ko'riladi — `docs/14` 5-bo'lim |
 | EF Core 9.x paketlari net10.0 loyihada (Npgsql EF10 provayderi yo'q) | P03 da runtime muammosi bo'lishi mumkin | P03 boshida DbContext bilan haqiqiy so'rov sinab ko'riladi; provayder chiqqach yangilanadi |
 | `/health` va `/health/ready` hozir bir xil (bog'liqlik tekshiruvi yo'q) | Orkestrator noto'g'ri "ready" deb o'ylashi mumkin | P03 da DB health check qo'shilib, `tag` bo'yicha ajratiladi |

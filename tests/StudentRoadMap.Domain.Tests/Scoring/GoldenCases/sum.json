@@ -1,0 +1,73 @@
+[
+  {
+    "name": "SUM — 2 shkala, teskari savol va og'irlik 2.0 to'g'ri hisoblanadi",
+    "_comment": "STRESS: Q1(dir+1,w1,v4)=4, Q2(dir-1,w1,v2)=6-2=4, Q3(dir+1,w2,v5)=5*2=10, Q4(dir+1,w1,v3)=3. scaleRaw=4+4+10+3=21. scaleMin=1+1+1*2+1=5. scaleMax=5+5+5*2+5=25. pct=(21-5)/(25-5)*100=80.0 => band[67,100]='Yuqori'. SUPPORT: 4 ta v3(dir+1,w1) => scaleRaw=12,min=4,max=20,pct=(12-4)/16*100=50.0 => band[34,66]='O'rtacha'.",
+    "strategyCode": "SUM",
+    "tolerance": 0.1,
+    "questions": [
+      { "code": "STRESS-1", "scale": "STRESS", "direction": 1, "weight": 1.0, "displayOrder": 1, "answer": 4 },
+      { "code": "STRESS-2", "scale": "STRESS", "direction": -1, "weight": 1.0, "displayOrder": 2, "answer": 2 },
+      { "code": "STRESS-3", "scale": "STRESS", "direction": 1, "weight": 2.0, "displayOrder": 3, "answer": 5 },
+      { "code": "STRESS-4", "scale": "STRESS", "direction": 1, "weight": 1.0, "displayOrder": 4, "answer": 3 },
+      { "code": "SUPPORT-1", "scale": "SUPPORT", "direction": 1, "weight": 1.0, "displayOrder": 5, "answer": 3 },
+      { "code": "SUPPORT-2", "scale": "SUPPORT", "direction": 1, "weight": 1.0, "displayOrder": 6, "answer": 3 },
+      { "code": "SUPPORT-3", "scale": "SUPPORT", "direction": 1, "weight": 1.0, "displayOrder": 7, "answer": 3 },
+      { "code": "SUPPORT-4", "scale": "SUPPORT", "direction": 1, "weight": 1.0, "displayOrder": 8, "answer": 3 }
+    ],
+    "scaleBands": {
+      "STRESS": [
+        { "min": 0, "max": 33, "level": "Past" },
+        { "min": 34, "max": 66, "level": "O'rtacha" },
+        { "min": 67, "max": 100, "level": "Yuqori" }
+      ],
+      "SUPPORT": [
+        { "min": 0, "max": 33, "level": "Past" },
+        { "min": 34, "max": 66, "level": "O'rtacha" },
+        { "min": 67, "max": 100, "level": "Yuqori" }
+      ]
+    },
+    "expected": {
+      "rawScores": { "STRESS": 21.0, "SUPPORT": 12.0 },
+      "normalizedScores": { "STRESS": 80.0, "SUPPORT": 50.0 },
+      "levels": { "STRESS": "Yuqori", "SUPPORT": "O'rtacha" },
+      "resultCode": null,
+      "compositeIndex": null,
+      "flags": [],
+      "interpretationKey": "SUM.RESULT"
+    }
+  },
+  {
+    "name": "SUM — past daraja oralig'i to'g'ri tanlanadi",
+    "_comment": "STRESS: Q1(dir+1,w1,v1)=1, Q2(dir-1,w1,v5)=6-5=1, Q3(dir+1,w2,v1)=1*2=2, Q4(dir+1,w1,v2)=2. scaleRaw=1+1+2+2=6. min=5,max=25. pct=(6-5)/20*100=5.0 => band[0,33]='Past'.",
+    "strategyCode": "SUM",
+    "tolerance": 0.1,
+    "questions": [
+      { "code": "STRESS-1", "scale": "STRESS", "direction": 1, "weight": 1.0, "displayOrder": 1, "answer": 1 },
+      { "code": "STRESS-2", "scale": "STRESS", "direction": -1, "weight": 1.0, "displayOrder": 2, "answer": 5 },
+      { "code": "STRESS-3", "scale": "STRESS", "direction": 1, "weight": 2.0, "displayOrder": 3, "answer": 1 },
+      { "code": "STRESS-4", "scale": "STRESS", "direction": 1, "weight": 1.0, "displayOrder": 4, "answer": 2 },
+      { "code": "SUPPORT-1", "scale": "SUPPORT", "direction": 1, "weight": 1.0, "displayOrder": 5, "answer": 3 },
+      { "code": "SUPPORT-2", "scale": "SUPPORT", "direction": 1, "weight": 1.0, "displayOrder": 6, "answer": 3 },
+      { "code": "SUPPORT-3", "scale": "SUPPORT", "direction": 1, "weight": 1.0, "displayOrder": 7, "answer": 3 },
+      { "code": "SUPPORT-4", "scale": "SUPPORT", "direction": 1, "weight": 1.0, "displayOrder": 8, "answer": 3 }
+    ],
+    "scaleBands": {
+      "STRESS": [
+        { "min": 0, "max": 33, "level": "Past" },
+        { "min": 34, "max": 66, "level": "O'rtacha" },
+        { "min": 67, "max": 100, "level": "Yuqori" }
+      ],
+      "SUPPORT": [
+        { "min": 0, "max": 33, "level": "Past" },
+        { "min": 34, "max": 66, "level": "O'rtacha" },
+        { "min": 67, "max": 100, "level": "Yuqori" }
+      ]
+    },
+    "expected": {
+      "rawScores": { "STRESS": 6.0, "SUPPORT": 12.0 },
+      "normalizedScores": { "STRESS": 5.0, "SUPPORT": 50.0 },
+      "levels": { "STRESS": "Past", "SUPPORT": "O'rtacha" },
+      "interpretationKey": "SUM.RESULT"
+    }
+  }
+]

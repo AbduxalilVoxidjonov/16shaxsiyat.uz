@@ -157,4 +157,131 @@ public sealed class TestDefinitionTests
         copy.Kind.Should().Be(TestKind.Custom);
         copy.Status.Should().Be(TestDefinitionStatus.Draft);
     }
+
+    // --- P04 seed infratuzilmasi: CreateSystemPublished / UpdateMetadata --------------------
+
+    [Fact]
+    public void CreateSystemPublished_BuildsPublishedSystemAggregateWithSystemQuestions()
+    {
+        var testDefinitionId = Guid.NewGuid();
+        var question = CreateQuestion(testDefinitionId, "MB-Q01", isSystem: true);
+
+        var testDefinition = TestDefinition.CreateSystemPublished(
+            testDefinitionId, "MBTI16", "16 tipli shaxsiyat modeli", "Tavsif", 1, 9, false, 10, "MBTI16",
+            [question], Now);
+
+        testDefinition.IsSystem.Should().BeTrue();
+        testDefinition.Kind.Should().Be(TestKind.Standard);
+        testDefinition.Status.Should().Be(TestDefinitionStatus.Published);
+        testDefinition.PublishedAt.Should().Be(Now);
+        testDefinition.ScoringStrategyCode.Should().Be("MBTI16");
+        testDefinition.QuestionCount.Should().Be(1);
+        testDefinition.Questions.Should().OnlyContain(q => q.IsSystem);
+    }
+
+    [Fact]
+    public void CreateSystemPublished_WithEmptyQuestions_ThrowsArgumentException()
+    {
+        var testDefinitionId = Guid.NewGuid();
+
+        var act = () => TestDefinition.CreateSystemPublished(
+            testDefinitionId, "MBTI16", "16 tipli shaxsiyat modeli", null, 1, 9, false, 10, "MBTI16",
+            [], Now);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void CreateSystemPublished_WithNonSystemQuestion_ThrowsArgumentException()
+    {
+        var testDefinitionId = Guid.NewGuid();
+        var question = CreateQuestion(testDefinitionId, "MB-Q01", isSystem: false);
+
+        var act = () => TestDefinition.CreateSystemPublished(
+            testDefinitionId, "MBTI16", "16 tipli shaxsiyat modeli", null, 1, 9, false, 10, "MBTI16",
+            [question], Now);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void CreateSystemPublished_ThenAddQuestion_ThrowsDomainException()
+    {
+        // Muhim: `CreateSystemPublished` orqali qulflangan tizim metodikasiga keyinchalik
+        // `AddQuestion` chaqirilsa ham BR-8 qulfi haqiqatan faol bo'lishi kerak (`SYSTEM_TEST_LOCKED`).
+        var testDefinitionId = Guid.NewGuid();
+        var question = CreateQuestion(testDefinitionId, "MB-Q01", isSystem: true);
+        var testDefinition = TestDefinition.CreateSystemPublished(
+            testDefinitionId, "MBTI16", "16 tipli shaxsiyat modeli", null, 1, 9, false, 10, "MBTI16",
+            [question], Now);
+
+        var newQuestion = CreateQuestion(testDefinitionId, "MB-Q02", isSystem: true);
+        var act = () => testDefinition.AddQuestion(newQuestion, Now);
+
+        var ex = act.Should().Throw<DomainException>().Which;
+        ex.Code.Should().Be("SYSTEM_TEST_LOCKED");
+    }
+
+    [Fact]
+    public void CreateSystemPublished_ThenRemoveQuestion_ThrowsDomainException()
+    {
+        var testDefinitionId = Guid.NewGuid();
+        var question = CreateQuestion(testDefinitionId, "MB-Q01", isSystem: true);
+        var testDefinition = TestDefinition.CreateSystemPublished(
+            testDefinitionId, "MBTI16", "16 tipli shaxsiyat modeli", null, 1, 9, false, 10, "MBTI16",
+            [question], Now);
+
+        var act = () => testDefinition.RemoveQuestion(question.Id, Now);
+
+        var ex = act.Should().Throw<DomainException>().Which;
+        ex.Code.Should().Be("SYSTEM_TEST_LOCKED");
+    }
+
+    [Fact]
+    public void UpdateMetadata_UpdatesTextFieldsOnly_LeavesScaleKindIsSystemStatusUntouched()
+    {
+        var testDefinitionId = Guid.NewGuid();
+        var question = CreateQuestion(testDefinitionId, "MB-Q01", isSystem: true);
+        var testDefinition = TestDefinition.CreateSystemPublished(
+            testDefinitionId, "MBTI16", "Eski nom", "Eski tavsif", 1, 9, false, 10, "MBTI16",
+            [question], Now);
+
+        testDefinition.UpdateMetadata("Yangi nom", "Yangi tavsif", 2, 12, true, 20, Now.AddDays(1));
+
+        testDefinition.NameUz.Should().Be("Yangi nom");
+        testDefinition.DescriptionUz.Should().Be("Yangi tavsif");
+        testDefinition.DisplayOrder.Should().Be(2);
+        testDefinition.EstimatedMinutes.Should().Be(12);
+        testDefinition.ShuffleQuestions.Should().BeTrue();
+        testDefinition.PageSize.Should().Be(20);
+        testDefinition.UpdatedAt.Should().Be(Now.AddDays(1));
+
+        // `UpdateMetadata` — faqat matn/tartib maydonlariga tegadi, BR-8 himoyalagan holatga
+        // (Kind/IsSystem/Status/ScoringStrategyCode) va savol shkalasiga tegmaydi.
+        testDefinition.Kind.Should().Be(TestKind.Standard);
+        testDefinition.IsSystem.Should().BeTrue();
+        testDefinition.Status.Should().Be(TestDefinitionStatus.Published);
+        testDefinition.ScoringStrategyCode.Should().Be("MBTI16");
+        testDefinition.Questions.Single().Scale.Should().Be("EI");
+    }
+
+    [Fact]
+    public void UpdateMetadata_WithBlankName_ThrowsArgumentException()
+    {
+        var testDefinition = CreateCustomTestDefinition();
+
+        var act = () => testDefinition.UpdateMetadata(" ", null, 1, 10, false, 10, Now);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void UpdateMetadata_WithNonPositivePageSize_ThrowsArgumentOutOfRangeException()
+    {
+        var testDefinition = CreateCustomTestDefinition();
+
+        var act = () => testDefinition.UpdateMetadata("Nom", null, 1, 10, false, 0, Now);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
 }

@@ -3,7 +3,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Infrastructure.Common;
+using StudentRoadMap.Infrastructure.Identity;
 using StudentRoadMap.Infrastructure.Persistence;
+using StudentRoadMap.Infrastructure.Persistence.Seeding;
 using StudentRoadMap.Infrastructure.Security;
 
 namespace StudentRoadMap.Infrastructure;
@@ -35,6 +37,8 @@ public static class DependencyInjection
         services.AddScoped<IAsyncQueryExecutor, EfAsyncQueryExecutor>();
         services.AddSingleton<IDateTime, SystemDateTime>();
         services.AddScoped<IEncryptionService, AesEncryptionService>();
+        services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
+        services.AddScoped<DbSeeder>();
 
         // `/health/ready` DB ulanishini tekshiradi — `ready` tag bilan ajratilib,
         // Api/Program.cs da alohida endpoint sifatida ochiladi (`/health` esa DB'siz jonlik).

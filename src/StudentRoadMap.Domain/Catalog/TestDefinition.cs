@@ -249,6 +249,102 @@ public sealed class TestDefinition : AggregateRoot
         return copy;
     }
 
+    /// <summary>
+    /// Seed infratuzilmasi uchun: tizim metodikasini (`IsSystem = true`) savollari bilan birga
+    /// to'g'ridan-to'g'ri **nashr qilingan** holatda materiallashtiradi. `AddQuestion` tizim
+    /// metodikasida taqiqlangani uchun (BR-8) bu — savollarni bir martalik joylashtirishning
+    /// yagona yo'li; keyingi qayta seedlashda faqat matn/tartib yangilanadi
+    /// (`Question.UpdateText`/`UpdateOrder`), shkala esa `SeedDataLoader.DetectScaleConflicts`
+    /// bilan himoyalanadi.
+    /// </summary>
+    public static TestDefinition CreateSystemPublished(
+        Guid id,
+        string code,
+        string nameUz,
+        string? descriptionUz,
+        int displayOrder,
+        int estimatedMinutes,
+        bool shuffleQuestions,
+        int pageSize,
+        string scoringStrategyCode,
+        IReadOnlyList<Question> questions,
+        DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(questions);
+
+        if (questions.Count == 0)
+        {
+            throw new ArgumentException("Tizim metodikasida kamida bitta savol bo'lishi kerak.", nameof(questions));
+        }
+
+        var testDefinition = new TestDefinition(
+            id,
+            code,
+            nameUz,
+            descriptionUz,
+            displayOrder,
+            estimatedMinutes,
+            shuffleQuestions,
+            pageSize,
+            TestKind.Standard,
+            isSystem: true,
+            scoringStrategyCode,
+            createdByAdminUserId: null,
+            now);
+
+        foreach (var question in questions)
+        {
+            if (question.TestDefinitionId != id)
+            {
+                throw new ArgumentException("Savol boshqa anketaga tegishli.", nameof(questions));
+            }
+
+            if (!question.IsSystem)
+            {
+                throw new ArgumentException("Tizim metodikasi faqat 'IsSystem = true' savollarni qabul qiladi.", nameof(questions));
+            }
+
+            testDefinition._questions.Add(question);
+        }
+
+        testDefinition.Status = TestDefinitionStatus.Published;
+        testDefinition.PublishedAt = now;
+
+        return testDefinition;
+    }
+
+    /// <summary>
+    /// Seed qayta ishga tushirilganda matn/tartibga oid metadatani yangilaydi — `Scale`/`Kind`/
+    /// `IsSystem`/`Status`ga tegmaydi (BR-8 shkala qulfi shu metoddan tashqarida saqlanadi).
+    /// </summary>
+    public void UpdateMetadata(
+        string nameUz,
+        string? descriptionUz,
+        int displayOrder,
+        int estimatedMinutes,
+        bool shuffleQuestions,
+        int pageSize,
+        DateTimeOffset now)
+    {
+        if (string.IsNullOrWhiteSpace(nameUz))
+        {
+            throw new ArgumentException("Anketa nomi bo'sh bo'lishi mumkin emas.", nameof(nameUz));
+        }
+
+        if (pageSize <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(pageSize), "Sahifa hajmi musbat bo'lishi kerak.");
+        }
+
+        NameUz = nameUz;
+        DescriptionUz = descriptionUz;
+        DisplayOrder = displayOrder;
+        EstimatedMinutes = estimatedMinutes;
+        ShuffleQuestions = shuffleQuestions;
+        PageSize = pageSize;
+        UpdatedAt = now;
+    }
+
     private void BumpVersionIfPublished()
     {
         // Nashr qilingan anketaga savol qo'shilsa/olib tashlansa versiya oshadi (docs/04 2.7, BR-9) —

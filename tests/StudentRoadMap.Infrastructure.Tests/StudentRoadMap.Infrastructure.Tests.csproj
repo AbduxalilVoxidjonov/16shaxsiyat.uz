@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="FluentAssertions" Version="8.10.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <!--
+      Docker/PostgreSQL bu muhitda yo'q (`prompts/04` topshirig'i). `DbSeeder` bitta DB
+      tranzaksiyasida ishlaydi (S8) — EF Core InMemory provayderi tranzaksiyani qo'llamaydi,
+      shu sabab **SQLite in-memory** ishlatiladi (relational, real tranzaksiya/rollback,
+      Npgsql'ga eng yaqin xatti-harakat). `AppDbContext.OnModelCreating`dagi Postgres-ga xos
+      annotatsiyalar (`HasPostgresExtension`, `gen_random_uuid()`, `now()`,
+      `HasComputedColumnSql("lower(...)")`) SQLite'da muammosiz — birinchisi shunchaki
+      e'tiborsiz qoldiriladigan annotatsiya, qolganlari esa faqat qiymat berilmagan
+      ustunlarga ta'sir qiladi va bizning agregatlar `Id`/`CreatedAt`/`UpdatedAt`ni har doim
+      xotirada, konstruktorda to'ldiradi.
+    -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.9" />
+    <!-- Transitiv `SQLitePCLRaw.lib.e_sqlite3` 2.1.10 NU1903 (yuqori darajali zaiflik) beradi — aniq yangi versiya bilan qulflaymiz. -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
+    <!-- `ConfigurationBuilder`/`AddInMemoryCollection` — sinovda `ADMIN_USERNAME`/`ADMIN_PASSWORD`ni soxtalashtirish uchun. -->
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\StudentRoadMap.Infrastructure\StudentRoadMap.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <!-- `DbSeeder` `AppContext.BaseDirectory/SeedData/...` dan o'qiydi — haqiqiy 6 ta seed fayli
+       (4 test-ta'rifi + type-catalog + career-map) shu yerga nusxalanadi, manba fayllar
+       tahrirlanmaydi/dublikat qilinmaydi. -->
+  <ItemGroup>
+    <Content Include="..\..\src\StudentRoadMap.Infrastructure\Persistence\SeedData\**\*.json">
+      <Link>SeedData\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

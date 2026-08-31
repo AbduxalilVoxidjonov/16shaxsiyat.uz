@@ -143,6 +143,15 @@ public sealed class Question : Entity
         TextEn = textEn;
     }
 
+    /// <summary>
+    /// Ko'rsatish tartibini yangilaydi. BR-8 faqat `Scale`/`ScaleDirection`/`Weight`ni qulflaydi —
+    /// tartib tizim savollarida ham seed orqali yangilanishi mumkin.
+    /// </summary>
+    public void UpdateOrder(int displayOrder)
+    {
+        DisplayOrder = displayOrder;
+    }
+
     public void Activate() => IsActive = true;
 
     public void Deactivate() => IsActive = false;

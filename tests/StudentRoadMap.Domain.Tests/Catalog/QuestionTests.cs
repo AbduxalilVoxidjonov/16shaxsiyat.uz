@@ -92,4 +92,32 @@ public sealed class QuestionTests
         var ex = act.Should().Throw<DomainException>().Which;
         ex.Code.Should().Be("SYSTEM_TEST_LOCKED");
     }
+
+    // --- P04 seed infratuzilmasi: UpdateOrder ------------------------------------------------
+
+    [Fact]
+    public void UpdateOrder_OnSystemQuestion_UpdatesDisplayOrderOnly()
+    {
+        // BR-8 faqat Scale/Direction/Weightni qulflaydi — tartib tizim savolida ham
+        // seed orqali yangilanishi mumkin (`CLAUDE.md` 9a-qoida).
+        var question = CreateSystemQuestion();
+
+        question.UpdateOrder(7);
+
+        question.DisplayOrder.Should().Be(7);
+        question.Scale.Should().Be("EI");
+        question.ScaleDirection.Should().Be(1);
+        question.Weight.Should().Be(1.0m);
+        question.IsSystem.Should().BeTrue();
+    }
+
+    [Fact]
+    public void UpdateOrder_OnCustomQuestion_UpdatesDisplayOrder()
+    {
+        var question = CreateCustomQuestion(QuestionType.Likert5);
+
+        question.UpdateOrder(3);
+
+        question.DisplayOrder.Should().Be(3);
+    }
 }

@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StudentRoadMap.Application.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StudentRoadMap.Api.IntegrationTests", "tests\StudentRoadMap.Api.IntegrationTests\StudentRoadMap.Api.IntegrationTests.csproj", "{30CE87F7-B0F5-48F3-B562-8F75F9BCA3E1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StudentRoadMap.Infrastructure.Tests", "tests\StudentRoadMap.Infrastructure.Tests\StudentRoadMap.Infrastructure.Tests.csproj", "{93168311-B743-447A-A542-21CC2137377F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -115,6 +117,18 @@ Global
 		{30CE87F7-B0F5-48F3-B562-8F75F9BCA3E1}.Release|x64.Build.0 = Release|Any CPU
 		{30CE87F7-B0F5-48F3-B562-8F75F9BCA3E1}.Release|x86.ActiveCfg = Release|Any CPU
 		{30CE87F7-B0F5-48F3-B562-8F75F9BCA3E1}.Release|x86.Build.0 = Release|Any CPU
+		{93168311-B743-447A-A542-21CC2137377F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{93168311-B743-447A-A542-21CC2137377F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{93168311-B743-447A-A542-21CC2137377F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{93168311-B743-447A-A542-21CC2137377F}.Debug|x64.Build.0 = Debug|Any CPU
+		{93168311-B743-447A-A542-21CC2137377F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{93168311-B743-447A-A542-21CC2137377F}.Debug|x86.Build.0 = Debug|Any CPU
+		{93168311-B743-447A-A542-21CC2137377F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{93168311-B743-447A-A542-21CC2137377F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{93168311-B743-447A-A542-21CC2137377F}.Release|x64.ActiveCfg = Release|Any CPU
+		{93168311-B743-447A-A542-21CC2137377F}.Release|x64.Build.0 = Release|Any CPU
+		{93168311-B743-447A-A542-21CC2137377F}.Release|x86.ActiveCfg = Release|Any CPU
+		{93168311-B743-447A-A542-21CC2137377F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -127,5 +141,6 @@ Global
 		{FC47C076-C2C5-463B-8ABC-35BE4838C7B0} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{FE035998-CC24-436D-9E68-06BDAD3F269A} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{30CE87F7-B0F5-48F3-B562-8F75F9BCA3E1} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{93168311-B743-447A-A542-21CC2137377F} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

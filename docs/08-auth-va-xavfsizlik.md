@@ -22,8 +22,12 @@ HS256, kalit `Jwt:Key` (≥ 32 bayt, env orqali). Muddat 30 daqiqa.
   **barcha** refresh tokenlari bekor qilinadi + `AuditLog` ga `Security.RefreshReuse`.
 - `httpOnly; Secure; SameSite=Strict` cookie'da.
 
-**Parol:** BCrypt (work factor 12) yoki Argon2id. Minimal talab: 10 belgi, harf+raqam.
-Parol o'zgarganda barcha refresh tokenlar bekor qilinadi.
+**Parol:** PBKDF2-HMACSHA256, **210 000 iteratsiya**, 16 baytli tasodifiy tuz, 32 baytli xesh
+(OWASP 2023 tavsiyasi). Solishtirish `CryptographicOperations.FixedTimeEquals` bilan.
+Iteratsiya soni xesh ichida saqlanadi (kelajakda oshirish uchun), lekin o'qishda
+`100 000 … 1 000 000` oralig'ida bo'lishi tekshiriladi — aks holda xesh yaroqsiz deb qaraladi
+(downgrade hujumining oldini olish).
+Minimal talab: 10 belgi, harf+raqam. Parol o'zgarganda barcha refresh tokenlar bekor qilinadi.
 
 **Blokirovka:** 5 ta noto'g'ri urinish → 15 daqiqa (`LockedUntil`). Muvaffaqiyatli kirishda `FailedLoginCount = 0`.
 
@@ -72,7 +76,7 @@ Yoqilganda 8 ta bir martalik zaxira kod beriladi (xeshlangan holda saqlanadi).
 | IP manzil | Xom saqlanmaydi — `SHA256(ip + Security:IpHashSalt)` |
 | AI provider API kalitlari | AES-256-GCM shifrlangan, o'qishda maskalangan (`AIza••••7f2b`) |
 | TOTP sekret | AES-256-GCM |
-| Parol | BCrypt/Argon2 (qaytarilmas) |
+| Parol | PBKDF2-HMACSHA256 210k (qaytarilmas) |
 | Test javoblari | Xom javoblar faqat audit uchun; AI'ga **javoblar emas, ballar** yuboriladi |
 
 **AI provayderga yuboriladigan ma'lumot (muhim):**
