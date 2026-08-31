@@ -4,7 +4,7 @@
 > PM har vazifa boshlanganda va tugaganda **darhol** yangilaydi.
 
 **Loyiha:** Salohiyat (`salohiyat.uz`) · ichki nom `StudentRoadMap`
-**Oxirgi yangilanish:** 2026-08-31 · **Joriy bosqich:** B0 (Poydevor) · **Joriy vazifa:** P02 (Domain qatlami)
+**Oxirgi yangilanish:** 2026-08-31 · **Joriy bosqich:** B0 (Poydevor) · **Joriy vazifa:** P04 ‖ P09
 
 ---
 
@@ -19,14 +19,14 @@
 | № | Vazifa | Agent | Holat | PR | Izoh |
 |---|--------|-------|-------|----|------|
 | P01 | Solution'ni Clean Architecture ga o'tkazish | backend-dotnet | 🔵 | branch `feat/P01-clean-architecture` | QA: PASS · build 0 ogohlantirish · 4 test yashil |
-| P02 | Domain qatlami | backend-dotnet | 🟡 | — | branch `feat/P02-domain-qatlami` |
-| P03 | EF Core, DbContext, migratsiya | backend-dotnet | 🟡 | — | Docker yo'q — jonli DB tekshiruvlari P04 ga qoldi |
-| P04 | Katalog va seed infratuzilmasi | backend-dotnet | ⬜ | — | |
+| P02 | Domain qatlami | backend-dotnet | ✅ | `84ebaed` | 43 fayl · 193 test · QA testlari alohida agentda |
+| P03 | EF Core, DbContext, migratsiya | backend-dotnet | ✅ | `9bb42d2` | QA: PASS (3 topilma tuzatildi) · jonli DB tekshiruvi qoldi |
+| P04 | Katalog va seed infratuzilmasi | backend-dotnet | 🟡 | — | P09 bilan parallel |
 | P05 | 16 tip savol banki (60) | scoring-psychometrics | ✅ | — | QA: PASS · JSON tayyor; seed integratsiyasi P04 da |
 | P06 | Big Five savol banki (50) | scoring-psychometrics | ✅ | — | QA: PASS · JSON tayyor; naqsh 2 marta qaytarildi |
 | P07 | RIASEC savol banki (48) | scoring-psychometrics | ✅ | — | QA: PASS · JSON tayyor |
 | P08 | Aktivlik anketasi (32) | scoring-psychometrics | ✅ | — | QA: PASS · JSON tayyor; shkalalar aralashtirildi |
-| P09 | Scoring engine + oltin testlar | scoring-psychometrics | ⬜ | — | **Kritik** — 100% qoplama |
+| P09 | Scoring engine + oltin testlar | scoring-psychometrics | 🟡 | — | **Kritik** · 1-urinish agent qotib qoldi, qayta boshlandi |
 | P10 | Application skeleti + sessiya API | backend-dotnet | ⬜ | — | |
 | P11 | Savol va javob API | backend-dotnet | ⬜ | — | |
 | P12 | Yakunlash va scoring ulash | backend-dotnet | ⬜ | — | |
@@ -114,7 +114,17 @@
   QA barcha 190 savolning yo'nalish mantiqini `docs/03` konvensiyasi bilan solishtirdi —
   scoring'ni buzadigan xato yo'q. Til, brend nomlari, taqiqlangan mavzular, gender stereotip,
   litsenziya riski — hammasi toza. 5 ta zaif savol texnik qarz sifatida yozildi.
-- **Keyingi:** P03 tugashi → QA → commit; keyin P04 (seed infratuzilmasi) va P09 (scoring).
+- **P03 commit qilindi** (`9bb42d2`). QA: PASS. Uchta topilma tuzatildi:
+  `question_order_json` nullable qilindi, `ix_students_last_at` ga `NULLS LAST` qo'shildi
+  (xom SQL bilan — EF fluent API'da sozlanmaydi), `docker-compose.yml` dagi parol zaxira qiymati
+  olib tashlandi. Oltita arxitektura qarori `docs/06` §8 ga yozildi.
+- **⚠️ Ma'lumot yo'qolishi:** P03 agenti ish oxirida `.srm_bundle.json` (294 KB) faylini
+  o'z-o'zidan o'chirib yubordi. Fayl `.gitignore` da edi → git'da yo'q → **tiklanmadi**.
+  Repoda unga havola yo'q. Egasiga aytildi. Chora: barcha keyingi topshiriqlarda agentlarga
+  fayl o'chirish va `rm` qat'iy taqiqlandi.
+- **P04 ‖ P09 parallel boshlandi.** P09 ning birinchi agenti hech narsa yozmasdan qotib qoldi
+  (ish daraxti toza qoldi), qayta ishga tushirildi.
+- **Keyingi:** P04 va P09 → QA → commit; keyin B2 (P10–P12, ommaviy API).
 
 ---
 
