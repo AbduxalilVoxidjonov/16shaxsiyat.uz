@@ -1,0 +1,612 @@
+{
+  "code": "MBTI16",
+  "nameUz": "16 tipli shaxsiyat modeli",
+  "descriptionUz": "O'zingizning fikrlash, muloqot va qaror qabul qilish uslubingizni aniqlaydigan 60 savolli shaxsiyat testi.",
+  "version": 1,
+  "displayOrder": 1,
+  "estimatedMinutes": 9,
+  "pageSize": 10,
+  "shuffleQuestions": false,
+  "questions": [
+    {
+      "code": "MB-Q01",
+      "order": 1,
+      "textUz": "Yangi sinfdoshlar bilan tanishish menga oson kechadi.",
+      "type": "Likert5",
+      "scale": "EI",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q02",
+      "order": 2,
+      "textUz": "Topshiriqni aniq ko'rsatma bo'yicha bajarishni afzal ko'raman.",
+      "type": "Likert5",
+      "scale": "SN",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q03",
+      "order": 3,
+      "textUz": "Qaror qabul qilishda odamlarning his-tuyg'usiga birinchi e'tibor beraman.",
+      "type": "Likert5",
+      "scale": "TF",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q04",
+      "order": 4,
+      "textUz": "Ishlarni oxirgi kunga qoldirib, keyin shoshilib bajaraman.",
+      "type": "Likert5",
+      "scale": "JP",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q05",
+      "order": 5,
+      "textUz": "Ko'p odam orasida bo'lgach, yolg'iz qolib dam olishni istayman.",
+      "type": "Likert5",
+      "scale": "EI",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q06",
+      "order": 6,
+      "textUz": "Kelajakda nima bo'lishi mumkinligini tasavvur qilishni yaxshi ko'raman.",
+      "type": "Likert5",
+      "scale": "SN",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q07",
+      "order": 7,
+      "textUz": "Qaror qabul qilishda faktlarga va mantiqqa tayanaman.",
+      "type": "Likert5",
+      "scale": "TF",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q08",
+      "order": 8,
+      "textUz": "Uy vazifasini oldindan rejalashtirib bajarishni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "JP",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q09",
+      "order": 9,
+      "textUz": "Katta bayramda ko'p odam orasida o'zimni yaxshi his qilaman.",
+      "type": "Likert5",
+      "scale": "EI",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q10",
+      "order": 10,
+      "textUz": "Matndagi har bir tafsilotni diqqat bilan o'qib chiqaman.",
+      "type": "Likert5",
+      "scale": "SN",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q11",
+      "order": 11,
+      "textUz": "Sinfdoshim xafa bo'lsa, uning holini albatta so'rayman.",
+      "type": "Likert5",
+      "scale": "TF",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q12",
+      "order": 12,
+      "textUz": "Kutilmagan o'zgarish bo'lsa, tez moslashib ketaman.",
+      "type": "Likert5",
+      "scale": "JP",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q13",
+      "order": 13,
+      "textUz": "Sinfda hamma menga qarasa, noqulay his qilaman.",
+      "type": "Likert5",
+      "scale": "EI",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q14",
+      "order": 14,
+      "textUz": "Mavzuning umumiy g'oyasi meni tafsilotlardan ko'ra ko'proq qiziqtiradi.",
+      "type": "Likert5",
+      "scale": "SN",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q15",
+      "order": 15,
+      "textUz": "Xato haqida to'g'ridan-to'g'ri va ochiq aytaman.",
+      "type": "Likert5",
+      "scale": "TF",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q16",
+      "order": 16,
+      "textUz": "Muddatidan oldin ishni tugatishga harakat qilaman.",
+      "type": "Likert5",
+      "scale": "JP",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q17",
+      "order": 17,
+      "textUz": "Guruh loyihasida ishlash meni ruhlantiradi.",
+      "type": "Likert5",
+      "scale": "EI",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q18",
+      "order": 18,
+      "textUz": "Nazariyadan ko'ra amaliy mashqlar menga tushunarliroq.",
+      "type": "Likert5",
+      "scale": "SN",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q19",
+      "order": 19,
+      "textUz": "Kimgadir kamchiligini aytishda so'zlarni yumshoq tanlayman.",
+      "type": "Likert5",
+      "scale": "TF",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q20",
+      "order": 20,
+      "textUz": "Rejasiz kun ham menga qulay va erkin tuyuladi.",
+      "type": "Likert5",
+      "scale": "JP",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q21",
+      "order": 21,
+      "textUz": "Uyda jim o'tirib kitob o'qish meni tinchlantiradi.",
+      "type": "Likert5",
+      "scale": "EI",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q22",
+      "order": 22,
+      "textUz": "Yangi mavzuni o'zim erkin izlanib o'rganishni afzal ko'raman.",
+      "type": "Likert5",
+      "scale": "SN",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q23",
+      "order": 23,
+      "textUz": "Adolat hamma uchun bir xil qoida bo'lishi kerak, deb o'ylayman.",
+      "type": "Likert5",
+      "scale": "TF",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q24",
+      "order": 24,
+      "textUz": "Xonamdagi narsalarni tartib bilan joylashtirib qo'yaman.",
+      "type": "Likert5",
+      "scale": "JP",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q25",
+      "order": 25,
+      "textUz": "Sinf oldida chiqib gapirish menga yoqadi.",
+      "type": "Likert5",
+      "scale": "EI",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q26",
+      "order": 26,
+      "textUz": "Masalani hal qilishda avval aniq misolga tayanaman.",
+      "type": "Likert5",
+      "scale": "SN",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q27",
+      "order": 27,
+      "textUz": "Nizo chiqsa, avval tomonlarning kayfiyatini tinchlantirishga harakat qilaman.",
+      "type": "Likert5",
+      "scale": "TF",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q28",
+      "order": 28,
+      "textUz": "Sayohat uchun jomadonni ketish kunining ertalabida yig'aman.",
+      "type": "Likert5",
+      "scale": "JP",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q29",
+      "order": 29,
+      "textUz": "Katta olomon o'rniga bir-ikki yaqin do'stni afzal ko'raman.",
+      "type": "Likert5",
+      "scale": "EI",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q30",
+      "order": 30,
+      "textUz": "Darsda g'ayrioddiy g'oyalar bilan o'ylab ko'rishni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "SN",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q31",
+      "order": 31,
+      "textUz": "Nizoda kim haq ekanini dalillar asosida aniqlayman.",
+      "type": "Likert5",
+      "scale": "TF",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q32",
+      "order": 32,
+      "textUz": "Kun tartibimga qat'iy amal qilishni afzal ko'raman.",
+      "type": "Likert5",
+      "scale": "JP",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q33",
+      "order": 33,
+      "textUz": "Tanaffusda ko'p sinfdosh bilan gaplashishni yaxshi ko'raman.",
+      "type": "Likert5",
+      "scale": "EI",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q34",
+      "order": 34,
+      "textUz": "Yangi mavzuni bosqichma-bosqich tushuntirilganda yaxshi o'zlashtiraman.",
+      "type": "Likert5",
+      "scale": "SN",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q35",
+      "order": 35,
+      "textUz": "Do'stimning muvaffaqiyatiga chin dildan xursand bo'laman.",
+      "type": "Likert5",
+      "scale": "TF",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q36",
+      "order": 36,
+      "textUz": "Stol ustim tartibsiz bo'lsa ham o'zimni erkin his qilaman.",
+      "type": "Likert5",
+      "scale": "JP",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q37",
+      "order": 37,
+      "textUz": "Guruh ishidan ko'ra yakka o'zim ishlashni afzal ko'raman.",
+      "type": "Likert5",
+      "scale": "EI",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q38",
+      "order": 38,
+      "textUz": "Loyihada yangi va notanish yechim izlashni afzal ko'raman.",
+      "type": "Likert5",
+      "scale": "SN",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q39",
+      "order": 39,
+      "textUz": "His-tuyg'udan ko'ra mantiqiy xulosaga ko'proq ishonaman.",
+      "type": "Likert5",
+      "scale": "TF",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q40",
+      "order": 40,
+      "textUz": "Loyihani boshlashdan oldin aniq reja tuzib olaman.",
+      "type": "Likert5",
+      "scale": "JP",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q41",
+      "order": 41,
+      "textUz": "Yangi to'garakka qo'shilganimda tezda faollashib ketaman.",
+      "type": "Likert5",
+      "scale": "EI",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q42",
+      "order": 42,
+      "textUz": "Kelajak rejalaridan ko'ra bugungi vazifaga ko'proq e'tibor beraman.",
+      "type": "Likert5",
+      "scale": "SN",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q43",
+      "order": 43,
+      "textUz": "Adolatni baholashda odamning holatini ham hisobga olaman.",
+      "type": "Likert5",
+      "scale": "TF",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q44",
+      "order": 44,
+      "textUz": "Dars jadvali birdan o'zgarsa, xotirjam qabul qilaman.",
+      "type": "Likert5",
+      "scale": "JP",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q45",
+      "order": 45,
+      "textUz": "Javob berishdan oldin fikrimni ichimda tugatib olaman.",
+      "type": "Likert5",
+      "scale": "EI",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q46",
+      "order": 46,
+      "textUz": "O'z kelajagim haqida turli variantlarni tasavvur qilib yuraman.",
+      "type": "Likert5",
+      "scale": "SN",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q47",
+      "order": 47,
+      "textUz": "Topshiriqni baholashda faqat belgilangan qoidaga tayanaman.",
+      "type": "Likert5",
+      "scale": "TF",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q48",
+      "order": 48,
+      "textUz": "Ro'yxat tuzib, vazifalarni belgilangan tartibda bajaraman.",
+      "type": "Likert5",
+      "scale": "JP",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q49",
+      "order": 49,
+      "textUz": "Bayramona tadbirdan keyin ham quvnoq va tetik qolaman.",
+      "type": "Likert5",
+      "scale": "EI",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q50",
+      "order": 50,
+      "textUz": "Dars vaqtida raqamlar va faktlarga tayanib fikr yurituraman.",
+      "type": "Likert5",
+      "scale": "SN",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q51",
+      "order": 51,
+      "textUz": "Kimningdir ko'z yoshini ko'rsam, o'zim ham hayajonlanaman.",
+      "type": "Likert5",
+      "scale": "TF",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q52",
+      "order": 52,
+      "textUz": "Topshiriqni ilhom kelgan payt boshlashni afzal ko'raman.",
+      "type": "Likert5",
+      "scale": "JP",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q53",
+      "order": 53,
+      "textUz": "Yangi joyda avval kuzatib, keyin gaplashishni boshlayman.",
+      "type": "Likert5",
+      "scale": "EI",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q54",
+      "order": 54,
+      "textUz": "Masalani hal qilishning yangi yo'lini o'ylab topishni yaxshi ko'raman.",
+      "type": "Likert5",
+      "scale": "SN",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q55",
+      "order": 55,
+      "textUz": "Sinfdoshlar bahslashganda mantiqiy tomonni qo'llab-quvvatlayman.",
+      "type": "Likert5",
+      "scale": "TF",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q56",
+      "order": 56,
+      "textUz": "Imtihonga hafta oldin tayyorgarlik ko'rishni boshlayman.",
+      "type": "Likert5",
+      "scale": "JP",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q57",
+      "order": 57,
+      "textUz": "Fikrimni ovoz chiqarib aytganimda yaxshiroq o'ylayman.",
+      "type": "Likert5",
+      "scale": "EI",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q58",
+      "order": 58,
+      "textUz": "Sayohat rejasida aniq marshrut va vaqtni belgilab qo'yaman.",
+      "type": "Likert5",
+      "scale": "SN",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q59",
+      "order": 59,
+      "textUz": "Guruh qarorida hammaning kayfiyati yaxshi bo'lishiga harakat qilaman.",
+      "type": "Likert5",
+      "scale": "TF",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "MB-Q60",
+      "order": 60,
+      "textUz": "Kunimni aniq reja o'rniga kayfiyatga qarab quraman.",
+      "type": "Likert5",
+      "scale": "JP",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    }
+  ]
+}

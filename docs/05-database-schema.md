@@ -365,11 +365,11 @@ CREATE TABLE registration_counters (
 | Enum | Qiymatlar |
 |------|-----------|
 | `AssessmentStatus` | 0 Draft, 1 InProgress, 2 Completed, 3 Analyzing, 4 Analyzed, 5 AnalysisFailed, 6 Abandoned |
-| `TestStatus` | 0 NotStarted, 1 InProgress, 2 Completed |
+| `TestStatus` | 0 NotStarted, 1 InProgress, 2 Completed (`assessment_tests.status`) |
 | `Gender` | 0 Unspecified, 1 Male, 2 Female |
 | `QuestionType` | 1 Likert5, 2 Likert7, 3 Binary, 4 SingleChoice, 5 ForcedChoice |
 | `TestKind` | 1 Standard (ilmiy metodika), 2 Custom (superadmin anketasi) |
-| `TestStatus` | 1 Draft, 2 Published, 3 Archived |
+| `TestDefinitionStatus` | 1 Draft, 2 Published, 3 Archived (`test_definitions.status`) |
 | `ReliabilityFlag` | 1 Reliable, 2 Questionable, 3 Unreliable |
 | `ActivityLevel` | 1 Passive, 2 LowActive, 3 Moderate, 4 Active, 5 HighlyActive |
 | `AiProvider` | 1 Gemini, 2 OpenAi, 3 Anthropic |

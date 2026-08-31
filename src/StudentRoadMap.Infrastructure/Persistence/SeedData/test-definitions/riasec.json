@@ -1,0 +1,492 @@
+{
+  "code": "RIASEC",
+  "nameUz": "Kasb qiziqishlari",
+  "descriptionUz": "Turli faoliyat turlariga bo'lgan qiziqishingizni aniqlab, sizga mos kasb yo'nalishlarini taklif qiladi.",
+  "version": 1,
+  "displayOrder": 3,
+  "estimatedMinutes": 7,
+  "pageSize": 10,
+  "shuffleQuestions": false,
+  "questions": [
+    {
+      "code": "RS-Q01",
+      "order": 1,
+      "textUz": "Buzilgan velosipedni ta'mirlashni xohlayman.",
+      "type": "Likert5",
+      "scale": "R",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q02",
+      "order": 2,
+      "textUz": "Kimyoviy tajribalar o'tkazishni xohlayman.",
+      "type": "Likert5",
+      "scale": "I",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q03",
+      "order": 3,
+      "textUz": "Rasm chizishni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "ART",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q04",
+      "order": 4,
+      "textUz": "Sinfdoshimga mavzuni tushuntirib berishni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "SOC",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q05",
+      "order": 5,
+      "textUz": "Mahsulot yoki xizmatni sotishni xohlayman.",
+      "type": "Likert5",
+      "scale": "ENT",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q06",
+      "order": 6,
+      "textUz": "Narsalarni ro'yxatga solishni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "CONV",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q07",
+      "order": 7,
+      "textUz": "Yog'ochdan skameyka yasashni xohlayman.",
+      "type": "Likert5",
+      "scale": "R",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q08",
+      "order": 8,
+      "textUz": "Yulduzli osmonni kuzatishni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "I",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q09",
+      "order": 9,
+      "textUz": "Musiqa asbobida chalishni xohlayman.",
+      "type": "Likert5",
+      "scale": "ART",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q10",
+      "order": 10,
+      "textUz": "Qiyinchilikka duch kelgan odamga yordam berishni xohlayman.",
+      "type": "Likert5",
+      "scale": "SOC",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q11",
+      "order": 11,
+      "textUz": "Loyihani boshdan-oxirigacha boshqarishni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "ENT",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q12",
+      "order": 12,
+      "textUz": "Ish jadvalini tuzishni xohlayman.",
+      "type": "Likert5",
+      "scale": "CONV",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q13",
+      "order": 13,
+      "textUz": "Uy texnikasining ichki qurilishini bilishni xohlayman.",
+      "type": "Likert5",
+      "scale": "R",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q14",
+      "order": 14,
+      "textUz": "Voqealarning sababini surishtirishni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "I",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q15",
+      "order": 15,
+      "textUz": "Hikoya yoki she'r yozishni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "ART",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q16",
+      "order": 16,
+      "textUz": "Do'stimning muammosini diqqat bilan tinglashni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "SOC",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q17",
+      "order": 17,
+      "textUz": "O'z fikrimni boshqalarga ishontirib aytishni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "ENT",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q18",
+      "order": 18,
+      "textUz": "Xonamdagi buyumlarni tartibga solishni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "CONV",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q19",
+      "order": 19,
+      "textUz": "Bog'da mevali daraxt ekishni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "R",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q20",
+      "order": 20,
+      "textUz": "Murakkab matematik masalalarni yechishni xohlayman.",
+      "type": "Likert5",
+      "scale": "I",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q21",
+      "order": 21,
+      "textUz": "Kiyim yoki mahsulot dizaynini yaratishni xohlayman.",
+      "type": "Likert5",
+      "scale": "ART",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q22",
+      "order": 22,
+      "textUz": "Kichik bolalarga biror narsa o'rgatishni xohlayman.",
+      "type": "Likert5",
+      "scale": "SOC",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q23",
+      "order": 23,
+      "textUz": "Sinf uchun tadbir tashkil qilishni xohlayman.",
+      "type": "Likert5",
+      "scale": "ENT",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q24",
+      "order": 24,
+      "textUz": "Xarajatlarni hisob-kitob qilishni xohlayman.",
+      "type": "Likert5",
+      "scale": "CONV",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q25",
+      "order": 25,
+      "textUz": "Sport musobaqalarida faol qatnashishni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "R",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q26",
+      "order": 26,
+      "textUz": "Ilmiy maqolalarni o'qishni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "I",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q27",
+      "order": 27,
+      "textUz": "Qiziqarli video ishlab chiqarishni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "ART",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q28",
+      "order": 28,
+      "textUz": "Ko'ngilli sifatida jamoat ishlarida qatnashishni xohlayman.",
+      "type": "Likert5",
+      "scale": "SOC",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q29",
+      "order": 29,
+      "textUz": "Maktab bayramini rejalashtirishni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "ENT",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q30",
+      "order": 30,
+      "textUz": "Hujjatlarni to'g'ri to'ldirishni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "CONV",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q31",
+      "order": 31,
+      "textUz": "Bolg'a va otvyortka bilan ishlashni xohlayman.",
+      "type": "Likert5",
+      "scale": "R",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q32",
+      "order": 32,
+      "textUz": "Statistik ma'lumotlarni tahlil qilishni xohlayman.",
+      "type": "Likert5",
+      "scale": "I",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q33",
+      "order": 33,
+      "textUz": "Sahnada chiqish qilishni xohlayman.",
+      "type": "Likert5",
+      "scale": "ART",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q34",
+      "order": 34,
+      "textUz": "Guruh a'zolarini bir maqsadga birlashtirishni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "SOC",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q35",
+      "order": 35,
+      "textUz": "Tanlov yoki musobaqa o'tkazishni xohlayman.",
+      "type": "Likert5",
+      "scale": "ENT",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q36",
+      "order": 36,
+      "textUz": "Fayllarni papkalarga tartib bilan joylashni xohlayman.",
+      "type": "Likert5",
+      "scale": "CONV",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q37",
+      "order": 37,
+      "textUz": "Mashina motorining ishlashini o'rganishni xohlayman.",
+      "type": "Likert5",
+      "scale": "R",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q38",
+      "order": 38,
+      "textUz": "Dastur kodini yozishni xohlayman.",
+      "type": "Likert5",
+      "scale": "I",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q39",
+      "order": 39,
+      "textUz": "Fotosurat olishni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "ART",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q40",
+      "order": 40,
+      "textUz": "Do'stimga to'g'ri yo'l tanlashda maslahat berishni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "SOC",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q41",
+      "order": 41,
+      "textUz": "Jamoaga yetakchilik qilishni xohlayman.",
+      "type": "Likert5",
+      "scale": "ENT",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q42",
+      "order": 42,
+      "textUz": "Aniq qoida bo'yicha ishlashni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "CONV",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q43",
+      "order": 43,
+      "textUz": "Elektron sxema yig'ishni xohlayman.",
+      "type": "Likert5",
+      "scale": "R",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q44",
+      "order": 44,
+      "textUz": "Mikroskop orqali kichik jonzotlarni kuzatishni xohlayman.",
+      "type": "Likert5",
+      "scale": "I",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q45",
+      "order": 45,
+      "textUz": "Xona yoki devorni bezashni yoqtiraman.",
+      "type": "Likert5",
+      "scale": "ART",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q46",
+      "order": 46,
+      "textUz": "Yangi kelgan o'quvchiga moslashishda yordam berishni xohlayman.",
+      "type": "Likert5",
+      "scale": "SOC",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q47",
+      "order": 47,
+      "textUz": "Kelishuv yoki muzokara olib borishni xohlayman.",
+      "type": "Likert5",
+      "scale": "ENT",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "RS-Q48",
+      "order": 48,
+      "textUz": "Ma'lumotlarni jadvalga kiritib saralashni xohlayman.",
+      "type": "Likert5",
+      "scale": "CONV",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    }
+  ]
+}

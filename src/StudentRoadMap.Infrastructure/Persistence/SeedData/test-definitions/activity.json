@@ -1,0 +1,332 @@
+{
+  "code": "ACTIVITY",
+  "nameUz": "Aktivlik va motivatsiya",
+  "descriptionUz": "Ta'lim motivatsiyasi, o'z-o'zini boshqarish, ijtimoiy faollik va band bo'lish darajangizni aniqlaydigan so'rovnoma.",
+  "version": 1,
+  "displayOrder": 4,
+  "estimatedMinutes": 5,
+  "pageSize": 10,
+  "shuffleQuestions": false,
+  "questions": [
+    {
+      "code": "AC-Q01",
+      "order": 1,
+      "textUz": "Qiyin mavzuni tushunguncha ishlashda davom etaman.",
+      "type": "Likert5",
+      "scale": "MOT",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q02",
+      "order": 2,
+      "textUz": "Kunlik ishlarimni oldindan rejalashtiraman.",
+      "type": "Likert5",
+      "scale": "SELF",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q03",
+      "order": 3,
+      "textUz": "Sinf oldida gapirishdan iloji boricha qochaman.",
+      "type": "Likert5",
+      "scale": "SOCA",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q04",
+      "order": 4,
+      "textUz": "Darslikdan tashqari qo'shimcha kurslarda qatnashaman.",
+      "type": "Likert5",
+      "scale": "ENG",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q05",
+      "order": 5,
+      "textUz": "Nega bu fanni o'rganayotganimni ko'pincha tushunmayman.",
+      "type": "Likert5",
+      "scale": "MOT",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q06",
+      "order": 6,
+      "textUz": "Uy vazifasini odatda belgilangan vaqtida bajaraman.",
+      "type": "Likert5",
+      "scale": "SELF",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q07",
+      "order": 7,
+      "textUz": "Sinf tadbirlarida faol ishtirok etaman.",
+      "type": "Likert5",
+      "scale": "SOCA",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q08",
+      "order": 8,
+      "textUz": "Bo'sh vaqtimning ko'pini telefon ekranida o'tkazaman.",
+      "type": "Likert5",
+      "scale": "ENG",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q09",
+      "order": 9,
+      "textUz": "Yangi mavzuni o'rganish meni qiziqtiradi.",
+      "type": "Likert5",
+      "scale": "MOT",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q10",
+      "order": 10,
+      "textUz": "Uy vazifasini ko'pincha oxirgi kunga qoldiraman.",
+      "type": "Likert5",
+      "scale": "SELF",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q11",
+      "order": 11,
+      "textUz": "Sinfdoshimga tushunmagan mavzusini tushuntirib beraman.",
+      "type": "Likert5",
+      "scale": "SOCA",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q12",
+      "order": 12,
+      "textUz": "Darsdan tashqari hech qanday to'garakka qatnashmayman.",
+      "type": "Likert5",
+      "scale": "ENG",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q13",
+      "order": 13,
+      "textUz": "Bugun o'rganganlarim kelajakdagi kasbimga kerak bo'ladi deb o'ylayman.",
+      "type": "Likert5",
+      "scale": "MOT",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q14",
+      "order": 14,
+      "textUz": "Dars tayyorlayotganda telefonni chetga qo'yaman.",
+      "type": "Likert5",
+      "scale": "SELF",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q15",
+      "order": 15,
+      "textUz": "Qiyinchilikka duch kelsam ham yordam so'ramayman.",
+      "type": "Likert5",
+      "scale": "SOCA",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q16",
+      "order": 16,
+      "textUz": "Darsdan tashqari to'garak yoki sport bilan shug'ullanaman.",
+      "type": "Likert5",
+      "scale": "ENG",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q17",
+      "order": 17,
+      "textUz": "Nima uchun o'qiyotganimni aniq bilaman.",
+      "type": "Likert5",
+      "scale": "MOT",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q18",
+      "order": 18,
+      "textUz": "Boshlagan ishimni oxirigacha yetkazmasdan tashlab qo'yaman.",
+      "type": "Likert5",
+      "scale": "SELF",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q19",
+      "order": 19,
+      "textUz": "Yangi ishni boshlashda tashabbus ko'rsataman.",
+      "type": "Likert5",
+      "scale": "SOCA",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q20",
+      "order": 20,
+      "textUz": "Bo'sh vaqtimda o'z loyihamni yaratishga harakat qilaman.",
+      "type": "Likert5",
+      "scale": "ENG",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q21",
+      "order": 21,
+      "textUz": "Faqat ota-onam aytgani uchun darslarni o'qiyman.",
+      "type": "Likert5",
+      "scale": "MOT",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q22",
+      "order": 22,
+      "textUz": "Uzoq mashg'ulotda ham diqqatimni jamlab qololaman.",
+      "type": "Likert5",
+      "scale": "SELF",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q23",
+      "order": 23,
+      "textUz": "Sinf tadbirlaridan iloji boricha chetda turaman.",
+      "type": "Likert5",
+      "scale": "SOCA",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q24",
+      "order": 24,
+      "textUz": "Bo'sh vaqtimda kitob o'qishni yaxshi ko'raman.",
+      "type": "Likert5",
+      "scale": "ENG",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q25",
+      "order": 25,
+      "textUz": "Yaxshi natijaga erishish meni ruhlantiradi.",
+      "type": "Likert5",
+      "scale": "MOT",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q26",
+      "order": 26,
+      "textUz": "Dars vaqtida telefon meni tez-tez chalg'itadi.",
+      "type": "Likert5",
+      "scale": "SELF",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q27",
+      "order": 27,
+      "textUz": "Yangi sinfdoshlar bilan tanishish menga oson.",
+      "type": "Likert5",
+      "scale": "SOCA",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q28",
+      "order": 28,
+      "textUz": "Menda doimiy shug'ullanadigan sevimli mashg'ulotim bor.",
+      "type": "Likert5",
+      "scale": "ENG",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q29",
+      "order": 29,
+      "textUz": "Qiyin mavzuga duch kelsam, darrov taslim bo'laman.",
+      "type": "Likert5",
+      "scale": "MOT",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q30",
+      "order": 30,
+      "textUz": "Xato qilsam, undan saboq olib tuzataman.",
+      "type": "Likert5",
+      "scale": "SELF",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q31",
+      "order": 31,
+      "textUz": "Guruh ishida o'z vazifamni bajarishga harakat qilaman.",
+      "type": "Likert5",
+      "scale": "SOCA",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "AC-Q32",
+      "order": 32,
+      "textUz": "Darslik kitobidan boshqasini deyarli o'qimayman.",
+      "type": "Likert5",
+      "scale": "ENG",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    }
+  ]
+}

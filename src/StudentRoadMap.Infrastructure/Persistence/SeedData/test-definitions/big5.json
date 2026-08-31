@@ -1,0 +1,512 @@
+{
+  "code": "BIG5",
+  "nameUz": "Shaxsiyatning 5 omili",
+  "descriptionUz": "Shaxsiyatning beshta asosiy omilini — ochiqlik, vijdonlilik, ekstraversiya, kelishuvchanlik va emotsional barqarorlikni — aniqlaydigan test.",
+  "version": 1,
+  "displayOrder": 2,
+  "estimatedMinutes": 8,
+  "pageSize": 10,
+  "shuffleQuestions": false,
+  "questions": [
+    {
+      "code": "B5-Q01",
+      "order": 1,
+      "textUz": "Yangi narsalarni sinab ko'rishni yaxshi ko'raman.",
+      "type": "Likert5",
+      "scale": "O",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q02",
+      "order": 2,
+      "textUz": "Ko'pincha ishlarni oxirgi daqiqaga qoldiraman.",
+      "type": "Likert5",
+      "scale": "C",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q03",
+      "order": 3,
+      "textUz": "Ko'p odam orasida tezda charchayman.",
+      "type": "Likert5",
+      "scale": "E",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q04",
+      "order": 4,
+      "textUz": "Do'stimga yordam berishdan xursand bo'laman.",
+      "type": "Likert5",
+      "scale": "A",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q05",
+      "order": 5,
+      "textUz": "Imtihon oldidan juda hayajonlanaman.",
+      "type": "Likert5",
+      "scale": "N",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q06",
+      "order": 6,
+      "textUz": "Har doim tanish ish-usulni afzal ko'raman.",
+      "type": "Likert5",
+      "scale": "O",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q07",
+      "order": 7,
+      "textUz": "Vazifalarni muddatidan oldin tugatishga harakat qilaman.",
+      "type": "Likert5",
+      "scale": "C",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q08",
+      "order": 8,
+      "textUz": "Yolg'iz vaqt o'tkazishni afzal ko'raman.",
+      "type": "Likert5",
+      "scale": "E",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q09",
+      "order": 9,
+      "textUz": "Boshqalarning fikrini diqqat bilan tinglayman.",
+      "type": "Likert5",
+      "scale": "A",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q10",
+      "order": 10,
+      "textUz": "Qiyin vaziyatda ham xotirjam qola olaman.",
+      "type": "Likert5",
+      "scale": "N",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q11",
+      "order": 11,
+      "textUz": "Kitob yoki filmda g'alati g'oyalar meni qiziqtiradi.",
+      "type": "Likert5",
+      "scale": "O",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q12",
+      "order": 12,
+      "textUz": "Rejalashtirishni tez-tez unutib qo'yaman.",
+      "type": "Likert5",
+      "scale": "C",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q13",
+      "order": 13,
+      "textUz": "Yangi odamlar bilan tanishish menga oson kechadi.",
+      "type": "Likert5",
+      "scale": "E",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q14",
+      "order": 14,
+      "textUz": "Ko'pincha o'z manfaatimni birinchi o'ylayman.",
+      "type": "Likert5",
+      "scale": "A",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q15",
+      "order": 15,
+      "textUz": "Kutilmagan o'zgarish meni tashvishga soladi.",
+      "type": "Likert5",
+      "scale": "N",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q16",
+      "order": 16,
+      "textUz": "G'alati fikrlardan ko'ra aniq faktlarga tayanaman.",
+      "type": "Likert5",
+      "scale": "O",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q17",
+      "order": 17,
+      "textUz": "Kun rejamni oldindan tuzib qo'yaman.",
+      "type": "Likert5",
+      "scale": "C",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q18",
+      "order": 18,
+      "textUz": "Sinfda birinchi bo'lib gapirishga tayyorman.",
+      "type": "Likert5",
+      "scale": "E",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q19",
+      "order": 19,
+      "textUz": "Raqobatda g'olib bo'lish men uchun muhimroq.",
+      "type": "Likert5",
+      "scale": "A",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q20",
+      "order": 20,
+      "textUz": "Kutilmagan o'zgarishlarga tez moslasha olaman.",
+      "type": "Likert5",
+      "scale": "N",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q21",
+      "order": 21,
+      "textUz": "Rasm chizish yoki musiqa bilan shug'ullanish menga yoqadi.",
+      "type": "Likert5",
+      "scale": "O",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q22",
+      "order": 22,
+      "textUz": "Buyumlarim tez-tez tartibsiz bo'lib qoladi.",
+      "type": "Likert5",
+      "scale": "C",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q23",
+      "order": 23,
+      "textUz": "Katta guruh orasida o'zimni erkin his qilaman.",
+      "type": "Likert5",
+      "scale": "E",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q24",
+      "order": 24,
+      "textUz": "O'z fikrimni boshqalarnikidan ustun qo'yaman.",
+      "type": "Likert5",
+      "scale": "A",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q25",
+      "order": 25,
+      "textUz": "Kayfiyatim kun davomida tez-tez o'zgaradi.",
+      "type": "Likert5",
+      "scale": "N",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q26",
+      "order": 26,
+      "textUz": "Amaliy mashg'ulotlarni ijoddan ko'ra afzal ko'raman.",
+      "type": "Likert5",
+      "scale": "O",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q27",
+      "order": 27,
+      "textUz": "Boshlagan ishni yarim yo'lda tashlab qo'yaman.",
+      "type": "Likert5",
+      "scale": "C",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q28",
+      "order": 28,
+      "textUz": "Do'stlar davrasida bo'lish meni quvontiradi.",
+      "type": "Likert5",
+      "scale": "E",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q29",
+      "order": 29,
+      "textUz": "Kimdir yordam so'rasa, ko'pincha rad etaman.",
+      "type": "Likert5",
+      "scale": "A",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q30",
+      "order": 30,
+      "textUz": "Tanqid eshitsam, uzoq vaqt xavotirlanaman.",
+      "type": "Likert5",
+      "scale": "N",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q31",
+      "order": 31,
+      "textUz": "Darsda tasavvurimni ishlatishni yaxshi ko'raman.",
+      "type": "Likert5",
+      "scale": "O",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q32",
+      "order": 32,
+      "textUz": "Vazifalarimni ko'pincha shoshilib bajaraman.",
+      "type": "Likert5",
+      "scale": "C",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q33",
+      "order": 33,
+      "textUz": "Notanish odamlar bilan gaplashish menga qiyin.",
+      "type": "Likert5",
+      "scale": "E",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q34",
+      "order": 34,
+      "textUz": "Sinfdoshlarim bilan hamkorlik qilishni yaxshi ko'raman.",
+      "type": "Likert5",
+      "scale": "A",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q35",
+      "order": 35,
+      "textUz": "Tanqidni tinch qabul qilaman.",
+      "type": "Likert5",
+      "scale": "N",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q36",
+      "order": 36,
+      "textUz": "Yangi joyga borishdan ko'ra uyda qolishni afzal ko'raman.",
+      "type": "Likert5",
+      "scale": "O",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q37",
+      "order": 37,
+      "textUz": "Xonamni va buyumlarimni tartibli saqlayman.",
+      "type": "Likert5",
+      "scale": "C",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q38",
+      "order": 38,
+      "textUz": "Sinf oldida chiqishdan tortinaman.",
+      "type": "Likert5",
+      "scale": "E",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q39",
+      "order": 39,
+      "textUz": "Kimdir xato qilsa, uni kechirishga harakat qilaman.",
+      "type": "Likert5",
+      "scale": "A",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q40",
+      "order": 40,
+      "textUz": "Imtihon oldidan o'zimni bosiq tuta olaman.",
+      "type": "Likert5",
+      "scale": "N",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q41",
+      "order": 41,
+      "textUz": "Yangi fan yoki mavzuni o'rganish meni hayajonlantiradi.",
+      "type": "Likert5",
+      "scale": "O",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q42",
+      "order": 42,
+      "textUz": "Boshlagan ishimni oxiriga yetkazaman.",
+      "type": "Likert5",
+      "scale": "C",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q43",
+      "order": 43,
+      "textUz": "Katta davralardan ko'ra kichik suhbatni yaxshi ko'raman.",
+      "type": "Likert5",
+      "scale": "E",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q44",
+      "order": 44,
+      "textUz": "Guruh ishida o'z ulushimni baham ko'raman.",
+      "type": "Likert5",
+      "scale": "A",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q45",
+      "order": 45,
+      "textUz": "Muhim voqea oldidan yuragim tez uradi.",
+      "type": "Likert5",
+      "scale": "N",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q46",
+      "order": 46,
+      "textUz": "O'zgarishdan ko'ra barqaror tartibni yaxshi ko'raman.",
+      "type": "Likert5",
+      "scale": "O",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q47",
+      "order": 47,
+      "textUz": "Uy vazifamni diqqat bilan tekshirib chiqaman.",
+      "type": "Likert5",
+      "scale": "C",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q48",
+      "order": 48,
+      "textUz": "Tadbirlarda faol ishtirok etishni yaxshi ko'raman.",
+      "type": "Likert5",
+      "scale": "E",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q49",
+      "order": 49,
+      "textUz": "Guruh ishida ko'proq o'zimcha harakat qilaman.",
+      "type": "Likert5",
+      "scale": "A",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    },
+    {
+      "code": "B5-Q50",
+      "order": 50,
+      "textUz": "Kayfiyatim odatda barqaror bo'ladi.",
+      "type": "Likert5",
+      "scale": "N",
+      "direction": -1,
+      "weight": 1.0,
+      "isRequired": true
+    }
+  ]
+}

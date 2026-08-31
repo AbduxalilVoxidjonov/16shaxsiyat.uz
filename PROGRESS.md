@@ -19,13 +19,13 @@
 | № | Vazifa | Agent | Holat | PR | Izoh |
 |---|--------|-------|-------|----|------|
 | P01 | Solution'ni Clean Architecture ga o'tkazish | backend-dotnet | 🔵 | branch `feat/P01-clean-architecture` | QA: PASS · build 0 ogohlantirish · 4 test yashil |
-| P02 | Domain qatlami | backend-dotnet | ⬜ | — | |
-| P03 | EF Core, DbContext, migratsiya | backend-dotnet | ⬜ | — | |
+| P02 | Domain qatlami | backend-dotnet | 🟡 | — | branch `feat/P02-domain-qatlami` |
+| P03 | EF Core, DbContext, migratsiya | backend-dotnet | 🟡 | — | Docker yo'q — jonli DB tekshiruvlari P04 ga qoldi |
 | P04 | Katalog va seed infratuzilmasi | backend-dotnet | ⬜ | — | |
-| P05 | 16 tip savol banki (60) | scoring-psychometrics | ⬜ | — | P04 dan keyin, P06–P08 bilan parallel |
-| P06 | Big Five savol banki (50) | scoring-psychometrics | ⬜ | — | |
-| P07 | RIASEC savol banki (48) | scoring-psychometrics | ⬜ | — | |
-| P08 | Aktivlik anketasi (32) | scoring-psychometrics | ⬜ | — | |
+| P05 | 16 tip savol banki (60) | scoring-psychometrics | 🔵 | — | JSON tayyor; seed integratsiyasi P04 da |
+| P06 | Big Five savol banki (50) | scoring-psychometrics | 🔵 | — | JSON tayyor; naqsh 2 marta qaytarildi |
+| P07 | RIASEC savol banki (48) | scoring-psychometrics | 🔵 | — | JSON tayyor |
+| P08 | Aktivlik anketasi (32) | scoring-psychometrics | 🔵 | — | JSON tayyor; shkalalar aralashtirildi |
 | P09 | Scoring engine + oltin testlar | scoring-psychometrics | ⬜ | — | **Kritik** — 100% qoplama |
 | P10 | Application skeleti + sessiya API | backend-dotnet | ⬜ | — | |
 | P11 | Savol va javob API | backend-dotnet | ⬜ | — | |
@@ -62,6 +62,7 @@
 | 2026-08-31 | Superadmin uchun anketa konstruktori (`SUM` strategiyasi) qo'shildi | Superadmin o'z testini kirita olishi kerak | `docs/06` ADR-13..15 |
 | 2026-08-31 | Lokal git repozitoriysi ochildi (`main` + `feat/*`) | PM.md 6-bo'limidagi git intizomi shuni talab qiladi | `docs/06` 8-bo'lim |
 | 2026-08-31 | EF Core paketlari `9.x` da qulflandi (net10.0 da) | Npgsql'ning EF Core 10 provayderi hali yo'q | `docs/06` 8-bo'lim |
+| 2026-08-31 | **Push qilinmaydi** — faqat lokal commit va branch | Loyiha egasining ko'rsatmasi; repo `AbduxalilVoxidjonov/salohiyat` tayyor, keyinroq push qilinadi | shu jurnal |
 
 ---
 
@@ -94,7 +95,20 @@
   ProblemDetails. Razor/MVC qoldiqlari yo'q, Domain paketsiz, sirlar yo'q.
   Tekshiruv (PM o'zi): `dotnet build` 0 xato 0 ogohlantirish · `dotnet test` 4/4 yashil ·
   `/health` 200 `Healthy` · `/health/ready` 200 · `/swagger` 200. **QA verdikti: PASS.**
-- **Keyingi:** P02 — Domain qatlami.
+- **P02 boshlandi** (`feat/P02-domain-qatlami`).
+- **Ish tartibi o'zgardi (egasining ko'rsatmasi: "tezroq agentlar asosida ishla"):**
+  P05–P08 savol banklari (190 savol) endi P04 ni kutmasdan, P02/P03 bilan **parallel** yozilmoqda.
+  Ular faqat `SeedData/test-definitions/*.json` kontentini yozadi — seeder integratsiyasi
+  va "DB'da N qator" DoD bandi P04 da tekshiriladi. JSON sxemasi P04 promptidan olindi.
+- **P05–P08 savol banklari tayyor:** MBTI16 60, BIG5 50, RIASEC 48, ACTIVITY 32 = **190 savol**.
+  Ikkita sifat nuqsoni topilib qaytarildi: BIG5 da teskari savollar birinchi/ikkinchi yarimga
+  bo'linib qolgan edi, ACTIVITY da har shkala bitta blokda turardi — ikkalasi ham javob to'plami
+  effektiga olib keladi. Endi hamma bankda `direction` ketma-ketligi ≤ 2, `scale` ketma-ketligi = 1.
+  BIG5 tartibi `random.seed(20260831)` bilan deterministik qayta hisoblangan.
+- **Muhit muammosi:** bu mashinada Docker ishlamayapti, PostgreSQL yo'q. P03 migratsiyani
+  yozadi, lekin `docker compose up -d db` / `dotnet ef database update` / `psql` tekshiruvlari
+  bajarilmaydi. Egasiga aytildi; bandlar P04 da qaytib tekshiriladi.
+- **Keyingi:** P02 testlari + P03 tugashi → QA → commit.
 
 ---
 
@@ -107,4 +121,4 @@
 | `answers` jadvali tez o'sadi (190 qator/sessiya) | Ishlash | 100k sessiyadan keyin partitsiya (v2) |
 | EF Core 9.x paketlari net10.0 loyihada (Npgsql EF10 provayderi yo'q) | P03 da runtime muammosi bo'lishi mumkin | P03 boshida DbContext bilan haqiqiy so'rov sinab ko'riladi; provayder chiqqach yangilanadi |
 | `/health` va `/health/ready` hozir bir xil (bog'liqlik tekshiruvi yo'q) | Orkestrator noto'g'ri "ready" deb o'ylashi mumkin | P03 da DB health check qo'shilib, `tag` bo'yicha ajratiladi |
-| Masofaviy git repo (GitHub) yo'q — PR ochib bo'lmaydi | PM.md 6-bo'limidagi PR oqimi to'liq ishlamaydi | Insondan repo/remote so'raladi; hozircha branch'lar lokal saqlanadi |
+| Push qilinmaydi (egasining qarori) — PR oqimi ishlamaydi | Ko'rikni faqat `qa-reviewer` beradi, tashqi review yo'q | Repo: `AbduxalilVoxidjonov/salohiyat`. Egasi aytganda `origin` qayta qo'shilib, barcha branch birdan push qilinadi |
