@@ -250,3 +250,5 @@ Barcha xatolar `application/problem+json`:
 |------|-------|-----|-------|
 | 2026-08-31 | Boshlang'ich arxitektura tanlandi (ADR-1..12) | — | MVP asos |
 | 2026-08-31 | Superadmin uchun anketa konstruktori qo'shildi (ADR-13..15) | Loyiha egasi | Superadmin kod yozmasdan o'z testini kirita olishi kerak |
+| 2026-08-31 | EF Core paketlari `9.x` da qulflandi (net10.0 loyihada) | PM (P01) | Npgsql'ning EF Core 10 uchun barqaror provayderi hali chiqmagan; TFM oldinga moslik bilan ishlaydi. P03 da runtime'da tekshiriladi, provayder chiqqach yangilanadi |
+| 2026-08-31 | Loyiha uchun lokal git repozitoriysi ochildi (`main` + `feat/*` branch'lar) | PM (P01) | PM.md 6-bo'limidagi git intizomi uchun shart edi; masofaviy repo hali yo'q |

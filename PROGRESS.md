@@ -4,7 +4,7 @@
 > PM har vazifa boshlanganda va tugaganda **darhol** yangilaydi.
 
 **Loyiha:** Salohiyat (`salohiyat.uz`) · ichki nom `StudentRoadMap`
-**Oxirgi yangilanish:** 2026-08-31 · **Joriy bosqich:** B0 (Poydevor) · **Keyingi vazifa:** P01
+**Oxirgi yangilanish:** 2026-08-31 · **Joriy bosqich:** B0 (Poydevor) · **Joriy vazifa:** P02 (Domain qatlami)
 
 ---
 
@@ -18,7 +18,7 @@
 
 | № | Vazifa | Agent | Holat | PR | Izoh |
 |---|--------|-------|-------|----|------|
-| P01 | Solution'ni Clean Architecture ga o'tkazish | backend-dotnet | ⬜ | — | |
+| P01 | Solution'ni Clean Architecture ga o'tkazish | backend-dotnet | 🔵 | branch `feat/P01-clean-architecture` | QA: PASS · build 0 ogohlantirish · 4 test yashil |
 | P02 | Domain qatlami | backend-dotnet | ⬜ | — | |
 | P03 | EF Core, DbContext, migratsiya | backend-dotnet | ⬜ | — | |
 | P04 | Katalog va seed infratuzilmasi | backend-dotnet | ⬜ | — | |
@@ -60,6 +60,8 @@
 |------|-------|-------|-----------------|
 | 2026-08-31 | Brend "Salohiyat", domen `salohiyat.uz`, API `api.salohiyat.uz` | Domen olindi | `docs/01` 2a-bo'lim |
 | 2026-08-31 | Superadmin uchun anketa konstruktori (`SUM` strategiyasi) qo'shildi | Superadmin o'z testini kirita olishi kerak | `docs/06` ADR-13..15 |
+| 2026-08-31 | Lokal git repozitoriysi ochildi (`main` + `feat/*`) | PM.md 6-bo'limidagi git intizomi shuni talab qiladi | `docs/06` 8-bo'lim |
+| 2026-08-31 | EF Core paketlari `9.x` da qulflandi (net10.0 da) | Npgsql'ning EF Core 10 provayderi hali yo'q | `docs/06` 8-bo'lim |
 
 ---
 
@@ -86,7 +88,13 @@
 - Brend va domen qat'iylashtirildi: **Salohiyat**, `salohiyat.uz`.
 - Anketa konstruktori qamrovga qo'shildi (P33).
 - PM agent (`PM.md`), 5 mutaxassis agent (`.claude/agents/`) va shu jurnal yaratildi.
-- **Keyingi:** P01 — solution'ni Clean Architecture ga o'tkazish.
+- **P01 bajarildi** — MVC shabloni `src/StudentRoadMap.Api/` ga aylantirildi; 4 `src/` + 3 `tests/`
+  loyihasi, `Directory.Build.props` (`TreatWarningsAsErrors=true`), `.editorconfig`, `README.md`.
+  `Program.cs`: Serilog, Swagger (faqat Dev), CORS `App:FrontendUrl` dan, `/health`, `/health/ready`,
+  ProblemDetails. Razor/MVC qoldiqlari yo'q, Domain paketsiz, sirlar yo'q.
+  Tekshiruv (PM o'zi): `dotnet build` 0 xato 0 ogohlantirish · `dotnet test` 4/4 yashil ·
+  `/health` 200 `Healthy` · `/health/ready` 200 · `/swagger` 200. **QA verdikti: PASS.**
+- **Keyingi:** P02 — Domain qatlami.
 
 ---
 
@@ -97,3 +105,6 @@
 | Savol banklari (190 savol) sifati — real o'quvchida sinalmagan | Natija ishonchliligi | Pilotdan keyin matnlarni tuzatish (`docs/14` 5-bo'lim) |
 | AI prompt sifati faqat mock bilan sinaladi | Hisobot sifati | P17 dan keyin 10 ta oltin namuna bilan qo'lda baholash |
 | `answers` jadvali tez o'sadi (190 qator/sessiya) | Ishlash | 100k sessiyadan keyin partitsiya (v2) |
+| EF Core 9.x paketlari net10.0 loyihada (Npgsql EF10 provayderi yo'q) | P03 da runtime muammosi bo'lishi mumkin | P03 boshida DbContext bilan haqiqiy so'rov sinab ko'riladi; provayder chiqqach yangilanadi |
+| `/health` va `/health/ready` hozir bir xil (bog'liqlik tekshiruvi yo'q) | Orkestrator noto'g'ri "ready" deb o'ylashi mumkin | P03 da DB health check qo'shilib, `tag` bo'yicha ajratiladi |
+| Masofaviy git repo (GitHub) yo'q — PR ochib bo'lmaydi | PM.md 6-bo'limidagi PR oqimi to'liq ishlamaydi | Insondan repo/remote so'raladi; hozircha branch'lar lokal saqlanadi |

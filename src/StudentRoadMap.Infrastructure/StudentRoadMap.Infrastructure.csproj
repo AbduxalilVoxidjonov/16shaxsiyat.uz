@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Eslatma: Npgsql.EntityFrameworkCore.PostgreSQL hali net10.0/EF Core 10 uchun barqaror
+    versiya chiqarmagan (faqat net11 preview mavjud) — shu sabab EF Core 9.x paketlari
+    aniq versiya bilan qulflangan. net10.0 loyihasi net9.0 kutubxonalarini muammosiz
+    ishlatadi (forward TFM moslik). EF Core 10 chiqishi bilan yangilanadi.
+  -->
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+    <PackageReference Include="EFCore.NamingConventions" Version="9.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.9">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\StudentRoadMap.Application\StudentRoadMap.Application.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Domain qatlami: hech qanday NuGet paket bo'lmasin (docs/06-arxitektura.md, 3-bo'lim) -->
+
+</Project>

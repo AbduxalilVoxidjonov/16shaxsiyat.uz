@@ -3,6 +3,8 @@ bin/
 obj/
 *.user
 *.suo
+.vs/
+TestResults/
 
 # Frontend
 node_modules/
