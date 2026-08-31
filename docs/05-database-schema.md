@@ -1,0 +1,405 @@
+# 05 — Ma'lumotlar bazasi sxemasi (PostgreSQL 16)
+
+## 1. Umumiy konvensiyalar
+
+| Qoida | Qiymat |
+|-------|--------|
+| Jadval nomi | `snake_case`, ko'plik: `schools`, `assessment_tests` |
+| Ustun nomi | `snake_case`: `created_at`, `school_id` |
+| PK | `uuid`, `gen_random_uuid()` (pgcrypto) |
+| Vaqt | `timestamptz` — **hamma joyda UTC** |
+| Sana | `date` (tug'ilgan sana) |
+| Pul | `numeric(10,6)` (AI narxi) |
+| Erkin struktura | `jsonb` (ball, AI javob, bayroq) |
+| Enum | `smallint` + C# enum (DB enum turi ishlatilmaydi — migratsiya osonligi uchun) |
+| Naming EF'da | `UseSnakeCaseNamingConvention()` (EFCore.NamingConventions) |
+
+Kengaytmalar: `pgcrypto` (uuid), `pg_trgm` (ism bo'yicha qidiruv), `unaccent` (ixtiyoriy).
+
+---
+
+## 2. DDL
+
+```sql
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- ============ SCHOOLS ============
+CREATE TABLE schools (
+    id                        uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    name                      varchar(200) NOT NULL,
+    region                    varchar(100) NOT NULL,
+    district                  varchar(100) NOT NULL,
+    school_number             varchar(20),
+    contact_person            varchar(150),
+    contact_phone             varchar(20),
+    slug                      varchar(80)  NOT NULL,
+    access_token              varchar(64)  NOT NULL,
+    access_code               varchar(6),
+    daily_registration_limit  int          NOT NULL DEFAULT 500,
+    is_active                 boolean      NOT NULL DEFAULT true,
+    notes                     varchar(1000),
+    is_deleted                boolean      NOT NULL DEFAULT false,
+    deleted_at                timestamptz,
+    created_at                timestamptz  NOT NULL DEFAULT now(),
+    updated_at                timestamptz  NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX ux_schools_slug        ON schools(slug) WHERE is_deleted = false;
+CREATE UNIQUE INDEX ux_schools_token       ON schools(access_token);
+CREATE INDEX        ix_schools_region_dist ON schools(region, district);
+CREATE INDEX        ix_schools_name_trgm   ON schools USING gin (name gin_trgm_ops);
+
+-- ============ TEST CATALOG ============
+CREATE TABLE test_definitions (
+    id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    code               varchar(20)  NOT NULL,
+    name_uz            varchar(150) NOT NULL,
+    description_uz     text,
+    version            int          NOT NULL DEFAULT 1,
+    display_order      int          NOT NULL,
+    question_count     int          NOT NULL,
+    estimated_minutes  int          NOT NULL,
+    shuffle_questions  boolean      NOT NULL DEFAULT false,
+    page_size          int          NOT NULL DEFAULT 10,
+    is_active          boolean      NOT NULL DEFAULT true,
+    kind               smallint     NOT NULL DEFAULT 1,   -- 1 Standard, 2 Custom
+    is_system          boolean      NOT NULL DEFAULT false,
+    scoring_strategy   varchar(20)  NOT NULL,             -- MBTI16|BIG5|RIASEC|ACTIVITY|SUM
+    status             smallint     NOT NULL DEFAULT 2,   -- 1 Draft, 2 Published, 3 Archived
+    created_by_admin_user_id uuid,
+    published_at       timestamptz,
+    created_at         timestamptz  NOT NULL DEFAULT now(),
+    updated_at         timestamptz  NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX ux_test_definitions_code ON test_definitions(code);
+CREATE INDEX ix_test_definitions_active ON test_definitions(is_active, display_order)
+    WHERE status = 2;
+
+CREATE TABLE test_scales (
+    id                        uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    test_definition_id        uuid NOT NULL REFERENCES test_definitions(id) ON DELETE CASCADE,
+    code                      varchar(10)  NOT NULL,
+    name_uz                   varchar(120) NOT NULL,
+    description_uz            text,
+    display_order             int          NOT NULL,
+    interpretation_bands_json jsonb        NOT NULL DEFAULT '[]'
+);
+CREATE UNIQUE INDEX ux_test_scales ON test_scales(test_definition_id, code);
+
+CREATE TABLE questions (
+    id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    test_definition_id  uuid NOT NULL REFERENCES test_definitions(id) ON DELETE CASCADE,
+    code                varchar(20)  NOT NULL,
+    display_order       int          NOT NULL,
+    text_uz             text         NOT NULL,
+    text_ru             text,
+    text_en             text,
+    question_type       smallint     NOT NULL,   -- 1 Likert5, 2 Likert7, 3 Binary, 4 SingleChoice, 5 ForcedChoice
+    scale               varchar(10)  NOT NULL,   -- EI, SN, TF, JP, O, C, E, A, N, R, I, ART, SOC, ENT, CONV, MOT, SELF, SOCA, ENG
+    scale_direction     smallint     NOT NULL DEFAULT 1,  -- +1 | -1
+    weight              numeric(4,2) NOT NULL DEFAULT 1.0,
+    is_required         boolean      NOT NULL DEFAULT true,
+    is_active           boolean      NOT NULL DEFAULT true,
+    is_system           boolean      NOT NULL DEFAULT false
+);
+CREATE UNIQUE INDEX ux_questions_code       ON questions(code);
+CREATE INDEX        ix_questions_test_order ON questions(test_definition_id, display_order);
+
+CREATE TABLE answer_options (
+    id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    question_id    uuid NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+    text_uz        text NOT NULL,
+    value          int  NOT NULL,
+    scale          varchar(10),
+    display_order  int  NOT NULL
+);
+CREATE INDEX ix_answer_options_question ON answer_options(question_id, display_order);
+
+CREATE TABLE type_catalog (
+    code                   varchar(4) PRIMARY KEY,      -- INTJ ...
+    name_uz                varchar(80)  NOT NULL,
+    short_description_uz   varchar(300) NOT NULL,
+    long_description_uz    text         NOT NULL,
+    strengths_json         jsonb        NOT NULL DEFAULT '[]',
+    growth_areas_json      jsonb        NOT NULL DEFAULT '[]',
+    career_hints_json      jsonb        NOT NULL DEFAULT '[]'
+);
+
+CREATE TABLE career_map (
+    id                       uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    holland_code             varchar(2)   NOT NULL,
+    field_name_uz            varchar(150) NOT NULL,
+    description_uz           text,
+    example_professions_json jsonb        NOT NULL DEFAULT '[]',
+    relevance_order          int          NOT NULL DEFAULT 1
+);
+CREATE INDEX ix_career_map_code ON career_map(holland_code, relevance_order);
+
+-- ============ STUDENTS ============
+CREATE TABLE students (
+    id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    school_id                   uuid NOT NULL REFERENCES schools(id),
+    full_name                   varchar(200) NOT NULL,
+    normalized_name             varchar(200) NOT NULL,
+    birth_date                  date         NOT NULL,
+    gender                      smallint     NOT NULL DEFAULT 0,
+    grade                       int          NOT NULL CHECK (grade BETWEEN 1 AND 11),
+    class_letter                varchar(2),
+    phone                       varchar(20)  NOT NULL,
+    parent_phone                varchar(20),
+    email                       varchar(150),
+    consent_given_at            timestamptz  NOT NULL,
+    -- snapshot
+    last_personality_type       varchar(4),
+    last_maturity_index         numeric(5,2),
+    last_activity_index         numeric(5,2),
+    last_activity_level         smallint,
+    last_holland_code           varchar(3),
+    needs_attention             boolean      NOT NULL DEFAULT false,
+    last_assessment_at          timestamptz,
+    completed_assessment_count  int          NOT NULL DEFAULT 0,
+    is_deleted                  boolean      NOT NULL DEFAULT false,
+    deleted_at                  timestamptz,
+    created_at                  timestamptz  NOT NULL DEFAULT now(),
+    updated_at                  timestamptz  NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX ux_students_identity ON students(school_id, normalized_name, birth_date)
+    WHERE is_deleted = false;
+CREATE INDEX ix_students_school_grade ON students(school_id, grade);
+CREATE INDEX ix_students_name_trgm    ON students USING gin (full_name gin_trgm_ops);
+CREATE INDEX ix_students_attention    ON students(needs_attention) WHERE needs_attention = true;
+CREATE INDEX ix_students_last_at      ON students(last_assessment_at DESC NULLS LAST);
+
+-- ============ ASSESSMENTS ============
+CREATE TABLE assessments (
+    id                      uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    student_id              uuid NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+    school_id               uuid NOT NULL REFERENCES schools(id),
+    session_token           varchar(64)  NOT NULL,
+    status                  smallint     NOT NULL DEFAULT 0,
+    language_code           varchar(5)   NOT NULL DEFAULT 'uz',
+    started_at              timestamptz  NOT NULL DEFAULT now(),
+    completed_at            timestamptz,
+    expires_at              timestamptz  NOT NULL,
+    reliability_score       numeric(5,2),
+    reliability_flag        smallint,
+    total_duration_seconds  int,
+    ip_hash                 varchar(64),
+    user_agent              varchar(300),
+    is_deleted              boolean      NOT NULL DEFAULT false,
+    created_at              timestamptz  NOT NULL DEFAULT now(),
+    updated_at              timestamptz  NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX ux_assessments_token   ON assessments(session_token);
+CREATE INDEX ix_assessments_student        ON assessments(student_id, started_at DESC);
+CREATE INDEX ix_assessments_school_status  ON assessments(school_id, status);
+CREATE INDEX ix_assessments_status_started ON assessments(status, started_at DESC);
+
+CREATE TABLE assessment_tests (
+    id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    assessment_id       uuid NOT NULL REFERENCES assessments(id) ON DELETE CASCADE,
+    test_definition_id  uuid NOT NULL REFERENCES test_definitions(id),
+    status              smallint NOT NULL DEFAULT 0,
+    display_order       int      NOT NULL,
+    answered_count      int      NOT NULL DEFAULT 0,
+    total_count         int      NOT NULL,
+    question_order_json jsonb,
+    started_at          timestamptz,
+    completed_at        timestamptz
+);
+CREATE UNIQUE INDEX ux_assessment_tests ON assessment_tests(assessment_id, test_definition_id);
+
+CREATE TABLE answers (
+    id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    assessment_test_id  uuid NOT NULL REFERENCES assessment_tests(id) ON DELETE CASCADE,
+    question_id         uuid NOT NULL REFERENCES questions(id),
+    raw_value           int  NOT NULL,
+    selected_option_id  uuid REFERENCES answer_options(id),
+    duration_ms         int  NOT NULL DEFAULT 0,
+    revision_count      int  NOT NULL DEFAULT 0,
+    answered_at         timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX ux_answers_test_question ON answers(assessment_test_id, question_id);
+
+CREATE TABLE test_results (
+    id                     uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    assessment_test_id     uuid NOT NULL REFERENCES assessment_tests(id) ON DELETE CASCADE,
+    assessment_id          uuid NOT NULL REFERENCES assessments(id) ON DELETE CASCADE,
+    test_code              varchar(20) NOT NULL,
+    result_code            varchar(20),
+    raw_scores_json        jsonb NOT NULL,
+    normalized_scores_json jsonb NOT NULL,
+    levels_json            jsonb NOT NULL DEFAULT '{}',
+    composite_index        numeric(5,2),
+    flags_json             jsonb NOT NULL DEFAULT '[]',
+    scoring_version        int   NOT NULL DEFAULT 1,
+    test_version           int   NOT NULL DEFAULT 1,
+    computed_at            timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX ux_test_results_test ON test_results(assessment_test_id);
+CREATE INDEX ix_test_results_assessment  ON test_results(assessment_id);
+CREATE INDEX ix_test_results_code        ON test_results(test_code, result_code);
+
+-- ============ AI ============
+CREATE TABLE ai_provider_configs (
+    id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    provider           smallint     NOT NULL,   -- 1 Gemini, 2 OpenAi, 3 Anthropic
+    display_name       varchar(80)  NOT NULL,
+    api_key_encrypted  text,
+    model              varchar(80)  NOT NULL,
+    base_url           varchar(200),
+    max_output_tokens  int          NOT NULL DEFAULT 4096,
+    temperature        numeric(3,2) NOT NULL DEFAULT 0.4,
+    is_default         boolean      NOT NULL DEFAULT false,
+    is_active          boolean      NOT NULL DEFAULT false,
+    fallback_order     int          NOT NULL DEFAULT 100,
+    last_checked_at    timestamptz,
+    last_check_status  varchar(200),
+    created_at         timestamptz  NOT NULL DEFAULT now(),
+    updated_at         timestamptz  NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX ux_ai_provider_default ON ai_provider_configs(is_default) WHERE is_default = true;
+CREATE UNIQUE INDEX ux_ai_provider_kind    ON ai_provider_configs(provider);
+
+CREATE TABLE ai_analyses (
+    id                      uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    assessment_id           uuid NOT NULL REFERENCES assessments(id) ON DELETE CASCADE,
+    provider                smallint NOT NULL,
+    model                   varchar(80)  NOT NULL,
+    prompt_version          varchar(20)  NOT NULL,
+    status                  smallint     NOT NULL DEFAULT 0,
+    request_payload_json    jsonb,
+    response_json           jsonb,
+    summary                 text,
+    personality_portrait    text,
+    strengths_json          jsonb,
+    growth_areas_json       jsonb,
+    recommendations_json    jsonb,
+    career_suggestions_json jsonb,
+    teacher_notes           text,
+    parent_notes            text,
+    attention_flags_json    jsonb,
+    input_tokens            int,
+    output_tokens           int,
+    estimated_cost_usd      numeric(10,6),
+    duration_ms             int,
+    error_message           varchar(2000),
+    attempt_number          int      NOT NULL DEFAULT 1,
+    is_current              boolean  NOT NULL DEFAULT false,
+    created_at              timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX ix_ai_analyses_assessment ON ai_analyses(assessment_id, created_at DESC);
+CREATE UNIQUE INDEX ux_ai_analyses_current ON ai_analyses(assessment_id) WHERE is_current = true;
+
+CREATE TABLE prompt_templates (
+    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    key         varchar(50)  NOT NULL,      -- 'full_analysis'
+    version     varchar(20)  NOT NULL,      -- 'v1.0'
+    system_text text NOT NULL,
+    user_text   text NOT NULL,
+    json_schema jsonb NOT NULL,
+    is_active   boolean NOT NULL DEFAULT false,
+    created_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX ux_prompt_templates ON prompt_templates(key, version);
+
+-- ============ IDENTITY & AUDIT ============
+CREATE TABLE admin_users (
+    id                    uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    username              varchar(60)  NOT NULL,
+    email                 varchar(150) NOT NULL,
+    full_name             varchar(150),
+    password_hash         varchar(300) NOT NULL,
+    role                  smallint     NOT NULL DEFAULT 1,
+    is_active             boolean      NOT NULL DEFAULT true,
+    totp_secret_encrypted text,
+    totp_enabled          boolean      NOT NULL DEFAULT false,
+    failed_login_count    int          NOT NULL DEFAULT 0,
+    locked_until          timestamptz,
+    last_login_at         timestamptz,
+    created_at            timestamptz  NOT NULL DEFAULT now(),
+    updated_at            timestamptz  NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX ux_admin_users_username ON admin_users(lower(username));
+CREATE UNIQUE INDEX ux_admin_users_email    ON admin_users(lower(email));
+
+CREATE TABLE refresh_tokens (
+    id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    admin_user_id     uuid NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+    token_hash        varchar(128) NOT NULL,
+    expires_at        timestamptz  NOT NULL,
+    revoked_at        timestamptz,
+    created_by_ip_hash varchar(64),
+    created_at        timestamptz  NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX ux_refresh_tokens_hash ON refresh_tokens(token_hash);
+
+CREATE TABLE audit_logs (
+    id             bigserial PRIMARY KEY,
+    admin_user_id  uuid REFERENCES admin_users(id),
+    action         varchar(80) NOT NULL,
+    entity_type    varchar(60),
+    entity_id      uuid,
+    before_json    jsonb,
+    after_json     jsonb,
+    ip_hash        varchar(64),
+    user_agent     varchar(300),
+    created_at     timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX ix_audit_logs_created ON audit_logs(created_at DESC);
+CREATE INDEX ix_audit_logs_entity  ON audit_logs(entity_type, entity_id);
+
+-- ============ RATE LIMIT ============
+CREATE TABLE registration_counters (
+    school_id  uuid NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    date_utc   date NOT NULL,
+    count      int  NOT NULL DEFAULT 0,
+    PRIMARY KEY (school_id, date_utc)
+);
+```
+
+---
+
+## 3. Enum ↔ raqam mosligi (kodda ham shu)
+
+| Enum | Qiymatlar |
+|------|-----------|
+| `AssessmentStatus` | 0 Draft, 1 InProgress, 2 Completed, 3 Analyzing, 4 Analyzed, 5 AnalysisFailed, 6 Abandoned |
+| `TestStatus` | 0 NotStarted, 1 InProgress, 2 Completed |
+| `Gender` | 0 Unspecified, 1 Male, 2 Female |
+| `QuestionType` | 1 Likert5, 2 Likert7, 3 Binary, 4 SingleChoice, 5 ForcedChoice |
+| `TestKind` | 1 Standard (ilmiy metodika), 2 Custom (superadmin anketasi) |
+| `TestStatus` | 1 Draft, 2 Published, 3 Archived |
+| `ReliabilityFlag` | 1 Reliable, 2 Questionable, 3 Unreliable |
+| `ActivityLevel` | 1 Passive, 2 LowActive, 3 Moderate, 4 Active, 5 HighlyActive |
+| `AiProvider` | 1 Gemini, 2 OpenAi, 3 Anthropic |
+| `AiAnalysisStatus` | 0 Pending, 1 Running, 2 Succeeded, 3 Failed |
+| `AdminRole` | 1 SuperAdmin, 2 SchoolAdmin (v2), 3 Psychologist (v2) |
+
+---
+
+## 4. Migratsiya siyosati
+
+1. Har o'zgarish — **EF Core migration**, qo'lda SQL yozilmaydi (yuqoridagi DDL — mos yozuvlar manbai).
+   `dotnet ef migrations add <Nom> -p src/StudentRoadMap.Infrastructure -s src/StudentRoadMap.Api`
+2. Migratsiya nomi ma'noli: `AddReliabilityScoreToAssessment`.
+3. **Destruktiv** o'zgarish (ustun o'chirish/tip almashtirish) alohida migratsiyada, avval
+   yangi ustun qo'shiladi → ma'lumot ko'chiriladi → keyingi relizda eskisi o'chiriladi.
+4. Seed ma'lumot (test bankiga tegishli) — migratsiyada emas, `DbSeeder` da idempotent
+   (`Code` bo'yicha upsert), start-upda `SEED_ON_STARTUP=true` bo'lsa ishlaydi.
+   Seed'dan kelgan 4 metodika va ularning savollari `is_system = true` bilan belgilanadi —
+   superadmin ularni o'chira olmaydi va shkalasini o'zgartira olmaydi (BR-8).
+   Superadmin yaratgan anketalar `kind = 2`, `is_system = false` va seeder ularga tegmaydi.
+5. Production'da `Database.Migrate()` avtomatik emas — alohida `migrate` konteyner/step.
+
+---
+
+## 5. Ishlash bo'yicha eslatmalar
+
+- Admin ro'yxatlarida `students` jadvalidagi **snapshot** ustunlar ishlatiladi — JOIN kerak emas.
+- `answers` eng katta jadval (190 qator × sessiya). Kerak bo'lsa `assessment_test_id` bo'yicha
+  `BRIN` yoki oylik partitsiya (v2).
+- `jsonb` ustunlarga GIN indeks faqat real ehtiyoj bo'lsa qo'shiladi (masalan tip bo'yicha
+  filtr — buning o'rniga `test_results.result_code` ustuni ishlatiladi).
+- Dashboard statistikasi 60 soniyaga keshlanadi (`IMemoryCache`), og'ir `GROUP BY` har so'rovda emas.
+- Ulanish: `Npgsql`, `Pooling=true;Maximum Pool Size=50`, `CommandTimeout=30`.

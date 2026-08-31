@@ -1,0 +1,21 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+
+# Frontend
+node_modules/
+dist/
+.vite/
+
+# Muhit va sirlar
+.env
+.env.*
+!.env.example
+*.pfx
+
+# Vaqtinchalik
+.DS_Store
+.srm_bundle.json
+/tmp/
