@@ -20,6 +20,10 @@ ishlatilmaydi. Shuning uchun platformada **ochiq (public domain) analoglar** ish
 UI'da hech qachon "MBTI" so'zi ishlatilmaydi — **"16 tipli shaxsiyat modeli"** deyiladi.
 Kodda `TestCode = MBTI16` faqat ichki identifikator.
 
+Shuningdek **16Personalities / NERIS Type Explorer®** ning savollari, tip nomlari
+("Arxitektor", "Vositachi" …), tavsif matnlari va `-A`/`-T` belgisi **ishlatilmaydi**.
+Batafsil huquqiy chegara: [`17-16personalities-tahlili.md`](17-16personalities-tahlili.md) 8-bo'lim.
+
 ---
 
 ## 1. Umumiy tuzilma
@@ -100,12 +104,12 @@ uzatiladi, chunki bu holatda tipni qat'iy aytish noto'g'ri.
     "JP": { "pct": 64.1, "letter": "J", "borderline": false }
   },
   "borderlineAxes": [],
-  "typeName": "Strateg",
+  "typeName": "Loyihachi",
   "typeShort": "Uzoqni ko'zlaydigan, mustaqil rejalashtiruvchi"
 }
 ```
 
-16 tipning o'zbekcha nomlari `TypeCatalog` jadvalida seed qilinadi (INTJ — Strateg, ENFP — Ilhomlantiruvchi, ...).
+16 tipning o'zbekcha nomlari `TypeCatalog` jadvalida seed qilinadi (INTJ — Loyihachi, ENFP — Otashqalb, ...).
 
 ### 2.4 Savol namunalari (seed uchun format)
 

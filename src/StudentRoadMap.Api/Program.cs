@@ -1,6 +1,10 @@
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using StudentRoadMap.Api.Auth;
+using StudentRoadMap.Api.Extensions;
+using StudentRoadMap.Api.Middleware;
 using StudentRoadMap.Application;
 using StudentRoadMap.Infrastructure;
 using StudentRoadMap.Infrastructure.Persistence;
@@ -16,19 +20,35 @@ builder.Host.UseSerilog((context, services, configuration) =>
         .Enrich.FromLogContext());
 
 // --- Servislar ---------------------------------------------------------------
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // `docs/07-api-shartnoma.md` 4-bo'lim: "Enum'lar JSON'da string ko'rinishida" (`"Male"`, `"Analyzed"`...).
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddProblemDetails(options =>
 {
     // RFC 9457 formatiga mos `code` maydoni uchun joy (docs/06-arxitektura.md, 6-bo'lim).
-    // Konkret `code` qiymatlari keyingi promptlarda ExceptionHandlingMiddleware orqali to'ldiriladi.
+    // Konkret `code` qiymatlari `ExceptionHandlingMiddleware` (`IExceptionHandler`) orqali to'ldiriladi.
     options.CustomizeProblemDetails = context =>
     {
         context.ProblemDetails.Extensions.TryAdd("traceId", context.HttpContext.TraceIdentifier);
     };
 });
+
+builder.Services.AddExceptionHandler<ExceptionHandlingMiddleware>();
+
+builder.Services.AddRateLimitPolicies();
+
+// --- Autentifikatsiya: SessionToken (o'quvchi, `docs/08` 4-bo'lim). Superadmin JWT — P13+. ---
+builder.Services
+    .AddAuthentication(SessionTokenAuthenticationHandler.SchemeName)
+    .AddScheme<SessionTokenAuthenticationSchemeOptions, SessionTokenAuthenticationHandler>(
+        SessionTokenAuthenticationHandler.SchemeName, _ => { });
+builder.Services.AddAuthorization();
 
 var frontendUrl = builder.Configuration["App:FrontendUrl"];
 builder.Services.AddCors(options =>
@@ -79,6 +99,11 @@ if (app.Configuration.GetValue<bool>("App:SeedOnStartup"))
 }
 
 // --- HTTP quvuri ---------------------------------------------------------------
+// `UseConfiguredForwardedHeaders` pipeline'ning ENG BOSHIDA turishi shart — boshqa barcha
+// middleware (shu jumladan HTTPS redirect, rate limiter, autentifikatsiya) `RemoteIpAddress`ga
+// tayanadi (`ForwardedHeadersSetup` izohiga qarang, `docs/13` 4-bo'lim).
+app.UseConfiguredForwardedHeaders();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -94,6 +119,8 @@ app.UseStatusCodePages();
 
 app.UseHttpsRedirection();
 app.UseCors();
+app.UseRateLimiter();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

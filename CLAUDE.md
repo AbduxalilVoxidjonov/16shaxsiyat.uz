@@ -56,6 +56,8 @@ Ishlab chiqish **`prompts/` papkasidagi tartibda** olib boriladi — `prompts/00
 5. **AI'ga shaxsiy ma'lumot yuborilmaydi:** ism, telefon, email, aniq tug'ilgan sana, maktab nomi.
    Faqat yosh, sinf, jins va ballar.
 6. **AI tashxis qo'ymaydi** — taqiqlangan atamalar ro'yxati promptda va post-filtrda.
+6a. **Raqobatchi kontenti ko'chirilmaydi:** 16Personalities/NERIS va MBTI savollari, tip nomlari,
+    tavsiflari va tovar belgilari ishlatilmaydi (`docs/17` 8-bo'lim).
 7. **Migratsiya faqat EF Core orqali**; destruktiv o'zgarish ikki bosqichda.
 8. **Ommaviy API'da ID qabul qilinmaydi** — faqat `X-Session-Token` (IDOR himoyasi).
 9. **`scale` va `scaleDirection` o'quvchi API'siga hech qachon yuborilmaydi** (admin katalogida ko'rinadi).

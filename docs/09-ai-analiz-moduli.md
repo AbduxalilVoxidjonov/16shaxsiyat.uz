@@ -84,7 +84,7 @@ chunki modellar tez yangilanadi.
   "context": { "age": 16, "grade": 9, "gender": "male", "language": "uz" },
   "reliability": { "score": 82.5, "flag": "Reliable", "notes": [] },
   "personality16": {
-    "type": "INTJ", "typeNameUz": "Strateg",
+    "type": "INTJ", "typeNameUz": "Loyihachi",
     "axes": { "EI": { "pct": 28.3, "letter": "I" }, "SN": { "pct": 71.6, "letter": "N" },
               "TF": { "pct": 33.3, "letter": "T" }, "JP": { "pct": 64.1, "letter": "J" } },
     "borderlineAxes": []

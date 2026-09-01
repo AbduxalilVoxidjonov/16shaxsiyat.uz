@@ -153,7 +153,7 @@ internal sealed class RegenerateSchoolLinkHandler
     : IRequestHandler<RegenerateSchoolLinkCommand, Result<SchoolLinkDto>> { ... }
 
 // Validator — FluentValidation, pipeline behavior orqali avtomatik ishlaydi
-internal sealed class RegenerateSchoolLinkValidator
+public sealed class RegenerateSchoolLinkValidator
     : AbstractValidator<RegenerateSchoolLinkCommand> { ... }
 ```
 
@@ -162,6 +162,9 @@ Qoidalar:
 - Query'lar **read-only**, `AsNoTracking()`, to'g'ridan-to'g'ri DTO'ga proyeksiya (`Select`).
 - Command'lar `TransactionBehavior` ichida bajariladi.
 - Handler'lar `internal sealed`.
+- **Validator'lar `public sealed`** — `FluentValidation.DependencyInjectionExtensions`
+  `AssemblyScanner` faqat public tiplarni topadi; `internal` bo'lsa validatsiya jimgina
+  ishlamay qoladi (P10 da integratsiya sinovi bilan tasdiqlandi).
 - Natija: `Result<T>` — istisno biznes oqimi uchun ishlatilmaydi.
 
 ---
@@ -213,6 +216,7 @@ Barcha xatolar `application/problem+json`:
 | `SCHOOL_INACTIVE` | 410 | Maktab o'chirilgan |
 | `SESSION_EXPIRED` | 410 | Sessiya muddati o'tgan |
 | `DUPLICATE_ASSESSMENT` | 409 | BR-1 buzildi |
+| `ACCESS_CODE_INVALID` | 400 | Maktab kirish kodi noto'g'ri (P10) |
 | `TEST_NOT_UNLOCKED` | 409 | Oldingi test tugamagan |
 | `SYSTEM_TEST_LOCKED` | 409 | Tizim metodikasini o'zgartirishga urinish |
 | `TEST_NOT_PUBLISHABLE` | 400 | Anketa nashr validatsiyasidan o'tmadi |
@@ -265,3 +269,11 @@ Barcha xatolar `application/problem+json`:
 | 2026-08-31 | Parol xeshi: `docs/08` dagi BCrypt/Argon2id o'rniga **PBKDF2-HMACSHA256 210k** | PM (P04) | OWASP 2023 tavsiyasiga mos, .NET ichida (uchinchi tomon paketi kerak emas), bitta superadmin hisobi uchun yetarli (lockout 5/15 daq bilan birga). `docs/08` yangilandi. Ko'p adminli v2 da Argon2id qayta ko'riladi |
 | 2026-08-31 | `docs/03` §7 ga 5 ta aniqlashtirish qo'shildi (§7.1): `AllSame`↔`StraightLining` istisnosi, blok sanash, sessiya bo'ylab tartiblash, teskari ziddiyat `d` formulasi, tez javob maxraji | PM (P09) | Jadval qisqa edi va ikki xil talqinga yo'l qo'yardi; QA ikkita bloklovchi xato aynan shu noaniqlikdan kelib chiqqanini ko'rsatdi |
 | 2026-08-31 | `TestDefinition.Duplicate()` dagi `Guid.NewGuid()` — texnik qarz sifatida qoldirildi | PM (P02) | Domain ichida ID generatsiyasi loyiha konvensiyasini buzadi (boshqa hamma fabrika ID ni parametr oladi), lekin `Duplicate` hozir hech qayerda ishlatilmaydi. P33 (anketa konstruktori) da tuzatiladi |
+| 2026-08-31 | Refresh token **faqat `httpOnly` cookie** orqali yuradi; `docs/07` jadvali shunga moslandi | PM (P19) | `docs/07` tanada `{refreshToken}` deb ko'rsatgan, `docs/08` esa cookie-only degan edi — ziddiyat. Xavfsizlik hujjati ustun: XSS holatida refresh token o'g'irlanmasligi kerak |
+| 2026-08-31 | Admin access token `adminClient.ts` ichida modul o'zgaruvchisi (HTTP qatlami manbai) + `authStore` (Zustand, `persist`siz) React reaktivligi uchun | PM (P19) | `docs/10` "faqat xotirada" deydi; `localStorage` ishlatilmaydi. Ikki joy sinxron: klient `setOnAdminSessionExpired` orqali store'ni tozalaydi |
+| 2026-08-31 | `publicClient` sessiya tokenini `features/` dan import qilmaydi — umumiy `STORAGE_KEYS.session` kaliti shartnomasi orqali o'qiydi | PM (P19) | `docs/10` qoidasi: `shared/` `features/` ga bog'lanmaydi. Kalit `shared/config/storageKeys.ts` da yagona manba |
+| 2026-08-31 | Validator'lar `public sealed` (hujjatdagi `internal` namuna tuzatildi) | PM (P10) | `AssemblyScanner` faqat public validatorlarni ko'radi — `internal` bo'lsa validatsiya jimgina ishlamaydi. Integratsiya sinovi bilan tasdiqlandi |
+| 2026-08-31 | `IAppDbContext` ga `AsNoTracking<T>()`, `BeginTransactionAsync`, `IncrementRegistrationCounterAsync`, `RegistrationCounters` qo'shildi | PM (P10) | "Query'lar `AsNoTracking`" va "Command'lar tranzaksiyada" talablarini `Application` da EF paketisiz bajarish uchun zarur |
+| 2026-08-31 | `POST /api/public/sessions`: yangi sessiya **201**, `resumed: true` → **200** | PM (P10) | `docs/07` faqat 201 ni ko'rsatgan edi; REST semantikasi bo'yicha mavjud resursga qaytish 200 |
+| 2026-08-31 | `registration_counters` faqat **yangi** `Assessment` yaratilganda oshadi (resume/dublikatda emas) | PM (P10) | BR-1 maktabning kunlik **ro'yxatdan o'tish** sonini o'lchaydi. Har so'rovni sanash bitta o'quvchi sahifani yangilaganda maktab limitini yeb qo'yardi. Suiiste'mol — rate limiting vazifasi |
+| 2026-09-01 | 16 tipning barcha nomlari qayta yozildi (Tayanch, G'amxo'r, Teran, Loyihachi, Chevar, Sezgir, Orzumand, Bilimdon, Sinovchi, Quvnoq, Otashqalb, Yangilikchi, Tuzuvchi, Jonkuyar, Murabbiy, Bunyodkor) | Loyiha egasi (`CLAUDE.md` 6a, `docs/17` §8) | Eski nomlarning **hammasi** 16Personalities nomlarining o'zbekcha tarjimasi edi (Strateg=Architect, Vositachi=Mediator, Konsul=Consul…). Keirsey nomlari ham taqiqlandi. Har yangi nom 4 harfli kodning ma'nosidan kelib chiqadi va teng qadrli (hech biri "pastroq" eshitilmaydi) |

@@ -1,0 +1,23 @@
+import { useEffect, useState } from 'react';
+
+/** Brauzerning onlayn/oflayn holatini kuzatadi (docs/10, 4.2-bo'lim — offline banner uchun). */
+export function useOnline(): boolean {
+  const [isOnline, setIsOnline] = useState(() => navigator.onLine);
+
+  useEffect(() => {
+    function handleOnline() {
+      setIsOnline(true);
+    }
+    function handleOffline() {
+      setIsOnline(false);
+    }
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  return isOnline;
+}

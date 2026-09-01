@@ -47,6 +47,17 @@ public interface IAppDbContext
 
     IQueryable<RefreshToken> RefreshTokens { get; }
 
+    IQueryable<RegistrationCounter> RegistrationCounters { get; }
+
+    /// <summary>
+    /// So'rovni kuzatilmaydigan (no-tracking) rejimga o'tkazadi — Query handler'lar uchun
+    /// (`docs/06-arxitektura.md` 4-bo'lim: "Query'lar READ-ONLY, `AsNoTracking()`"). `Application`
+    /// EF Core'ning `AsNoTracking()` kengaytma metodiga (paket sifatida) bevosita bog'lanmasligi
+    /// uchun shu abstraksiya orqali beriladi.
+    /// </summary>
+    IQueryable<TEntity> AsNoTracking<TEntity>(IQueryable<TEntity> query)
+        where TEntity : class;
+
     /// <summary>Yangi entity'ni o'zgarishlarni kuzatish grafigiga qo'shadi.</summary>
     void Add<TEntity>(TEntity entity)
         where TEntity : class;
@@ -56,4 +67,22 @@ public interface IAppDbContext
         where TEntity : class;
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Aniq (explicit) DB tranzaksiyasini boshlaydi — `TransactionBehavior` Command'larni shu
+    /// bilan o'raydi (`docs/06-arxitektura.md` 4-bo'lim: "Command'lar TransactionBehavior
+    /// ichida bajariladi").
+    /// </summary>
+    Task<IAppDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Maktabning kunlik ro'yxatdan o'tish hisoblagichini atomik oshiradi va YANGI qiymatni
+    /// qaytaradi — `registration_counters(school_id, date_utc)` bo'yicha `INSERT ... ON CONFLICT
+    /// DO UPDATE SET count = count + 1` (poyga holatining oldini olish uchun xom SQL, `docs/08-auth-va-xavfsizlik.md`
+    /// 3-bo'lim ruxsati: "atomik `INSERT … ON CONFLICT … +1`"). EF Core LINQ orqali bitta
+    /// so'rovda atomik "upsert-va-oshirish" amalga oshirilmaydi — bir nechta parallel so'rov
+    /// bir xil kunga bir vaqtda yozsa, LINQ bilan yozilgan "o'qi-tekshir-yoz" mantig'i poyga
+    /// holatiga (ikkalasi ham eski qiymatni o'qib, limitdan oshib ketishi mumkin) olib keladi.
+    /// </summary>
+    Task<int> IncrementRegistrationCounterAsync(Guid schoolId, DateOnly dateUtc, CancellationToken cancellationToken = default);
 }

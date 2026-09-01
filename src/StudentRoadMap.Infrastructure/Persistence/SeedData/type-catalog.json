@@ -1,7 +1,7 @@
 [
   {
     "code": "ISTJ",
-    "nameUz": "Nazoratchi",
+    "nameUz": "Tayanch",
     "shortDescriptionUz": "Aniqlik, mas'uliyat va tartibga tayangan, va'dasiga sodiq amaliyotchi.",
     "longDescriptionUz": "ISTJ — faktlarga, tajribaga va aniq qoidalarga tayanib ish yurituvchi, o'ta mas'uliyatli shaxsiyat tipi. Bunday odamlar rejalarni oxirigacha yetkazishni, tartib-intizomni va aniq natijani qadrlaydi. Ular vaziyatni shoshilinch emas, balki bosqichma-bosqich, dalillarga asoslanib baholaydi va bergan va'dasini bajarishga alohida e'tibor beradi.",
     "strengths": [
@@ -27,7 +27,7 @@
   },
   {
     "code": "ISFJ",
-    "nameUz": "Himoyachi",
+    "nameUz": "G'amxo'r",
     "shortDescriptionUz": "Boshqalarga g'amxo'r, ishonchli va sokin xizmat qiluvchi shaxsiyat.",
     "longDescriptionUz": "ISFJ — atrofdagilarning ehtiyojlarini sezgirlik bilan payqaydigan, ishonchli va mehnatkash shaxsiyat tipi. Ular jamoada barqarorlik yaratadi, aniq va amaliy yordam berishni yaxshi ko'radi, o'z majburiyatlariga jiddiy yondashadi. Diqqat markazida bo'lishdan ko'ra, sokin va samarali ishlashni afzal ko'radilar.",
     "strengths": [
@@ -53,7 +53,7 @@
   },
   {
     "code": "INFJ",
-    "nameUz": "Maslahatchi",
+    "nameUz": "Teran",
     "shortDescriptionUz": "Chuqur qadriyatlarga ega, boshqalarni tushunishga intiluvchi g'oyaviy shaxsiyat.",
     "longDescriptionUz": "INFJ — insonlarning ichki dunyosini chuqur his qiladigan, uzoq muddatli maqsad va qadriyatlar asosida harakat qiluvchi shaxsiyat tipi. Ular kam sonli, ammo chuqur munosabatlarni afzal ko'radi, atrofdagilarga ilhom berishga va ma'noli o'zgarish yaratishga intiladi. Ko'pincha o'z ichki dunyosida boy tasavvur va aniq qadriyatlar tizimiga ega.",
     "strengths": [
@@ -78,11 +78,11 @@
   },
   {
     "code": "INTJ",
-    "nameUz": "Strateg",
+    "nameUz": "Loyihachi",
     "shortDescriptionUz": "Uzoqni ko'zlaydigan, mustaqil rejalashtiruvchi va tizimli fikrlovchi shaxsiyat.",
     "longDescriptionUz": "INTJ — murakkab tizimlarni tahlil qilib, uzoq muddatli strategiya quradigan mustaqil fikrlovchi shaxsiyat tipi. Ular mantiqiy dalillarga tayanadi, samarasiz jarayonlarni takomillashtirishga intiladi va o'z maqsadlariga erishishda qat'iyatli. Yangi g'oyalarni tizimli reja bilan bog'lay olishlari ularning asosiy kuchi.",
     "strengths": [
-      "Strategik va tizimli fikrlash",
+      "Tizimli va uzoqni ko'zlab fikrlash",
       "Mustaqil qaror qabul qilish",
       "Murakkab muammolarni tahlil qilish",
       "Maqsadga qat'iyat bilan intilish",
@@ -103,8 +103,8 @@
   },
   {
     "code": "ISTP",
-    "nameUz": "Usta",
-    "shortDescriptionUz": "Amaliy muammolarni tezkor va mustaqil hal qiluvchi, qo'l ishiga usta shaxsiyat.",
+    "nameUz": "Chevar",
+    "shortDescriptionUz": "Amaliy muammolarni tezkor va mustaqil hal qiluvchi, qo'l ishiga chevar shaxsiyat.",
     "longDescriptionUz": "ISTP — narsalarning qanday ishlashini tushunishga qiziquvchi, amaliy va mustaqil shaxsiyat tipi. Ular vaziyatni tinch tahlil qilib, aniq va tezkor yechim topadi. Nazariyadan ko'ra amaliyotni, gapdan ko'ra ishni afzal ko'radilar, kutilmagan vaziyatlarda ham sovuqqonlikni saqlaydi.",
     "strengths": [
       "Amaliy muammo yechish qobiliyati",
@@ -128,7 +128,7 @@
   },
   {
     "code": "ISFP",
-    "nameUz": "Sarguzashtchi",
+    "nameUz": "Sezgir",
     "shortDescriptionUz": "Erkin, estetik didga ega va shu lahzada yashaydigan mehribon shaxsiyat.",
     "longDescriptionUz": "ISFP — go'zallikni his qiladigan, o'z qadriyatlariga sodiq va erkinlikni qadrlaydigan shaxsiyat tipi. Ular ijodiy ifodani, tabiiylikni va shaxsiy erkinlikni yaxshi ko'radi. Diqqat markazida bo'lishdan ko'ra, o'z ishini sukunatda, sifatli bajarishni afzal ko'radilar.",
     "strengths": [
@@ -153,7 +153,7 @@
   },
   {
     "code": "INFP",
-    "nameUz": "Vositachi",
+    "nameUz": "Orzumand",
     "shortDescriptionUz": "Ichki qadriyatlarga sodiq, insonparvar va ijodiy g'oyalar bilan yashaydigan shaxsiyat.",
     "longDescriptionUz": "INFP — o'z qadriyatlari va ideallariga chuqur sodiq, insonlar va g'oyalarga hissiy jihatdan bog'langan shaxsiyat tipi. Ular dunyoni yaxshilashga intiladi, ijodiy ifodani qadrlaydi va boshqalarning ichki dunyosini tushunishga harakat qiladi. Tashqi ko'rinishda sokin, ammo ichki dunyosi boy va murakkab.",
     "strengths": [
@@ -178,7 +178,7 @@
   },
   {
     "code": "INTP",
-    "nameUz": "Mantiqchi",
+    "nameUz": "Bilimdon",
     "shortDescriptionUz": "G'oyalar dunyosini sevuvchi, mustaqil va chuqur tahlil qiluvchi shaxsiyat.",
     "longDescriptionUz": "INTP — nazariy tizimlar va g'oyalarni chuqur tahlil qilishga qiziquvchi, mustaqil fikrlovchi shaxsiyat tipi. Ular mantiqiy izchillikni qadrlaydi, murakkab muammolarni yangi burchakdan ko'rishga harakat qiladi va bilim olishning o'zidan zavq oladi. Qat'iy qoidalardan ko'ra, tushuntirish kuchiga ega g'oyalarni afzal ko'radilar.",
     "strengths": [
@@ -203,7 +203,7 @@
   },
   {
     "code": "ESTP",
-    "nameUz": "Tadbirkor",
+    "nameUz": "Sinovchi",
     "shortDescriptionUz": "Harakatchan, xavf-xatarga tayyor va tezkor qaror qabul qiluvchi amaliyotchi.",
     "longDescriptionUz": "ESTP — hozirgi lahzada yashaydigan, amaliy va tezkor harakat qiluvchi shaxsiyat tipi. Ular vaziyatni tez baholaydi, xavf-xatardan qo'rqmaydi va real muammolarni darhol hal qilishni yaxshi ko'radi. Energiyasi yuqori, muloqotga ochiq va amaliy tajribadan tez o'rganadi.",
     "strengths": [
@@ -228,7 +228,7 @@
   },
   {
     "code": "ESFP",
-    "nameUz": "Ko'ngilochar",
+    "nameUz": "Quvnoq",
     "shortDescriptionUz": "Hayotsevar, spontan va odamlar bilan muloqotdan quvvat oluvchi shaxsiyat.",
     "longDescriptionUz": "ESFP — hayotning har lahzasidan zavq olishga intiladigan, ochiq va energiyaga to'la shaxsiyat tipi. Ular muloqotda tabiiy, boshqalarni quvontirishni yaxshi ko'radi va vaziyatga moslashishda mohir. Amaliy tajriba va his-tuyg'ular ularning dunyoni idrok etish usulining markazida turadi.",
     "strengths": [
@@ -253,12 +253,12 @@
   },
   {
     "code": "ENFP",
-    "nameUz": "Ilhomlantiruvchi",
+    "nameUz": "Otashqalb",
     "shortDescriptionUz": "G'ayratli, ijodiy va odamlarni yangi imkoniyatlarga undovchi shaxsiyat.",
-    "longDescriptionUz": "ENFP — hayotga ishtiyoq bilan qaraydigan, yangi g'oyalar va imkoniyatlarni sinab ko'rishni yaxshi ko'radigan shaxsiyat tipi. Ular odamlar bilan chuqur, mazmunli aloqa o'rnatadi, ilhomlantiradi va o'zgarishlarni qo'llab-quvvatlaydi. Qat'iy qoliplardan ko'ra, erkin va ijodiy yondashuvni afzal ko'radilar.",
+    "longDescriptionUz": "ENFP — hayotga ishtiyoq bilan qaraydigan, yangi g'oyalar va imkoniyatlarni sinab ko'rishni yaxshi ko'radigan shaxsiyat tipi. Ular odamlar bilan chuqur, mazmunli aloqa o'rnatadi, ruhlantiradi va o'zgarishlarni qo'llab-quvvatlaydi. Qat'iy qoliplardan ko'ra, erkin va ijodiy yondashuvni afzal ko'radilar.",
     "strengths": [
       "Yuqori ijodkorlik va tashabbuskorlik",
-      "Kuchli muloqot va ilhomlantirish qobiliyati",
+      "Kuchli muloqot va ruhlantirish qobiliyati",
       "Moslashuvchanlik va ochiqlik",
       "Odamlarning kuchli tomonlarini ko'ra bilish",
       "Yangi g'oyalarni tezda qabul qilish"
@@ -278,7 +278,7 @@
   },
   {
     "code": "ENTP",
-    "nameUz": "Munozarachi",
+    "nameUz": "Yangilikchi",
     "shortDescriptionUz": "Tez fikrlovchi, bahs-munozarani sevuvchi va yangi g'oyalar generatori.",
     "longDescriptionUz": "ENTP — g'oyalarni sinash, savol berish va mavjud qoidalarni qayta ko'rib chiqishni yaxshi ko'radigan tez fikrlovchi shaxsiyat tipi. Ular intellektual bahsdan zavq oladi, muammolarga bir nechta nuqtai nazardan yondashadi va o'zgarishlarni imkoniyat sifatida ko'radi.",
     "strengths": [
@@ -303,7 +303,7 @@
   },
   {
     "code": "ESTJ",
-    "nameUz": "Boshqaruvchi",
+    "nameUz": "Tuzuvchi",
     "shortDescriptionUz": "Tashkilotchilik qobiliyatiga ega, qat'iy va natijaga yo'naltirilgan yetakchi.",
     "longDescriptionUz": "ESTJ — aniq tuzilma, qoida va tartibga tayangan holda jamoani natijaga yetaklaydigan shaxsiyat tipi. Ular mas'uliyatni o'z zimmasiga olishni yaxshi ko'radi, jarayonlarni samarali tashkil etadi va vazifalarni belgilangan muddatda bajarishga qat'iy amal qiladi.",
     "strengths": [
@@ -328,7 +328,7 @@
   },
   {
     "code": "ESFJ",
-    "nameUz": "Konsul",
+    "nameUz": "Jonkuyar",
     "shortDescriptionUz": "Jamoada uyg'unlik yaratuvchi, g'amxo'r va tashkilotchi shaxsiyat.",
     "longDescriptionUz": "ESFJ — atrofdagilarning ehtiyojlariga sezgir, jamoada hamjihatlik va tartib yaratishga intiladigan shaxsiyat tipi. Ular amaliy yordamni, aniq mas'uliyatlarni va ijtimoiy me'yorlarni qadrlaydi. Boshqalarga g'amxo'rlik qilish orqali o'zlarini realizatsiya qiladilar.",
     "strengths": [
@@ -353,11 +353,11 @@
   },
   {
     "code": "ENFJ",
-    "nameUz": "Yetakchi",
-    "shortDescriptionUz": "Odamlarni ilhomlantiruvchi, karizmatik va insonlarning rivojiga yordam beruvchi shaxsiyat.",
-    "longDescriptionUz": "ENFJ — boshqalarning salohiyatini ko'rib, ularni rivojlanishga undaydigan karizmatik shaxsiyat tipi. Ular jamoani umumiy maqsad atrofida birlashtirishga, insonlarga ilhom berishga va ijobiy o'zgarish yaratishga intiladi. Kuchli empatiya va yetakchilik qobiliyatini birlashtiradi.",
+    "nameUz": "Murabbiy",
+    "shortDescriptionUz": "Odamlarni ruhlantiruvchi, karizmatik va insonlarning rivojiga yordam beruvchi shaxsiyat.",
+    "longDescriptionUz": "ENFJ — boshqalarning salohiyatini ko'rib, ularni rivojlanishga undaydigan karizmatik shaxsiyat tipi. Ular jamoani umumiy maqsad atrofida birlashtirishga, insonlarga ilhom berishga va ijobiy o'zgarish yaratishga intiladi. Kuchli empatiya va boshchilik qobiliyatini birlashtiradi.",
     "strengths": [
-      "Kuchli yetakchilik va ilhomlantirish",
+      "Kuchli boshchilik va ruhlantirish",
       "Chuqur empatiya",
       "Jamoani birlashtirish qobiliyati",
       "Ishonchli va ta'sirchan muloqot",
@@ -378,7 +378,7 @@
   },
   {
     "code": "ENTJ",
-    "nameUz": "Qo'mondon",
+    "nameUz": "Bunyodkor",
     "shortDescriptionUz": "Qat'iyatli, strategik va katta maqsadlar sari jamoani yetaklovchi shaxsiyat.",
     "longDescriptionUz": "ENTJ — aniq maqsad qo'yib, unga erishish uchun jamoani samarali tashkil etadigan tabiiy yetakchi shaxsiyat tipi. Ular strategik fikrlaydi, qarorlarni tez va qat'iy qabul qiladi, samarasizlikka chidamsiz. Katta loyihalarni boshqarish va natijaga erishishda ishonchli.",
     "strengths": [

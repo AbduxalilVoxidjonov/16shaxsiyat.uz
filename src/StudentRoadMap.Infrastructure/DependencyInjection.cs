@@ -38,6 +38,9 @@ public static class DependencyInjection
         services.AddSingleton<IDateTime, SystemDateTime>();
         services.AddScoped<IEncryptionService, AesEncryptionService>();
         services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
+        services.AddSingleton<ITokenGenerator, TokenGenerator>();
+        services.AddScoped<IIpHasher, IpHasher>();
+        services.AddSingleton<IAppSettings, AppSettingsProvider>();
         services.AddScoped<DbSeeder>();
 
         // `/health/ready` DB ulanishini tekshiradi — `ready` tag bilan ajratilib,

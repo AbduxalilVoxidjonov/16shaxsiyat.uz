@@ -1,0 +1,62 @@
+{
+  "app": {
+    "name": "Salohiyat"
+  },
+  "common": {
+    "skipToContent": "Asosiy mazmunga o'tish",
+    "loading": "Yuklanmoqda…",
+    "retry": "Qayta urinish",
+    "close": "Yopish",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "back": "Orqaga",
+    "next": "Keyingi",
+    "search": "Qidiruv",
+    "yes": "Ha",
+    "no": "Yo'q"
+  },
+  "error": {
+    "title": "Xatolik yuz berdi",
+    "generic": "Nimadir noto'g'ri ketdi. Birozdan so'ng qayta urinib ko'ring.",
+    "network": "Internet aloqasi yo'q. Ulanishni tekshirib, qayta urinib ko'ring.",
+    "boundaryTitle": "Sahifada xatolik yuz berdi",
+    "boundaryDescription": "Sahifani qayta yuklab ko'ring. Xatolik davom etsa, administratorga murojaat qiling."
+  },
+  "empty": {
+    "title": "Bu yerda hali hech narsa yo'q",
+    "description": "Ma'lumot paydo bo'lganda shu yerda ko'rinadi."
+  },
+  "nav": {
+    "dashboard": "Boshqaruv paneli",
+    "schools": "Maktablar",
+    "students": "O'quvchilar",
+    "assessments": "Sessiyalar",
+    "catalog": "Testlar katalogi",
+    "ai": "AI sozlamalari",
+    "audit": "Audit jurnali",
+    "settings": "Sozlamalar",
+    "logout": "Chiqish"
+  },
+  "pages": {
+    "placeholderNotice": "Bu sahifa hali qurilmoqda.",
+    "notFoundDescription": "Bunday sahifa mavjud emas.",
+    "landing": { "title": "Maktab sahifasi" },
+    "register": { "title": "Ro'yxatdan o'tish" },
+    "test": { "title": "Test savollari" },
+    "testDone": { "title": "Blok tugadi" },
+    "finish": { "title": "Test yakunlandi" },
+    "result": { "title": "Natija" },
+    "login": { "title": "Tizimga kirish" },
+    "dashboard": { "title": "Boshqaruv paneli" },
+    "schools": { "title": "Maktablar" },
+    "students": { "title": "O'quvchilar" },
+    "studentProfile": { "title": "O'quvchi profili" },
+    "assessments": { "title": "Sessiyalar" },
+    "assessmentDetail": { "title": "Sessiya detali" },
+    "catalog": { "title": "Testlar katalogi" },
+    "ai": { "title": "AI sozlamalari" },
+    "audit": { "title": "Audit jurnali" },
+    "settings": { "title": "Sozlamalar" },
+    "notFound": { "title": "Sahifa topilmadi" }
+  }
+}

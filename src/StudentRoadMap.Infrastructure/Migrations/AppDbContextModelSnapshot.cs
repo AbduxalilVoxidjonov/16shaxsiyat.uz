@@ -1124,6 +1124,28 @@ namespace StudentRoadMap.Infrastructure.Migrations
                     b.ToTable("refresh_tokens", (string)null);
                 });
 
+            modelBuilder.Entity("StudentRoadMap.Domain.Schools.RegistrationCounter", b =>
+                {
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("school_id");
+
+                    b.Property<DateOnly>("DateUtc")
+                        .HasColumnType("date")
+                        .HasColumnName("date_utc");
+
+                    b.Property<int>("Count")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("count");
+
+                    b.HasKey("SchoolId", "DateUtc")
+                        .HasName("pk_registration_counters");
+
+                    b.ToTable("registration_counters", (string)null);
+                });
+
             modelBuilder.Entity("StudentRoadMap.Domain.Schools.School", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1511,6 +1533,16 @@ namespace StudentRoadMap.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_refresh_tokens_admin_users_admin_user_id");
+                });
+
+            modelBuilder.Entity("StudentRoadMap.Domain.Schools.RegistrationCounter", b =>
+                {
+                    b.HasOne("StudentRoadMap.Domain.Schools.School", null)
+                        .WithMany()
+                        .HasForeignKey("SchoolId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_registration_counters_schools_school_id");
                 });
 
             modelBuilder.Entity("StudentRoadMap.Domain.Students.Student", b =>

@@ -4,7 +4,7 @@
 > PM har vazifa boshlanganda va tugaganda **darhol** yangilaydi.
 
 **Loyiha:** Salohiyat (`salohiyat.uz`) · ichki nom `StudentRoadMap`
-**Oxirgi yangilanish:** 2026-08-31 · **Joriy bosqich:** B0 (Poydevor) · **Joriy vazifa:** B2 (P10 — ommaviy sessiya API)
+**Oxirgi yangilanish:** 2026-09-01 · **Joriy bosqich:** B2 (Ommaviy API) · **Joriy vazifa:** P11 ‖ P20
 
 ---
 
@@ -27,7 +27,7 @@
 | P07 | RIASEC savol banki (48) | scoring-psychometrics | ✅ | — | QA: PASS · JSON tayyor |
 | P08 | Aktivlik anketasi (32) | scoring-psychometrics | ✅ | — | QA: PASS · JSON tayyor; shkalalar aralashtirildi |
 | P09 | Scoring engine + oltin testlar | scoring-psychometrics | ✅ | — | **Kritik** · QA: FAIL→PASS · 2 bloklovchi tuzatildi · 127 scoring testi |
-| P10 | Application skeleti + sessiya API | backend-dotnet | ⬜ | — | |
+| P10 | Application skeleti + sessiya API | backend-dotnet | ✅ | — | QA: PASS · 3 endpoint · ForwardedHeaders tuzatildi |
 | P11 | Savol va javob API | backend-dotnet | ⬜ | — | |
 | P12 | Yakunlash va scoring ulash | backend-dotnet | ⬜ | — | |
 | P13 | Auth va JWT | backend-dotnet | ⬜ | — | P19 bilan parallel |
@@ -36,7 +36,7 @@
 | P16 | AI abstraksiya va prompt | ai-integration | ⬜ | — | |
 | P17 | 3 provider (Gemini/OpenAI/Anthropic) | ai-integration | ⬜ | — | Real kalit kerak (§8-1) |
 | P18 | Fon navbati, fallback | ai-integration | ⬜ | — | |
-| P19 | Frontend skeleti | frontend-react | ⬜ | — | |
+| P19 | Frontend skeleti | frontend-react | ✅ | — | QA: PASS · 18 test · Vite qoldiqlari tozalandi |
 | P20 | Ommaviy UI: landing va anketa | frontend-react | ⬜ | — | |
 | P21 | Ommaviy UI: test oqimi, autosave | frontend-react | ⬜ | — | |
 | P22 | Admin skelet va login | frontend-react | ⬜ | — | |
@@ -148,7 +148,29 @@
     yangi Domain metodlariga testlar, `Pbkdf2PasswordHasher` mustahkamlandi (iteratsiya chegarasi).
 - **Hujjatlar yangilandi:** `docs/03` §7.1 (ishonchlilik qoidalarining 5 ta aniqlashtirilishi),
   `docs/08` (PBKDF2-HMACSHA256 210k), `docs/06` §8 (3 yangi qaror).
-- **Keyingi:** B2 — P10 (ommaviy sessiya API) → P11 → P12.
+- **P10 va P19 tugadi, ikkalasi ham QA: PASS.** Jami **419 test yashil**.
+  - P10 QA topilmasi (jiddiy): `UseForwardedHeaders()` yo'q edi. Production'da API Caddy ortida
+    turadi, ya'ni `RemoteIpAddress` har doim proksining manzili — **rate limiting ham, IP audit
+    ham jimgina ishlamay qolardi**. Tuzatildi.
+  - Tuzatish jarayonida ASP.NET Core'ning tuzog'i aniqlandi: `KnownProxies` ni `Clear()` qilib
+    bo'sh qoldirish cheklov qo'ymaydi, **aksincha har qanday manbadan `X-Forwarded-For` ga
+    ishonadi**. Shuning uchun ro'yxat bo'sh bo'lganda `UseForwardedHeaders` **umuman
+    chaqirilmaydi**. Agent buni amaliy probe bilan tasdiqladi va regressiya testi yozdi
+    (middleware'ni o'chirib ko'rib, test qizarishini tekshirgan).
+  - P19 QA: `adminClient` refresh mutex testi haqiqiy, `shared/` `features/` ga bog'lanmaydi,
+    `dangerouslySetInnerHTML` ESLint qoidasi chindan `error` (QA qasddan buzib sinadi).
+
+### 2026-09-01
+- **Loyiha egasi `docs/17-16personalities-tahlili.md` va `CLAUDE.md` 6a-qoidasini qo'shdi:**
+  raqobatchi kontenti (16Personalities/NERIS, MBTI, Keirsey) ishlatilmaydi.
+- **Natijada 16 tip nomi to'liq qayta yozildi.** Eski nomlarning hammasi 16Personalities
+  nomlarining o'zbekcha tarjimasi ekan (Strateg=Architect, Vositachi=Mediator, Konsul=Consul,
+  Qo'mondon=Commander va h.k.). Yangi nomlar: Tayanch, G'amxo'r, Teran, Loyihachi, Chevar,
+  Sezgir, Orzumand, Bilimdon, Sinovchi, Quvnoq, Otashqalb, Yangilikchi, Tuzuvchi, Jonkuyar,
+  Murabbiy, Bunyodkor. Tavsiflardagi eski nom izlari ham tozalandi;
+  `docs/03`, `docs/04`, `docs/07`, `docs/09`, `docs/10`, `docs/11`, `docs/17` va
+  `TypeCatalogEntry.cs` izohi yangi nomlarga moslandi.
+- **Keyingi:** P11 (savol va javob API) ‖ P20 (ommaviy UI — landing va anketa).
 
 ---
 
@@ -164,6 +186,7 @@
 | `ReliabilityInput.Questions` tartibi shartnoma bilan himoyalangan, kod bilan emas | Noto'g'ri tartibda berilsa straight-lining signali **jimgina o'chadi**, hech narsa ushlamaydi | `prompts/12` ga **P12-R1** (aniq LINQ) va **P12-R2** (majburiy regressiya testi) yozildi. Yagona himoya — o'sha test |
 | `ReliabilityCalculator` da dublikat `QuestionId` tekshirilmaydi | Soxta straight-lining hosil qilish mumkin | Kichik; P10–P12 da kirish validatsiyasi bilan birga yopiladi |
 | `SUM` talqin oraliqlari 3+ kasrli belgilansa `pct` bo'shliqqa tushishi mumkin | Superadmin anketasida `SUM_INTERPRETATION_BAND_NOT_FOUND` | P33 nashr validatsiyasida oraliqlar 2 kasr bilan cheklansin |
+| `docs/17` va `CLAUDE.md` 6a — raqobatchi kontenti taqiqi kech kiritildi | `type-catalog.json` dagi 16 tip nomi allaqachon 16Personalities tarjimasi bo'lib yozilgan edi | **Bajarildi (2026-09-01):** hamma nom qayta yozildi. Kelgusida yangi kontent yozilganda 6a-qoida oldindan tekshiriladi |
 | QA topgan 5 ta zaif savol (cross-loading): `MB-Q58` (SN↔JP), `B5-Q36` (O↔E), `B5-Q49` (A↔ish uslubi), `AC-Q15` (SOCA↔SELF), va `MB-Q01`≈`AC-Q27` deyarli bir xil misol | Omillar orasida ortiqcha korrelyatsiya; ball biroz aniqroq bo'lishi mumkin edi | Bloklovchi emas (professional testlarda ham uchraydi). Pilotdan keyin real ma'lumot bilan qayta ko'riladi — `docs/14` 5-bo'lim |
 | EF Core 9.x paketlari net10.0 loyihada (Npgsql EF10 provayderi yo'q) | P03 da runtime muammosi bo'lishi mumkin | P03 boshida DbContext bilan haqiqiy so'rov sinab ko'riladi; provayder chiqqach yangilanadi |
 | `/health` va `/health/ready` hozir bir xil (bog'liqlik tekshiruvi yo'q) | Orkestrator noto'g'ri "ready" deb o'ylashi mumkin | P03 da DB health check qo'shilib, `tag` bo'yicha ajratiladi |

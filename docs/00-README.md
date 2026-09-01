@@ -40,6 +40,7 @@ boshqaradi, har bir o'quvchining individual profilini ko'radi.
 | 14 | [14-yol-xaritasi.md](14-yol-xaritasi.md) | Sprintlar, bosqichlar, Definition of Done | Hamma |
 | 15 | [15-glossariy.md](15-glossariy.md) | Atamalar lug'ati (uz/en) | Hamma |
 | 16 | `16-foydalanuvchi-qollanmasi.md` | Superadmin qo'llanmasi — **P32 promptida yaratiladi** | Superadmin |
+| 17 | [17-16personalities-tahlili.md](17-16personalities-tahlili.md) | 16Personalities tahlili: metodika, UX, biznes modeli, huquqiy chegara va bizga xulosalar | Mahsulot egasi, PM, psixometrika |
 
 ---
 

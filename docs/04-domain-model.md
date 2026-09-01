@@ -203,7 +203,7 @@ va shkala o'zgartirish `DomainException` beradi (BR-8).
 
 **AnswerOption** (faqat `SingleChoice`/`ForcedChoice`): `Id`, `QuestionId`, `TextUz`, `Value`, `Scale?`, `DisplayOrder`.
 
-**TypeCatalog:** `Code` (`INTJ`), `NameUz` ("Strateg"), `ShortDescriptionUz`, `LongDescriptionUz`,
+**TypeCatalog:** `Code` (`INTJ`), `NameUz` ("Loyihachi"), `ShortDescriptionUz`, `LongDescriptionUz`,
 `StrengthsJson`, `GrowthAreasJson`, `CareerHintsJson`.
 
 **CareerMap:** `HollandCode` (2 harf), `FieldNameUz`, `DescriptionUz`, `ExampleProfessionsJson`, `RelevanceOrder`.

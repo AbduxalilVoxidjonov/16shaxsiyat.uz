@@ -3,7 +3,7 @@ using StudentRoadMap.Domain.Common;
 namespace StudentRoadMap.Domain.Catalog;
 
 /// <summary>
-/// Shaxsiyat tipi katalogi (masalan, `INTJ` — "Strateg"). `Code` — jadval kaliti
+/// Shaxsiyat tipi katalogi (masalan, `INTJ` — "Loyihachi"). `Code` — jadval kaliti
 /// (`docs/04` 2.7-bo'lim, `docs/05` `type_catalog`).
 /// </summary>
 public sealed class TypeCatalogEntry : ValueObject

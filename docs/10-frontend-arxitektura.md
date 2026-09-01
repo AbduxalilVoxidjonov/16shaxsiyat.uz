@@ -175,7 +175,7 @@ export const QUERY_KEYS = {
 Tartib:
 1. **Sarlavha:** FISH, maktab, sinf, yosh, holat belgisi, `ReliabilityBadge`, harakat tugmalari
    (PDF, Qayta tahlil, O'chirish).
-2. **Yig'ma kartalar:** tip (`INTJ — Strateg`), `MaturityIndex` gauge, `ActivityIndex` gauge,
+2. **Yig'ma kartalar:** tip (`INTJ — Loyihachi`), `MaturityIndex` gauge, `ActivityIndex` gauge,
    Holland kodi (`IRA`).
 3. **Diagrammalar:** 16 tip o'qlari (4 ta gorizontal bar, markazda 50), Big Five radar,
    RIASEC bar, Aktivlik 4 shkala.

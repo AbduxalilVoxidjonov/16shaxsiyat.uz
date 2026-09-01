@@ -60,6 +60,8 @@ public sealed class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
+    public DbSet<RegistrationCounter> RegistrationCounters => Set<RegistrationCounter>();
+
     // --- IAppDbContext: DbSet<T> emas, IQueryable<T> (PM qarori) ---------------------------
     IQueryable<School> IAppDbContext.Schools => Schools;
 
@@ -93,9 +95,43 @@ public sealed class AppDbContext : DbContext, IAppDbContext
 
     IQueryable<RefreshToken> IAppDbContext.RefreshTokens => RefreshTokens;
 
+    IQueryable<RegistrationCounter> IAppDbContext.RegistrationCounters => RegistrationCounters;
+
+    IQueryable<TEntity> IAppDbContext.AsNoTracking<TEntity>(IQueryable<TEntity> query) => query.AsNoTracking();
+
     void IAppDbContext.Add<TEntity>(TEntity entity) => Set<TEntity>().Add(entity);
 
     void IAppDbContext.Remove<TEntity>(TEntity entity) => Set<TEntity>().Remove(entity);
+
+    async Task<IAppDbContextTransaction> IAppDbContext.BeginTransactionAsync(CancellationToken cancellationToken)
+    {
+        var transaction = await Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        return new EfAppDbContextTransaction(transaction);
+    }
+
+    /// <summary>
+    /// Atomik `INSERT ... ON CONFLICT DO UPDATE ... RETURNING` — Postgres va SQLite (sinov
+    /// muhiti) ikkalasida ham qo'llab-quvvatlanadi (SQLite 3.35+ `RETURNING`, 3.24+ `ON CONFLICT
+    /// DO UPDATE`). `docs/08-auth-va-xavfsizlik.md` 3-bo'lim ruxsati bilan xom SQL — poyga
+    /// holatining oldini olish uchun (izoh: `IAppDbContext.IncrementRegistrationCounterAsync`).
+    /// </summary>
+    async Task<int> IAppDbContext.IncrementRegistrationCounterAsync(Guid schoolId, DateOnly dateUtc, CancellationToken cancellationToken)
+    {
+        var rows = await Database.SqlQueryRaw<int>(
+                """
+                INSERT INTO registration_counters (school_id, date_utc, count)
+                VALUES ({0}, {1}, 1)
+                ON CONFLICT (school_id, date_utc)
+                DO UPDATE SET count = registration_counters.count + 1
+                RETURNING count
+                """,
+                schoolId,
+                dateUtc)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return rows[0];
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

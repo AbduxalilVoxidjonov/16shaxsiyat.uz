@@ -1,20 +1,33 @@
 using System.Reflection;
+using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using StudentRoadMap.Application.Common.Behaviors;
 
 namespace StudentRoadMap.Application;
 
 /// <summary>
-/// `Application` qatlami servislarini DI konteyneriga ro'yxatdan o'tkazadi. Hozircha faqat
-/// MediatR (`IPublisher`/`ISender`) — `AppDbContext.SaveChangesAsync` domen hodisalarini shu
-/// orqali publish qiladi (P03). CQRS pipeline behavior'lari (`ValidationBehavior` va h.k.)
-/// va FluentValidation ro'yxatdan o'tkazish keyingi promptlarda (use-case'lar bilan birga) qo'shiladi.
+/// `Application` qatlami servislarini DI konteyneriga ro'yxatdan o'tkazadi: MediatR
+/// (`IPublisher`/`ISender`), CQRS pipeline behavior'lari (`docs/06-arxitektura.md` 4-bo'lim
+/// — `ValidationBehavior` → `LoggingBehavior` → `TransactionBehavior` tartibida, ya'ni
+/// validatsiya eng birinchi ishga tushadi, tranzaksiya esa handler'ni eng yaqindan o'raydi)
+/// va FluentValidation validatorlari.
 /// </summary>
 public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+        var assembly = Assembly.GetExecutingAssembly();
+
+        services.AddMediatR(cfg =>
+        {
+            cfg.RegisterServicesFromAssembly(assembly);
+            cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+            cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
+            cfg.AddOpenBehavior(typeof(TransactionBehavior<,>));
+        });
+
+        services.AddValidatorsFromAssembly(assembly);
 
         return services;
     }

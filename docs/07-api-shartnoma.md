@@ -176,7 +176,7 @@ O'quvchiga **qisqartirilgan** natija (superadmin sozlamasi yoqilgan bo'lsa).
 **200**
 ```json
 {
-  "personalityType": "INTJ", "typeName": "Strateg",
+  "personalityType": "INTJ", "typeName": "Loyihachi",
   "shortDescription": "Uzoqni ko'zlaydigan, mustaqil rejalashtiruvchi",
   "topStrengths": ["Tahliliy fikrlash", "Mustaqillik", "Maqsadga yo'nalganlik"],
   "careerFields": ["Muhandislik", "IT", "Ilmiy tadqiqot"],
@@ -194,14 +194,20 @@ O'quvchiga **qisqartirilgan** natija (superadmin sozlamasi yoqilgan bo'lsa).
 
 | Metod | Yo'l | Izoh |
 |-------|------|------|
-| POST | `/api/auth/login` | `{username, password, totpCode?}` → `{accessToken, refreshToken, expiresIn, user}` |
-| POST | `/api/auth/refresh` | `{refreshToken}` → yangi juftlik (rotatsiya) |
-| POST | `/api/auth/logout` | Refresh tokenni bekor qiladi |
+| POST | `/api/auth/login` | `{username, password, totpCode?}` → `{accessToken, expiresIn, user}`; refresh token **`httpOnly` cookie** da qaytadi |
+| POST | `/api/auth/refresh` | Tana **bo'sh**; refresh token `httpOnly` cookie'dan o'qiladi → yangi `accessToken` + rotatsiya qilingan cookie |
+| POST | `/api/auth/logout` | Refresh tokenni bekor qiladi va cookie'ni tozalaydi |
 | GET | `/api/auth/me` | Joriy foydalanuvchi |
 | POST | `/api/auth/change-password` | `{currentPassword, newPassword}` |
 | POST | `/api/auth/totp/enable` · `/disable` | 2FA |
 
 5 marta xato parol → 15 daqiqa blok (`LockedUntil`). Login urinishlari `AuditLog` da.
+
+> **Eslatma (P19 da tuzatildi):** avval bu jadvalda `refreshToken` javob tanasida va so'rov
+> tanasida ko'rsatilgan edi — bu `docs/08` bilan ziddiyatda edi (u yerda refresh token
+> `httpOnly` cookie, JS uni hech qachon ko'rmaydi). Xavfsizlik hujjati ustun turadi:
+> refresh token **faqat cookie** orqali yuradi, frontend `credentials: 'include'` bilan
+> so'rov yuboradi. Bu XSS holatida refresh tokenning o'g'irlanishini oldini oladi.
 
 ---
 
@@ -245,7 +251,7 @@ personalityType, maturityIndex, activityLevel, needsAttention, reliabilityFlag, 
   "latestAssessment": {
     "id": "…",
     "results": {
-      "MBTI16": { "resultCode":"INTJ","typeName":"Strateg",
+      "MBTI16": { "resultCode":"INTJ","typeName":"Loyihachi",
         "axes": { "EI":{"pct":28.3,"letter":"I","borderline":false}, "SN":{…},"TF":{…},"JP":{…} },
         "borderlineAxes": [] },
       "BIG5": { "factors": { "O":{"raw":38,"pct":70,"level":"Yuqori"}, "C":{…},"E":{…},"A":{…},"N":{…} },

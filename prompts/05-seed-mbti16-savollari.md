@@ -35,6 +35,9 @@ Seed infratuzilmasi tayyor (P04). Endi birinchi metodikaning savollarini yozamiz
 ## Cheklovlar
 - "MBTI" so'zi hech qayerda ishlatilmasin (`nameUz`: "16 tipli shaxsiyat modeli").
 - Mavjud litsenziyalangan test savollarini nusxalash **taqiqlanadi** — savollar original yozilsin.
+- **16Personalities (`16personalities.com`) sahifasini ochma va undan savol olma.** Uning savollari
+  himoyalangan; tarjima yoki "qayta yozish" ham taqiqlanadi. Tahlil `docs/17` da bor — undan faqat
+  UX va struktura darslari olinadi.
 - `scale` va `direction` maydonlari to'g'ri va izchil bo'lishi kritik — ball shunga bog'liq.
 
 ## DoD
