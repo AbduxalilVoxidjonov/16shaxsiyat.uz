@@ -43,6 +43,11 @@ public static class DependencyInjection
         services.AddSingleton<IAppSettings, AppSettingsProvider>();
         services.AddScoped<DbSeeder>();
 
+        // `prompts/11`: ommaviy katalog keshi (10 daqiqa) va savollarni aralashtirish abstraksiyasi.
+        services.AddMemoryCache();
+        services.AddSingleton<ICacheService, MemoryCacheService>();
+        services.AddSingleton<IQuestionShuffler, RandomQuestionShuffler>();
+
         // `/health/ready` DB ulanishini tekshiradi — `ready` tag bilan ajratilib,
         // Api/Program.cs da alohida endpoint sifatida ochiladi (`/health` esa DB'siz jonlik).
         services.AddHealthChecks()

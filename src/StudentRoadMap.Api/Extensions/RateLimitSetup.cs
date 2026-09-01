@@ -1,6 +1,7 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using StudentRoadMap.Api.Auth;
 using StudentRoadMap.Application.Common.Models;
 
 namespace StudentRoadMap.Api.Extensions;
@@ -16,6 +17,9 @@ public static class RateLimitSetup
 
     /// <summary>`POST /api/public/sessions` — IP bo'yicha 10/soat.</summary>
     public const string PublicStartSession = "PublicStartSession";
+
+    /// <summary>`POST /api/public/.../answers` — SESSIYA bo'yicha (IP emas) 120/daqiqa (`docs/07` 4-bo'lim).</summary>
+    public const string PublicSaveAnswers = "PublicSaveAnswers";
 
     public static IServiceCollection AddRateLimitPolicies(this IServiceCollection services)
     {
@@ -58,6 +62,21 @@ public static class RateLimitSetup
                     Window = TimeSpan.FromHours(1),
                     QueueLimit = 0,
                 }));
+
+            // Sessiya (`X-Session-Token`) bo'yicha bo'linadi — IP emas, chunki bitta maktab
+            // kompyuter sinfida bir nechta o'quvchi bitta IP orqasida bo'lishi mumkin
+            // (`docs/07` 4-bo'lim: "sessiya bo'yicha 120/daqiqa"). Autentifikatsiya (`UseAuthentication`)
+            // `UseRateLimiter`dan KEYIN ishga tushadi (`Program.cs`), shu sabab bu yerda xom
+            // sarlavha qiymati ishlatiladi — token yaroqsiz bo'lsa ham partitsiya kaliti sifatida
+            // yetarli (keyinroq autentifikatsiya 401/410 bilan rad etadi).
+            options.AddPolicy(PublicSaveAnswers, httpContext => RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: GetSessionToken(httpContext),
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 120,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0,
+                }));
         });
 
         return services;
@@ -65,4 +84,9 @@ public static class RateLimitSetup
 
     private static string GetClientIp(HttpContext httpContext) =>
         httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+    private static string GetSessionToken(HttpContext httpContext) =>
+        httpContext.Request.Headers.TryGetValue(SessionTokenAuthenticationHandler.HeaderName, out var value) && !string.IsNullOrWhiteSpace(value)
+            ? value.ToString()
+            : "unknown";
 }

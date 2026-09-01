@@ -5,6 +5,7 @@ using Serilog;
 using StudentRoadMap.Api.Auth;
 using StudentRoadMap.Api.Extensions;
 using StudentRoadMap.Api.Middleware;
+using StudentRoadMap.Api.Swagger;
 using StudentRoadMap.Application;
 using StudentRoadMap.Infrastructure;
 using StudentRoadMap.Infrastructure.Persistence;
@@ -27,7 +28,16 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    // Non-nullable C# xususiyatlari OpenAPI `required` ro'yxatiga tushishi, `T?` bo'lganlari esa
+    // tushmasdan `nullable: true` bo'lib qolishi uchun — `Directory.Build.props`dagi
+    // `Nullable=enable` kompilyator chiqargan NRT metadatasidan foydalanadi. Aks holda barcha
+    // maydonlar ixtiyoriy ko'rinadi va `npm run generate:api` chiqargan TS tiplari haqiqiy
+    // shartnomani aks ettirmaydi (frontend agenti xabari, 2026-09-02).
+    options.SupportNonNullableReferenceTypes();
+    options.SchemaFilter<RequiredNonNullablePropertiesSchemaFilter>();
+});
 
 builder.Services.AddProblemDetails(options =>
 {

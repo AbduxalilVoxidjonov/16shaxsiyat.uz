@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "Salohiyat"
+    "name": "Salohiyat",
+    "tagline": "O'zingni bilib, yo'lingni tanla"
   },
   "common": {
     "skipToContent": "Asosiy mazmunga o'tish",
@@ -40,8 +41,34 @@
   "pages": {
     "placeholderNotice": "Bu sahifa hali qurilmoqda.",
     "notFoundDescription": "Bunday sahifa mavjud emas.",
-    "landing": { "title": "Maktab sahifasi" },
-    "register": { "title": "Ro'yxatdan o'tish" },
+    "landing": {
+      "title": "Maktab sahifasi",
+      "heading": "Sen haqingdagi test",
+      "summary": "{{count}} ta savol · ~{{minutes}} daqiqa vaqt ketadi.",
+      "noRightWrong": "Bu yerda to'g'ri yoki noto'g'ri javob yo'q — faqat senga xos javoblar bor.",
+      "notAGrade": "Bu test baho emas, shuning uchun tashvishlanma.",
+      "startCta": "Boshlash",
+      "resumeNotice": "Sen bu testni allaqachon boshlagansan.",
+      "resumeCta": "Davom ettirish",
+      "notFoundTitle": "Havola ishlamayapti",
+      "notFoundDescription": "Havola ishlamayapti, maktabingizdan yangisini so'rang.",
+      "inactiveTitle": "Test vaqtincha yopilgan",
+      "inactiveDescription": "Bu maktab uchun test vaqtincha yopilgan.",
+      "testMeta": "{{count}} ta savol · ~{{minutes}} daqiqa",
+      "testDescriptions": {
+        "MBTI16": "O'zingga xos fikrlash, muloqot va qaror qabul qilish uslubingni aniqlaydi.",
+        "BIG5": "Xarakteringning 5 asosiy jihatini o'lchaydi.",
+        "RIASEC": "Qanday kasb yo'nalishlari senga ko'proq mos kelishini aniqlaydi.",
+        "ACTIVITY": "O'quv faolligi va motivatsiyangni o'lchaydi."
+      }
+    },
+    "register": {
+      "title": "Ro'yxatdan o'tish",
+      "duplicateAssessment": "Sen allaqachon testni topshirgansan. Qayta topshirish uchun o'qituvchingga murojaat qil.",
+      "rateLimited": "Juda ko'p urinish bo'ldi. Birozdan keyin qayta urinib ko'ring.",
+      "resumedNotice": "Boshlagan testingni davom ettiramiz.",
+      "genericSubmitError": "Yuborishda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
+    },
     "test": { "title": "Test savollari" },
     "testDone": { "title": "Blok tugadi" },
     "finish": { "title": "Test yakunlandi" },
@@ -58,5 +85,47 @@
     "audit": { "title": "Audit jurnali" },
     "settings": { "title": "Sozlamalar" },
     "notFound": { "title": "Sahifa topilmadi" }
+  },
+  "register": {
+    "consentLabel": "Ma'lumotlarim ta'lim maqsadida ishlatilishiga roziman",
+    "submitCta": "Testni boshlash",
+    "fields": {
+      "fullName": "F.I.Sh.",
+      "birthDate": "Tug'ilgan sana",
+      "birthDay": "Tug'ilgan kun",
+      "birthDayPlaceholder": "Kun",
+      "birthMonth": "Tug'ilgan oy",
+      "birthMonthPlaceholder": "Oy",
+      "birthYear": "Tug'ilgan yil",
+      "birthYearPlaceholder": "Yil",
+      "gender": "Jinsi",
+      "grade": "Sinf",
+      "gradePlaceholder": "Tanlang",
+      "classLetter": "Sinf harfi",
+      "phone": "Telefon raqami",
+      "parentPhone": "Ota-ona telefon raqami",
+      "parentPhoneHint": "Ixtiyoriy",
+      "email": "Email",
+      "emailHint": "Ixtiyoriy",
+      "accessCode": "Kirish kodi"
+    },
+    "genderOptions": {
+      "male": "O'g'il bola",
+      "female": "Qiz bola"
+    },
+    "months": {
+      "jan": "Yanvar",
+      "feb": "Fevral",
+      "mar": "Mart",
+      "apr": "Aprel",
+      "may": "May",
+      "jun": "Iyun",
+      "jul": "Iyul",
+      "aug": "Avgust",
+      "sep": "Sentyabr",
+      "oct": "Oktyabr",
+      "nov": "Noyabr",
+      "dec": "Dekabr"
+    }
   }
 }

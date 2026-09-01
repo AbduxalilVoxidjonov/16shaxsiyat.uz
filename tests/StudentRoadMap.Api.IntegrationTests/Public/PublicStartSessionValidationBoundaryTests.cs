@@ -74,7 +74,7 @@ public sealed class PublicStartSessionValidationBoundaryTests : IClassFixture<Pu
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
         problem.GetProperty("code").GetString().Should().Be("VALIDATION_ERROR");
-        problem.GetProperty("errors").TryGetProperty(nameof(StartSessionCommand.FullName), out _).Should().BeTrue();
+        problem.GetProperty("errors").TryGetProperty("fullName", out _).Should().BeTrue();
     }
 
     /// <summary>`StartSessionCommandValidator`: tug'ilgan sana 6-20 yosh oralig'idan tashqarida (5, 21 yosh) — 400.</summary>
@@ -94,7 +94,7 @@ public sealed class PublicStartSessionValidationBoundaryTests : IClassFixture<Pu
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
         problem.GetProperty("code").GetString().Should().Be("VALIDATION_ERROR");
-        problem.GetProperty("errors").TryGetProperty(nameof(StartSessionCommand.BirthDate), out _).Should().BeTrue();
+        problem.GetProperty("errors").TryGetProperty("birthDate", out _).Should().BeTrue();
     }
 
     /// <summary>`StartSessionCommandValidator`: 6 va 20 yosh — chegara qiymatlari RUXSAT ETILGAN (inclusive).</summary>
@@ -130,7 +130,7 @@ public sealed class PublicStartSessionValidationBoundaryTests : IClassFixture<Pu
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
         problem.GetProperty("code").GetString().Should().Be("VALIDATION_ERROR");
-        problem.GetProperty("errors").TryGetProperty(nameof(StartSessionCommand.Grade), out _).Should().BeTrue();
+        problem.GetProperty("errors").TryGetProperty("grade", out _).Should().BeTrue();
     }
 
     /// <summary>`StartSessionCommandValidator`: 1 va 11-sinf — chegara qiymatlari RUXSAT ETILGAN (inclusive).</summary>

@@ -1,0 +1,182 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter, Route, Routes } from 'react-router';
+import LandingPage from './LandingPage';
+import { useSessionStore } from '../store/sessionStore';
+
+const SCHOOL_INFO_BODY = {
+  schoolId: 'school-1',
+  name: '12-son umumiy o\'rta ta\'lim maktabi',
+  region: "Farg'ona",
+  district: "Qo'qon",
+  requiresAccessCode: false,
+  tests: [
+    { code: 'MBTI16', name: '16 tipli shaxsiyat modeli', questionCount: 60, estimatedMinutes: 9, order: 1 },
+    { code: 'BIG5', name: 'Shaxsiyatning 5 omili', questionCount: 50, estimatedMinutes: 8, order: 2 },
+    { code: 'RIASEC', name: 'Kasb qiziqishlari', questionCount: 48, estimatedMinutes: 7, order: 3 },
+    { code: 'ACTIVITY', name: 'Aktivlik va motivatsiya', questionCount: 32, estimatedMinutes: 5, order: 4 },
+  ],
+  totalEstimatedMinutes: 31,
+  consentText: "Farzandimning testdan o'tishiga roziman.",
+};
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  });
+}
+
+function problemResponse(code: string, status: number, title = 'Xato'): Response {
+  return jsonResponse({ code, title, status, type: `https://studentroadmap/errors/${code}` }, status);
+}
+
+function renderLanding(initialPath = '/t/demo-school?k=tok123') {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[initialPath]}>
+        <Routes>
+          <Route path="/t/:slug" element={<LandingPage />} />
+          <Route path="/t/:slug/register" element={<div>REGISTER_STUB</div>} />
+          <Route path="/t/:slug/test/:testCode" element={<div>TEST_STUB</div>} />
+          <Route path="/t/:slug/finish" element={<div>FINISH_STUB</div>} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
+
+describe('LandingPage', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useSessionStore.getState().clear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorage.clear();
+    useSessionStore.getState().clear();
+  });
+
+  it("maktab ma'lumotini yuklab, sarlavha, 4 ta test kartasi va Boshlash tugmasini ko'rsatadi", async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(SCHOOL_INFO_BODY)));
+
+    renderLanding();
+
+    expect(await screen.findByText(SCHOOL_INFO_BODY.name)).toBeInTheDocument();
+    expect(screen.getByText('16 tipli shaxsiyat modeli')).toBeInTheDocument();
+    expect(screen.getByText('Shaxsiyatning 5 omili')).toBeInTheDocument();
+    expect(screen.getByText('Kasb qiziqishlari')).toBeInTheDocument();
+    expect(screen.getByText('Aktivlik va motivatsiya')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Boshlash' })).toBeInTheDocument();
+  });
+
+  it("so'rov to'g'ri manzil va query bilan yuboriladi (k parametri)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(SCHOOL_INFO_BODY));
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderLanding('/t/demo-school?k=tok123');
+    await screen.findByText(SCHOOL_INFO_BODY.name);
+
+    const [url] = fetchMock.mock.calls[0] as [string];
+    expect(url).toContain('/api/public/schools/demo-school');
+    expect(url).toContain('k=tok123');
+  });
+
+  it("404 (havola noto'g'ri) bo'lsa tushunarli xabar ko'rsatadi", async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(problemResponse('NOT_FOUND', 404)));
+
+    renderLanding();
+
+    expect(await screen.findByText('Havola ishlamayapti')).toBeInTheDocument();
+    expect(
+      screen.getByText("Havola ishlamayapti, maktabingizdan yangisini so'rang."),
+    ).toBeInTheDocument();
+  });
+
+  it("410 (maktab nofaol) bo'lsa tegishli xabar ko'rsatadi", async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(problemResponse('SCHOOL_INACTIVE', 410)));
+
+    renderLanding();
+
+    expect(await screen.findByText('Test vaqtincha yopilgan')).toBeInTheDocument();
+    expect(screen.getByText('Bu maktab uchun test vaqtincha yopilgan.')).toBeInTheDocument();
+  });
+
+  it("kutilmagan (masalan 500) xatoda umumiy xato holati va qayta urinish tugmasi chiqadi", async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(problemResponse('INTERNAL_ERROR', 500)));
+
+    renderLanding();
+
+    expect(await screen.findByRole('button', { name: 'Qayta urinish' })).toBeInTheDocument();
+  });
+
+  it("'Boshlash' bosilganda k parametri saqlangan holda ro'yxatdan o'tish sahifasiga o'tadi", async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(SCHOOL_INFO_BODY)));
+    const user = userEvent.setup();
+
+    renderLanding();
+    await user.click(await screen.findByRole('button', { name: 'Boshlash' }));
+
+    expect(await screen.findByText('REGISTER_STUB')).toBeInTheDocument();
+  });
+
+  it("saqlangan sessiya shu maktabga tegishli va hali faol bo'lsa 'Davom ettirish' tugmasini ko'rsatadi", async () => {
+    useSessionStore.getState().setSession('sess-token-1', 'demo-school', 'assessment-1');
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes('/api/public/sessions/me')) {
+          return Promise.resolve(
+            jsonResponse({
+              assessmentId: 'assessment-1',
+              status: 'InProgress',
+              student: { firstNameShort: 'Sardor', grade: 9 },
+              expiresAt: '2026-09-10T00:00:00Z',
+              currentTestCode: 'BIG5',
+              tests: [],
+              progressPercent: 25,
+            }),
+          );
+        }
+        return Promise.resolve(jsonResponse(SCHOOL_INFO_BODY));
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderLanding();
+
+    const resumeButton = await screen.findByRole('button', { name: 'Davom ettirish' });
+    await user.click(resumeButton);
+
+    expect(await screen.findByText('TEST_STUB')).toBeInTheDocument();
+  });
+
+  it("saqlangan sessiya muddati tugagan bo'lsa (410) sessionStore tozalanadi", async () => {
+    useSessionStore.getState().setSession('expired-token', 'demo-school', 'assessment-1');
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes('/api/public/sessions/me')) {
+          return Promise.resolve(problemResponse('SESSION_EXPIRED', 410));
+        }
+        return Promise.resolve(jsonResponse(SCHOOL_INFO_BODY));
+      }),
+    );
+
+    renderLanding();
+    await screen.findByText(SCHOOL_INFO_BODY.name);
+
+    await waitFor(() => {
+      expect(useSessionStore.getState().sessionToken).toBeNull();
+    });
+    expect(screen.queryByRole('button', { name: 'Davom ettirish' })).not.toBeInTheDocument();
+  });
+});

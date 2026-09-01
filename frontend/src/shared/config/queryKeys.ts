@@ -4,4 +4,9 @@
  */
 export const QUERY_KEYS = {
   // Misol: schools: (f: SchoolFilters) => ['schools', f] as const,
+  /** `docs/07` 1.1-bo'lim — `features/public-assessment/api/useSchoolInfo.ts`. */
+  publicSchoolInfo: (slug: string, accessToken: string) =>
+    ['public', 'school-info', slug, accessToken] as const,
+  /** `docs/07` 1.3-bo'lim — `features/public-assessment/api/useSessionState.ts`. */
+  publicSessionMe: () => ['public', 'session-me'] as const,
 } as const;

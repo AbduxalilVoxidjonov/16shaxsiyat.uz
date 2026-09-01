@@ -37,26 +37,45 @@ Skript `openapi-typescript` bilan backend swagger sxemasidan
 (`docs/10-frontend-arxitektura.md`, 6-bo'lim):
 
 ```
-openapi-typescript http://localhost:5000/swagger/v1/swagger.json -o src/shared/api/schema.d.ts
+openapi-typescript ${API_URL:-http://localhost:5402}/swagger/v1/swagger.json -o src/shared/api/schema.d.ts
 ```
 
-**P19 (frontend skelet) bosqichida bu skript ishga tushirilmagan.** Backend ommaviy
-API endpointlari (`prompts/10`–`12`) shu paytda parallel yozilmoqda va swagger sxemasi
-deyarli bo'sh/beqaror. Shuning uchun:
+Manzil `API_URL` muhit o'zgaruvchisi bilan sozlanadi (standart — `http://localhost:5402`).
+Ba'zi muhitlarda (masalan bu loyihaning sandbox CI konteyneri) `5000` porti bloklangan
+(`403 Forbidden` chiqadi) — shu sabab standart port `5402`ga o'zgartirilgan (`prompts/20`,
+P20 hisoboti). Boshqa port/host kerak bo'lsa:
 
-- `src/shared/api/schema.d.ts` hali mavjud emas.
-- `src/shared/api/types.ts` faqat transport qatlami uchun umumiy tiplarni saqlaydi
-  (`ProblemDetails`, `PagedResult<T>`) — bular generatsiyaga bog'liq emas.
-- Featurelar hali biznes DTO tiplarini import qilmaydi (chunki featurelar hali skelet).
+```bash
+API_URL=http://localhost:5000 npm run generate:api
+```
 
-**P20 da** (backend tayyor bo'lgach) quyidagilar bajariladi:
+**Backend Swagger faqat `Development`/`Staging`da ochiq** (`docs/07`, 4-bo'lim) — lokal ishga
+tushirishda `ASPNETCORE_ENVIRONMENT=Development` va (DB'ga haqiqiy ulanish shart emas, faqat
+`DbContext` ro'yxatdan o'tishi uchun) `ConnectionStrings__Postgres` beriladi:
 
-1. Backend ishga tushiriladi (`dotnet run --project src/StudentRoadMap.Api`).
-2. `npm run generate:api` ishga tushiriladi — `schema.d.ts` yaratiladi/yangilanadi.
-3. `schema.d.ts` git'ga commit qilinadi; CI'da generatsiya natijasi bilan farq
-   qilsa build yiqiladi (kontrakt eskirganini erta ko'rish uchun — docs/10, 6-bo'lim).
-4. Qo'lda yozilgan DTO tipiga ruxsat yo'q — faqat `schema.d.ts`dan generatsiya yoki
-   `types.ts` orqali re-export.
+```bash
+ConnectionStrings__Postgres="Host=localhost;Port=5432;Database=srm;Username=srm;Password=x" ASPNETCORE_ENVIRONMENT=Development dotnet run --project ../src/StudentRoadMap.Api --no-launch-profile --urls http://localhost:5402
+# boshqa terminalda:
+npm run generate:api
+# tugagach backend'ni to'xtating (Ctrl+C yoki tegishli process'ni o'ldiring).
+```
+
+**P20'dan boshlab** (`PublicSessionController`ga `[ProducesResponseType]` qo'shilgach,
+backend tuzatildi) generatsiya barcha 6 ommaviy endpoint uchun **to'liq** ishlaydi — so'rov
+VA javob sxemalari, shu jumladan xato holatlari. Qoidalar:
+
+- `src/shared/api/schema.d.ts` git'ga commit qilinadi; CI'da generatsiya natijasi bilan farq
+  qilsa build yiqiladi (kontrakt eskirganini erta ko'rish uchun — docs/10, 6-bo'lim).
+- Qo'lda yozilgan biznes DTO tipiga ruxsat yo'q — faqat `schema.d.ts`dan generatsiya yoki
+  `types.ts` orqali re-export (`ProblemDetails`/`PagedResult<T>` kabi sof transport
+  tiplaridan tashqari — ular generatsiyaga bog'liq emas, `types.ts`da qo'lda qoladi).
+- **Majburiy va ixtiyoriy maydonlar to'g'ri ajratilgan.** Backend'da
+  `SupportNonNullableReferenceTypes()` va `RequiredNonNullablePropertiesSchemaFilter` yoqilgan,
+  shuning uchun `schema.d.ts` da non-nullable C# xususiyatlari majburiy, `T?` bo'lganlari esa
+  ixtiyoriy (`?` + `| null`) bo'lib chiqadi. Demak majburiy maydonlarda `?? ''`/`?? []`
+  himoyasi **yozilmaydi** — u tip xavfsizligini yo'q qiladi va haqiqiy `null` xatosini yashiradi.
+  Null-ishlash faqat chindan ixtiyoriy maydonlarda: `accessCode`, `classLetter`, `parentPhone`,
+  `email`, `languageCode`, `currentTestCode`, `scaleLabels`, `options`, `currentValue`.
 
 ## Muhim arxitektura qoidalari (qisqacha — to'liq: `docs/10`)
 

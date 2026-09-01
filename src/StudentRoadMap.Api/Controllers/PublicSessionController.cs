@@ -8,14 +8,24 @@ using StudentRoadMap.Api.Contracts.Public;
 using StudentRoadMap.Api.Extensions;
 using StudentRoadMap.Application.Public.GetSchoolInfo;
 using StudentRoadMap.Application.Public.GetSession;
+using StudentRoadMap.Application.Public.GetTestQuestions;
+using StudentRoadMap.Application.Public.SaveAnswers;
 using StudentRoadMap.Application.Public.StartSession;
+using StudentRoadMap.Application.Public.StartTest;
 
 namespace StudentRoadMap.Api.Controllers;
 
 /// <summary>
 /// O'quvchi (ommaviy) oqimi — maktab havolasini tekshirish, sessiya ochish, sessiya holatini
-/// o'qish (`docs/07-api-shartnoma.md` 1.1–1.3-bo'lim, `prompts/10`). Boshqa endpointlar
-/// (savollar, javob saqlash, testni yakunlash) keyingi promptlarda qo'shiladi.
+/// o'qish (`docs/07-api-shartnoma.md` 1.1–1.3-bo'lim, `prompts/10`), test boshlash, savollarni
+/// olish va javoblarni saqlash (`docs/07` 1.4–1.6-bo'lim, `prompts/11`). Testni yakunlash
+/// (1.7/1.8/1.9) keyingi promptlarda qo'shiladi.
+///
+/// **Swagger javob sxemalari:** har endpoint `ActionResult&lt;T&gt;` qaytaradi va
+/// `[ProducesResponseType]` bilan HAQIQIY (handler kodidan tekshirilgan) status kodlari
+/// e'lon qilinadi — muvaffaqiyat DTO tipi bilan, xatolar `ProblemDetails` (`application/problem+json`)
+/// bilan. Bu shunchaki hujjat emas: `npm run generate:api` shu sxemalardan TS tiplarini chiqaradi
+/// (`PM.md` §9 sifat darvozasi #4) — sxema bo'lmasa generatsiya qilingan tiplar bo'sh qoladi.
 /// </summary>
 [ApiController]
 [Route("api/public")]
@@ -31,7 +41,11 @@ public sealed class PublicSessionController : ControllerBase
     /// <summary>`GET /api/public/schools/{slug}?k={accessToken}` — `docs/07` 1.1-bo'lim.</summary>
     [HttpGet("schools/{slug}")]
     [EnableRateLimiting(RateLimitSetup.PublicSchoolInfo)]
-    public async Task<IActionResult> GetSchoolInfo(string slug, [FromQuery(Name = "k")] string? k, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(GetSchoolInfoResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status410Gone, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests, "application/problem+json")]
+    public async Task<ActionResult<GetSchoolInfoResult>> GetSchoolInfo(string slug, [FromQuery(Name = "k")] string? k, CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetSchoolInfoQuery(slug, k ?? string.Empty), cancellationToken).ConfigureAwait(false);
 
@@ -46,7 +60,14 @@ public sealed class PublicSessionController : ControllerBase
     /// </summary>
     [HttpPost("sessions")]
     [EnableRateLimiting(RateLimitSetup.PublicStartSession)]
-    public async Task<IActionResult> StartSession([FromBody] StartSessionRequest request, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(StartSessionResult), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(StartSessionResult), StatusCodes.Status200OK, "application/json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status410Gone, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests, "application/problem+json")]
+    public async Task<ActionResult<StartSessionResult>> StartSession([FromBody] StartSessionRequest request, CancellationToken cancellationToken)
     {
         var command = request.ToCommand(
             HttpContext.Connection.RemoteIpAddress?.ToString(),
@@ -60,7 +81,8 @@ public sealed class PublicSessionController : ControllerBase
 
         // Yangi sessiya — 201 Created; mavjud tugallanmagan sessiya davom ettirilsa — 200 OK
         // (`docs/07` 1.2 faqat "201"ni ko'rsatadi, lekin `resumed: true` holati yangi resurs
-        // yaratmaydi — REST semantikasiga ko'ra 200 tanlandi; PM'ga savol).
+        // yaratmaydi — REST semantikasiga ko'ra 200 tanlandi; PM'ga savol, `docs/06` §8 da
+        // ikkalasi ham qonuniy deb tasdiqlandi).
         return result.Value.Resumed
             ? Ok(result.Value)
             : StatusCode(StatusCodes.Status201Created, result.Value);
@@ -69,13 +91,81 @@ public sealed class PublicSessionController : ControllerBase
     /// <summary>`GET /api/public/sessions/me` — `docs/07` 1.3-bo'lim. `X-Session-Token` bo'yicha holatni tiklaydi.</summary>
     [HttpGet("sessions/me")]
     [Authorize(AuthenticationSchemes = SessionTokenAuthenticationHandler.SchemeName)]
-    public async Task<IActionResult> GetSessionState(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(GetSessionStateResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status410Gone, "application/problem+json")]
+    public async Task<ActionResult<GetSessionStateResult>> GetSessionState(CancellationToken cancellationToken)
     {
         // `assessmentId` URL/tanadan emas — `SessionTokenAuthenticationHandler` autentifikatsiya
         // paytida `HttpContext.Items`ga qo'ygan (IDOR himoyasi, `CLAUDE.md` 8-qoida).
         var assessmentId = (Guid)HttpContext.Items["AssessmentId"]!;
 
         var result = await _sender.Send(new GetSessionStateQuery(assessmentId), cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>
+    /// `POST /api/public/sessions/tests/{testCode}/start` — `docs/07` 1.4-bo'lim. Testni
+    /// boshlaydi (aralashtirish tartibi shu yerda bir martalik qat'iylashadi).
+    /// </summary>
+    [HttpPost("sessions/tests/{testCode}/start")]
+    [Authorize(AuthenticationSchemes = SessionTokenAuthenticationHandler.SchemeName)]
+    [ProducesResponseType(typeof(StartTestResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status410Gone, "application/problem+json")]
+    public async Task<ActionResult<StartTestResult>> StartTest(string testCode, CancellationToken cancellationToken)
+    {
+        var assessmentId = (Guid)HttpContext.Items["AssessmentId"]!;
+
+        var result = await _sender.Send(new StartTestCommand(assessmentId, testCode), cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>`GET /api/public/sessions/tests/{testCode}/questions?page=1` — `docs/07` 1.5-bo'lim.</summary>
+    [HttpGet("sessions/tests/{testCode}/questions")]
+    [Authorize(AuthenticationSchemes = SessionTokenAuthenticationHandler.SchemeName)]
+    [ProducesResponseType(typeof(GetTestQuestionsResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status410Gone, "application/problem+json")]
+    public async Task<ActionResult<GetTestQuestionsResult>> GetTestQuestions(string testCode, [FromQuery] int page, CancellationToken cancellationToken)
+    {
+        var assessmentId = (Guid)HttpContext.Items["AssessmentId"]!;
+
+        // `page` berilmasa (query'da yo'q) `int` default'i `0` — validator `GreaterThanOrEqualTo(1)`
+        // bilan `400 VALIDATION_ERROR` qaytaradi (docs'da default qiymat ko'rsatilmagan, birinchi
+        // sahifani sukut bo'yicha taxmin qilish o'rniga aniq xato afzal — PM'ga savol).
+        var result = await _sender.Send(new GetTestQuestionsQuery(assessmentId, testCode, page), cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>
+    /// `POST /api/public/sessions/tests/{testCode}/answers` — `docs/07` 1.6-bo'lim. Paketli,
+    /// idempotent saqlash (autosave).
+    /// </summary>
+    [HttpPost("sessions/tests/{testCode}/answers")]
+    [Authorize(AuthenticationSchemes = SessionTokenAuthenticationHandler.SchemeName)]
+    [EnableRateLimiting(RateLimitSetup.PublicSaveAnswers)]
+    [ProducesResponseType(typeof(SaveAnswersResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status410Gone, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests, "application/problem+json")]
+    public async Task<ActionResult<SaveAnswersResult>> SaveAnswers(string testCode, [FromBody] SaveAnswersRequest request, CancellationToken cancellationToken)
+    {
+        var assessmentId = (Guid)HttpContext.Items["AssessmentId"]!;
+
+        var command = request.ToCommand(assessmentId, testCode);
+        var result = await _sender.Send(command, cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
     }

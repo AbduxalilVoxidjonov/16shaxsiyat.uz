@@ -3,6 +3,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using StudentRoadMap.Application.Common.Behaviors;
+using StudentRoadMap.Application.Public.Common;
 
 namespace StudentRoadMap.Application;
 
@@ -28,6 +29,9 @@ public static class DependencyInjection
         });
 
         services.AddValidatorsFromAssembly(assembly);
+
+        // `prompts/11`: ommaviy katalog keshi — `StartTest`/`GetTestQuestions` ikkalasi ham ishlatadi.
+        services.AddScoped<PublicCatalogCache>();
 
         return services;
     }

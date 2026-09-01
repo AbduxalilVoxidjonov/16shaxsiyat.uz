@@ -45,7 +45,9 @@ internal static class TestDataFactory
         DateTimeOffset now,
         string code,
         int displayOrder,
-        int questionCount = 2)
+        int questionCount = 2,
+        int pageSize = 10,
+        bool shuffleQuestions = false)
     {
         var testId = Guid.NewGuid();
         var test = TestDefinition.Create(
@@ -55,7 +57,9 @@ internal static class TestDataFactory
             displayOrder,
             estimatedMinutes: 5,
             scoringStrategyCode: "SUM",
-            now: now);
+            now: now,
+            pageSize: pageSize,
+            shuffleQuestions: shuffleQuestions);
 
         for (var i = 1; i <= questionCount; i++)
         {

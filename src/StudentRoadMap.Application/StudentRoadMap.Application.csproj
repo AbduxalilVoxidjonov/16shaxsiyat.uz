@@ -10,4 +10,12 @@
     <ProjectReference Include="..\StudentRoadMap.Domain\StudentRoadMap.Domain.csproj" />
   </ItemGroup>
 
+  <!-- `internal` sinflar (masalan `PublicCatalogCache`) faqat sinov sborkalariga ochiladi —
+       QA/integratsiya testlari kesh kaliti (`QuestionsCacheKey`) til bo'yicha to'g'ri
+       ajratilganini to'g'ridan-to'g'ri tekshirishi uchun (2026-09-02). -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="StudentRoadMap.Api.IntegrationTests" />
+    <InternalsVisibleTo Include="StudentRoadMap.Application.Tests" />
+  </ItemGroup>
+
 </Project>

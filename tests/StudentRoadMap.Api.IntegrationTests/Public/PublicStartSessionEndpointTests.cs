@@ -192,22 +192,49 @@ public sealed class PublicStartSessionEndpointTests : IClassFixture<PublicApiTes
         problem.GetProperty("code").GetString().Should().Be("RATE_LIMITED");
     }
 
+    /// <summary>
+    /// PM qarori (2026-09-02): `errors` lug'ati kalitlari qolgan API bilan bir xil camelCase
+    /// bo'lishi kerak (`ExceptionHandlingMiddleware`/`ValidationException` `JsonNamingPolicy.CamelCase`
+    /// bilan o'giradi) — PascalCase (`FullName`, `BirthDate`...) EMAS. Bir vaqtning o'zida bir
+    /// nechta maydon (`fullName`, `phone`, `birthDate`, `grade`, `consentAccepted`) noto'g'ri
+    /// bo'lganda barcha kalitlar camelCase ekanini shu bitta so'rovda tekshiradi (`PublicStartSession`
+    /// IP bo'yicha 10/soat limit — sinf ichida qo'shimcha `/sessions` chaqiruvi qo'shmaslik uchun
+    /// ataylab MAVJUD testga birlashtirilgan, alohida test emas).
+    /// </summary>
     [Fact]
-    public async Task StartSession_RozilikBerilmasa_400VaValidationErrorQaytaradi()
+    public async Task StartSession_RozilikBerilmasa_400VaErrorsKalitlariCamelCaseQaytaradi()
     {
         var (school, token) = await SeedSchoolAsync("invalid1");
         using var client = _factory.CreateClient();
 
-        var command = ValidCommand(school.Slug.Value, token, "Test Foydalanuvchi Familiyasi", new DateOnly(2010, 1, 1))
+        var command = ValidCommand(school.Slug.Value, token, "Ali", new DateOnly(1990, 1, 1))
             with
-        { ConsentAccepted = false };
+        {
+            FullName = "Ali", // 5 belgidan kam
+            Phone = "12345", // noto'g'ri format
+            Grade = 0, // chegaradan tashqarida
+            ConsentAccepted = false,
+        };
 
         var response = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
         problem.GetProperty("code").GetString().Should().Be("VALIDATION_ERROR");
-        problem.GetProperty("errors").TryGetProperty(nameof(StartSessionCommand.ConsentAccepted), out _).Should().BeTrue();
+
+        var errors = problem.GetProperty("errors");
+        errors.TryGetProperty("fullName", out _).Should().BeTrue();
+        errors.TryGetProperty("phone", out _).Should().BeTrue();
+        errors.TryGetProperty("birthDate", out _).Should().BeTrue();
+        errors.TryGetProperty("grade", out _).Should().BeTrue();
+        errors.TryGetProperty("consentAccepted", out _).Should().BeTrue();
+
+        // Eski (buzilgan) PascalCase kalitlar ENDI bo'lmasligi kerak.
+        errors.TryGetProperty("FullName", out _).Should().BeFalse();
+        errors.TryGetProperty("Phone", out _).Should().BeFalse();
+        errors.TryGetProperty("BirthDate", out _).Should().BeFalse();
+        errors.TryGetProperty("Grade", out _).Should().BeFalse();
+        errors.TryGetProperty("ConsentAccepted", out _).Should().BeFalse();
     }
 
     [Fact]
