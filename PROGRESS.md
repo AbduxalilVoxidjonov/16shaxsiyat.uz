@@ -4,7 +4,7 @@
 > PM har vazifa boshlanganda va tugaganda **darhol** yangilaydi.
 
 **Loyiha:** Salohiyat (`salohiyat.uz`) · ichki nom `StudentRoadMap`
-**Oxirgi yangilanish:** 2026-09-02 · **Joriy bosqich:** B3 (Admin API) ‖ B6 (Admin UI) · **Joriy vazifa:** P15 ‖ P24
+**Oxirgi yangilanish:** 2026-09-02 · **Joriy bosqich:** B4 (AI modul) ‖ B6 (Admin UI) · **Joriy vazifa:** P16 (AI) ‖ P25 (individual profil)
 
 ---
 
@@ -32,7 +32,7 @@
 | P12 | Yakunlash va scoring ulash | backend-dotnet | ✅ | — | QA: PASS · P12-R1/R2 mutatsiya sinovidan o'tdi |
 | P13 | Auth va JWT | backend-dotnet | ✅ | — | QA: PASS · TOTP poyga holati tuzatildi |
 | P14 | Maktab va o'quvchi admin API | backend-dotnet | ✅ | — | QA: PASS · xotirada saralash tuzatildi |
-| P15 | Sessiya va dashboard API | backend-dotnet | ⬜ | — | |
+| P15 | Sessiya va dashboard API | backend-dotnet | ✅ | — | QA: FAIL→PASS · kesh bloklovchisi tuzatildi |
 | P16 | AI abstraksiya va prompt | ai-integration | ⬜ | — | |
 | P17 | 3 provider (Gemini/OpenAI/Anthropic) | ai-integration | ⬜ | — | Real kalit kerak (§8-1) |
 | P18 | Fon navbati, fallback | ai-integration | ⬜ | — | |
@@ -41,7 +41,7 @@
 | P21 | Ommaviy UI: test oqimi, autosave | frontend-react | ✅ | — | QA: PASS · 127 test · javob yo'qolmasligi qulflangan |
 | P22 | Admin skelet va login | frontend-react | ✅ | — | QA: PASS · 171 test · DataTable qayta ishlatiladi |
 | P23 | Admin: maktablar va havolalar | frontend-react | ✅ | — | QA: PASS · 183 test · QR, havola, drawer |
-| P24 | Admin: o'quvchilar ro'yxati | frontend-react | ⬜ | — | |
+| P24 | Admin: o'quvchilar ro'yxati | frontend-react | ✅ | — | QA: PASS · 200 test |
 | P25 | Individual profil sahifasi | frontend-react | ⬜ | — | **Asosiy ekran** |
 | P26 | Diagramma widgetlari | frontend-react | ⬜ | — | |
 | P27 | Excel va PDF eksport | backend-dotnet | ⬜ | — | P28, P29 bilan parallel |
@@ -225,7 +225,19 @@
     P13 dan beri hech bir admin endpointda yo'q edi.
   - QA topgan ikki test bo'shlig'i yopildi: hard delete allaqachon soft-o'chirilgan sessiyani
     ham tozalashi, va IDOR regressiyasi (o'quvchi tokeni admin endpointida ishlamasligi).
-- **Keyingi:** P15 (sessiya va dashboard API) ‖ P24 (admin: o'quvchilar ro'yxati).
+- **P15 va P24 tugadi.** Backend **575 test, 0 Skip**, frontend **200 test**.
+  - **QA FAIL bergan bloklovchi:** dashboard keshi parametrsiz chaqiruvda (ya'ni odatiy
+    yuklanishda) **hech qachon ishlamasdi** — `to = UtcNow` tik aniqligida kalitga kirardi.
+    Mavjud kesh testi buni sezmasdi, chunki ikkala chaqiruvda `from`/`to` ni qotirib berardi.
+    QA buni empirik isbotladi. Tuzatildi; yangi test eski kodda **qizarishi** tekshirilgan.
+  - **Sinov muhiti cheklovi butunlay yopildi:** SQLite `DateTimeOffset` bo'yicha na `ORDER BY`,
+    na `WHERE` ni tarjima qila olmasligi aniqlandi — ya'ni P14 dagi sana filtrlari hech qachon
+    sinalmagan ekan. Value converter qo'shildi (faqat SQLite'da), **`Skip` soni 8 dan 0 ga tushdi**.
+    Yo'l-yo'lakay haqiqiy xato topildi: xom SQL konverterni chetlab o'tadi
+    (`TryMarkTotpBackupCodeUsedAsync` — P13 dagi TOTP himoyasi).
+  - `Changed` bayrog'i endi to'liq payload bo'yicha solishtiriladi; yangi test eski kodda
+    qizarishi tasdiqlangan.
+- **Keyingi:** B4 boshlanadi — P16 (AI abstraksiya va prompt) ‖ P25 (individual profil sahifasi).
 
 ---
 
@@ -243,7 +255,7 @@
 | `SUM` talqin oraliqlari 3+ kasrli belgilansa `pct` bo'shliqqa tushishi mumkin | Superadmin anketasida `SUM_INTERPRETATION_BAND_NOT_FOUND` | P33 nashr validatsiyasida oraliqlar 2 kasr bilan cheklansin |
 | `docs/17` va `CLAUDE.md` 6a — raqobatchi kontenti taqiqi kech kiritildi | `type-catalog.json` dagi 16 tip nomi allaqachon 16Personalities tarjimasi bo'lib yozilgan edi | **Bajarildi (2026-09-01):** hamma nom qayta yozildi. Kelgusida yangi kontent yozilganda 6a-qoida oldindan tekshiriladi |
 | `lastAssessmentStatus`/`reliabilityFlag` snapshot ustun emas — sahifa uchun alohida batch so'rov | Bitta qo'shimcha so'rov (N+1 emas), lekin ADR-11 ruhiga to'liq mos emas | P15 (dashboard) da o'lchov asosida snapshot ustunga ko'chirish qaroriga qaytamiz |
-| 3 ta test SQLite `DateTimeOffset ORDER BY` cheklovi sababli `Skip` | Saralash faqat Postgres'da sinaladi | P30 (E2E) da Testcontainers/Postgres bilan yopiladi |
+| ~~3 ta test SQLite `DateTimeOffset` cheklovi sababli `Skip`~~ — **yopildi (P15)**: sinov muhitiga value converter qo'shildi, `Skip` soni **0** | Saralash faqat Postgres'da sinaladi | P30 (E2E) da Testcontainers/Postgres bilan yopiladi |
 | `frontend` da `sessionStore.testCatalog` hamon bor (backend endi `name`/`estimatedMinutes` beradi) | Ikki manba — kelajakda nomuvofiqlik | Kichik tozalash: `testCatalog` olib tashlanib, nom `GET /sessions/me` dan olinsin. P22 bilan birga |
 | 390px/1440px real brauzer vizual tekshiruvi hech bir ekranda qilinmagan | Gorizontal scroll yoki konsol xatosi sezilmay qolishi mumkin | Chrome MCP kengaytmasi ulanmagan; subagent uni ocholmaydi. Egasi yoqsa P21 dan boshlab tekshiriladi, aks holda P30 (E2E) da Playwright bilan |
 | `429` javobida `retry-after` yo'q | Foydalanuvchi qancha kutishni bilmaydi | P31 (mustahkamlash) da `ProblemDetails` ga qo'shiladi |

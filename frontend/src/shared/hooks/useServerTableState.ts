@@ -26,9 +26,26 @@ export interface UseServerTableStateResult extends ServerTableState {
   setSort: (sort: DataTableSort) => void;
 }
 
+/**
+ * `pageSize`ning yuqori chegarasi — docs/07-api-shartnoma.md, 4-bo'lim ("Umumiy
+ * konvensiyalar — Pagination"): "`pageSize` max 100"; CLAUDE.md / `prompts/24`:
+ * "`pageSize` ≤ 100 ... har filtr o'zgarganda page=1 ga qaytish". Backend ham buni
+ * o'zi normallashtiradi (`AdminPagingOptions.Normalize`) — xavfsizlik teshigi emas,
+ * lekin front o'z tomonidan ham kafolatlashi kerak: aks holda `?pageSize=5000` kabi
+ * URL bilan front 5000 so'rab, serverdan 100 ta qator olib, sahifalash hisobini
+ * (`totalPages`, "keyingi sahifa" tugmasi) noto'g'ri ko'rsatib qo'yishi mumkin.
+ */
+export const MAX_PAGE_SIZE = 100;
+
 function parsePositiveInt(value: string | null, fallback: number): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? Math.trunc(parsed) : fallback;
+}
+
+/** `parsePositiveInt` + `[1, MAX_PAGE_SIZE]` oralig'iga qisish (URL'dan kelgan qiymat ham). */
+function parsePageSize(value: string | null, fallback: number): number {
+  const parsed = parsePositiveInt(value, fallback);
+  return Math.min(parsed, MAX_PAGE_SIZE);
 }
 
 /**
@@ -48,7 +65,7 @@ export function useServerTableState(
   const [searchParams, setSearchParams] = useSearchParams();
 
   const page = parsePositiveInt(searchParams.get('page'), 1);
-  const pageSize = parsePositiveInt(searchParams.get('pageSize'), defaultPageSize);
+  const pageSize = parsePageSize(searchParams.get('pageSize'), defaultPageSize);
 
   const sortColumnId = searchParams.get('sort');
   const sort: DataTableSort | null = sortColumnId

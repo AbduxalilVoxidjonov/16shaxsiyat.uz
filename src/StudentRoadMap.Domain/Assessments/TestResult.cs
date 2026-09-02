@@ -119,4 +119,33 @@ public sealed class TestResult : Entity
         CompositeIndex = compositeIndex;
         LevelsJson = levelsJson;
     }
+
+    /// <summary>
+    /// Superadmin `POST /api/admin/assessments/{id}/recalculate-scores` chaqirganda (`prompts/15`,
+    /// `docs/07` 3.3-bo'lim) — saqlangan javoblardan (`Answer`, o'zgarmagan) `ScoringEngine` bilan
+    /// QAYTA hisoblangan natijani yozadi. `ResultCode`dan `ScoringVersion`gacha BARCHASI
+    /// almashtiriladi (`ApplyCompositeIndex`dan farqli — u faqat kompozit ko'rsatkichni qo'shadi).
+    /// `TestVersion` bu yerda O'ZGARMAYDI: u o'quvchi HAQIQATDA qaysi anketa shaklini
+    /// (savol/shkala tuzilishi) topshirganini bildiradi (BR-9) — formulaning qayta hisoblanishi
+    /// buni o'zgartirmaydi, faqat `ScoringVersion` (formulaning o'zi) yangilanadi.
+    /// </summary>
+    public void ReplaceScores(
+        string? resultCode,
+        string rawScoresJson,
+        string normalizedScoresJson,
+        string levelsJson,
+        double? compositeIndex,
+        string flagsJson,
+        int scoringVersion,
+        DateTimeOffset computedAt)
+    {
+        ResultCode = resultCode;
+        RawScoresJson = rawScoresJson;
+        NormalizedScoresJson = normalizedScoresJson;
+        LevelsJson = levelsJson;
+        CompositeIndex = compositeIndex;
+        FlagsJson = flagsJson;
+        ScoringVersion = scoringVersion;
+        ComputedAt = computedAt;
+    }
 }

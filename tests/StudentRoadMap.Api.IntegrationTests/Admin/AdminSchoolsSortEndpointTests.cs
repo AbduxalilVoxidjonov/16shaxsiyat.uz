@@ -14,18 +14,12 @@ namespace StudentRoadMap.Api.IntegrationTests.Admin;
 
 /// <summary>
 /// `SchoolsController.List` — `sort=createdAt` (DB-darajasidagi `ORDER BY`, `DateTimeOffset`
-/// ustun). `ListSchoolsQueryHandler`ning standart maydoni `name` (string, SQLite'da muammosiz),
-/// shu sabab bu FAQAT `createdAt` uchun alohida test — `AdminStudentsSortEndpointTests`dagi
-/// bir xil sabab bilan `Skip` qilingan (SQLite `DateTimeOffset` `ORDER BY`ni tarjima qila
-/// olmaydi; Postgres'da production yo'lida to'liq ishlaydi).
+/// ustun). Avval SQLite'da `Skip` qilingan edi (`DateTimeOffset` `ORDER BY` tarjima
+/// qilinmasligi sababli) — `AppDbContext.ApplySqliteDateTimeOffsetConversion` bilan yopildi
+/// (`prompts/15` 2-bosqich, 2026-09-02), endi to'liq ishlaydi.
 /// </summary>
 public sealed class AdminSchoolsSortEndpointTests : IClassFixture<PublicApiTestFactory>
 {
-    private const string SqliteSkipReason =
-        "SQLite (faqat sinov muhiti) DateTimeOffset ustunida ORDER BY'ni tarjima qila olmaydi " +
-        "(System.NotSupportedException) — Postgres'da (production) to'liq ishlaydi. " +
-        "P30 (Testcontainers, haqiqiy Postgres) da qayta tekshiriladi.";
-
     private readonly PublicApiTestFactory _factory;
 
     public AdminSchoolsSortEndpointTests(PublicApiTestFactory factory)
@@ -54,7 +48,7 @@ public sealed class AdminSchoolsSortEndpointTests : IClassFixture<PublicApiTestF
         return client;
     }
 
-    [Fact(Skip = SqliteSkipReason)]
+    [Fact]
     public async Task List_SortCreatedAt_DBDarajasidaTogriTartiblaydi()
     {
         using var scope = _factory.Services.CreateScope();

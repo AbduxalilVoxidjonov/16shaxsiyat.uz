@@ -15,24 +15,15 @@ namespace StudentRoadMap.Api.IntegrationTests.Admin;
 
 /// <summary>
 /// `StudentsController.List` — `DateTimeOffset` ustunlar (`lastAssessmentAt` standart,
-/// `createdAt`) bo'yicha DB-darajasidagi saralash. Koordinator qarori (2026-09-02):
-/// "sinov muhiti uchun production xatti-harakati pasaytirilmaydi" — `ListStudentsQueryHandler`
-/// bu ikki maydonda ham HAR DOIM `ORDER BY` (DB darajasida, Postgres'da `ix_students_last_at`
-/// indeksidan foydalanadi) ishlatadi. SQLite (faqat sinov muhiti, Docker/PostgreSQL yo'q)
-/// `DateTimeOffset` ustunida `ORDER BY`ni UMUMAN tarjima qila olmaydi
-/// (`System.NotSupportedException: SQLite does not support expressions of type 'DateTimeOffset'
-/// in ORDER BY clauses`) — shu sabab FAQAT shu ikki test `Skip` bilan belgilangan (production
-/// kodi emas, sinov infratuzilmasining cheklovi). P30 (Testcontainers, haqiqiy Postgres)da
-/// `Skip` olib tashlanib qayta tekshiriladi. Boshqa barcha saralash (`fullName`, `grade`) va
-/// filtr testlari (`AdminStudentsListEndpointTests`) to'liq SQLite'da ham ishlaydi.
+/// `createdAt`) bo'yicha DB-darajasidagi saralash (Postgres'da `ix_students_last_at`
+/// indeksidan foydalanadi). Avval SQLite bu ustunlarda `ORDER BY`ni tarjima qila olmagani
+/// uchun ikkalasi `Skip` qilingan edi — `AppDbContext.ApplySqliteDateTimeOffsetConversion`
+/// (`DateTimeOffset` → `long` UTC tick, faqat SQLite'da) bilan yopildi (`prompts/15` 2-bosqich,
+/// 2026-09-02): endi `NULLS LAST` semantikasi (`ApplyLastAssessmentAtSort`) ham SQLite ostida
+/// to'g'ri tekshiriladi.
 /// </summary>
 public sealed class AdminStudentsSortEndpointTests : IClassFixture<PublicApiTestFactory>
 {
-    private const string SqliteSkipReason =
-        "SQLite (faqat sinov muhiti) DateTimeOffset ustunida ORDER BY'ni tarjima qila olmaydi " +
-        "(System.NotSupportedException) — Postgres'da (production) to'liq ishlaydi va " +
-        "ix_students_last_at indeksidan foydalanadi. P30 (Testcontainers, haqiqiy Postgres) da qayta tekshiriladi.";
-
     private readonly PublicApiTestFactory _factory;
 
     public AdminStudentsSortEndpointTests(PublicApiTestFactory factory)
@@ -64,7 +55,7 @@ public sealed class AdminStudentsSortEndpointTests : IClassFixture<PublicApiTest
     private static Student MakeStudent(Guid schoolId, DateTimeOffset now, string fullName, string phone) =>
         Student.Create(Guid.NewGuid(), schoolId, fullName, new DateOnly(2010, 1, 1), Gender.Male, 9, PhoneNumber.Create(phone).Value, now, now);
 
-    [Fact(Skip = SqliteSkipReason)]
+    [Fact]
     public async Task List_StandartSaralash_LastAssessmentAtBoyichaKamayishVaNullsLast()
     {
         using var scope = _factory.Services.CreateScope();
@@ -95,7 +86,7 @@ public sealed class AdminStudentsSortEndpointTests : IClassFixture<PublicApiTest
         result!.Items.Select(s => s.Id).Should().ContainInOrder(newer.Id, older.Id, never.Id);
     }
 
-    [Fact(Skip = SqliteSkipReason)]
+    [Fact]
     public async Task List_SortCreatedAt_DBDarajasidaTogriTartiblaydi()
     {
         using var scope = _factory.Services.CreateScope();

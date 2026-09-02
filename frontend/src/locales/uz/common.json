@@ -323,5 +323,88 @@
       "editSuccess": "O'zgarishlar saqlandi",
       "genericError": "Saqlashda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
     }
+  },
+  "students": {
+    "loadError": "O'quvchilar ro'yxatini yuklab bo'lmadi",
+    "export": {
+      "cta": "Excel'ga eksport",
+      "successTitle": "Fayl yuklab olindi",
+      "notAvailableTitle": "Eksport hali mavjud emas",
+      "notAvailableDescription": "Bu funksiya tez orada qo'shiladi. Birozdan so'ng qayta urinib ko'ring.",
+      "errorTitle": "Eksport qilishda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
+    },
+    "filters": {
+      "searchLabel": "Qidiruv",
+      "searchPlaceholder": "F.I.Sh. yoki telefon bo'yicha qidirish…",
+      "schoolLabel": "Maktab",
+      "schoolPlaceholder": "Maktab nomini kiriting…",
+      "schoolAll": "Barcha maktablar",
+      "schoolClear": "Maktab tanlovini tozalash",
+      "schoolNoMatch": "Hech narsa topilmadi",
+      "gradeLabel": "Sinf",
+      "gradeAll": "Barcha sinflar",
+      "gradeOption": "{{grade}}-sinf",
+      "statusLabel": "Holat",
+      "statusAll": "Barchasi",
+      "personalityTypeLabel": "Shaxsiyat tipi",
+      "personalityTypeAll": "Barchasi",
+      "activityLevelLabel": "Aktivlik darajasi",
+      "activityLevelAll": "Barchasi",
+      "needsAttentionLabel": "Faqat e'tibor talab qiladiganlar",
+      "fromLabel": "Sanadan",
+      "toLabel": "Sanagacha"
+    },
+    "chips": {
+      "ariaLabel": "Faol filtrlar",
+      "search": "Qidiruv: {{value}}",
+      "school": "Maktab: {{value}}",
+      "grade": "Sinf: {{value}}",
+      "status": "Holat: {{value}}",
+      "personalityType": "Tip: {{value}}",
+      "activityLevel": "Aktivlik: {{value}}",
+      "needsAttention": "Faqat e'tibor talab qiladiganlar",
+      "from": "Sanadan: {{value}}",
+      "to": "Sanagacha: {{value}}",
+      "remove": "{{value}} filtrini olib tashlash",
+      "clearAll": "Hammasini tozalash"
+    },
+    "table": {
+      "ariaLabel": "O'quvchilar jadvali",
+      "fullName": "F.I.Sh.",
+      "school": "Maktab",
+      "grade": "Sinf",
+      "status": "Holat",
+      "personalityType": "Tip",
+      "maturityIndex": "Yetuklik",
+      "activityLevel": "Aktivlik",
+      "reliabilityFlag": "Ishonchlilik",
+      "lastAssessmentAt": "Sana",
+      "needsAttentionLabel": "E'tibor talab qiladi",
+      "emptyTitle": "Hali o'quvchi yo'q",
+      "emptyDescription": "Hali o'quvchi yo'q — maktab havolasini ulashing."
+    },
+    "enums": {
+      "status": {
+        "Draft": "Qoralama",
+        "InProgress": "Davom etmoqda",
+        "Completed": "Yakunlangan",
+        "Analyzing": "Tahlil qilinmoqda",
+        "Analyzed": "Tahlil qilingan",
+        "AnalysisFailed": "Tahlil muvaffaqiyatsiz",
+        "Abandoned": "Tashlab ketilgan"
+      },
+      "activityLevel": {
+        "Passive": "Passiv",
+        "LowActive": "Kam faol",
+        "Moderate": "O'rtacha faol",
+        "Active": "Faol",
+        "HighlyActive": "Juda faol"
+      },
+      "reliabilityFlag": {
+        "Reliable": "Ishonchli",
+        "Questionable": "Shubhali",
+        "Unreliable": "Ishonchsiz"
+      }
+    }
   }
 }

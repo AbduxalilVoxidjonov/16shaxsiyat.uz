@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StudentRoadMap.Application.Common.Events;
 using StudentRoadMap.Application.Common.Exceptions;
 using StudentRoadMap.Application.Common.Interfaces;
@@ -153,8 +154,21 @@ public sealed class AppDbContext : DbContext, IAppDbContext
     /// </summary>
     async Task<bool> IAppDbContext.TryMarkTotpBackupCodeUsedAsync(Guid backupCodeId, DateTimeOffset usedAt, CancellationToken cancellationToken)
     {
+        // Xom SQL — `ApplySqliteDateTimeOffsetConversion`dagi `ValueConverter` faqat EF Core'ning
+        // ODDIY (LINQ/`SaveChanges`) so'rov quvuriga qo'llanadi, xom SQL parametriga AVTOMATIK
+        // TA'SIR QILMAYDI — SQLite'da ustun endi `long` (UTC tick) sifatida saqlanadi, lekin bu
+        // yerga xom `DateTimeOffset` yuborilsa, SQLite'ning standart (matn) parametr turi bilan
+        // yoziladi va keyinroq LINQ orqali o'qishda noto'g'ri talqin qilinadi (QA topilmasi,
+        // `prompts/15` davomida: `AdminTotpBackupCodeConcurrencyTests` konvertatsiyadan keyin
+        // yiqildi — sabab aynan shu edi). Shu sabab SQLite'da parametr QO'LDA xuddi
+        // `ApplySqliteDateTimeOffsetConversion` bilan BIR XIL shaklga (`UtcTicks`) o'giriladi;
+        // Postgres'da (`timestamptz`, konvertatsiya YO'Q) xom `DateTimeOffset` ishlatiladi.
+        object usedAtParameter = Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite"
+            ? usedAt.UtcTicks
+            : usedAt;
+
         var affectedRows = await Database.ExecuteSqlInterpolatedAsync(
-                $"UPDATE admin_totp_backup_codes SET used_at = {usedAt} WHERE id = {backupCodeId} AND used_at IS NULL",
+                $"UPDATE admin_totp_backup_codes SET used_at = {usedAtParameter} WHERE id = {backupCodeId} AND used_at IS NULL",
                 cancellationToken)
             .ConfigureAwait(false);
 
@@ -175,7 +189,62 @@ public sealed class AppDbContext : DbContext, IAppDbContext
         modelBuilder.Entity<Student>().HasQueryFilter(s => !s.IsDeleted);
         modelBuilder.Entity<Assessment>().HasQueryFilter(a => !a.IsDeleted);
 
+        // Faqat SINOV muhitida (SQLite — Docker/PostgreSQL yo'q joyda `PublicApiTestFactory`/
+        // `SqliteAppDbContextFactory` ishlatadi): EF Core'ning SQLite provayderi
+        // `DateTimeOffset` ustunida na `ORDER BY`, na oddiy `WHERE x >= @p` taqqoslashni
+        // tarjima qila oladi (`System.InvalidOperationException`, `prompts/15` davomida
+        // empirik tekshirilgan — hujjatlardagi eski izohlar faqat `ORDER BY`ni aytgan edi,
+        // aslida taqqoslash HAM buzilgan). Postgres'da (`Npgsql.EntityFrameworkCore.PostgreSQL`)
+        // bu muammo umuman yo'q — shu sabab konvertatsiya FAQAT `Database.ProviderName`
+        // SQLite bo'lganda qo'llanadi (`Database.IsSqlite()` emas — bu Sqlite paketining
+        // kengaytma metodi, `Infrastructure.csproj`da SHART emas: `ProviderName` satr
+        // taqqoslash EF Core yadrosining o'zida bor). Postgres modeliga (`timestamptz`)
+        // HECH QANDAY ta'sir qilmaydi — `has-pending-model-changes` bilan tasdiqlangan.
+        if (Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
+        {
+            ApplySqliteDateTimeOffsetConversion(modelBuilder);
+        }
+
         base.OnModelCreating(modelBuilder);
+    }
+
+    /// <summary>
+    /// Har bir `DateTimeOffset`/`DateTimeOffset?` ustunni `long` (UTC tick soni) ga
+    /// o'giradi — SQLite'da butun son ustuni sifatida saqlanadi, shu bilan `WHERE`/`ORDER BY`
+    /// DB darajasida ishlaydi (`ix_students_last_at` "DESC NULLS LAST" mantig'i
+    /// `ApplyLastAssessmentAtSort`da xotirada `== null` bo'yicha ALOHIDA emulyatsiya qilinadi
+    /// — bu o'zgarmaydi, faqat qiymatni solishtirish endi DB darajasida ishlaydi). `UtcTicks`
+    /// (100ns aniqlik) ishlatiladi — `ToUnixTimeMilliseconds()` EMAS, chunki millisekundgacha
+    /// yaxlitlash mavjud testlardagi aniq vaqt tengligini (`CreatedAt.Should().Be(now)` kabi)
+    /// buzardi. Qayta tiklashda offset har doim UTC (`TimeSpan.Zero`) qilib qo'yiladi —
+    /// loyihada barcha `DateTimeOffset` qiymatlar `IDateTime.UtcNow`dan keladi (`CLAUDE.md`
+    /// 2-band), shuning uchun bu yo'qotishsiz (`DateTimeOffset.Equals` UTC lahzani solishtiradi,
+    /// `Offset`ning o'zini emas).
+    /// </summary>
+    private static void ApplySqliteDateTimeOffsetConversion(ModelBuilder modelBuilder)
+    {
+        var nonNullConverter = new ValueConverter<DateTimeOffset, long>(
+            v => v.UtcTicks,
+            v => new DateTimeOffset(v, TimeSpan.Zero));
+
+        var nullableConverter = new ValueConverter<DateTimeOffset?, long?>(
+            v => v.HasValue ? v.Value.UtcTicks : null,
+            v => v.HasValue ? new DateTimeOffset(v.Value, TimeSpan.Zero) : null);
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                if (property.ClrType == typeof(DateTimeOffset))
+                {
+                    property.SetValueConverter(nonNullConverter);
+                }
+                else if (property.ClrType == typeof(DateTimeOffset?))
+                {
+                    property.SetValueConverter(nullableConverter);
+                }
+            }
+        }
     }
 
     /// <summary>

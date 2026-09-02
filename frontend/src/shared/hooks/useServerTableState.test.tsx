@@ -52,6 +52,22 @@ describe('useServerTableState', () => {
     expect(screen.getByTestId('sort')).toHaveTextContent('grade:desc');
   });
 
+  it("URL'dagi haddan tashqari katta pageSize 100 ga qisiladi (docs/07 4-bo'lim: max 100)", () => {
+    renderWithRouter('/students?pageSize=5000');
+
+    expect(screen.getByTestId('pageSize')).toHaveTextContent('100');
+  });
+
+  it("URL'dagi pageSize=0 standart qiymatga tushadi", () => {
+    renderWithRouter('/students?pageSize=0');
+    expect(screen.getByTestId('pageSize')).toHaveTextContent('20');
+  });
+
+  it("URL'dagi manfiy pageSize standart qiymatga tushadi", () => {
+    renderWithRouter('/students?pageSize=-5');
+    expect(screen.getByTestId('pageSize')).toHaveTextContent('20');
+  });
+
   it('setPage chaqirilganda URL yangilanadi', async () => {
     const user = userEvent.setup();
     renderWithRouter();

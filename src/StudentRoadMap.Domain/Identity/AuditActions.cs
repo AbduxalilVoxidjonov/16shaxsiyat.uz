@@ -24,4 +24,11 @@ public static class AuditActions
     public const string SchoolLinkRegenerated = "School.LinkRegenerated";
     public const string SchoolToggledActive = "School.ToggledActive";
     public const string StudentDeleted = "Student.Deleted";
+
+    // --- P15 (`prompts/15-sessiya-va-dashboard-api.md`) — `docs/05` §8 / `docs/08` §8da
+    // ro'yxat qilingan sessiya harakatlari. `Assessment.AnalysisRerun` bu yerda YO'Q — u
+    // `rerun-analysis` (AI, P16-P18) uchun, P15 qamroviga kirmaydi. ---
+
+    public const string AssessmentDeleted = "Assessment.Deleted";
+    public const string AssessmentScoresRecalculated = "Assessment.ScoresRecalculated";
 }
