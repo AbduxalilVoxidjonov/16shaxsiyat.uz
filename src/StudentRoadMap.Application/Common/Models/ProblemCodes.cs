@@ -30,6 +30,28 @@ public static class ProblemCodes
     /// </summary>
     public const string AccessCodeInvalid = "ACCESS_CODE_INVALID";
 
+    /// <summary>
+    /// P13 (`prompts/13-auth-va-jwt.md`) superadmin auth oqimi uchun qo'shildi — PM tomonidan
+    /// `docs/06`ga rasman kiritilgan (423).
+    /// </summary>
+    public const string AccountLocked = "ACCOUNT_LOCKED";
+
+    /// <summary>TOTP yoqilgan hisobda `totpCode` berilmagan — ikkinchi bosqich talab qilinadi. `docs/06`da (401).</summary>
+    public const string TotpRequired = "TOTP_REQUIRED";
+
+    /// <summary>TOTP allaqachon yoqilgan (`EnableTotp` ikkinchi marta chaqirilganda). `docs/06`da (409).</summary>
+    public const string TotpAlreadyEnabled = "TOTP_ALREADY_ENABLED";
+
+    /// <summary>TOTP yoqilmagan hisobda `DisableTotp` chaqirilganda. `docs/06`da (409).</summary>
+    public const string TotpNotEnabled = "TOTP_NOT_ENABLED";
+
+    /// <summary>
+    /// Optimistik konkurentlik ziddiyati (`ConcurrencyConflictException`) — ikki bir vaqtdagi
+    /// so'rov bir xil yozuvni o'zgartirmoqchi bo'lganda (masalan, bitta TOTP kodi bilan ikki
+    /// parallel login urinishi, QA topilmasi). Mijoz qaytadan urinib ko'rishi kerak.
+    /// </summary>
+    public const string ConcurrencyConflict = "CONCURRENCY_CONFLICT";
+
     /// <summary>`Error.Code` → HTTP status. Ro'yxatda yo'q kod uchun standart qiymat `409` (domen holat mashinasi konflikti).</summary>
     public static readonly IReadOnlyDictionary<string, int> HttpStatusByCode = new Dictionary<string, int>(StringComparer.Ordinal)
     {
@@ -48,6 +70,11 @@ public static class ProblemCodes
         [AiProviderError] = StatusCodes.Status502BadGateway,
         [InternalError] = StatusCodes.Status500InternalServerError,
         [AccessCodeInvalid] = StatusCodes.Status400BadRequest,
+        [AccountLocked] = StatusCodes.Status423Locked,
+        [TotpRequired] = StatusCodes.Status401Unauthorized,
+        [TotpAlreadyEnabled] = StatusCodes.Status409Conflict,
+        [TotpNotEnabled] = StatusCodes.Status409Conflict,
+        [ConcurrencyConflict] = StatusCodes.Status409Conflict,
     };
 
     /// <summary>Default (`docs/06` jadvaliga kirmagan domen kodlari uchun) — holat mashinasi konflikti.</summary>
@@ -66,6 +93,7 @@ public static class ProblemCodes
         public const int Status404NotFound = 404;
         public const int Status409Conflict = 409;
         public const int Status410Gone = 410;
+        public const int Status423Locked = 423;
         public const int Status429TooManyRequests = 429;
         public const int Status500InternalServerError = 500;
         public const int Status502BadGateway = 502;

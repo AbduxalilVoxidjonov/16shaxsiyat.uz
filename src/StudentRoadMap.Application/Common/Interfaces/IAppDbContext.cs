@@ -47,6 +47,10 @@ public interface IAppDbContext
 
     IQueryable<RefreshToken> RefreshTokens { get; }
 
+    IQueryable<AuditLog> AuditLogs { get; }
+
+    IQueryable<AdminTotpBackupCode> AdminTotpBackupCodes { get; }
+
     IQueryable<RegistrationCounter> RegistrationCounters { get; }
 
     /// <summary>
@@ -85,4 +89,15 @@ public interface IAppDbContext
     /// holatiga (ikkalasi ham eski qiymatni o'qib, limitdan oshib ketishi mumkin) olib keladi.
     /// </summary>
     Task<int> IncrementRegistrationCounterAsync(Guid schoolId, DateOnly dateUtc, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// TOTP zaxira kodini ATOMIK "ishlatilgan" deb belgilaydi — `UPDATE admin_totp_backup_codes
+    /// SET used_at = ... WHERE id = ... AND used_at IS NULL` (xom SQL, `IncrementRegistrationCounterAsync`
+    /// bilan bir xil sabab/naqsh: QA topgan poyga holati — ikki bir vaqtdagi so'rov bir xil
+    /// zaxira kod bilan kelsa, LINQ "o'qi-tekshir-yoz" mantig'i ikkalasini ham muvaffaqiyatli
+    /// deb hisoblardi). `true` — shu chaqiruv kodni muvaffaqiyatli "ishlatilgan" deb belgiladi;
+    /// `false` — kod ALLAQACHON ishlatilgan (0 qator ta'sirlandi — boshqa bir vaqtdagi so'rov
+    /// ilgari yutib olgan).
+    /// </summary>
+    Task<bool> TryMarkTotpBackupCodeUsedAsync(Guid backupCodeId, DateTimeOffset usedAt, CancellationToken cancellationToken = default);
 }

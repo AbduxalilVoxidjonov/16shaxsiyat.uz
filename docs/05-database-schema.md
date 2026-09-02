@@ -360,6 +360,30 @@ CREATE TABLE registration_counters (
 
 ---
 
+### P13 da qo'shilgan (migratsiya `AddAuditLogsAndTotpSupport`)
+
+```sql
+-- 2FA zaxira kodlari: har biri alohida qator, xeshlangan, bir martalik.
+-- Hujjatda dastlab yo'q edi — TOTP zaxira kodlarini xom holda saqlash mumkin emasligi uchun
+-- alohida jadval kerak bo'ldi (parol bilan bir xil `IPasswordHasher` ishlatiladi).
+create table admin_totp_backup_codes (
+  id              uuid primary key,
+  admin_user_id   uuid not null references admin_users(id) on delete cascade,
+  code_hash       text not null,
+  used_at         timestamptz null,
+  created_at      timestamptz not null
+);
+create index ix_admin_totp_backup_codes_admin on admin_totp_backup_codes(admin_user_id);
+
+-- EF Core FK ustunlari uchun avtomatik indeks qo'shadi; `audit_logs` da ham shunday:
+create index ix_audit_logs_admin_user_id on audit_logs(admin_user_id);
+
+-- TOTP kodini qayta ishlatishga qarshi himoya: oxirgi ishlatilgan vaqt qadami.
+alter table admin_users add column totp_last_used_step bigint null;
+```
+
+---
+
 ## 3. Enum ↔ raqam mosligi (kodda ham shu)
 
 | Enum | Qiymatlar |

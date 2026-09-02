@@ -95,4 +95,39 @@ public sealed class AdminUserTests
         admin.IsLocked(Now.AddMinutes(20)).Should().BeFalse();
         admin.LastLoginAt.Should().Be(Now.AddMinutes(20));
     }
+
+    [Fact]
+    public void RegisterTotpStepUsed_SetsLastUsedStep()
+    {
+        var admin = CreateAdminUser();
+
+        admin.RegisterTotpStepUsed(12345, Now);
+
+        admin.TotpLastUsedStep.Should().Be(12345);
+    }
+
+    [Fact]
+    public void EnableTotp_SetsSecretAndEnabledFlag()
+    {
+        var admin = CreateAdminUser();
+
+        admin.EnableTotp("encrypted-secret", Now);
+
+        admin.TotpEnabled.Should().BeTrue();
+        admin.TotpSecretEncrypted.Should().Be("encrypted-secret");
+    }
+
+    [Fact]
+    public void DisableTotp_ClearsSecretEnabledFlagAndLastUsedStep()
+    {
+        var admin = CreateAdminUser();
+        admin.EnableTotp("encrypted-secret", Now);
+        admin.RegisterTotpStepUsed(999, Now);
+
+        admin.DisableTotp(Now.AddMinutes(1));
+
+        admin.TotpEnabled.Should().BeFalse();
+        admin.TotpSecretEncrypted.Should().BeNull();
+        admin.TotpLastUsedStep.Should().BeNull();
+    }
 }

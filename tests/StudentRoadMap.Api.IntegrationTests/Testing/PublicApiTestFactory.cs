@@ -39,6 +39,17 @@ public class PublicApiTestFactory : WebApplicationFactory<Program>, Xunit.IAsync
                 ["ConnectionStrings:Postgres"] = "Host=127.0.0.1;Port=5432;Database=unused;Username=x;Password=x;Timeout=1",
                 ["Security:IpHashSalt"] = "integration-test-salt",
                 ["App:SessionLifetimeDays"] = "7",
+                // `Program.cs` `IJwtTokenService`ni START-UPda MAJBURIY resolve qiladi
+                // (fail-fast, `docs/13-auth-va-jwt.md` MAXSUS DIQQAT 2-band) — bu BARCHA
+                // test host'lari (hatto auth bilan ishlamaydiganlari) uchun ham amal qiladi,
+                // shu sabab bu ikkalasi shu yerda, BAZAVIY konfiguratsiyada beriladi
+                // (`Security:IpHashSalt`dagi bilan bir xil sabab: `IIpHasher` ham har doim
+                // resolve qilinishi mumkin). Qiymatlar faqat sinov uchun — ishlab chiqarishda
+                // ishlatilmaydi.
+                ["Jwt:Key"] = "integration-test-jwt-signing-key-at-least-32-bytes-long-0000",
+                ["Jwt:Issuer"] = "studentroadmap-test",
+                ["Jwt:Audience"] = "studentroadmap-admin-test",
+                ["Security:EncryptionKey"] = Convert.ToBase64String(new byte[32]),
             });
 
             // Bazaviy qiymatlardan KEYIN qo'shiladi — bir xil kalit bo'lsa ustidan yozadi

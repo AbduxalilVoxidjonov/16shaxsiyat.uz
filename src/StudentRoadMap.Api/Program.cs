@@ -7,6 +7,10 @@ using StudentRoadMap.Api.Extensions;
 using StudentRoadMap.Api.Middleware;
 using StudentRoadMap.Api.Swagger;
 using StudentRoadMap.Application;
+using StudentRoadMap.Application.Common.Interfaces;
+using StudentRoadMap.Application.Identity.ChangePassword;
+using StudentRoadMap.Application.Identity.DisableTotp;
+using StudentRoadMap.Application.Identity.Login;
 using StudentRoadMap.Infrastructure;
 using StudentRoadMap.Infrastructure.Persistence;
 using StudentRoadMap.Infrastructure.Persistence.Seeding;
@@ -14,11 +18,18 @@ using StudentRoadMap.Infrastructure.Persistence.Seeding;
 var builder = WebApplication.CreateBuilder(args);
 
 // --- Serilog ---------------------------------------------------------------
+// `Destructure.ByTransforming` — parol/token tashuvchi buyruqlar tasodifan `{@request}` kabi
+// to'liq obyekt sifatida log qilinsa ham (hozircha `LoggingBehavior` faqat request NOMINI
+// log qiladi, lekin bu himoya ehtiyot chorasi sifatida qo'shildi) — sir maydonlar hech qachon
+// log oqimiga tushmaydi (`CLAUDE.md` 4-qoida, `docs/13-auth-va-jwt.md` MAXSUS DIQQAT 6-band).
 builder.Host.UseSerilog((context, services, configuration) =>
     configuration
         .ReadFrom.Configuration(context.Configuration)
         .ReadFrom.Services(services)
-        .Enrich.FromLogContext());
+        .Enrich.FromLogContext()
+        .Destructure.ByTransforming<LoginCommand>(c => new { c.Username, HasTotpCode = c.TotpCode is not null })
+        .Destructure.ByTransforming<ChangePasswordCommand>(c => new { c.AdminUserId })
+        .Destructure.ByTransforming<DisableTotpCommand>(c => new { c.AdminUserId }));
 
 // --- Servislar ---------------------------------------------------------------
 builder.Services.AddControllers()
@@ -53,12 +64,17 @@ builder.Services.AddExceptionHandler<ExceptionHandlingMiddleware>();
 
 builder.Services.AddRateLimitPolicies();
 
-// --- Autentifikatsiya: SessionToken (o'quvchi, `docs/08` 4-bo'lim). Superadmin JWT — P13+. ---
+// --- Autentifikatsiya: SessionToken (o'quvchi, `docs/08` 4-bo'lim, DEFAULT sxema — o'zgarmaydi)
+// + JWT Bearer (superadmin, `docs/08` 2-bo'lim, QO'SHIMCHA sxema, `[Authorize(Policy =
+// JwtAuthenticationSetup.SuperAdminPolicy)]` orqali aniq tanlanadi). ---------------------------
 builder.Services
     .AddAuthentication(SessionTokenAuthenticationHandler.SchemeName)
     .AddScheme<SessionTokenAuthenticationSchemeOptions, SessionTokenAuthenticationHandler>(
-        SessionTokenAuthenticationHandler.SchemeName, _ => { });
-builder.Services.AddAuthorization();
+        SessionTokenAuthenticationHandler.SchemeName, _ => { })
+    .AddAdminJwtBearer(builder.Configuration);
+builder.Services.AddAdminAuthorizationPolicy();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUser, StudentRoadMap.Api.Auth.CurrentUser>();
 
 var frontendUrl = builder.Configuration["App:FrontendUrl"];
 builder.Services.AddCors(options =>
@@ -78,6 +94,18 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
+
+// --- Fail-fast: `Jwt:Key` 32 baytdan qisqa/yo'q bo'lsa ilova SHU YERDA (start-upda) xato bilan
+// to'xtaydi — birinchi login so'roviga qadar kutilmaydi (`docs/13-auth-va-jwt.md` MAXSUS DIQQAT
+// 2-band). `JwtTokenService` konstruktorida tekshiradi (`AesEncryptionService` bilan bir xil
+// naqsh); Singleton bo'lgani uchun bu yerda MAJBURIY resolve qilish uni darhol ishga tushiradi.
+// Test host'ining qo'shimcha konfiguratsiyasi (`ConfigureAppConfiguration`) `Build()` ichida
+// allaqachon qo'llanilgan bo'ladi, shu sabab bu yerda o'qish xavfsiz (`AddInfrastructure`dagi
+// "lazy o'qish" izohi bilan bir xil asos).
+using (var jwtValidationScope = app.Services.CreateScope())
+{
+    _ = jwtValidationScope.ServiceProvider.GetRequiredService<StudentRoadMap.Application.Common.Interfaces.IJwtTokenService>();
+}
 
 // --- `--migrate`: migratsiyani bajarib ilovani to'xtatadi (docs/05 4-bo'lim: production'da
 // `Database.Migrate()` avtomatik emas — alohida step/konteyner) ---------------------------

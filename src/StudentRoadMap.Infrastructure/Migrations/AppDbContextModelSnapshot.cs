@@ -969,6 +969,42 @@ namespace StudentRoadMap.Infrastructure.Migrations
                     b.ToTable("type_catalog", (string)null);
                 });
 
+            modelBuilder.Entity("StudentRoadMap.Domain.Identity.AdminTotpBackupCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid>("AdminUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("admin_user_id");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("code_hash");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<DateTimeOffset?>("UsedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("used_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_admin_totp_backup_codes");
+
+                    b.HasIndex("AdminUserId")
+                        .HasDatabaseName("ix_admin_totp_backup_codes_admin");
+
+                    b.ToTable("admin_totp_backup_codes", (string)null);
+                });
+
             modelBuilder.Entity("StudentRoadMap.Domain.Identity.AdminUser", b =>
                 {
                     b.Property<Guid>("Id")
@@ -976,6 +1012,11 @@ namespace StudentRoadMap.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid")
+                        .HasColumnName("concurrency_stamp");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -1038,6 +1079,10 @@ namespace StudentRoadMap.Infrastructure.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("totp_enabled");
 
+                    b.Property<long?>("TotpLastUsedStep")
+                        .HasColumnType("bigint")
+                        .HasColumnName("totp_last_used_step");
+
                     b.Property<string>("TotpSecretEncrypted")
                         .HasColumnType("text")
                         .HasColumnName("totp_secret_encrypted");
@@ -1072,6 +1117,74 @@ namespace StudentRoadMap.Infrastructure.Migrations
                         .HasDatabaseName("ux_admin_users_username");
 
                     b.ToTable("admin_users", (string)null);
+                });
+
+            modelBuilder.Entity("StudentRoadMap.Domain.Identity.AuditLog", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseSerialColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("action");
+
+                    b.Property<Guid?>("AdminUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("admin_user_id");
+
+                    b.Property<string>("AfterJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("after_json");
+
+                    b.Property<string>("BeforeJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("before_json");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid?>("EntityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("entity_id");
+
+                    b.Property<string>("EntityType")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("entity_type");
+
+                    b.Property<string>("IpHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("ip_hash");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("user_agent");
+
+                    b.HasKey("Id")
+                        .HasName("pk_audit_logs");
+
+                    b.HasIndex("AdminUserId")
+                        .HasDatabaseName("ix_audit_logs_admin_user_id");
+
+                    b.HasIndex("CreatedAt")
+                        .IsDescending()
+                        .HasDatabaseName("ix_audit_logs_created");
+
+                    b.HasIndex("EntityType", "EntityId")
+                        .HasDatabaseName("ix_audit_logs_entity");
+
+                    b.ToTable("audit_logs", (string)null);
                 });
 
             modelBuilder.Entity("StudentRoadMap.Domain.Identity.RefreshToken", b =>
@@ -1523,6 +1636,25 @@ namespace StudentRoadMap.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_questions_test_definitions_test_definition_id");
+                });
+
+            modelBuilder.Entity("StudentRoadMap.Domain.Identity.AdminTotpBackupCode", b =>
+                {
+                    b.HasOne("StudentRoadMap.Domain.Identity.AdminUser", null)
+                        .WithMany()
+                        .HasForeignKey("AdminUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_admin_totp_backup_codes_admin_users_admin_user_id");
+                });
+
+            modelBuilder.Entity("StudentRoadMap.Domain.Identity.AuditLog", b =>
+                {
+                    b.HasOne("StudentRoadMap.Domain.Identity.AdminUser", null)
+                        .WithMany()
+                        .HasForeignKey("AdminUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_audit_logs_admin_users_admin_user_id");
                 });
 
             modelBuilder.Entity("StudentRoadMap.Domain.Identity.RefreshToken", b =>

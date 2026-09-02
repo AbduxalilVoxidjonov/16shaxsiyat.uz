@@ -36,11 +36,19 @@ internal sealed class AdminUserConfiguration : IEntityTypeConfiguration<AdminUse
         builder.Property(u => u.IsActive).IsRequired().HasDefaultValue(true);
         builder.Property(u => u.TotpSecretEncrypted);
         builder.Property(u => u.TotpEnabled).IsRequired().HasDefaultValue(false);
+        // `docs/05`da yo'q — P13 TOTP qayta ishlatishga qarshi himoya uchun qo'shildi (hisobotga qarang).
+        builder.Property(u => u.TotpLastUsedStep);
         builder.Property(u => u.FailedLoginCount).IsRequired().HasDefaultValue(0);
         builder.Property(u => u.LockedUntil);
         builder.Property(u => u.LastLoginAt);
         builder.Property(u => u.CreatedAt).IsRequired().HasDefaultValueSql("now()");
         builder.Property(u => u.UpdatedAt).IsRequired().HasDefaultValueSql("now()");
+
+        // `docs/05`da yo'q — QA topilmasi (`docs/13-auth-va-jwt.md`): TOTP asosiy kod poyga
+        // holatiga qarshi optimistik konkurentlik. Provayderga xos `xmin` (Postgres) EMAS —
+        // sinov muhiti SQLite'da `xmin` yo'q, shu sabab oddiy, portativ `uuid` ustuni
+        // (`AppDbContext.SaveChangesAsync` har `Modified` saqlashda yangilaydi).
+        builder.Property(u => u.ConcurrencyStamp).IsConcurrencyToken().IsRequired();
 
         builder.Property<string>("UsernameLower")
             .HasColumnName("username_lower")

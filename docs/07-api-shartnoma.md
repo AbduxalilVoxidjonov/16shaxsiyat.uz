@@ -199,7 +199,8 @@ O'quvchiga **qisqartirilgan** natija (superadmin sozlamasi yoqilgan bo'lsa).
 | POST | `/api/auth/logout` | Refresh tokenni bekor qiladi va cookie'ni tozalaydi |
 | GET | `/api/auth/me` | Joriy foydalanuvchi |
 | POST | `/api/auth/change-password` | `{currentPassword, newPassword}` |
-| POST | `/api/auth/totp/enable` · `/disable` | 2FA |
+| POST | `/api/auth/totp/enable` | 2FA yoqadi → `{secret, otpauthUri, backupCodes[8]}` (zaxira kodlar **faqat shu javobda bir marta** ko'rsatiladi) |
+| POST | `/api/auth/totp/disable` | 2FA o'chiradi; tana: `{currentPassword}` — o'g'irlangan sessiya 2FA ni o'chira olmasligi uchun (P13) |
 
 5 marta xato parol → 15 daqiqa blok (`LockedUntil`). Login urinishlari `AuditLog` da.
 

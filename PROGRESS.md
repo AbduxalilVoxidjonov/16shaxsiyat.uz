@@ -4,7 +4,7 @@
 > PM har vazifa boshlanganda va tugaganda **darhol** yangilaydi.
 
 **Loyiha:** Salohiyat (`salohiyat.uz`) · ichki nom `StudentRoadMap`
-**Oxirgi yangilanish:** 2026-09-02 · **Joriy bosqich:** B2 (Ommaviy API) · **Joriy vazifa:** P13 ‖ P22
+**Oxirgi yangilanish:** 2026-09-02 · **Joriy bosqich:** B3 (Admin API) ‖ B6 (Admin UI) · **Joriy vazifa:** P14 ‖ P23
 
 ---
 
@@ -30,7 +30,7 @@
 | P10 | Application skeleti + sessiya API | backend-dotnet | ✅ | — | QA: PASS · 3 endpoint · ForwardedHeaders tuzatildi |
 | P11 | Savol va javob API | backend-dotnet | ✅ | — | QA: PASS · kesh va IDOR toza · til qo'llab-quvvatlash qo'shildi |
 | P12 | Yakunlash va scoring ulash | backend-dotnet | ✅ | — | QA: PASS · P12-R1/R2 mutatsiya sinovidan o'tdi |
-| P13 | Auth va JWT | backend-dotnet | ⬜ | — | P19 bilan parallel |
+| P13 | Auth va JWT | backend-dotnet | ✅ | — | QA: PASS · TOTP poyga holati tuzatildi |
 | P14 | Maktab va o'quvchi admin API | backend-dotnet | ⬜ | — | |
 | P15 | Sessiya va dashboard API | backend-dotnet | ⬜ | — | |
 | P16 | AI abstraksiya va prompt | ai-integration | ⬜ | — | |
@@ -39,7 +39,7 @@
 | P19 | Frontend skeleti | frontend-react | ✅ | — | QA: PASS · 18 test · Vite qoldiqlari tozalandi |
 | P20 | Ommaviy UI: landing va anketa | frontend-react | ✅ | — | QA: PASS · 63 test · 390px vizual tekshiruv qoldi |
 | P21 | Ommaviy UI: test oqimi, autosave | frontend-react | ✅ | — | QA: PASS · 127 test · javob yo'qolmasligi qulflangan |
-| P22 | Admin skelet va login | frontend-react | ⬜ | — | |
+| P22 | Admin skelet va login | frontend-react | ✅ | — | QA: PASS · 171 test · DataTable qayta ishlatiladi |
 | P23 | Admin: maktablar va havolalar | frontend-react | ⬜ | — | |
 | P24 | Admin: o'quvchilar ro'yxati | frontend-react | ⬜ | — | |
 | P25 | Individual profil sahifasi | frontend-react | ⬜ | — | **Asosiy ekran** |
@@ -195,7 +195,20 @@
 - **Agentlar sessiya limitiga urildi** (03:50 da tiklanadi). Qolgan uchta band PM tomonidan
   yakunlandi: `PublicTestSummaryDto` ga `name`/`estimatedMinutes`, `/start` idempotentligi
   va sessiya holati shartnomasi uchun regressiya testlari.
-- **Keyingi:** P13 (auth va JWT) ‖ P22 (admin skelet va login).
+- **P13 va P22 tugadi, ikkalasi ham QA: PASS.** Backend **511 test**, frontend **171 test**.
+  - P13 QA alohida puxta bo'ldi: timing farqi **o'lchandi** (mavjud bo'lmagan foydalanuvchi
+    21.91ms ↔ noto'g'ri parol 21.99ms), `[JsonIgnore]` atributga ishonmasdan **haqiqiy
+    serializatsiya** bilan tekshirildi, TOTP ni sinash uchun RFC 6238 **mustaqil qayta yozildi**
+    (aylanma tekshiruv bo'lmasligi uchun).
+  - QA topgan MAJOR: TOTP va zaxira kod qayta ishlatishga qarshi himoyaning **o'zi poyga
+    holatiga chidamsiz** edi — "o'qi, keyin yoz" naqshi. Tuzatildi: `AdminUser` ga optimistik
+    konkurentlik tokeni (`ConcurrencyStamp`, `xmin` emas — SQLite sinov muhiti uchun portativ),
+    zaxira kod uchun atomik `UPDATE ... WHERE used_at IS NULL` (P10 dagi `ON CONFLICT` namunasi).
+  - P22 da ishlatilmaydigan `@tanstack/react-table` bog'liqligi olib tashlandi — `DataTable`
+    qo'lda yozilgan va QA buni to'g'ri deb topdi (bizga faqat server-tomon sahifa/saralash kerak).
+    `docs/10`, `prompts/19`, `docs/06` §8 sababi bilan yangilandi.
+  - Saralanadigan ustunlarga `aria-sort` qo'shildi.
+- **Keyingi:** P14 (maktab va o'quvchi admin API) ‖ P23 (admin: maktablar va havolalar).
 
 ---
 

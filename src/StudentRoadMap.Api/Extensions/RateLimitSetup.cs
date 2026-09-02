@@ -21,6 +21,14 @@ public static class RateLimitSetup
     /// <summary>`POST /api/public/.../answers` — SESSIYA bo'yicha (IP emas) 120/daqiqa (`docs/07` 4-bo'lim).</summary>
     public const string PublicSaveAnswers = "PublicSaveAnswers";
 
+    /// <summary>
+    /// `POST /api/auth/login` — IP bo'yicha 10/5 daqiqa. Ikkinchi qatlam himoya (`docs/13-auth-va-jwt.md`
+    /// MAXSUS DIQQAT 9-band): hisob blokirovkasi (5 urinish/15 daq, `AdminUser`) FOYDALANUVCHI
+    /// nomiga bog'liq, bu limit esa IP manzilga — turli username'larni sinab ko'radigan
+    /// (username enumeration) hujumdan ham himoya qiladi.
+    /// </summary>
+    public const string AdminLogin = "AdminLogin";
+
     public static IServiceCollection AddRateLimitPolicies(this IServiceCollection services)
     {
         services.AddRateLimiter(options =>
@@ -69,6 +77,15 @@ public static class RateLimitSetup
             // `UseRateLimiter`dan KEYIN ishga tushadi (`Program.cs`), shu sabab bu yerda xom
             // sarlavha qiymati ishlatiladi — token yaroqsiz bo'lsa ham partitsiya kaliti sifatida
             // yetarli (keyinroq autentifikatsiya 401/410 bilan rad etadi).
+            options.AddPolicy(AdminLogin, httpContext => RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: GetClientIp(httpContext),
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(5),
+                    QueueLimit = 0,
+                }));
+
             options.AddPolicy(PublicSaveAnswers, httpContext => RateLimitPartition.GetFixedWindowLimiter(
                 partitionKey: GetSessionToken(httpContext),
                 factory: _ => new FixedWindowRateLimiterOptions

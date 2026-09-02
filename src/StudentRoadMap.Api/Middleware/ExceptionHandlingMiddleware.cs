@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using StudentRoadMap.Application.Common.Models;
 using StudentRoadMap.Domain.Common;
 using ApplicationValidationException = StudentRoadMap.Application.Common.Exceptions.ValidationException;
+using ConcurrencyConflictException = StudentRoadMap.Application.Common.Exceptions.ConcurrencyConflictException;
 
 namespace StudentRoadMap.Api.Middleware;
 
@@ -69,6 +70,14 @@ public sealed class ExceptionHandlingMiddleware : IExceptionHandler
                 ProblemCodes.ValidationError,
                 "Kiritilgan ma'lumotlar noto'g'ri.",
                 validation.Errors),
+            // QA topilmasi (`docs/13-auth-va-jwt.md`): TOTP asosiy kod poyga holati —
+            // `AppDbContext.SaveChangesAsync` EF Core `DbUpdateConcurrencyException`sini shu
+            // (EF'siz) istisnoga aylantiradi. Mijoz 409 bilan qaytadan urinib ko'rishi kerak.
+            ConcurrencyConflictException concurrency => (
+                409,
+                ProblemCodes.ConcurrencyConflict,
+                concurrency.Message,
+                null),
             DomainException domain => (
                 ProblemCodes.HttpStatusByCode.GetValueOrDefault(domain.Code, ProblemCodes.DefaultDomainErrorStatus),
                 domain.Code,

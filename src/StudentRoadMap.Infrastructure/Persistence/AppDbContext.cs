@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using StudentRoadMap.Application.Common.Events;
+using StudentRoadMap.Application.Common.Exceptions;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Domain.Ai;
 using StudentRoadMap.Domain.Assessments;
@@ -60,6 +61,10 @@ public sealed class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+
+    public DbSet<AdminTotpBackupCode> AdminTotpBackupCodes => Set<AdminTotpBackupCode>();
+
     public DbSet<RegistrationCounter> RegistrationCounters => Set<RegistrationCounter>();
 
     // --- IAppDbContext: DbSet<T> emas, IQueryable<T> (PM qarori) ---------------------------
@@ -94,6 +99,10 @@ public sealed class AppDbContext : DbContext, IAppDbContext
     IQueryable<AdminUser> IAppDbContext.AdminUsers => AdminUsers;
 
     IQueryable<RefreshToken> IAppDbContext.RefreshTokens => RefreshTokens;
+
+    IQueryable<AuditLog> IAppDbContext.AuditLogs => AuditLogs;
+
+    IQueryable<AdminTotpBackupCode> IAppDbContext.AdminTotpBackupCodes => AdminTotpBackupCodes;
 
     IQueryable<RegistrationCounter> IAppDbContext.RegistrationCounters => RegistrationCounters;
 
@@ -133,6 +142,22 @@ public sealed class AppDbContext : DbContext, IAppDbContext
         return rows[0];
     }
 
+    /// <summary>
+    /// Atomik shartli `UPDATE ... WHERE used_at IS NULL` — QA topilmasi (`docs/13-auth-va-jwt.md`):
+    /// ikki bir vaqtdagi so'rov bir xil TOTP zaxira kodi bilan kelsa, `IAppDbContext.TryMarkTotpBackupCodeUsedAsync`
+    /// izohidagi kabi faqat BITTASI muvaffaqiyatli bo'lishi shart (`IncrementRegistrationCounterAsync`
+    /// bilan bir xil naqsh/sabab).
+    /// </summary>
+    async Task<bool> IAppDbContext.TryMarkTotpBackupCodeUsedAsync(Guid backupCodeId, DateTimeOffset usedAt, CancellationToken cancellationToken)
+    {
+        var affectedRows = await Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE admin_totp_backup_codes SET used_at = {usedAt} WHERE id = {backupCodeId} AND used_at IS NULL",
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        return affectedRows > 0;
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // `docs/05-database-schema.md` 2-bo'lim: uuid (pgcrypto) va ism trigram qidiruvi (pg_trgm).
@@ -159,7 +184,20 @@ public sealed class AppDbContext : DbContext, IAppDbContext
         var now = _dateTime.UtcNow;
         UpdateAuditFields(now);
 
-        var result = await base.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        int result;
+        try
+        {
+            result = await base.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            // `Application` qatlami EF Core paketiga bog'lanmasligi uchun (`docs/06` 3-bo'lim)
+            // portativ istisnoga aylantiriladi — QA topilmasi (`docs/13-auth-va-jwt.md`):
+            // `ConcurrencyStamp` (`AdminUserConfiguration`) orqali TOTP asosiy kod poyga holati
+            // shu yerda ushlanadi.
+            throw new ConcurrencyConflictException(
+                "Ma'lumot boshqa so'rov tomonidan bir vaqtda o'zgartirildi. Qaytadan urinib ko'ring.", ex);
+        }
 
         await PublishDomainEventsAsync(cancellationToken).ConfigureAwait(false);
 
@@ -179,6 +217,18 @@ public sealed class AppDbContext : DbContext, IAppDbContext
                 && entry.Metadata.FindProperty("UpdatedAt") is not null)
             {
                 entry.Property("UpdatedAt").CurrentValue = now;
+            }
+
+            // Optimistik konkurentlik (QA topilmasi, `docs/13-auth-va-jwt.md`): `Modified`
+            // yozuvlarda `ConcurrencyStamp` bor bo'lsa YANGI qiymatga o'rnatiladi — UPDATE'ning
+            // WHERE qismi ESKI (original, SELECT paytida o'qilgan) qiymatni ishlatadi (EF
+            // standart xatti-harakati), shu bilan bir vaqtdagi ikki yozuv bir-birini "yutib
+            // qo'ymaydi" (lost update) — ikkinchisi `DbUpdateConcurrencyException` oladi.
+            // Portativ (SQLite/Postgres) — `xmin` kabi provayderga xos ustundan farqli, oddiy
+            // ustun tengligi orqali ishlaydi.
+            if (entry.State == EntityState.Modified && entry.Metadata.FindProperty("ConcurrencyStamp") is not null)
+            {
+                entry.Property("ConcurrencyStamp").CurrentValue = Guid.NewGuid();
             }
         }
     }

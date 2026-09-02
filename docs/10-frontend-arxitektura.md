@@ -12,7 +12,7 @@
 | Forma | **React Hook Form + Zod** | Anketa validatsiyasi, backend qoidalariga mos |
 | UI | **Tailwind CSS 4** + `shadcn/ui` (Radix) | Tez, erishimli, mobile-first |
 | Diagramma | **Recharts** | Radar (Big Five), bar (RIASEC), gauge (indekslar) |
-| Jadval | **TanStack Table v8** | Server-side pagination/sort |
+| Jadval | **Qo'lda yozilgan `DataTable`** (`shared/ui/DataTable.tsx`) | Server-side pagination/sort, URL query bilan sinxron. TanStack Table qo'shilmadi — bizga faqat server tomonda hisoblangan sahifa/saralashni ko'rsatish kerak, mijoz tomonida saralash/filtrlash/guruhlash kerak emas. Kutubxonaning asosiy qiymati aynan o'sha mijoz-tomon imkoniyatlarida, shuning uchun u ishlatilmaydigan bog'liqlik bo'lib qolardi (P22 da olib tashlandi) |
 | i18n | **i18next** | `uz` asosiy, `ru` tayyor |
 | Test | **Vitest + Testing Library**, **Playwright** (E2E) | |
 

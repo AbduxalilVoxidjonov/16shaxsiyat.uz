@@ -2,6 +2,7 @@ export * from './Badge';
 export * from './Button';
 export * from './Card';
 export * from './Checkbox';
+export * from './DataTable';
 export * from './Dialog';
 export * from './EmptyState';
 export * from './ErrorState';

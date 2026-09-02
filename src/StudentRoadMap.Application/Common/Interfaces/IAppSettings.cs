@@ -18,4 +18,11 @@ public interface IAppSettings
     /// orqali yoqadi.
     /// </summary>
     bool ShowResultToStudent { get; }
+
+    /// <summary>
+    /// Superadmin refresh tokenining amal qilish muddati, kunlarda (`docs/08` 2-bo'lim,
+    /// `docs/06` 7-bo'lim: `Jwt:RefreshTokenDays`, standart 14). Sir emas — `Jwt:Key`dan farqli
+    /// o'laroq bu shu interfeys orqali beriladi.
+    /// </summary>
+    int RefreshTokenDays { get; }
 }

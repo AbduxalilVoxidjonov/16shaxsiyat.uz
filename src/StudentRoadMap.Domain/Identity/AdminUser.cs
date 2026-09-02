@@ -27,6 +27,14 @@ public sealed class AdminUser : Entity
 
     public bool TotpEnabled { get; private set; }
 
+    /// <summary>
+    /// TOTP qayta ishlatishga qarshi himoya (`docs/13-auth-va-jwt.md` MAXSUS DIQQAT 5-band:
+    /// "bir kod ikki marta ishlamasin") — oxirgi qabul qilingan RFC 6238 vaqt qadami (30 s
+    /// oynalar soni, Unix vaqtidan). Yangi kod shu qiymatdan katta bo'lishi shart, aks holda
+    /// (bir xil yoki eskiroq qadam) rad etiladi.
+    /// </summary>
+    public long? TotpLastUsedStep { get; private set; }
+
     public int FailedLoginCount { get; private set; }
 
     public DateTimeOffset? LockedUntil { get; private set; }
@@ -36,6 +44,14 @@ public sealed class AdminUser : Entity
     public DateTimeOffset CreatedAt { get; private set; }
 
     public DateTimeOffset UpdatedAt { get; private set; }
+
+    /// <summary>
+    /// Optimistik konkurentlik tokeni (QA topilmasi, `docs/13-auth-va-jwt.md`): har `Modified`
+    /// saqlashda `AppDbContext.SaveChangesAsync` yangi qiymatga o'rnatadi — bir vaqtda ikki
+    /// yozuv (masalan, TOTP asosiy kod poyga holati) bittasini `ConcurrencyConflictException`
+    /// bilan rad etadi. Domendan tashqarida hech qachon o'qilmaydi/tekshirilmaydi.
+    /// </summary>
+    public Guid ConcurrencyStamp { get; private set; }
 
     /// <summary>EF Core uchun parametrsiz konstruktor.</summary>
     private AdminUser()
@@ -55,6 +71,7 @@ public sealed class AdminUser : Entity
         FailedLoginCount = 0;
         CreatedAt = now;
         UpdatedAt = now;
+        ConcurrencyStamp = Guid.NewGuid();
     }
 
     public static AdminUser Create(Guid id, string username, string email, string passwordHash, DateTimeOffset now, AdminRole role = AdminRole.SuperAdmin, string? fullName = null)
@@ -128,6 +145,17 @@ public sealed class AdminUser : Entity
     {
         TotpSecretEncrypted = null;
         TotpEnabled = false;
+        TotpLastUsedStep = null;
+        UpdatedAt = now;
+    }
+
+    /// <summary>
+    /// Muvaffaqiyatli TOTP tekshiruvidan keyin qabul qilingan vaqt qadamini qayd etadi —
+    /// keyingi tekshiruvda shu qadam yoki undan eskisi qayta qabul qilinmaydi (replay himoyasi).
+    /// </summary>
+    public void RegisterTotpStepUsed(long step, DateTimeOffset now)
+    {
+        TotpLastUsedStep = step;
         UpdatedAt = now;
     }
 

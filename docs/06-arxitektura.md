@@ -217,6 +217,10 @@ Barcha xatolar `application/problem+json`:
 | `SESSION_EXPIRED` | 410 | Sessiya muddati o'tgan |
 | `DUPLICATE_ASSESSMENT` | 409 | BR-1 buzildi |
 | `ACCESS_CODE_INVALID` | 400 | Maktab kirish kodi noto'g'ri (P10) |
+| `ACCOUNT_LOCKED` | 423 | 5 xato urinishdan keyin 15 daqiqalik blokirovka (P13) |
+| `TOTP_REQUIRED` | 401 | Foydalanuvchida 2FA yoqilgan, `totpCode` kerak (P13) |
+| `TOTP_ALREADY_ENABLED` | 409 | 2FA allaqachon yoqilgan (P13) |
+| `TOTP_NOT_ENABLED` | 409 | 2FA yoqilmagan, o'chirib bo'lmaydi (P13) |
 
 > **`ProblemDetails` qo'shimcha maydonlari.** `Error` tipida ixtiyoriy `Extensions` lug'ati bor;
 > u `ProblemDetails.Extensions` ga ko'chiriladi. Shu orqali xato bilan birga kontekst yuboriladi —
@@ -285,3 +289,7 @@ Barcha xatolar `application/problem+json`:
 | 2026-09-02 | Barcha ommaviy endpointlar `ActionResult<T>` + `[ProducesResponseType]` bilan; `SupportNonNullableReferenceTypes()` va `RequiredNonNullablePropertiesSchemaFilter` yoqildi | PM (P11) | Ilgari hech bir endpoint javob sxemasini generatsiya qilmasdi — `npm run generate:api` bo'sh tip berardi va PM.md §9 darvozasi #4 ma'nosiz edi. `SupportNonNullableReferenceTypes()` yolg'iz o'zi `required` ro'yxatini to'ldirmasligi empirik aniqlandi, shuning uchun alohida sxema filtri yozildi |
 | 2026-09-02 | `ProblemDetails.errors` kalitlari camelCase (`fullName`, `answers[0].questionId`) | PM (P11) | `System.Text.Json` nom siyosati `Dictionary<string,T>` kalitlariga qo'llanmaydi — FluentValidation `PropertyName` i PascalCase bo'lib sizib chiqardi. Frontend buni qo'lda xarita bilan aylanib o'tayotgan edi; xarita olib tashlandi |
 | 2026-09-02 | Savol matni va `scaleLabels` `Assessment.LanguageCode` bo'yicha tanlanadi, mos matn yo'q bo'lsa `uz` ga qaytadi; **kesh kaliti tilni o'z ichiga oladi** | PM (P11) | `prompts/11` talabi bajarilmagan edi. Kesh tilni ajratmasa, `ru` matn qo'shilgan kuni kesh birinchi so'ragan tilni hamma uchun qaytarardi — jimgina, tushunish qiyin xato. Hozircha faqat `uz` kontenti seed qilingan, mexanizm tayyor |
+| 2026-09-02 | TanStack Table ishlatilmaydi — `DataTable` qo'lda yozildi va bog'liqlik olib tashlandi | PM (P22) | Bizga faqat server tomonda hisoblangan sahifa/saralashni ko'rsatish kerak; kutubxonaning qiymati mijoz-tomon saralash/filtrlash/guruhlashda. `docs/10` va `prompts/19` yangilandi |
+| 2026-09-02 | `admin_totp_backup_codes` jadvali va `admin_users.totp_last_used_step` ustuni qo'shildi | PM (P13) | Zaxira kodlarni xom saqlash mumkin emas — har biri alohida xeshlangan qator; `totp_last_used_step` bir TOTP kodini ikki marta ishlatishni bloklaydi. `docs/05` yangilandi |
+| 2026-09-02 | `POST /api/auth/totp/disable` `{currentPassword}` talab qiladi | PM (P13) | `docs/07` da tana ko'rsatilmagan edi. Parolsiz o'chirish o'g'irlangan sessiyaga 2FA ni yechib tashlash imkonini berardi — ya'ni 2FA ning ma'nosi yo'qolardi |
+| 2026-09-02 | Admin login rate limit: 10 urinish / 5 daqiqa / IP | PM (P13) | `AdminUser` blokirovkasi (5/15daq) hisob bo'yicha ishlaydi; rate limit esa IP bo'yicha — birgalikda parol terish va hisob sanash hujumlarini qoplaydi |

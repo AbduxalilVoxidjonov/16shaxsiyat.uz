@@ -10,6 +10,7 @@ namespace StudentRoadMap.Infrastructure.Common;
 internal sealed class AppSettingsProvider : IAppSettings
 {
     private const int DefaultSessionLifetimeDays = 7;
+    private const int DefaultRefreshTokenDays = 14;
 
     public AppSettingsProvider(IConfiguration configuration)
     {
@@ -22,9 +23,14 @@ internal sealed class AppSettingsProvider : IAppSettings
         // ehtiyotkor standart (`prompts/12`, `IAppSettings.ShowResultToStudent` izohi).
         _ = bool.TryParse(configuration["App:ShowResultToStudent"], out var showResultToStudent);
         ShowResultToStudent = showResultToStudent;
+
+        var refreshDaysRaw = configuration["Jwt:RefreshTokenDays"];
+        RefreshTokenDays = int.TryParse(refreshDaysRaw, out var refreshDays) ? refreshDays : DefaultRefreshTokenDays;
     }
 
     public int SessionLifetimeDays { get; }
 
     public bool ShowResultToStudent { get; }
+
+    public int RefreshTokenDays { get; }
 }

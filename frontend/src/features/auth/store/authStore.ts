@@ -1,15 +1,21 @@
 import { create } from 'zustand';
 import { setAdminAccessToken, setOnAdminSessionExpired } from '@/shared/api/adminClient';
+import type { AdminUser } from '../model/types';
 
-export interface AdminUser {
-  id: string;
-  username: string;
-}
+export type { AdminUser };
 
 interface AuthState {
+  /**
+   * `true` — ilova hali `GET /auth/me` orqali sessiyani tiklashga urinmoqda (sahifa
+   * yangilanganidan keyingi birinchi render). `ProtectedRoute` shu bayroqqa qarab login'ga
+   * qaytarishni **kechiktiradi** — aks holda haqiqatan tizimga kirgan foydalanuvchi ham
+   * tekshiruv tugamasdan bir lahzaga login sahifasini ko'rib qolardi.
+   */
+  isRestoring: boolean;
   accessToken: string | null;
   user: AdminUser | null;
   setSession: (token: string, user: AdminUser) => void;
+  setUser: (user: AdminUser) => void;
   clear: () => void;
 }
 
@@ -20,15 +26,19 @@ interface AuthState {
  * ikkalasini sinxron tutadi.
  */
 export const useAuthStore = create<AuthState>((set) => ({
+  isRestoring: true,
   accessToken: null,
   user: null,
   setSession: (token, user) => {
     setAdminAccessToken(token);
-    set({ accessToken: token, user });
+    set({ accessToken: token, user, isRestoring: false });
+  },
+  setUser: (user) => {
+    set({ user });
   },
   clear: () => {
     setAdminAccessToken(null);
-    set({ accessToken: null, user: null });
+    set({ accessToken: null, user: null, isRestoring: false });
   },
 }));
 

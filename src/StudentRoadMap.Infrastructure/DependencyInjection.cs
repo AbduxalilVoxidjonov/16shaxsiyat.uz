@@ -40,6 +40,11 @@ public static class DependencyInjection
         services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<ITokenGenerator, TokenGenerator>();
         services.AddScoped<IIpHasher, IpHasher>();
+        // Singleton — ikkalasi ham faqat `IConfiguration`ga tayanadi (holatsiz). `Program.cs`
+        // `IJwtTokenService`ni ilova ishga tushganda MAJBURIY resolve qiladi — `Jwt:Key`
+        // uzunligi xato bo'lsa fail-fast (`docs/13-auth-va-jwt.md` MAXSUS DIQQAT 2-band).
+        services.AddSingleton<IJwtTokenService, JwtTokenService>();
+        services.AddSingleton<ITotpService, TotpService>();
         services.AddSingleton<IAppSettings, AppSettingsProvider>();
         // `prompts/12`: AI navbati hozircha yo'q — `NoOpJobQueue` kontraktni bajaradi, P18 da almashadi.
         services.AddSingleton<IBackgroundJobQueue, NoOpJobQueue>();

@@ -8,7 +8,7 @@ Backend to'liq ishlaydi. Endi React SPA. Bu promptda faqat poydevor — hech qan
 
 ## Vazifa
 1. `frontend/` da Vite + React 19 + TypeScript (strict) loyihasi.
-2. Paketlar: `react-router`, `@tanstack/react-query`, `@tanstack/react-table`, `zustand`,
+2. Paketlar: `react-router`, `@tanstack/react-query`, `zustand`,
    `react-hook-form`, `zod`, `tailwindcss`, `recharts`, `i18next` + `react-i18next`,
    `lucide-react`; dev: `vitest`, `@testing-library/react`, `eslint`, `prettier`, `playwright`.
 3. `tsconfig`: `strict`, `noUncheckedIndexedAccess`, `@/*` path alias.

@@ -36,7 +36,72 @@
     "ai": "AI sozlamalari",
     "audit": "Audit jurnali",
     "settings": "Sozlamalar",
-    "logout": "Chiqish"
+    "logout": "Chiqish",
+    "account": "Hisob",
+    "comingSoon": "Tez orada",
+    "openMenu": "Menyuni ochish",
+    "closeMenu": "Menyuni yopish"
+  },
+  "dataTable": {
+    "paginationLabel": "Sahifalash",
+    "previousPage": "Oldingi sahifa",
+    "nextPage": "Keyingi sahifa",
+    "pageIndicator": "{{page}} / {{totalPages}}",
+    "totalCount": "Jami: {{count}} ta",
+    "sortedBy": "Saralangan ({{direction}})",
+    "ascending": "o'sish tartibida",
+    "descending": "kamayish tartibida"
+  },
+  "auth": {
+    "login": {
+      "heading": "Boshqaruv paneliga kirish",
+      "usernameLabel": "Login",
+      "passwordLabel": "Parol",
+      "totpLabel": "Tasdiqlash kodi (2FA)",
+      "totpHint": "Autentifikatsiya ilovasidagi 6 xonali kodni kiriting.",
+      "submitCta": "Kirish",
+      "usernameRequired": "Login kiritilishi shart.",
+      "passwordRequired": "Parol kiritilishi shart.",
+      "totpCodeInvalidFormat": "6 xonali kodni kiriting.",
+      "invalidCredentials": "Login yoki parol noto'g'ri.",
+      "accountLocked": "Hisob 15 daqiqaga bloklandi. Birozdan so'ng qayta urinib ko'ring.",
+      "totpInvalid": "Tasdiqlash kodi noto'g'ri.",
+      "totpRequired": "Davom etish uchun autentifikatsiya ilovasidagi kodni kiriting.",
+      "genericError": "Kirishda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
+    }
+  },
+  "settings": {
+    "changePassword": {
+      "heading": "Parolni o'zgartirish",
+      "currentPasswordLabel": "Joriy parol",
+      "newPasswordLabel": "Yangi parol",
+      "confirmPasswordLabel": "Yangi parolni tasdiqlang",
+      "submitCta": "Saqlash",
+      "success": "Parol muvaffaqiyatli o'zgartirildi.",
+      "currentPasswordRequired": "Joriy parolni kiriting.",
+      "minLength": "Parol kamida 10 belgidan iborat bo'lishi kerak.",
+      "requiresLetterAndDigit": "Parolda kamida bitta harf va bitta raqam bo'lishi kerak.",
+      "mismatch": "Parollar mos emas.",
+      "currentPasswordInvalid": "Joriy parol noto'g'ri.",
+      "genericError": "Parolni o'zgartirishda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
+    },
+    "twoFactor": {
+      "heading": "Ikki bosqichli autentifikatsiya (2FA)",
+      "description": "Hisobingiz xavfsizligini oshirish uchun autentifikatsiya ilovasi (masalan Google Authenticator) orqali qo'shimcha tasdiqlash qo'shing.",
+      "enabledStatus": "Yoqilgan",
+      "disabledStatus": "Yoqilmagan",
+      "enableCta": "Yoqish",
+      "disableCta": "O'chirish",
+      "enableSuccess": "2FA muvaffaqiyatli yoqildi. Zaxira kodlarni xavfsiz joyda saqlang.",
+      "disableSuccess": "2FA o'chirildi.",
+      "secretLabel": "Maxfiy kalit",
+      "recoveryCodesLabel": "Zaxira kodlar (har biri bir marta ishlatiladi)",
+      "confirmDisableTitle": "2FA'ni o'chirishni tasdiqlang",
+      "confirmDisableDescription": "Davom etish uchun joriy parolingizni kiriting.",
+      "passwordLabel": "Parol",
+      "passwordRequired": "Parolni kiriting.",
+      "genericError": "Amalni bajarishda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
+    }
   },
   "pages": {
     "placeholderNotice": "Bu sahifa hali qurilmoqda.",

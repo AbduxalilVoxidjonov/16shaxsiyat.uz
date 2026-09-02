@@ -132,6 +132,8 @@ HTTP → HTTPS redirect; production'da HSTS yoqiladi.
 ## 8. Audit qilinadigan harakatlar
 
 `Auth.LoginSucceeded`, `Auth.LoginFailed`, `Auth.PasswordChanged`, `Auth.TotpEnabled`,
+`Auth.TotpDisabled` (P13 da qo'shildi — 2FA o'chirilishi yoqilishidan ko'ra muhimroq hodisa,
+chunki u himoyani pasaytiradi),
 `Security.RefreshReuse`, `School.Created/Updated/Deleted`, `School.LinkRegenerated`,
 `School.ToggledActive`, `Student.Deleted`, `Assessment.Deleted`, `Assessment.AnalysisRerun`,
 `Assessment.ScoresRecalculated`, `AiConfig.Updated`, `AiConfig.KeyChanged` (kalit qiymati emas!),

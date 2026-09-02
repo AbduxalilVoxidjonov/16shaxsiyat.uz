@@ -2,8 +2,11 @@ import type { HTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from 'react';
 import { cn } from '@/shared/lib/cn';
 
 /**
- * Jadval vizual primitivlari — ma'lumot va sortlash mantig'i `@tanstack/react-table`
- * orqali featurelarda ulanadi (docs/10, 5.3-bo'lim). Bu yerda faqat semantik markup + uslub.
+ * Jadval vizual primitivlari — semantik markup + uslub. Ma'lumot va sahifalash/sortlash
+ * mantig'i `shared/ui/DataTable.tsx` (server-side, `useServerTableState` bilan) orqali
+ * ulanadi — `@tanstack/react-table` ISHLATILMAYDI (docs/10, 5.3-bo'lim; `DataTable.tsx`dagi
+ * "Muhandislik qarori" izohiga qarang: paket eskirgan/mos kelmaydigan versiyada edi,
+ * PM tasdig'i bilan bog'liqlikdan butunlay olib tashlandi).
  */
 
 export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>) {

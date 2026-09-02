@@ -56,6 +56,10 @@ public sealed class HealthEndpointTests : IClassFixture<HealthEndpointTests.Test
                 {
                     ["ConnectionStrings:Postgres"] =
                         "Host=127.0.0.1;Port=5432;Database=studentroadmap;Username=srm;Password=test;Timeout=1;Command Timeout=1",
+                    // `Program.cs` `IJwtTokenService`ni START-UPda MAJBURIY resolve qiladi
+                    // (fail-fast, `docs/13-auth-va-jwt.md` MAXSUS DIQQAT 2-band) — bu factory
+                    // `PublicApiTestFactory`dan meros olmagani uchun qiymat shu yerda alohida beriladi.
+                    ["Jwt:Key"] = "integration-test-jwt-signing-key-at-least-32-bytes-long-0000",
                 });
             });
         }
