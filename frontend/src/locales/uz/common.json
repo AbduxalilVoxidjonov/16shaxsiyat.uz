@@ -135,7 +135,9 @@
       "resumedNotice": "Boshlagan testingni davom ettiramiz.",
       "genericSubmitError": "Yuborishda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
     },
-    "test": { "title": "Test savollari" },
+    "test": {
+      "title": "Test savollari"
+    },
     "testDone": {
       "title": "Blok tugadi",
       "heading": "Ajoyib! Blok tugadi",
@@ -159,18 +161,42 @@
       "forbiddenTitle": "Natija ko'rsatilmaydi",
       "forbiddenDescription": "Natijalaring maktabingizga yuboriladi, u yerdan bilib olasan."
     },
-    "login": { "title": "Tizimga kirish" },
-    "dashboard": { "title": "Boshqaruv paneli" },
-    "schools": { "title": "Maktablar" },
-    "students": { "title": "O'quvchilar" },
-    "studentProfile": { "title": "O'quvchi profili" },
-    "assessments": { "title": "Sessiyalar" },
-    "assessmentDetail": { "title": "Sessiya detali" },
-    "catalog": { "title": "Testlar katalogi" },
-    "ai": { "title": "AI sozlamalari" },
-    "audit": { "title": "Audit jurnali" },
-    "settings": { "title": "Sozlamalar" },
-    "notFound": { "title": "Sahifa topilmadi" }
+    "login": {
+      "title": "Tizimga kirish"
+    },
+    "dashboard": {
+      "title": "Boshqaruv paneli"
+    },
+    "schools": {
+      "title": "Maktablar"
+    },
+    "students": {
+      "title": "O'quvchilar"
+    },
+    "studentProfile": {
+      "title": "O'quvchi profili"
+    },
+    "assessments": {
+      "title": "Sessiyalar"
+    },
+    "assessmentDetail": {
+      "title": "Sessiya detali"
+    },
+    "catalog": {
+      "title": "Testlar katalogi"
+    },
+    "ai": {
+      "title": "AI sozlamalari"
+    },
+    "audit": {
+      "title": "Audit jurnali"
+    },
+    "settings": {
+      "title": "Sozlamalar"
+    },
+    "notFound": {
+      "title": "Sahifa topilmadi"
+    }
   },
   "test": {
     "sessionExpiredTitle": "Sessiya muddati tugagan. Iltimos, qaytadan boshlang.",
@@ -410,10 +436,22 @@
   "widgets": {
     "axisBar": {
       "pole": {
-        "EI": { "zero": "Introversiya", "hundred": "Ekstraversiya" },
-        "SN": { "zero": "Sezish", "hundred": "Intuitsiya" },
-        "TF": { "zero": "Fikrlash", "hundred": "His-tuyg'u" },
-        "JP": { "zero": "Moslashuvchan", "hundred": "Tartibli" }
+        "EI": {
+          "zero": "Introversiya",
+          "hundred": "Ekstraversiya"
+        },
+        "SN": {
+          "zero": "Sezish",
+          "hundred": "Intuitsiya"
+        },
+        "TF": {
+          "zero": "Fikrlash",
+          "hundred": "His-tuyg'u"
+        },
+        "JP": {
+          "zero": "Moslashuvchan",
+          "hundred": "Tartibli"
+        }
       },
       "ariaLabel": "{{zeroLabel}} va {{hundredLabel}} o'qi: {{hundredLetter}} tomon {{pct}} foiz",
       "borderline": "Muvozanat",
@@ -621,5 +659,125 @@
       "error": "PDF hisobotni yuklab bo'lmadi. Birozdan so'ng qayta urinib ko'ring."
     },
     "loadError": "O'quvchi profilini yuklab bo'lmadi"
+  },
+  "dashboard": {
+    "dateRange": {
+      "fromLabel": "Sanadan",
+      "toLabel": "Sanagacha",
+      "presets": {
+        "last7": "Oxirgi 7 kun",
+        "last30": "Oxirgi 30 kun"
+      },
+      "clear": "Filtrni tozalash"
+    },
+    "kpi": {
+      "schools": "Maktablar",
+      "schoolsHint": "{{active}} faol / {{total}} jami",
+      "students": "O'quvchilar",
+      "completedAssessments": "Yakunlangan sessiyalar",
+      "pendingAnalysis": "Tahlil navbatida",
+      "pendingAnalysisHint": "Bosing — sessiyalar ro'yxatiga o'tadi",
+      "needsAttention": "E'tibor talab qiladi",
+      "needsAttentionHint": "Bosing — o'quvchilar ro'yxatiga o'tadi"
+    },
+    "last30Days": {
+      "heading": "Oxirgi 30 kun",
+      "newStudents": "Yangi o'quvchilar",
+      "completed": "Yakunlangan",
+      "avgDuration": "O'rtacha davomiylik",
+      "avgDurationValue": "{{minutes}} daqiqa",
+      "avgReliability": "O'rtacha ishonchlilik",
+      "dropOffRate": "Tashlab ketish darajasi"
+    },
+    "funnel": {
+      "heading": "Voronka: havoladan tahlilgacha",
+      "description": "Har bosqichda o'quvchilar soni va oldingi bosqichga nisbatan foizi ko'rsatilgan.",
+      "emptyTitle": "Bu davrda faollik hali yo'q",
+      "emptyDescription": "Tanlangan sana oralig'ida havola ochilishi/ro'yxatdan o'tish qayd etilmagan. Boshqa davrni tanlang yoki maktab havolasini ulashing.",
+      "steps": {
+        "linkViews": "Havola ochilgan",
+        "registered": "Ro'yxatdan o'tgan",
+        "started": "Boshlagan",
+        "completed": "Yakunlagan",
+        "analyzed": "Tahlil tayyor"
+      },
+      "percentOfPrevious": "oldingidan {{value}}%",
+      "noPreviousData": "oldingi bosqich ma'lumoti yo'q",
+      "stepAriaLabel": "{{label}}: {{count}}, {{percent}}",
+      "tableCaption": "Voronka bosqichlari",
+      "tableStepColumn": "Bosqich",
+      "tableCountColumn": "Son",
+      "tablePercentColumn": "Oldingidan foiz"
+    },
+    "schoolBreakdown": {
+      "heading": "Maktablar kesimi",
+      "table": {
+        "name": "Nomi",
+        "region": "Viloyat",
+        "linkViews": "Ochilgan",
+        "registered": "Ro'yxatdan o'tgan",
+        "completed": "Yakunlagan",
+        "completionRate": "Yakunlash foizi",
+        "lastActivityAt": "Oxirgi faollik",
+        "ariaLabel": "Maktablar kesimi jadvali"
+      },
+      "emptyTitle": "Hali maktab yo'q",
+      "emptyDescription": "Birinchi maktabni qo'shing — o'ziga xos havola avtomatik yaratiladi.",
+      "addSchoolCta": "Birinchi maktabni qo'shish"
+    },
+    "charts": {
+      "personalityHeading": "Shaxsiyat tiplari taqsimoti",
+      "personalityAriaLabel": "Shaxsiyat tiplari taqsimoti: {{values}}",
+      "personalityEmptyTitle": "Hali ma'lumot yo'q",
+      "personalityEmptyDescription": "O'quvchilar testni yakunlaganda taqsimot shu yerda ko'rinadi.",
+      "activityHeading": "Aktivlik darajalari",
+      "activityAriaLabel": "Aktivlik darajalari taqsimoti: {{values}}",
+      "activityEmptyTitle": "Hali ma'lumot yo'q",
+      "activityEmptyDescription": "O'quvchilar testni yakunlaganda taqsimot shu yerda ko'rinadi.",
+      "hollandHeading": "Kasb qiziqishlari (Holland) — eng ko'p uchraydiganlar",
+      "hollandAriaLabel": "Eng ko'p uchraydigan Holland kodlari: {{values}}",
+      "hollandEmptyTitle": "Hali ma'lumot yo'q",
+      "hollandEmptyDescription": "O'quvchilar RIASEC testini yakunlaganda shu yerda ko'rinadi.",
+      "tableTypeColumn": "Tip",
+      "tableCountColumn": "Soni",
+      "tableLevelColumn": "Daraja",
+      "tableCodeColumn": "Kod",
+      "shareOfTotal": "jamidan {{value}}%",
+      "activityLevel": {
+        "Passive": "Passiv",
+        "LowActive": "Kam faol",
+        "Moderate": "O'rtacha faol",
+        "Active": "Faol",
+        "HighlyActive": "Juda faol"
+      }
+    },
+    "recentAssessments": {
+      "heading": "So'nggi sessiyalar",
+      "ariaLabel": "So'nggi sessiyalar jadvali",
+      "student": "O'quvchi",
+      "school": "Maktab",
+      "completedAt": "Yakunlangan sana",
+      "status": "Holat",
+      "emptyTitle": "Hali sessiya yo'q",
+      "emptyDescription": "O'quvchilar test topshirganda so'nggi sessiyalar shu yerda ko'rinadi.",
+      "statusValues": {
+        "Draft": "Qoralama",
+        "InProgress": "Davom etmoqda",
+        "Completed": "Yakunlangan",
+        "Analyzing": "Tahlil qilinmoqda",
+        "Analyzed": "Tahlil qilingan",
+        "AnalysisFailed": "Tahlil muvaffaqiyatsiz",
+        "Abandoned": "Tashlab ketilgan"
+      }
+    },
+    "emptySchools": {
+      "title": "Hali maktab yo'q",
+      "description": "Boshqaruv paneli ma'lumot ko'rsatishi uchun avval kamida bitta maktab qo'shing.",
+      "cta": "Birinchi maktabni qo'shish"
+    },
+    "error": {
+      "title": "Statistika yuklanmadi",
+      "description": "Server bilan bog'lanishda xatolik yuz berdi."
+    }
   }
 }

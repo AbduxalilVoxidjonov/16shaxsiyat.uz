@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
 using StudentRoadMap.Application.Public.Common;
@@ -15,6 +16,23 @@ namespace StudentRoadMap.Application.Public.GetSchoolInfo;
 /// bilan solishtiriladi (`docs/08-auth-va-xavfsizlik.md` 3-bo'lim). Noto'g'ri token bo'lsa
 /// maktabning mavjudligini oshkor qilmaslik uchun xuddi shu `NOT_FOUND` qaytariladi
 /// (topilmagan slug bilan bir xil javob).
+///
+/// **Havola ochilishi hisoblagichi (`prompts/15` vazifa 1, 2026-09-02):** bu — dashboard
+/// voronkasining ENG YUQORI bo'g'ini (`school_link_views`). Handler QUERY bo'lsa ham (odatda
+/// `docs/06` 4-bo'lim: "Query'lar READ-ONLY") atayin bitta yon ta'sirga ega — `IncrementSchoolLinkViewAsync`
+/// atomik xom SQL orqali (na `_context.Add`, na `SaveChangesAsync` — `TransactionBehavior`
+/// FAQAT `*Command` so'rovlarini o'raydi, bu yerga kerak emas, chunki SQL statement o'zi atomik).
+/// Hisoblagich **FAQAT** token to'g'ri VA maktab faol bo'lganda oshiriladi (404/410 holatida
+/// OSHIRILMAYDI) — pastdagi ikkita erta `return`dan KEYIN chaqiriladi. Bu — QASDDAN qilingan
+/// istisno (`docs/06` 4-bo'lim, PM qarori 2026-09-02): telemetriya hisoblagichi, alohida
+/// endpoint qilish yomonroq bo'lardi (qo'shimcha so'rov, mijoz o'tkazib yuborishi mumkin,
+/// poyga holati).
+///
+/// **FAIL-OPEN shart (PM qarori, 2026-09-02):** hisoblagich yozuvi MUVAFFAQIYATSIZ bo'lsa
+/// (DB band, deadlock, cheklov buzilishi) landing sahifasi (`GET .../schools/{slug}`) YIQILMASLIGI
+/// kerak — telemetriya nosozligi mahsulotdan MUHIMROQ bo'lib qolmasligi kerak. Shu sabab
+/// chaqiruv `try/catch` bilan o'raladi: xato `LogWarning` bilan yoziladi va YUTILADI, javob
+/// baribir muvaffaqiyatli qaytadi.
 /// </summary>
 internal sealed class GetSchoolInfoQueryHandler : IRequestHandler<GetSchoolInfoQuery, Result<GetSchoolInfoResult>>
 {
@@ -27,11 +45,16 @@ internal sealed class GetSchoolInfoQueryHandler : IRequestHandler<GetSchoolInfoQ
 
     private readonly IAppDbContext _context;
     private readonly IAsyncQueryExecutor _executor;
+    private readonly IDateTime _dateTime;
+    private readonly ILogger<GetSchoolInfoQueryHandler> _logger;
 
-    public GetSchoolInfoQueryHandler(IAppDbContext context, IAsyncQueryExecutor executor)
+    public GetSchoolInfoQueryHandler(
+        IAppDbContext context, IAsyncQueryExecutor executor, IDateTime dateTime, ILogger<GetSchoolInfoQueryHandler> logger)
     {
         _context = context;
         _executor = executor;
+        _dateTime = dateTime;
+        _logger = logger;
     }
 
     public async Task<Result<GetSchoolInfoResult>> Handle(GetSchoolInfoQuery request, CancellationToken cancellationToken)
@@ -49,6 +72,25 @@ internal sealed class GetSchoolInfoQueryHandler : IRequestHandler<GetSchoolInfoQ
         if (!school.IsActive)
         {
             return Result.Failure<GetSchoolInfoResult>(new Error(ProblemCodes.SchoolInactive, "Ushbu maktab havolasi hozircha faol emas."));
+        }
+
+        // Faqat shu nuqtadan — havola va token TO'G'RI VA maktab FAOL tasdiqlangach — atomik
+        // oshiriladi (sinf izohiga qarang). 404/410 holatlarida yuqoridagi erta `return`lar
+        // bilan chiqib ketiladi, hisoblagich OSHIRILMAYDI.
+        //
+        // FAIL-OPEN (PM qarori, 2026-09-02): bu — telemetriya, mahsulot ZANJIRINING o'zi EMAS.
+        // Hisoblagich yozuvi (DB band, deadlock, cheklov buzilishi va h.k.) muvaffaqiyatsiz
+        // bo'lsa ham, o'quvchi landing sahifasiga (bu so'rovning HAQIQIY maqsadi) kira olishi
+        // SHART — shu sabab istisno bu yerda YUTILADI (faqat `LogWarning`), pastga OTILMAYDI.
+        var dateUtc = DateOnly.FromDateTime(_dateTime.UtcNow.UtcDateTime);
+        try
+        {
+            await _context.IncrementSchoolLinkViewAsync(school.Id, dateUtc, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex, "Havola ochilishi hisoblagichini oshirib bo'lmadi (schoolId={SchoolId}) — landing sahifasi baribir qaytariladi.", school.Id);
         }
 
         var testDefinitions = await _executor.ToListAsync(

@@ -15,9 +15,11 @@ namespace StudentRoadMap.Application.Admin.Dashboard.GetStats;
 /// **Ishlash (`prompts/15` MAXSUS DIQQAT #2):** har bir ko'rsatkich — BITTA DB darajasidagi
 /// agregat so'rov (`COUNT`/`SUM`/`GROUP BY`); sikl ichida so'rov YO'Q. Sikl faqat sahifa
 /// hajmidagi (`RecentAssessmentsLimit` = 10) natijani JSON'ga yig'ishda ishlatiladi (xotirada,
-/// so'rovsiz). Jami ~14 so'rov (pastdagi metodlarga qarang) — `ListStudentsQueryHandler`dagi
-/// "sahifa hajmida batch" tamoyili bilan bir xil ruhda, lekin bu yerda "sahifa" o'rniga har bir
-/// alohida METRIKA o'zining aniq `WHERE`/`GROUP BY` so'rovini oladi.
+/// so'rovsiz). Jami ~18 so'rov (pastdagi metodlarga qarang, `funnel`/`schoolBreakdown` — `prompts/15`
+/// vazifa 2, 2026-09-02 kengaytmasi — +4 ta) — `ListStudentsQueryHandler`dagi "sahifa hajmida
+/// batch" tamoyili bilan bir xil ruhda, lekin bu yerda "sahifa" o'rniga har bir alohida METRIKA
+/// o'zining aniq `WHERE`/`GROUP BY` so'rovini oladi. `BuildFunnelAsync` `registered`/`completed`ni
+/// `BuildLast30DaysAsync` natijasidan QAYTA ISHLATADI (qo'shimcha so'rovsiz).
 ///
 /// **Kesh** (`ICacheService`, 60 soniya, `prompts/15` MAXSUS DIQQAT #2): bitta superadmin
 /// (`docs/01` MVP qamrovi) — dashboard barcha (ya'ni yagona) admin uchun bir xil, shu sabab
@@ -38,6 +40,7 @@ internal sealed class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboa
 {
     private const int RecentAssessmentsLimit = 10;
     private const int HollandTopLimit = 10;
+    private const int SchoolBreakdownLimit = 20;
     private static readonly TimeSpan CacheDuration = TimeSpan.FromSeconds(60);
 
     private readonly IAppDbContext _context;
@@ -80,8 +83,11 @@ internal sealed class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboa
         var activityDistribution = await BuildActivityDistributionAsync(cancellationToken).ConfigureAwait(false);
         var hollandTop = await BuildHollandTopAsync(cancellationToken).ConfigureAwait(false);
         var recentAssessments = await BuildRecentAssessmentsAsync(cancellationToken).ConfigureAwait(false);
+        var funnel = await BuildFunnelAsync(from, to, last30Days.NewStudents, last30Days.Completed, cancellationToken).ConfigureAwait(false);
+        var schoolBreakdown = await BuildSchoolBreakdownAsync(from, to, cancellationToken).ConfigureAwait(false);
 
-        var dto = new AdminDashboardStatsDto(totals, last30Days, personalityDistribution, activityDistribution, hollandTop, recentAssessments);
+        var dto = new AdminDashboardStatsDto(
+            totals, last30Days, personalityDistribution, activityDistribution, hollandTop, recentAssessments, funnel, schoolBreakdown);
         _cache.Set(cacheKey, dto, CacheDuration);
 
         return Result.Success(dto);
@@ -159,10 +165,19 @@ internal sealed class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboa
             ? 0m
             : await _executor.SumAsync(completedInWindow, a => (decimal)(a.ReliabilityScore ?? 0), cancellationToken).ConfigureAwait(false);
 
-        var avgDurationMinutes = Math.Round(AdminDashboardMath.SafeAverage(durationSum, completedTotal) / 60.0, 1);
-        var avgReliability = Math.Round(AdminDashboardMath.SafeAverage(reliabilitySum, completedTotal), 1);
+        // `null` — "ma'lumot yo'q" (oynada yakunlangan sessiya UMUMAN yo'q), `AdminDashboardMath`
+        // izohiga qarang (PM topilmasi, 2026-09-02) — `Math.Round` faqat QIYMAT bo'lganda qo'llanadi.
+        var avgDurationMinutes = AdminDashboardMath.SafeAverage(durationSum, completedTotal) is { } avgDurationSeconds
+            ? Math.Round(avgDurationSeconds / 60.0, 1)
+            : (double?)null;
 
-        return new AdminDashboardLast30DaysDto(newStudents, completedTotal, avgDurationMinutes, avgReliability, Math.Round(dropOffRate, 4));
+        var avgReliability = AdminDashboardMath.SafeAverage(reliabilitySum, completedTotal) is { } avgReliabilityRaw
+            ? Math.Round(avgReliabilityRaw, 1)
+            : (double?)null;
+
+        var roundedDropOffRate = dropOffRate is { } dropOffRateValue ? Math.Round(dropOffRateValue, 4) : (double?)null;
+
+        return new AdminDashboardLast30DaysDto(newStudents, completedTotal, avgDurationMinutes, avgReliability, roundedDropOffRate);
     }
 
     /// <summary>1 `GROUP BY` so'rov — `students.last_personality_type` (joriy holat, hamma vaqt).</summary>
@@ -249,6 +264,99 @@ internal sealed class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboa
                 schoolNameById.GetValueOrDefault(a.SchoolId, "?"),
                 a.CompletedAt,
                 a.Status.ToString()))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Voronka (`prompts/15` vazifa 2, 2026-09-02) — 3 ta DB so'rov: `linkViews` (`SUM`),
+    /// `started` (`COUNT`, `Status != Draft`), `analyzed` (`COUNT`, `Status == Analyzed`).
+    /// `registered`/`completed` PARAMETR sifatida keladi — `BuildLast30DaysAsync` allaqachon
+    /// AYNAN shu qiymatlarni (`NewStudents`/`Completed`) hisoblab bo'lgan, qayta so'ramaslik
+    /// uchun qayta ishlatiladi (ortiqcha DB so'rovsiz).
+    /// </summary>
+    private async Task<AdminDashboardFunnelDto> BuildFunnelAsync(
+        DateTimeOffset from, DateTimeOffset to, int registered, int completed, CancellationToken cancellationToken)
+    {
+        var fromDate = DateOnly.FromDateTime(from.UtcDateTime);
+        var toDate = DateOnly.FromDateTime(to.UtcDateTime);
+
+        var linkViews = await _executor.SumAsync(
+            _context.AsNoTracking(_context.SchoolLinkViews).Where(v => v.DateUtc >= fromDate && v.DateUtc <= toDate),
+            v => v.Count,
+            cancellationToken).ConfigureAwait(false);
+
+        var started = await _executor.CountAsync(
+            _context.AsNoTracking(_context.Assessments)
+                .Where(a => a.StartedAt >= from && a.StartedAt <= to && a.Status != AssessmentStatus.Draft),
+            cancellationToken).ConfigureAwait(false);
+
+        var analyzed = await _executor.CountAsync(
+            _context.AsNoTracking(_context.Assessments)
+                .Where(a => a.StartedAt >= from && a.StartedAt <= to && a.Status == AssessmentStatus.Analyzed),
+            cancellationToken).ConfigureAwait(false);
+
+        return new AdminDashboardFunnelDto(linkViews, registered, started, completed, analyzed);
+    }
+
+    /// <summary>
+    /// Maktab kesimidagi voronka (`prompts/15` vazifa 2) — BITTA DB so'rov: `Schools` asosiy
+    /// jadval, `SchoolLinkViews`/`Students`/`Assessments` bo'yicha KORRELYATSIYALANGAN skalyar
+    /// subquery'lar (`Sum`/`Count`/`Max`) to'g'ridan-to'g'ri `Select` proyeksiyasida — EF Core
+    /// buni BITTA SQL so'roviga (har maktab qatori uchun skalyar subquery) tarjima qiladi.
+    /// Saralash (`OrderByDescending`) va `Take(20)` HAM shu SQL so'rovining o'zida (DB darajasida,
+    /// `prompts/15` cheklovi: "Xotirada saralash yoki hisoblash taqiqlanadi"). Natijada `registered`
+    /// nolga teng bo'lishi TABIIY mumkin (masalan maktab faqat havolani ochgan, hali hech kim
+    /// ro'yxatdan o'tmagan) — `Schools` asosiy jadval bo'lgani uchun (`Students`/`Assessments`
+    /// bo'yicha `GroupBy` EMAS), bunday maktab HAM ro'yxatga kiradi, `completionRate` esa
+    /// `AdminDashboardMath.CompletionRate` orqali `null` bo'ladi (PM tuzatmasi, 2026-09-02:
+    /// "ma'lumot yo'q" ≠ "haqiqiy 0%").
+    ///
+    /// Saralash tartibi (eng faoli birinchi): `registered` DESC, keyin `completed` DESC, keyin
+    /// `linkViews` DESC — "faollik" aniq bitta ustunga tushmagani uchun uch bosqichli tie-break
+    /// (PM'ga savol: agar boshqa ustuvorlik kerak bo'lsa — masalan faqat `completed` — aytilsin).
+    /// </summary>
+    private async Task<IReadOnlyList<AdminDashboardSchoolBreakdownItemDto>> BuildSchoolBreakdownAsync(
+        DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken)
+    {
+        var fromDate = DateOnly.FromDateTime(from.UtcDateTime);
+        var toDate = DateOnly.FromDateTime(to.UtcDateTime);
+
+        var rows = await _executor.ToListAsync(
+            _context.AsNoTracking(_context.Schools)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Name,
+                    s.Region,
+                    LinkViews = _context.SchoolLinkViews
+                        .Where(v => v.SchoolId == s.Id && v.DateUtc >= fromDate && v.DateUtc <= toDate)
+                        .Sum(v => v.Count),
+                    Registered = _context.Students
+                        .Count(st => st.SchoolId == s.Id && st.CreatedAt >= from && st.CreatedAt <= to),
+                    Completed = _context.Assessments
+                        .Count(a => a.SchoolId == s.Id && a.StartedAt >= from && a.StartedAt <= to && a.CompletedAt != null),
+                    LastActivityAt = _context.Assessments
+                        .Where(a => a.SchoolId == s.Id && a.StartedAt >= from && a.StartedAt <= to)
+                        .Max(a => (DateTimeOffset?)a.UpdatedAt),
+                })
+                .OrderByDescending(x => x.Registered)
+                .ThenByDescending(x => x.Completed)
+                .ThenByDescending(x => x.LinkViews)
+                .Take(SchoolBreakdownLimit),
+            cancellationToken).ConfigureAwait(false);
+
+        return rows
+            .Select(r => new AdminDashboardSchoolBreakdownItemDto(
+                r.Id,
+                r.Name,
+                r.Region,
+                r.LinkViews,
+                r.Registered,
+                r.Completed,
+                AdminDashboardMath.CompletionRate(r.Completed, r.Registered) is { } completionRate
+                    ? Math.Round(completionRate, 4)
+                    : (double?)null,
+                r.LastActivityAt))
             .ToList();
     }
 }

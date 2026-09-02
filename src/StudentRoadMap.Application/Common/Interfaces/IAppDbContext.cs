@@ -59,6 +59,8 @@ public interface IAppDbContext
 
     IQueryable<RegistrationCounter> RegistrationCounters { get; }
 
+    IQueryable<SchoolLinkView> SchoolLinkViews { get; }
+
     /// <summary>
     /// So'rovni kuzatilmaydigan (no-tracking) rejimga o'tkazadi — Query handler'lar uchun
     /// (`docs/06-arxitektura.md` 4-bo'lim: "Query'lar READ-ONLY, `AsNoTracking()`"). `Application`
@@ -104,6 +106,16 @@ public interface IAppDbContext
     /// holatiga (ikkalasi ham eski qiymatni o'qib, limitdan oshib ketishi mumkin) olib keladi.
     /// </summary>
     Task<int> IncrementRegistrationCounterAsync(Guid schoolId, DateOnly dateUtc, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Maktab havolasining kunlik ochilish hisoblagichini atomik oshiradi va YANGI qiymatni
+    /// qaytaradi — `school_link_views(school_id, date_utc)` bo'yicha `INSERT ... ON CONFLICT
+    /// DO UPDATE SET count = count + 1` (`IncrementRegistrationCounterAsync` bilan BIR XIL
+    /// naqsh/sabab — poyga holatining oldini olish uchun xom SQL, `docs/08` 3-bo'lim ruxsati).
+    /// `GetSchoolInfoQueryHandler` (ommaviy landing chaqiruvi) faqat havola/token to'g'ri va
+    /// maktab faol bo'lganda chaqiradi (`prompts/15` vazifa 1).
+    /// </summary>
+    Task<int> IncrementSchoolLinkViewAsync(Guid schoolId, DateOnly dateUtc, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// TOTP zaxira kodini ATOMIK "ishlatilgan" deb belgilaydi — `UPDATE admin_totp_backup_codes

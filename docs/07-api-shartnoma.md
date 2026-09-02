@@ -364,6 +364,36 @@ personalityType, maturityIndex, activityLevel, needsAttention, reliabilityFlag, 
 | GET | `/api/admin/ai/usage?from=&to=` | Token va taxminiy xarajat statistikasi |
 
 ### 3.6 Dashboard va audit
+
+> **P-dashboard da qo'shildi.** `GET /api/admin/dashboard/stats` javobiga ikki blok qo'shildi
+> (mavjud maydonlar o'zgarmadi):
+>
+> ```jsonc
+> "funnel": {                 // barchasi `[from,to]` oynasida
+>   "linkViews":  1240,       // maktab havolasi ochilgan soni
+>   "registered": 380,        // yaratilgan o'quvchilar
+>   "started":    350,        // Draft dan o'tgan sessiyalar
+>   "completed":  290,        // yakunlangan
+>   "analyzed":   275         // AI tahlili tayyor
+> },
+> "schoolBreakdown": [        // maksimum 20 qator; registered DESC -> completed DESC -> linkViews DESC
+>   { "schoolId": "…", "name": "12-son maktab", "region": "Farg'ona",
+>     "linkViews": 210, "registered": 64, "completed": 51,
+>     "completionRate": 0.797,         // ULUSH (0..1), foiz emas — UI `× 100` qiladi.
+>                                      // registered = 0 bo'lsa `null` (0 EMAS)
+>     "lastActivityAt": "2026-09-02T10:15:00Z" }
+> ]
+> ```
+>
+> **`null` qoidasi** (`docs/06` §8, 2026-09-02): `avgDurationMinutes`, `avgReliability`,
+> `dropOffRate`, `completionRate` — ma'lumot bo'lmaganda **`null`**, hech qachon `0` emas.
+>
+> **Birlik:** `completionRate` va `dropOffRate` — **ulush (0..1)**; `avgReliability` — **0..100**;
+> `avgDurationMinutes` — daqiqa. UI ulushlarni `× 100` qilib ko'rsatadi. Bu bir marta xato
+> qilingan joy: `completionRate` uchun `× 100` unutilganda 50% yakunlagan maktab `1%` bo'lib
+> ko'ringan edi.
+> `0` "past ko'rsatkich" degan ma'noni beradi va adminni noto'g'ri xulosaga olib keladi.
+
 | Metod | Yo'l |
 |-------|------|
 | GET | `/api/admin/dashboard/stats?from=&to=` |

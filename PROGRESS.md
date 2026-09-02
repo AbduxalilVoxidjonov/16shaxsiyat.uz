@@ -51,7 +51,7 @@
 | P31 | Xavfsizlik va mustahkamlash | qa-reviewer | ⬜ | — | |
 | P32 | Docker, CI/CD, yakuniy hujjat | backend-dotnet | 🟡 | — | Dockerfile.api/web va compose tayyor; CI/CD va hujjat qoldi |
 | P33 | Anketa konstruktori | backend + frontend | ⬜ | — | P29 dan keyin |
-| P34 | Dastur modeli va biriktirish | backend-dotnet | ⬜ | — | **Yangi** (2026-09-02, egasi talabi) |
+| P34 | Dastur modeli va biriktirish | backend-dotnet | ✅ | — | QA: FAIL→PASS · migratsiya backfill tuzatildi |
 | P35 | Admin: savollar, dasturlar, biriktirish | frontend-react | ⬜ | — | **Yangi** · P34 dan keyin |
 | P36 | Ommaviy: dastur tanlash, so'rovnoma | frontend-react | ⬜ | — | **Yangi** · P34 dan keyin |
 
@@ -240,7 +240,20 @@
     (`TryMarkTotpBackupCodeUsedAsync` — P13 dagi TOTP himoyasi).
   - `Changed` bayrog'i endi to'liq payload bo'yicha solishtiriladi; yangi test eski kodda
     qizarishi tasdiqlangan.
-- **Keyingi:** B4 boshlanadi — P16 (AI abstraksiya va prompt) ‖ P25 (individual profil sahifasi).
+- **P34 (dastur modeli) va dashboard voronkasi tugadi.** Backend **643 test**, frontend **263 test**.
+  - **QA FAIL bergan bloklovchi:** ikki bosqichli migratsiya faqat qog'ozda ikki bosqichli edi.
+    `--migrate` barcha migratsiyalarni bitta chaqiruvda bajaradi, seeder esa faqat undan keyin —
+    ya'ni mavjud sessiyalar nol-GUID ga bog'lanib FK cheklovini buzardi va deploy to'xtardi.
+    Bizning bazamiz **tasodifan** omon qolgan (migratsiyalar `assessments` bo'sh paytda qo'llangan).
+    Testlar ushlay olmasdi — ular `EnsureCreated()` ishlatadi. Tuzatildi: tizim dasturi
+    deterministik ID bilan **migratsiya ichida** yaratiladi va backfill `SET NOT NULL` dan
+    oldin bajariladi. Agent buni haqiqiy Postgres'da `program_id IS NULL` qatorlar bilan sinadi.
+  - **PM topgan xato:** `completionRate` ulush (0..1) qaytaradi, frontend esa uni to'g'ridan-to'g'ri
+    foiz deb ko'rsatardi — 50% yakunlagan maktab jadvalda **`1%`** bo'lib ko'rinardi.
+    Tuzatildi, regressiya testi qo'shildi, birlik `docs/07` da aniq yozildi.
+  - Havola ochilishi hisoblagichi qo'shildi (voronkaning yuqori bo'g'ini ilgari umuman
+    kuzatilmasdi) va u **fail-open**: telemetriya xatosi landing sahifasini buza olmaydi.
+- **Keyingi:** P35 (savollar bo'limi, dasturlar, biriktirish UI) ‖ P36 (o'quvchi dastur tanlovi).
 
 ---
 
@@ -261,6 +274,8 @@
 | ~~3 ta test SQLite `DateTimeOffset` cheklovi sababli `Skip`~~ — **yopildi (P15)**: sinov muhitiga value converter qo'shildi, `Skip` soni **0** | Saralash faqat Postgres'da sinaladi | P30 (E2E) da Testcontainers/Postgres bilan yopiladi |
 | `frontend` da `sessionStore.testCatalog` hamon bor (backend endi `name`/`estimatedMinutes` beradi) | Ikki manba — kelajakda nomuvofiqlik | Kichik tozalash: `testCatalog` olib tashlanib, nom `GET /sessions/me` dan olinsin. P22 bilan birga |
 | 390px/1440px real brauzer vizual tekshiruvi hech bir ekranda qilinmagan | Gorizontal scroll yoki konsol xatosi sezilmay qolishi mumkin | Chrome MCP kengaytmasi ulanmagan; subagent uni ocholmaydi. Egasi yoqsa P21 dan boshlab tekshiriladi, aks holda P30 (E2E) da Playwright bilan |
+| Havola ochilishi hisoblagichi botlar va takroriy ochish bilan shishadi (per-IP/qurilma dedup yo'q) | Voronkaning yuqori bo'g'ini haqiqiydan kattaroq ko'rinadi | MVP uchun qabul qilindi. Kerak bo'lsa `docs/13` da CDN/Cloudflare analitikasi bilan solishtirish yoki sessiya cookie bilan dedup |
+| `PublicApiTestFactory` `EnsureCreated()` ishlatadi — integratsiya testlari **migratsiyalarni umuman bajarmaydi** | Migratsiya xatolari testlarda ko'rinmaydi (P34 QA aynan shu sababli bloklovchini topdi) | P30 (E2E) da Testcontainers bilan haqiqiy `Database.Migrate()` yo'lini sinash |
 | ~~`env.ts` bo'sh `VITE_API_BASE_URL` ni `localhost:5000` ga qaytaradi~~ — **tuzatildi (2026-09-02)**: standart qiymat endi same-origin (bo'sh satr), `/api/...` nisbiy yo'li ishlatiladi |
 | `429` javobida `retry-after` yo'q | Foydalanuvchi qancha kutishni bilmaydi | P31 (mustahkamlash) da `ProblemDetails` ga qo'shiladi |
 | QA topgan 5 ta zaif savol (cross-loading): `MB-Q58` (SN↔JP), `B5-Q36` (O↔E), `B5-Q49` (A↔ish uslubi), `AC-Q15` (SOCA↔SELF), va `MB-Q01`≈`AC-Q27` deyarli bir xil misol | Omillar orasida ortiqcha korrelyatsiya; ball biroz aniqroq bo'lishi mumkin edi | Bloklovchi emas (professional testlarda ham uchraydi). Pilotdan keyin real ma'lumot bilan qayta ko'riladi — `docs/14` 5-bo'lim |

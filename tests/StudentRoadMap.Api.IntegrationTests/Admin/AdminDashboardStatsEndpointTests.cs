@@ -217,8 +217,15 @@ public sealed class AdminDashboardStatsEndpointTests : IClassFixture<PublicApiTe
         stats.RecentAssessments.Should().NotContain(a => a.AssessmentId == deletedAssessment.Id);
     }
 
+    /// <summary>
+    /// ⚠️ PM topilmasi (2026-09-02, `docs/06` §8): oynada ma'lumot UMUMAN yo'q bo'lsa
+    /// `DropOffRate`/`AvgDurationMinutes`/`AvgReliability` — `null` (HAQIQIY `0` EMAS, "ma'lumot
+    /// yo'q" bilan "o'lchov chindan 0" chalkashtirilmasin — `MaturityIndex`/`ActivityIndex`dagi
+    /// bilan bir xil qoida). Avval bu maydonlar `double` edi va `0.0` qaytarardi — frontend
+    /// buni "o'rtacha ishonchlilik 0" deb noto'g'ri ko'rsatardi.
+    /// </summary>
     [Fact]
-    public async Task GetStats_BoshOynadaMalumotYoq_NolBolinishsizIshlaydi()
+    public async Task GetStats_BoshOynadaMalumotYoq_NolEmasNullQaytaradi()
     {
         using var client = await AuthenticatedClientAsync("dashboard-empty-admin");
 
@@ -235,9 +242,9 @@ public sealed class AdminDashboardStatsEndpointTests : IClassFixture<PublicApiTe
         stats.Should().NotBeNull();
         stats!.Last30Days.NewStudents.Should().Be(0);
         stats.Last30Days.Completed.Should().Be(0);
-        stats.Last30Days.DropOffRate.Should().Be(0.0);
-        stats.Last30Days.AvgDurationMinutes.Should().Be(0.0);
-        stats.Last30Days.AvgReliability.Should().Be(0.0);
+        stats.Last30Days.DropOffRate.Should().BeNull("oynada boshlangan sessiya umuman yo'q — 0% emas, ma'lumot yo'q");
+        stats.Last30Days.AvgDurationMinutes.Should().BeNull("oynada yakunlangan sessiya umuman yo'q — o'rtacha hisoblab bo'lmaydi");
+        stats.Last30Days.AvgReliability.Should().BeNull("oynada yakunlangan sessiya umuman yo'q — o'rtacha hisoblab bo'lmaydi");
     }
 
     [Fact]

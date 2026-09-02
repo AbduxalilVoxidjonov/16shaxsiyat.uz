@@ -75,6 +75,8 @@ public sealed class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<RegistrationCounter> RegistrationCounters => Set<RegistrationCounter>();
 
+    public DbSet<SchoolLinkView> SchoolLinkViews => Set<SchoolLinkView>();
+
     // --- IAppDbContext: DbSet<T> emas, IQueryable<T> (PM qarori) ---------------------------
     IQueryable<School> IAppDbContext.Schools => Schools;
 
@@ -120,6 +122,8 @@ public sealed class AppDbContext : DbContext, IAppDbContext
 
     IQueryable<RegistrationCounter> IAppDbContext.RegistrationCounters => RegistrationCounters;
 
+    IQueryable<SchoolLinkView> IAppDbContext.SchoolLinkViews => SchoolLinkViews;
+
     IQueryable<TEntity> IAppDbContext.AsNoTracking<TEntity>(IQueryable<TEntity> query) => query.AsNoTracking();
 
     IQueryable<TEntity> IAppDbContext.IgnoreQueryFilters<TEntity>(IQueryable<TEntity> query) => query.IgnoreQueryFilters();
@@ -148,6 +152,29 @@ public sealed class AppDbContext : DbContext, IAppDbContext
                 VALUES ({0}, {1}, 1)
                 ON CONFLICT (school_id, date_utc)
                 DO UPDATE SET count = registration_counters.count + 1
+                RETURNING count
+                """,
+                schoolId,
+                dateUtc)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return rows[0];
+    }
+
+    /// <summary>
+    /// Atomik `INSERT ... ON CONFLICT DO UPDATE ... RETURNING` — `IncrementRegistrationCounterAsync`
+    /// bilan BIR XIL naqsh (izohiga qarang), faqat `school_link_views` jadvali uchun
+    /// (`prompts/15` vazifa 1, 2026-09-02).
+    /// </summary>
+    async Task<int> IAppDbContext.IncrementSchoolLinkViewAsync(Guid schoolId, DateOnly dateUtc, CancellationToken cancellationToken)
+    {
+        var rows = await Database.SqlQueryRaw<int>(
+                """
+                INSERT INTO school_link_views (school_id, date_utc, count)
+                VALUES ({0}, {1}, 1)
+                ON CONFLICT (school_id, date_utc)
+                DO UPDATE SET count = school_link_views.count + 1
                 RETURNING count
                 """,
                 schoolId,

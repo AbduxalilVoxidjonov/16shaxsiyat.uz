@@ -135,6 +135,49 @@ public sealed class AssessmentProgram : AggregateRoot
         return program;
     }
 
+    /// <summary>
+    /// Seed infratuzilmasi uchun (`DbSeeder.SeedSystemProgramAsync`): mavjud tizim dasturiga
+    /// (`IsSystem = true`) HALI BOG'LANMAGAN test(lar)ni qo'shadi — `AddTest`dan farqli, BR-8
+    /// qulfini CHETLAB O'TADI. Bu faqat bitta legitim stsenariy uchun: birinchi deploy'da
+    /// migratsiya (`RequireAssessmentProgramId`) dasturni test banki hali seed qilinmagan
+    /// paytda (0 ta test bilan) yaratishi mumkin — keyinroq `--seed` haqiqiy test banki (4 tizim
+    /// metodikasi) yozilgach, shu metod orqali ULARNI (va faqat ULARNI — chaqiruvchi tanlagan
+    /// ro'yxatni) bog'laydi. Admin API (`AddProgramTestCommandHandler`) BU METODNI CHAQIRMAYDI —
+    /// u oddiy `AddTest`dan foydalanadi, shu sabab tizim dasturi tarkibi runtime'da admin
+    /// tomonidan o'zgartirilmaydi (BR-8 buzilmaydi). Faqat `IsSystem = true` dasturda ishlaydi.
+    /// </summary>
+    public IReadOnlyList<ProgramTest> EnsureSystemTestsAttached(IReadOnlyList<(Guid TestDefinitionId, int DisplayOrder)> tests, DateTimeOffset now)
+    {
+        if (!IsSystem)
+        {
+            throw new DomainException("SYSTEM_PROGRAM_LOCKED", "Bu metod faqat tizim dasturlari uchun.");
+        }
+
+        ArgumentNullException.ThrowIfNull(tests);
+
+        var alreadyLinked = _tests.Select(t => t.TestDefinitionId).ToHashSet();
+        var newlyAdded = new List<ProgramTest>();
+
+        foreach (var (testDefinitionId, displayOrder) in tests)
+        {
+            if (alreadyLinked.Contains(testDefinitionId))
+            {
+                continue;
+            }
+
+            var programTest = ProgramTest.Create(Guid.NewGuid(), Id, testDefinitionId, displayOrder);
+            _tests.Add(programTest);
+            newlyAdded.Add(programTest);
+        }
+
+        if (newlyAdded.Count > 0)
+        {
+            UpdatedAt = now;
+        }
+
+        return newlyAdded;
+    }
+
     /// <summary>Dasturga anketa biriktiradi. Tizim dasturida taqiqlangan (BR-8 ruhida).</summary>
     public void AddTest(Guid testDefinitionId, int displayOrder, DateTimeOffset now)
     {

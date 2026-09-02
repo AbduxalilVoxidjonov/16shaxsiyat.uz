@@ -360,6 +360,70 @@ CREATE TABLE registration_counters (
 
 ---
 
+### P34 da qo'shilgan — dastur modeli (migratsiyalar `AddAssessmentPrograms`, `RequireAssessmentProgramId`)
+
+```sql
+-- Dastur = nomlangan, tartiblangan test to'plami. O'quvchi kirishda DASTURNI tanlaydi.
+create table assessment_programs (
+  id                     uuid primary key,
+  code                   varchar(50)  not null,
+  name_uz                varchar(200) not null,
+  description_uz         varchar(1000) null,
+  kind                   smallint     not null,  -- 1 System, 2 Custom
+  visibility             smallint     not null,  -- 1 Public, 2 Assigned
+  status                 smallint     not null,  -- 1 Draft, 2 Published, 3 Archived
+  is_active              boolean      not null default true,
+  is_system              boolean      not null default false,
+  display_order          int          not null,
+  created_by_admin_user_id uuid       null references admin_users(id),
+  created_at             timestamptz  not null,
+  updated_at             timestamptz  not null
+);
+create unique index ux_assessment_programs_code on assessment_programs(code);
+
+create table program_tests (
+  program_id         uuid not null references assessment_programs(id) on delete cascade,
+  test_definition_id uuid not null references test_definitions(id) on delete restrict,
+  display_order      int  not null,
+  primary key (program_id, test_definition_id)
+);
+
+-- Faqat visibility = Assigned dasturlar uchun.
+create table school_programs (
+  school_id  uuid not null references schools(id) on delete cascade,
+  program_id uuid not null references assessment_programs(id) on delete cascade,
+  primary key (school_id, program_id)
+);
+
+alter table test_definitions add column scoring_mode smallint not null default 1; -- 1 Scored, 2 Survey
+alter table assessments     add column program_id   uuid     not null references assessment_programs(id);
+```
+
+> **Migratsiya tartibi muhim.** `program_id` avval `nullable` qo'shiladi; ikkinchi migratsiya
+> `SET NOT NULL` dan **oldin** o'z ichida: (a) `PERSONALITY_PROFILE` tizim dasturini
+> **deterministik ID** (`00000000-0000-0000-0000-000000000001`) bilan yaratadi,
+> (b) mavjud tizim testlarini `program_tests` ga bog'laydi, (c) `program_id IS NULL` qatorlarni
+> backfill qiladi. Backfill'ni seeder'ga qoldirish **xato**: `--migrate` barcha migratsiyalarni
+> bitta chaqiruvda bajaradi, `--seed` esa faqat undan keyin ishlaydi — natijada mavjud
+> sessiyalar nol-GUID ga bog'lanib FK cheklovini buzardi (P34 QA topilmasi).
+
+### P-dashboard da qo'shilgan — havola ochilishi hisoblagichi
+
+```sql
+-- Voronkaning eng yuqori bo'g'ini: maktab havolasi necha marta ochilgani.
+-- Shaxsiy ma'lumot saqlanmaydi — faqat kunlik son (IP/qurilma yo'q).
+create table school_link_views (
+  school_id uuid not null references schools(id) on delete cascade,
+  date_utc  date not null,
+  count     int  not null default 0,
+  primary key (school_id, date_utc)
+);
+```
+
+> Hisoblagich `registration_counters` bilan bir xil atomik naqshda oshiriladi
+> (`INSERT ... ON CONFLICT DO UPDATE`). **Ma'lum cheklov:** takroriy sahifa ochish va
+> botlar sonni oshiradi — MVP uchun qabul qilingan.
+
 ### P13 da qo'shilgan (migratsiya `AddAuditLogsAndTotpSupport`)
 
 ```sql

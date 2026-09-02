@@ -4,6 +4,1375 @@
  */
 
 export interface paths {
+    "/api/admin/programs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    search?: string;
+                    status?: string;
+                    isActive?: boolean;
+                    page?: number;
+                    pageSize?: number;
+                    sort?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminProgramListItemDtoPagedResult"];
+                        "application/json": components["schemas"]["AdminProgramListItemDtoPagedResult"];
+                        "text/json": components["schemas"]["AdminProgramListItemDtoPagedResult"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateProgramRequest"];
+                    "text/json": components["schemas"]["CreateProgramRequest"];
+                    "application/*+json": components["schemas"]["CreateProgramRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
+                        "application/json": components["schemas"]["AdminProgramDetailDto"];
+                        "text/json": components["schemas"]["AdminProgramDetailDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/programs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
+                        "application/json": components["schemas"]["AdminProgramDetailDto"];
+                        "text/json": components["schemas"]["AdminProgramDetailDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateProgramRequest"];
+                    "text/json": components["schemas"]["UpdateProgramRequest"];
+                    "application/*+json": components["schemas"]["UpdateProgramRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
+                        "application/json": components["schemas"]["AdminProgramDetailDto"];
+                        "text/json": components["schemas"]["AdminProgramDetailDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/programs/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
+                        "application/json": components["schemas"]["AdminProgramDetailDto"];
+                        "text/json": components["schemas"]["AdminProgramDetailDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/programs/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
+                        "application/json": components["schemas"]["AdminProgramDetailDto"];
+                        "text/json": components["schemas"]["AdminProgramDetailDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/programs/{id}/toggle-active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
+                        "application/json": components["schemas"]["AdminProgramDetailDto"];
+                        "text/json": components["schemas"]["AdminProgramDetailDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/programs/{id}/tests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["AddProgramTestRequest"];
+                    "text/json": components["schemas"]["AddProgramTestRequest"];
+                    "application/*+json": components["schemas"]["AddProgramTestRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
+                        "application/json": components["schemas"]["AdminProgramDetailDto"];
+                        "text/json": components["schemas"]["AdminProgramDetailDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/programs/{id}/tests/{testDefinitionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    testDefinitionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
+                        "application/json": components["schemas"]["AdminProgramDetailDto"];
+                        "text/json": components["schemas"]["AdminProgramDetailDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/programs/{id}/tests/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ReorderProgramTestsRequest"];
+                    "text/json": components["schemas"]["ReorderProgramTestsRequest"];
+                    "application/*+json": components["schemas"]["ReorderProgramTestsRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
+                        "application/json": components["schemas"]["AdminProgramDetailDto"];
+                        "text/json": components["schemas"]["AdminProgramDetailDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/programs/{id}/schools/{schoolId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    schoolId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
+                        "application/json": components["schemas"]["AdminProgramDetailDto"];
+                        "text/json": components["schemas"]["AdminProgramDetailDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    schoolId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
+                        "application/json": components["schemas"]["AdminProgramDetailDto"];
+                        "text/json": components["schemas"]["AdminProgramDetailDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/assessments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    schoolId?: string;
+                    status?: string;
+                    from?: string;
+                    to?: string;
+                    page?: number;
+                    pageSize?: number;
+                    sort?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminAssessmentListItemDtoPagedResult"];
+                        "application/json": components["schemas"]["AdminAssessmentListItemDtoPagedResult"];
+                        "text/json": components["schemas"]["AdminAssessmentListItemDtoPagedResult"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/assessments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminLatestAssessmentDto"];
+                        "application/json": components["schemas"]["AdminLatestAssessmentDto"];
+                        "text/json": components["schemas"]["AdminLatestAssessmentDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/assessments/{id}/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    testCode?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminAssessmentAnswerDto"][];
+                        "application/json": components["schemas"]["AdminAssessmentAnswerDto"][];
+                        "text/json": components["schemas"]["AdminAssessmentAnswerDto"][];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/assessments/{id}/recalculate-scores": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminRecalculateScoresResultDto"];
+                        "application/json": components["schemas"]["AdminRecalculateScoresResultDto"];
+                        "text/json": components["schemas"]["AdminRecalculateScoresResultDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/audit-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    action?: string;
+                    entityType?: string;
+                    from?: string;
+                    to?: string;
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminAuditLogItemDtoPagedResult"];
+                        "application/json": components["schemas"]["AdminAuditLogItemDtoPagedResult"];
+                        "text/json": components["schemas"]["AdminAuditLogItemDtoPagedResult"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["LoginRequest"];
+                    "text/json": components["schemas"]["LoginRequest"];
+                    "application/*+json": components["schemas"]["LoginRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["LoginResult"];
+                        "application/json": components["schemas"]["LoginResult"];
+                        "text/json": components["schemas"]["LoginResult"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Locked */
+                423: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RefreshResult"];
+                        "application/json": components["schemas"]["RefreshResult"];
+                        "text/json": components["schemas"]["RefreshResult"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminUserDto"];
+                        "application/json": components["schemas"]["AdminUserDto"];
+                        "text/json": components["schemas"]["AdminUserDto"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/change-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ChangePasswordRequest"];
+                    "text/json": components["schemas"]["ChangePasswordRequest"];
+                    "application/*+json": components["schemas"]["ChangePasswordRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/totp/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EnableTotpResult"];
+                        "application/json": components["schemas"]["EnableTotpResult"];
+                        "text/json": components["schemas"]["EnableTotpResult"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/totp/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DisableTotpRequest"];
+                    "text/json": components["schemas"]["DisableTotpRequest"];
+                    "application/*+json": components["schemas"]["DisableTotpRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/dashboard/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    from?: string;
+                    to?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminDashboardStatsDto"];
+                        "application/json": components["schemas"]["AdminDashboardStatsDto"];
+                        "text/json": components["schemas"]["AdminDashboardStatsDto"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/public/schools/{slug}": {
         parameters: {
             query?: never;
@@ -721,10 +2090,970 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/schools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    search?: string;
+                    region?: string;
+                    isActive?: boolean;
+                    page?: number;
+                    pageSize?: number;
+                    sort?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminSchoolListItemDtoPagedResult"];
+                        "application/json": components["schemas"]["AdminSchoolListItemDtoPagedResult"];
+                        "text/json": components["schemas"]["AdminSchoolListItemDtoPagedResult"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateSchoolRequest"];
+                    "text/json": components["schemas"]["CreateSchoolRequest"];
+                    "application/*+json": components["schemas"]["CreateSchoolRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminSchoolDetailDto"];
+                        "application/json": components["schemas"]["AdminSchoolDetailDto"];
+                        "text/json": components["schemas"]["AdminSchoolDetailDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/schools/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminSchoolDetailDto"];
+                        "application/json": components["schemas"]["AdminSchoolDetailDto"];
+                        "text/json": components["schemas"]["AdminSchoolDetailDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateSchoolRequest"];
+                    "text/json": components["schemas"]["UpdateSchoolRequest"];
+                    "application/*+json": components["schemas"]["UpdateSchoolRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminSchoolDetailDto"];
+                        "application/json": components["schemas"]["AdminSchoolDetailDto"];
+                        "text/json": components["schemas"]["AdminSchoolDetailDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/schools/{id}/regenerate-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RegenerateSchoolLinkResult"];
+                        "application/json": components["schemas"]["RegenerateSchoolLinkResult"];
+                        "text/json": components["schemas"]["RegenerateSchoolLinkResult"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/schools/{id}/toggle-active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminSchoolDetailDto"];
+                        "application/json": components["schemas"]["AdminSchoolDetailDto"];
+                        "text/json": components["schemas"]["AdminSchoolDetailDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/students": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    schoolId?: string;
+                    grade?: number;
+                    status?: string;
+                    needsAttention?: boolean;
+                    personalityType?: string;
+                    activityLevel?: string;
+                    from?: string;
+                    to?: string;
+                    search?: string;
+                    page?: number;
+                    pageSize?: number;
+                    sort?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminStudentListItemDtoPagedResult"];
+                        "application/json": components["schemas"]["AdminStudentListItemDtoPagedResult"];
+                        "text/json": components["schemas"]["AdminStudentListItemDtoPagedResult"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/students/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminStudentProfileDto"];
+                        "application/json": components["schemas"]["AdminStudentProfileDto"];
+                        "text/json": components["schemas"]["AdminStudentProfileDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: {
+                    hard?: boolean;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AddProgramTestRequest: {
+            /** Format: uuid */
+            testDefinitionId: string;
+            /** Format: int32 */
+            displayOrder: number;
+        };
+        AdminActivityDto: {
+            scales: {
+                [key: string]: number;
+            };
+            /** Format: double */
+            activityIndex?: number | null;
+            activityLevel?: string | null;
+            needsAttention: boolean;
+        };
+        AdminAiAnalysisDto: {
+            /** Format: uuid */
+            id: string;
+            status: string;
+            provider: string;
+            model: string;
+            promptVersion: string;
+            /** Format: date-time */
+            createdAt: string;
+            summary?: string | null;
+            personalityPortrait?: string | null;
+            strengths: string[];
+            growthAreas: string[];
+            careerSuggestions: components["schemas"]["AdminCareerSuggestionDto"][];
+            studentRecommendations: string[];
+            teacherNotes?: string | null;
+            parentNotes?: string | null;
+            attentionFlags: string[];
+        };
+        AdminAiHistoryItemDto: {
+            /** Format: uuid */
+            id: string;
+            provider: string;
+            /** Format: date-time */
+            createdAt: string;
+            status: string;
+            isCurrent: boolean;
+        };
+        AdminAssessmentAnswerDto: {
+            /** Format: uuid */
+            questionId: string;
+            questionCode: string;
+            testCode: string;
+            questionText: string;
+            /** Format: int32 */
+            rawValue: number;
+            selectedOptionText?: string | null;
+            /** Format: int32 */
+            durationMs: number;
+            /** Format: int32 */
+            revisionCount: number;
+            /** Format: date-time */
+            answeredAt: string;
+        };
+        AdminAssessmentListItemDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            studentId: string;
+            studentName: string;
+            /** Format: uuid */
+            schoolId: string;
+            schoolName: string;
+            status: string;
+            /** Format: date-time */
+            startedAt: string;
+            /** Format: date-time */
+            completedAt?: string | null;
+            /** Format: int32 */
+            durationMinutes?: number | null;
+            /** Format: double */
+            reliabilityScore?: number | null;
+            reliabilityFlag?: string | null;
+        };
+        AdminAssessmentListItemDtoPagedResult: {
+            items: components["schemas"]["AdminAssessmentListItemDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            readonly totalPages: number;
+            readonly hasNext: boolean;
+            readonly hasPrevious: boolean;
+        };
+        AdminAssessmentSummaryDto: {
+            /** Format: uuid */
+            id: string;
+            status: string;
+            /** Format: date-time */
+            startedAt: string;
+            /** Format: date-time */
+            completedAt?: string | null;
+            /** Format: int32 */
+            durationMinutes?: number | null;
+            /** Format: double */
+            reliabilityScore?: number | null;
+            reliabilityFlag?: string | null;
+            isLatest: boolean;
+        };
+        AdminAuditLogItemDto: {
+            /** Format: int64 */
+            id: number;
+            /** Format: uuid */
+            adminUserId?: string | null;
+            action: string;
+            entityType?: string | null;
+            /** Format: uuid */
+            entityId?: string | null;
+            beforeJson?: string | null;
+            afterJson?: string | null;
+            ipHash?: string | null;
+            userAgent?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AdminAuditLogItemDtoPagedResult: {
+            items: components["schemas"]["AdminAuditLogItemDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            readonly totalPages: number;
+            readonly hasNext: boolean;
+            readonly hasPrevious: boolean;
+        };
+        AdminAxisDto: {
+            /** Format: double */
+            pct: number;
+            letter: string;
+            borderline: boolean;
+        };
+        AdminBig5Dto: {
+            factors: {
+                [key: string]: components["schemas"]["AdminFactorDto"];
+            };
+            /** Format: double */
+            stabilityPct: number;
+            /** Format: double */
+            maturityIndex?: number | null;
+            maturityLevel?: string | null;
+        };
+        AdminCareerFieldDto: {
+            name: string;
+            professions: string[];
+        };
+        AdminCareerSuggestionDto: {
+            field: string;
+            why: string;
+            nextSteps: string[];
+        };
+        AdminDashboardActivityItemDto: {
+            level: string;
+            /** Format: int32 */
+            count: number;
+        };
+        AdminDashboardFunnelDto: {
+            /** Format: int32 */
+            linkViews: number;
+            /** Format: int32 */
+            registered: number;
+            /** Format: int32 */
+            started: number;
+            /** Format: int32 */
+            completed: number;
+            /** Format: int32 */
+            analyzed: number;
+        };
+        AdminDashboardHollandItemDto: {
+            code: string;
+            /** Format: int32 */
+            count: number;
+        };
+        AdminDashboardLast30DaysDto: {
+            /** Format: int32 */
+            newStudents: number;
+            /** Format: int32 */
+            completed: number;
+            /** Format: double */
+            avgDurationMinutes?: number | null;
+            /** Format: double */
+            avgReliability?: number | null;
+            /** Format: double */
+            dropOffRate?: number | null;
+        };
+        AdminDashboardPersonalityItemDto: {
+            type: string;
+            /** Format: int32 */
+            count: number;
+        };
+        AdminDashboardRecentAssessmentDto: {
+            /** Format: uuid */
+            assessmentId: string;
+            studentName: string;
+            schoolName: string;
+            /** Format: date-time */
+            completedAt: string;
+            status: string;
+        };
+        AdminDashboardSchoolBreakdownItemDto: {
+            /** Format: uuid */
+            schoolId: string;
+            name: string;
+            region: string;
+            /** Format: int32 */
+            linkViews: number;
+            /** Format: int32 */
+            registered: number;
+            /** Format: int32 */
+            completed: number;
+            /** Format: double */
+            completionRate?: number | null;
+            /** Format: date-time */
+            lastActivityAt?: string | null;
+        };
+        AdminDashboardStatsDto: {
+            totals: components["schemas"]["AdminDashboardTotalsDto"];
+            last30Days: components["schemas"]["AdminDashboardLast30DaysDto"];
+            personalityDistribution: components["schemas"]["AdminDashboardPersonalityItemDto"][];
+            activityDistribution: components["schemas"]["AdminDashboardActivityItemDto"][];
+            hollandTop: components["schemas"]["AdminDashboardHollandItemDto"][];
+            recentAssessments: components["schemas"]["AdminDashboardRecentAssessmentDto"][];
+            funnel: components["schemas"]["AdminDashboardFunnelDto"];
+            schoolBreakdown: components["schemas"]["AdminDashboardSchoolBreakdownItemDto"][];
+        };
+        AdminDashboardTotalsDto: {
+            /** Format: int32 */
+            schools: number;
+            /** Format: int32 */
+            activeSchools: number;
+            /** Format: int32 */
+            students: number;
+            /** Format: int32 */
+            completedAssessments: number;
+            /** Format: int32 */
+            pendingAnalysis: number;
+            /** Format: int32 */
+            needsAttention: number;
+        };
+        AdminFactorDto: {
+            /** Format: double */
+            raw: number;
+            /** Format: double */
+            pct: number;
+            level: string;
+        };
+        AdminLatestAssessmentDto: {
+            /** Format: uuid */
+            id: string;
+            results: components["schemas"]["AdminTestResultsDto"];
+            aiAnalysis?: components["schemas"]["AdminAiAnalysisDto"];
+            aiHistory: components["schemas"]["AdminAiHistoryItemDto"][];
+        };
+        AdminMbti16Dto: {
+            resultCode: string;
+            typeName: string;
+            axes: {
+                [key: string]: components["schemas"]["AdminAxisDto"];
+            };
+            borderlineAxes: string[];
+        };
+        AdminProgramDetailDto: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            nameUz: string;
+            descriptionUz?: string | null;
+            kind: string;
+            visibility: string;
+            status: string;
+            isActive: boolean;
+            isSystem: boolean;
+            /** Format: int32 */
+            displayOrder: number;
+            tests: components["schemas"]["AdminProgramTestItemDto"][];
+            assignedSchoolIds: string[];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        AdminProgramListItemDto: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            nameUz: string;
+            kind: string;
+            visibility: string;
+            status: string;
+            isActive: boolean;
+            isSystem: boolean;
+            /** Format: int32 */
+            displayOrder: number;
+            /** Format: int32 */
+            testCount: number;
+        };
+        AdminProgramListItemDtoPagedResult: {
+            items: components["schemas"]["AdminProgramListItemDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            readonly totalPages: number;
+            readonly hasNext: boolean;
+            readonly hasPrevious: boolean;
+        };
+        AdminProgramTestItemDto: {
+            /** Format: uuid */
+            testDefinitionId: string;
+            code: string;
+            nameUz: string;
+            /** Format: int32 */
+            displayOrder: number;
+        };
+        AdminRecalculateScoresResultDto: {
+            /** Format: uuid */
+            assessmentId: string;
+            results: components["schemas"]["AdminTestResultsDto"];
+            /** Format: double */
+            reliabilityScore?: number | null;
+            reliabilityFlag?: string | null;
+            changed: boolean;
+        };
+        AdminRiasecDto: {
+            resultCode: string;
+            types: {
+                [key: string]: number;
+            };
+            /** Format: double */
+            differentiation: number;
+            consistency: string;
+            careerFields: components["schemas"]["AdminCareerFieldDto"][];
+        };
+        AdminSchoolDetailDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            region: string;
+            district: string;
+            schoolNumber?: string | null;
+            contactPerson?: string | null;
+            contactPhone?: string | null;
+            slug: string;
+            publicUrl: string;
+            qrCodeBase64: string;
+            accessCode?: string | null;
+            /** Format: int32 */
+            dailyRegistrationLimit: number;
+            isActive: boolean;
+            notes?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            stats: components["schemas"]["AdminSchoolStatsDto"];
+        };
+        AdminSchoolListItemDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            region: string;
+            district: string;
+            slug: string;
+            publicUrl: string;
+            isActive: boolean;
+            /** Format: int32 */
+            studentCount: number;
+            /** Format: int32 */
+            completedCount: number;
+            /** Format: date-time */
+            lastActivityAt?: string | null;
+        };
+        AdminSchoolListItemDtoPagedResult: {
+            items: components["schemas"]["AdminSchoolListItemDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            readonly totalPages: number;
+            readonly hasNext: boolean;
+            readonly hasPrevious: boolean;
+        };
+        AdminSchoolStatsDto: {
+            /** Format: int32 */
+            studentCount: number;
+            /** Format: int32 */
+            completedCount: number;
+            /** Format: date-time */
+            lastActivityAt?: string | null;
+        };
+        AdminStudentDetailDto: {
+            /** Format: uuid */
+            id: string;
+            fullName: string;
+            /** Format: date */
+            birthDate: string;
+            /** Format: int32 */
+            age: number;
+            gender: string;
+            /** Format: int32 */
+            grade: number;
+            classLetter?: string | null;
+            phone: string;
+            parentPhone?: string | null;
+            email?: string | null;
+            school: components["schemas"]["AdminStudentSchoolRefDto"];
+            /** Format: date-time */
+            consentGivenAt: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        AdminStudentListItemDto: {
+            /** Format: uuid */
+            id: string;
+            fullName: string;
+            schoolName: string;
+            /** Format: int32 */
+            grade: number;
+            classLetter?: string | null;
+            phone: string;
+            lastAssessmentStatus?: string | null;
+            personalityType?: string | null;
+            /** Format: double */
+            maturityIndex?: number | null;
+            activityLevel?: string | null;
+            needsAttention: boolean;
+            reliabilityFlag?: string | null;
+            /** Format: date-time */
+            lastAssessmentAt?: string | null;
+        };
+        AdminStudentListItemDtoPagedResult: {
+            items: components["schemas"]["AdminStudentListItemDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            readonly totalPages: number;
+            readonly hasNext: boolean;
+            readonly hasPrevious: boolean;
+        };
+        AdminStudentProfileDto: {
+            student: components["schemas"]["AdminStudentDetailDto"];
+            assessments: components["schemas"]["AdminAssessmentSummaryDto"][];
+            latestAssessment?: components["schemas"]["AdminLatestAssessmentDto"];
+        };
+        AdminStudentSchoolRefDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        AdminTestResultsDto: {
+            mbti16?: components["schemas"]["AdminMbti16Dto"];
+            big5?: components["schemas"]["AdminBig5Dto"];
+            riasec?: components["schemas"]["AdminRiasecDto"];
+            activity?: components["schemas"]["AdminActivityDto"];
+        };
+        AdminUserDto: {
+            /** Format: uuid */
+            id: string;
+            username: string;
+            email: string;
+            fullName?: string | null;
+            role: string;
+            totpEnabled: boolean;
+        };
+        ChangePasswordRequest: {
+            currentPassword: string;
+            newPassword: string;
+        };
         CompleteSessionResult: {
             status: string;
             message: string;
@@ -737,6 +3066,34 @@ export interface components {
             status: string;
             nextTestCode?: string | null;
             allTestsCompleted: boolean;
+        };
+        CreateProgramRequest: {
+            code: string;
+            nameUz: string;
+            descriptionUz?: string | null;
+            /** Format: int32 */
+            displayOrder: number;
+            visibility: string;
+        };
+        CreateSchoolRequest: {
+            name: string;
+            region: string;
+            district: string;
+            schoolNumber?: string | null;
+            contactPerson?: string | null;
+            contactPhone?: string | null;
+            accessCode?: string | null;
+            /** Format: int32 */
+            dailyRegistrationLimit?: number | null;
+            notes?: string | null;
+        };
+        DisableTotpRequest: {
+            currentPassword: string;
+        };
+        EnableTotpResult: {
+            secret: string;
+            otpauthUri: string;
+            backupCodes: string[];
         };
         /** @enum {string} */
         Gender: "Unspecified" | "Male" | "Female";
@@ -751,6 +3108,7 @@ export interface components {
             /** Format: int32 */
             totalEstimatedMinutes: number;
             consentText: string;
+            programs: components["schemas"]["PublicProgramSummaryDto"][];
         };
         GetSessionStateResult: {
             /** Format: uuid */
@@ -785,6 +3143,17 @@ export interface components {
             scaleLabels?: components["schemas"]["PublicScaleLabelDto"][] | null;
             questions: components["schemas"]["PublicQuestionDto"][];
         };
+        LoginRequest: {
+            username: string;
+            password: string;
+            totpCode?: string | null;
+        };
+        LoginResult: {
+            accessToken: string;
+            /** Format: int32 */
+            expiresIn: number;
+            user: components["schemas"]["AdminUserDto"];
+        };
         ProblemDetails: {
             type?: string | null;
             title?: string | null;
@@ -803,6 +3172,17 @@ export interface components {
             value: number;
             /** Format: int32 */
             order: number;
+        };
+        PublicProgramSummaryDto: {
+            code: string;
+            nameUz: string;
+            descriptionUz?: string | null;
+            /** Format: int32 */
+            testCount: number;
+            /** Format: int32 */
+            questionCount: number;
+            /** Format: int32 */
+            estimatedMinutes: number;
         };
         PublicQuestionDto: {
             /** Format: uuid */
@@ -850,6 +3230,18 @@ export interface components {
             /** Format: int32 */
             estimatedMinutes: number;
         };
+        RefreshResult: {
+            accessToken: string;
+            /** Format: int32 */
+            expiresIn: number;
+        };
+        RegenerateSchoolLinkResult: {
+            publicUrl: string;
+            qrCodeBase64: string;
+        };
+        ReorderProgramTestsRequest: {
+            testDefinitionIds: string[];
+        };
         SaveAnswerItemRequest: {
             /** Format: uuid */
             questionId: string;
@@ -885,6 +3277,7 @@ export interface components {
             email?: string | null;
             consentAccepted: boolean;
             languageCode?: string | null;
+            programCode?: string | null;
         };
         StartSessionResult: {
             sessionToken: string;
@@ -903,6 +3296,25 @@ export interface components {
             pageSize: number;
             /** Format: int32 */
             totalPages: number;
+        };
+        UpdateProgramRequest: {
+            nameUz: string;
+            descriptionUz?: string | null;
+            /** Format: int32 */
+            displayOrder: number;
+            visibility: string;
+        };
+        UpdateSchoolRequest: {
+            name: string;
+            region: string;
+            district: string;
+            schoolNumber?: string | null;
+            contactPerson?: string | null;
+            contactPhone?: string | null;
+            accessCode?: string | null;
+            /** Format: int32 */
+            dailyRegistrationLimit?: number | null;
+            notes?: string | null;
         };
     };
     responses: never;

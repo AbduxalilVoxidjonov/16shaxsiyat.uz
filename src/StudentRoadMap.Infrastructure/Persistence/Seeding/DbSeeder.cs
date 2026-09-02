@@ -21,6 +21,18 @@ namespace StudentRoadMap.Infrastructure.Persistence.Seeding;
 /// </summary>
 public sealed class DbSeeder
 {
+    /// <summary>
+    /// `PERSONALITY_PROFILE` tizim dasturining DETERMINISTIK identifikatori — `prompts/34`
+    /// QA tuzatmasi (bloklovchi topilma, 2026-09-02): bu ID `RequireAssessmentProgramId`
+    /// migratsiyasidagi xom SQL bilan AYNAN bir xil bo'lishi SHART. Ikkalasi (migratsiya va
+    /// seeder) mustaqil `Guid.NewGuid()` bilan yaratsa, ular IKKI XIL dastur hosil qilib
+    /// qo'yardi (migratsiya production'da `--migrate` bosqichida, seeder esa keyinroq
+    /// `--seed` bosqichida ishga tushadi — `docker-compose.yml`: migrate → seed → api).
+    /// </summary>
+    public static readonly Guid SystemPersonalityProfileProgramId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+
+    public const string SystemPersonalityProfileProgramCode = "PERSONALITY_PROFILE";
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -186,36 +198,41 @@ public sealed class DbSeeder
     /// </summary>
     private async Task SeedSystemProgramAsync(CancellationToken cancellationToken)
     {
-        const string programCode = "PERSONALITY_PROFILE";
-
         var now = _dateTime.UtcNow;
 
+        var systemTestCodes = new[] { "MBTI16", "BIG5", "RIASEC", "ACTIVITY" };
+        var systemTestDefinitions = await _dbContext.TestDefinitions
+            .Where(t => systemTestCodes.Contains(t.Code))
+            .OrderBy(t => t.DisplayOrder)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        // `Include(p => p.Tests)` — mavjud (migratsiya yoki oldingi seed orqali yaratilgan)
+        // dasturning tarkibi haqiqiy tekshirilishi kerak (pastdagi `EnsureSystemTestsAttached`
+        // uchun) — `AsNoTracking` EMAS, chunki `SaveChangesAsync` bilan yozilishi mumkin.
         var existingProgram = await _dbContext.AssessmentPrograms
-            .FirstOrDefaultAsync(p => p.Code == programCode, cancellationToken)
+            .Include(p => p.Tests)
+            .FirstOrDefaultAsync(p => p.Code == SystemPersonalityProfileProgramCode, cancellationToken)
             .ConfigureAwait(false);
 
         if (existingProgram is null)
         {
-            var systemTestCodes = new[] { "MBTI16", "BIG5", "RIASEC", "ACTIVITY" };
-            var systemTestDefinitions = await _dbContext.TestDefinitions
-                .Where(t => systemTestCodes.Contains(t.Code))
-                .OrderBy(t => t.DisplayOrder)
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
-
             if (systemTestDefinitions.Count == 0)
             {
                 // Test bankiga oid seed katalogi topilmagan muhitda (yuqoridagi
                 // `SeedTestDefinitionsAsync` ogohlantirishi bilan bir xil holat) — tizim
                 // dasturi ham yaratilmaydi, jimgina o'tkazib yuboriladi.
-                _logger.LogWarning("Tizim metodikalari topilmadi — '{ProgramCode}' tizim dasturi yaratilmadi.", programCode);
+                _logger.LogWarning("Tizim metodikalari topilmadi — '{ProgramCode}' tizim dasturi yaratilmadi.", SystemPersonalityProfileProgramCode);
                 return;
             }
 
-            var programId = Guid.NewGuid();
+            // Odatiy holatda bu shoxobcha ISHGA TUSHMAYDI — `RequireAssessmentProgramId`
+            // migratsiyasi dasturni allaqachon (xom SQL bilan, xuddi shu deterministik ID
+            // bilan) yaratgan bo'ladi. Bu yerda faqat ESKI (bu migratsiyadan oldingi) yoki
+            // qo'lda boshqarilgan muhitlar uchun zaxira yo'l sifatida qoladi.
             var program = AssessmentProgram.CreateSystemPublished(
-                programId,
-                programCode,
+                SystemPersonalityProfileProgramId,
+                SystemPersonalityProfileProgramCode,
                 "Shaxsiyat profili",
                 descriptionUz: "To'rt ilmiy metodikadan iborat yaxlit batareya: shaxsiyat tipi, Big Five, kasb qiziqishlari va aktivlik.",
                 displayOrder: 1,
@@ -226,34 +243,61 @@ public sealed class DbSeeder
             await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
             _logger.LogInformation(
-                "Tizim dasturi yaratildi: {Code} ({TestCount} ta test).", programCode, systemTestDefinitions.Count);
-
-            existingProgram = program;
+                "Tizim dasturi yaratildi: {Code} ({TestCount} ta test).", SystemPersonalityProfileProgramCode, systemTestDefinitions.Count);
         }
         else
         {
-            _logger.LogInformation("Tizim dasturi allaqachon mavjud: {Code} — o'tkazib yuborildi.", programCode);
+            // ⚠️ Asosiy stsenariy (QA tuzatmasi, 2026-09-02): BIRINCHI deploy'da migratsiya
+            // (`RequireAssessmentProgramId`, `--migrate` bosqichi) dasturni test banki HALI
+            // seed qilinmagan paytda (0 ta test bilan) yaratgan bo'lishi mumkin — chunki
+            // `--migrate` har doim `--seed`dan OLDIN ishga tushadi (`docker-compose.yml`).
+            // Endi (`--seed` bosqichida) haqiqiy test banki mavjud — `EnsureSystemTestsAttached`
+            // hali bog'lanmagan testlarni bog'laydi (BR-8 qulfini CHETLAB o'tadigan yagona,
+            // maxsus seed-vaqtidagi metod — admin API oddiy `AddTest`dan foydalanadi).
+            if (systemTestDefinitions.Count > 0)
+            {
+                var newlyLinked = existingProgram.EnsureSystemTestsAttached(
+                    systemTestDefinitions.Select(t => (t.Id, t.DisplayOrder)).ToList(), now);
+
+                // ⚠️ QA topilmasi (`AddProgramTestCommandHandler`dagi bilan bir xil sabab):
+                // `existingProgram` SO'ROV orqali (Add() EMAS) tracked qilingan — domen metodi
+                // ichida yaratilgan yangi `ProgramTest`larni EF Core'ning avtomatik graf
+                // kashfiyoti noto'g'ri holatga ("Modified", "Added" emas) belgilaydi, chunki
+                // ularning `Id`si oldindan (client tomonida) o'rnatilgan. Har birini ANIQ
+                // `Add()` qilish holatni majburiy ravishda to'g'rilaydi.
+                foreach (var programTest in newlyLinked)
+                {
+                    _dbContext.Add(programTest);
+                }
+
+                if (newlyLinked.Count > 0)
+                {
+                    await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                    _logger.LogInformation(
+                        "{Count} ta tizim testi '{Code}' dasturiga qayta bog'landi.", newlyLinked.Count, SystemPersonalityProfileProgramCode);
+                }
+            }
+
+            _logger.LogInformation("Tizim dasturi allaqachon mavjud: {Code} — tarkib tekshirildi.", SystemPersonalityProfileProgramCode);
         }
 
-        // Ma'lumot migratsiyasi (idempotent): eski sessiyalar (`program_id IS NULL`) shu
-        // dasturga bog'lanadi. Xom SQL — DB ustuni birinchi migratsiyadan keyin HALI nullable
-        // (`AddAssessmentPrograms`), lekin `Assessment.ProgramId` C# darajasida ENDI `Guid`
-        // (non-nullable) — NULL qiymatli qatorlarni oddiy EF LINQ/`SaveChanges` orqali
-        // materiallashtirish (`Guid` maydonga NULL o'qishga urinish) xato beradi, shu sabab
-        // to'g'ridan-to'g'ri `UPDATE` ishlatiladi (`docs/08` 3-bo'lim ruhidagi xom SQL ruxsati,
-        // `IncrementRegistrationCounterAsync` bilan bir xil uslub). Ikkinchi migratsiya
-        // (`RequireAssessmentProgramId`) DB ustunini ham `NOT NULL` qiladi — shu UPDATE undan
-        // OLDIN ishga tushishi shart (seed migratsiyadan keyin, ikkinchi migratsiyadan oldin
-        // chaqiriladi).
+        // Zaxira/himoya: eski sessiyalar (`program_id IS NULL`) shu dasturga bog'lanadi.
+        // Odatiy holatda bu SHART EMAS — asosiy backfill endi `RequireAssessmentProgramId`
+        // migratsiyasining O'ZIDA, `SET NOT NULL`dan OLDIN, xom SQL bilan bajariladi (QA
+        // tuzatmasi: `--migrate` butun zanjirni `--seed`dan OLDIN, bitta chaqiruvda bajaradi,
+        // shu sabab bu yerdagi (seed bosqichidagi) backfill'ga um HECH QACHON tayanib bo'lmaydi
+        // — ustun bu paytda allaqachon `NOT NULL`). Shunga qaramay, ustun hali nullable bo'lgan
+        // (masalan qo'lda faqat birinchi migratsiya qo'llangan) noodatiy holatlar uchun
+        // zararsiz zaxira sifatida qoldirilgan — ustun `NOT NULL` bo'lsa bu so'rov 0 qatorga tegadi.
         var updatedRows = await _dbContext.Database
             .ExecuteSqlInterpolatedAsync(
-                $"UPDATE assessments SET program_id = {existingProgram.Id} WHERE program_id IS NULL",
+                $"UPDATE assessments SET program_id = {SystemPersonalityProfileProgramId} WHERE program_id IS NULL",
                 cancellationToken)
             .ConfigureAwait(false);
 
         if (updatedRows > 0)
         {
-            _logger.LogInformation("{Count} ta eski sessiya '{Code}' tizim dasturiga bog'landi.", updatedRows, programCode);
+            _logger.LogInformation("{Count} ta eski sessiya '{Code}' tizim dasturiga bog'landi.", updatedRows, SystemPersonalityProfileProgramCode);
         }
     }
 
