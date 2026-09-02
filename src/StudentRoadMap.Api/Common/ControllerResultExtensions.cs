@@ -26,6 +26,16 @@ internal static class ControllerResultExtensions
         problem.Extensions["code"] = error.Code;
         problem.Extensions["traceId"] = controller.HttpContext.TraceIdentifier;
 
+        // `docs/07` 1.7-bo'lim: `400 VALIDATION_ERROR` javobida `unansweredCount` kabi
+        // qo'shimcha maydonlar bo'lishi kerak — `Error.Extensions` orqali keladi.
+        if (error.Extensions is not null)
+        {
+            foreach (var extension in error.Extensions)
+            {
+                problem.Extensions[extension.Key] = extension.Value;
+            }
+        }
+
         return new ObjectResult(problem)
         {
             StatusCode = status,

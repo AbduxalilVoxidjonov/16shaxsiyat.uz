@@ -75,7 +75,7 @@
 **Hosila (denormalizatsiya, tez ro'yxat uchun) — `StudentSnapshot`:**
 `LastPersonalityType`, `LastMaturityIndex`, `LastActivityIndex`, `LastActivityLevel`,
 `NeedsAttention`, `LastAssessmentAt`, `CompletedAssessmentCount`.
-Sessiya `Analyzed` bo'lganda yangilanadi.
+Sessiya **`Completed`** bo'lganda (ya'ni `CompleteSession` da, scoring tugagach) yangilanadi — snapshot maydonlarining hammasi deterministik ballardan kelib chiqadi, AI natijasiga bog'liq emas. (P12 da qat'iylashtirildi; avval "`Analyzed` bo'lganda" deb yozilgan edi.)
 
 **Invariantlar**
 - `(SchoolId, NormalizedName, BirthDate)` — mantiqiy unikal (unique index).

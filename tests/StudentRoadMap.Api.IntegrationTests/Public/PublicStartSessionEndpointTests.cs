@@ -154,7 +154,7 @@ public sealed class PublicStartSessionEndpointTests : IClassFixture<PublicApiTes
             assessment.AddTest(assessmentTest);
             assessment.StartTest(testDefinition.Id, startedAt);
             assessmentTest.UpsertAnswer(Guid.NewGuid(), question.Id, 3, null, 1000, startedAt);
-            assessment.CompleteTest(testDefinition.Id, now.AddDays(-9));
+            assessment.CompleteTest(testDefinition.Id, [question.Id], now.AddDays(-9));
             assessment.Complete(now.AddDays(-9));
 
             db.Assessments.Add(assessment);

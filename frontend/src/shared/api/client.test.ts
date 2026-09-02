@@ -63,6 +63,17 @@ describe('apiRequest', () => {
     await expect(apiRequest('/api/public/schools/demo')).resolves.toEqual({ ok: true });
   });
 
+  it("202 (hali tayyor emas) ni ham AppError sifatida uloqtiradi — docs/07 1.9-bo'lim", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      jsonResponse({ title: 'Tahlil tayyor emas', status: 202 }, 202),
+    );
+
+    await expect(apiRequest('/api/public/sessions/result')).rejects.toMatchObject({
+      code: 'NOT_READY',
+      status: 202,
+    });
+  });
+
   it('tarmoq xatosini (fetch reject) AppError sifatida ushlaydi', async () => {
     vi.mocked(fetch).mockRejectedValueOnce(new TypeError('Failed to fetch'));
 

@@ -4,6 +4,7 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using StudentRoadMap.Application.Common.Behaviors;
 using StudentRoadMap.Application.Public.Common;
+using StudentRoadMap.Domain.Scoring;
 
 namespace StudentRoadMap.Application;
 
@@ -32,6 +33,15 @@ public static class DependencyInjection
 
         // `prompts/11`: ommaviy katalog keshi — `StartTest`/`GetTestQuestions` ikkalasi ham ishlatadi.
         services.AddScoped<PublicCatalogCache>();
+
+        // `prompts/12`: scoring engine `Domain/Scoring`da tayyor (o'zgartirilmaydi) — bu yerda
+        // faqat DI ro'yxatidan o'tkaziladi. Strategiyalar holatsiz (sof funksiya) — `Singleton`.
+        services.AddSingleton<IScoringStrategy, Mbti16Strategy>();
+        services.AddSingleton<IScoringStrategy, BigFiveStrategy>();
+        services.AddSingleton<IScoringStrategy, RiasecStrategy>();
+        services.AddSingleton<IScoringStrategy, ActivityStrategy>();
+        services.AddSingleton<IScoringStrategy, SumStrategy>();
+        services.AddSingleton<ScoringEngine>();
 
         return services;
     }

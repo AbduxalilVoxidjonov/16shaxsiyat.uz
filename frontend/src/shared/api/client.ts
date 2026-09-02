@@ -56,6 +56,25 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   const contentType = response.headers.get('content-type') ?? '';
   const isJson = contentType.includes('json');
 
+  if (response.status === 202) {
+    // `202 Accepted` — "hali tayyor emas" (masalan `GET /sessions/result`, docs/07 1.9-bo'lim:
+    // AI tahlili navbatda). `fetch` uni `response.ok === true` (2xx) deb hisoblaydi, shu sabab
+    // pastdagi umumiy `!response.ok` filtridan o'tib ketmasligi uchun bu yerda alohida
+    // ushlanadi — javob tanasi chaqiruvchi kutgan `T` shaklida bo'lmasligi mumkin, shu sabab
+    // muvaffaqiyat sifatida qaytarilmaydi; chaqiruvchi `error.status === 202` orqali
+    // "keyinroq urin" holatini ko'rsatadi.
+    let detail: string | undefined;
+    if (isJson) {
+      try {
+        const body = (await response.json()) as ProblemDetails;
+        detail = body.detail ?? body.title ?? undefined;
+      } catch {
+        // Javob tanasi kutilmagan shaklda — pastdagi umumiy xabar bilan davom etamiz.
+      }
+    }
+    throw new AppError({ code: 'NOT_READY', message: detail ?? 'NOT_READY', status: 202 });
+  }
+
   if (!response.ok) {
     if (isJson) {
       let problem: ProblemDetails = {};

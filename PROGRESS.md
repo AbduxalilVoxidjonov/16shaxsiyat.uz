@@ -4,7 +4,7 @@
 > PM har vazifa boshlanganda va tugaganda **darhol** yangilaydi.
 
 **Loyiha:** Salohiyat (`salohiyat.uz`) · ichki nom `StudentRoadMap`
-**Oxirgi yangilanish:** 2026-09-02 · **Joriy bosqich:** B2 (Ommaviy API) · **Joriy vazifa:** P12 ‖ P21
+**Oxirgi yangilanish:** 2026-09-02 · **Joriy bosqich:** B2 (Ommaviy API) · **Joriy vazifa:** P13 ‖ P22
 
 ---
 
@@ -29,7 +29,7 @@
 | P09 | Scoring engine + oltin testlar | scoring-psychometrics | ✅ | — | **Kritik** · QA: FAIL→PASS · 2 bloklovchi tuzatildi · 127 scoring testi |
 | P10 | Application skeleti + sessiya API | backend-dotnet | ✅ | — | QA: PASS · 3 endpoint · ForwardedHeaders tuzatildi |
 | P11 | Savol va javob API | backend-dotnet | ✅ | — | QA: PASS · kesh va IDOR toza · til qo'llab-quvvatlash qo'shildi |
-| P12 | Yakunlash va scoring ulash | backend-dotnet | ⬜ | — | |
+| P12 | Yakunlash va scoring ulash | backend-dotnet | ✅ | — | QA: PASS · P12-R1/R2 mutatsiya sinovidan o'tdi |
 | P13 | Auth va JWT | backend-dotnet | ⬜ | — | P19 bilan parallel |
 | P14 | Maktab va o'quvchi admin API | backend-dotnet | ⬜ | — | |
 | P15 | Sessiya va dashboard API | backend-dotnet | ⬜ | — | |
@@ -38,7 +38,7 @@
 | P18 | Fon navbati, fallback | ai-integration | ⬜ | — | |
 | P19 | Frontend skeleti | frontend-react | ✅ | — | QA: PASS · 18 test · Vite qoldiqlari tozalandi |
 | P20 | Ommaviy UI: landing va anketa | frontend-react | ✅ | — | QA: PASS · 63 test · 390px vizual tekshiruv qoldi |
-| P21 | Ommaviy UI: test oqimi, autosave | frontend-react | ⬜ | — | |
+| P21 | Ommaviy UI: test oqimi, autosave | frontend-react | ✅ | — | QA: PASS · 127 test · javob yo'qolmasligi qulflangan |
 | P22 | Admin skelet va login | frontend-react | ⬜ | — | |
 | P23 | Admin: maktablar va havolalar | frontend-react | ⬜ | — | |
 | P24 | Admin: o'quvchilar ro'yxati | frontend-react | ⬜ | — | |
@@ -181,7 +181,21 @@
   (`prompts/11`: "`scaleLabels` tildan olinadi"). Endi matn va yorliqlar til bo'yicha tanlanadi,
   `uz` ga fallback qiladi va **kesh kaliti tilni o'z ichiga oladi** — busiz `ru` matn qo'shilgan
   kuni kesh birinchi so'ragan tilni hamma uchun qaytarardi.
-- **Keyingi:** P12 (yakunlash va scoring ulash) ‖ P21 (test oqimi, autosave).
+- **P12 va P21 tugadi, ikkalasi ham QA: PASS.** Backend **457 test**, frontend **127 test**.
+  - P12-R1/R2 o'zini oqladi: QA `ReliabilityInputBuilder` ni buzib ikkala testni qizartirdi,
+    keyin qaytardi — regressiya himoyasi ishlashi isbotlandi. `65.19` ishonchlilik balli
+    QA tomonidan qo'lda mustaqil qayta hisoblandi.
+  - QA topgan spetsifikatsiya buzilishi: `IsRequired = false` savollar majburiy deb
+    hisoblanardi — tuzatildi.
+  - P21 da `sendBeacon` → `fetch(keepalive: true)` ga almashtirildi: `sendBeacon` maxsus
+    header qo'ya olmaydi, ya'ni `beforeunload` yo'li ishlayotgandek ko'rinib 401 qaytarardi.
+    `visibilitychange` ham qo'shildi (mobilda `beforeunload` ishonchsiz).
+  - `durationMs` ga 10 daqiqalik chegara qo'yildi — o'quvchi tanaffus qilsa qiymat
+    cheksiz o'sib ketardi.
+- **Agentlar sessiya limitiga urildi** (03:50 da tiklanadi). Qolgan uchta band PM tomonidan
+  yakunlandi: `PublicTestSummaryDto` ga `name`/`estimatedMinutes`, `/start` idempotentligi
+  va sessiya holati shartnomasi uchun regressiya testlari.
+- **Keyingi:** P13 (auth va JWT) ‖ P22 (admin skelet va login).
 
 ---
 
@@ -198,6 +212,7 @@
 | `ReliabilityCalculator` da dublikat `QuestionId` tekshirilmaydi | Soxta straight-lining hosil qilish mumkin | Kichik; P10–P12 da kirish validatsiyasi bilan birga yopiladi |
 | `SUM` talqin oraliqlari 3+ kasrli belgilansa `pct` bo'shliqqa tushishi mumkin | Superadmin anketasida `SUM_INTERPRETATION_BAND_NOT_FOUND` | P33 nashr validatsiyasida oraliqlar 2 kasr bilan cheklansin |
 | `docs/17` va `CLAUDE.md` 6a — raqobatchi kontenti taqiqi kech kiritildi | `type-catalog.json` dagi 16 tip nomi allaqachon 16Personalities tarjimasi bo'lib yozilgan edi | **Bajarildi (2026-09-01):** hamma nom qayta yozildi. Kelgusida yangi kontent yozilganda 6a-qoida oldindan tekshiriladi |
+| `frontend` da `sessionStore.testCatalog` hamon bor (backend endi `name`/`estimatedMinutes` beradi) | Ikki manba — kelajakda nomuvofiqlik | Kichik tozalash: `testCatalog` olib tashlanib, nom `GET /sessions/me` dan olinsin. P22 bilan birga |
 | 390px/1440px real brauzer vizual tekshiruvi hech bir ekranda qilinmagan | Gorizontal scroll yoki konsol xatosi sezilmay qolishi mumkin | Chrome MCP kengaytmasi ulanmagan; subagent uni ocholmaydi. Egasi yoqsa P21 dan boshlab tekshiriladi, aks holda P30 (E2E) da Playwright bilan |
 | `429` javobida `retry-after` yo'q | Foydalanuvchi qancha kutishni bilmaydi | P31 (mustahkamlash) da `ProblemDetails` ga qo'shiladi |
 | QA topgan 5 ta zaif savol (cross-loading): `MB-Q58` (SN↔JP), `B5-Q36` (O↔E), `B5-Q49` (A↔ish uslubi), `AC-Q15` (SOCA↔SELF), va `MB-Q01`≈`AC-Q27` deyarli bir xil misol | Omillar orasida ortiqcha korrelyatsiya; ball biroz aniqroq bo'lishi mumkin edi | Bloklovchi emas (professional testlarda ham uchraydi). Pilotdan keyin real ma'lumot bilan qayta ko'riladi — `docs/14` 5-bo'lim |

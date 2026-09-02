@@ -9,4 +9,9 @@ export const QUERY_KEYS = {
     ['public', 'school-info', slug, accessToken] as const,
   /** `docs/07` 1.3-bo'lim — `features/public-assessment/api/useSessionState.ts`. */
   publicSessionMe: () => ['public', 'session-me'] as const,
+  /** `docs/07` 1.5-bo'lim — `features/public-assessment/api/useTestQuestions.ts`. */
+  publicTestQuestions: (testCode: string, page: number) =>
+    ['public', 'test-questions', testCode, page] as const,
+  /** `docs/07` 1.9-bo'lim — `features/public-assessment/api/useStudentResult.ts`. */
+  publicStudentResult: () => ['public', 'student-result'] as const,
 } as const;

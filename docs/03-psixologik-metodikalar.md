@@ -227,6 +227,12 @@ Birinchi ikki harf qo'shni bo'lsa `High`, bitta oralatib `Medium`, qarama-qarshi
 
 ### 4.3 Kasb yo'nalishlari xaritasi
 
+> **Moslash qoidasi (P12 da qat'iylashtirildi).** 3 harfli Holland kodidan `CareerMap` yozuvlari
+> shunday tanlanadi: kodning **istalgan ikki harfi** (tartibidan qat'i nazar) yozuvning 2 harfli
+> juftligiga mos kelsa, o'sha yozuv tanlanadi. Masalan `RIA` uchun `RI`, `IR`, `IA`, `AI`, `RA`, `AR`
+> juftliklari mos keladi. Sabab: seed 15 juftlikni qamraydi, qat'iy tartibli moslashtirishda
+> ko'p o'quvchi umuman kasb tavsiyasisiz qolardi.
+
 `CareerMap` jadvali: `HollandCode` (2 harf) → yo'nalishlar ro'yxati (O'zbekiston sharoitiga moslangan).
 
 | Kod | Yo'nalishlar |

@@ -67,7 +67,13 @@ internal sealed class PublicCatalogCache
             return null;
         }
 
-        var dto = new CachedTestDefinitionDto(testDefinition.Id, testDefinition.Code, testDefinition.PageSize, testDefinition.ShuffleQuestions);
+        var dto = new CachedTestDefinitionDto(
+            testDefinition.Id,
+            testDefinition.Code,
+            testDefinition.PageSize,
+            testDefinition.ShuffleQuestions,
+            testDefinition.Version,
+            testDefinition.ScoringStrategyCode);
         _cache.Set(cacheKey, dto, CacheDuration);
         return dto;
     }

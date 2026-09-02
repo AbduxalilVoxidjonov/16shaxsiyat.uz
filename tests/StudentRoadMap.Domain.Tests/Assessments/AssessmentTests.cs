@@ -39,12 +39,15 @@ public sealed class AssessmentTests
         assessment.StartTest(testDefinitionId, now);
         var test = assessment.Tests.Single(t => t.TestDefinitionId == testDefinitionId);
 
+        var questionIds = new List<Guid>();
         for (var i = 0; i < answersNeeded; i++)
         {
-            test.UpsertAnswer(Guid.NewGuid(), Guid.NewGuid(), 3, null, 1000, now);
+            var questionId = Guid.NewGuid();
+            questionIds.Add(questionId);
+            test.UpsertAnswer(Guid.NewGuid(), questionId, 3, null, 1000, now);
         }
 
-        assessment.CompleteTest(testDefinitionId, now);
+        assessment.CompleteTest(testDefinitionId, questionIds, now);
     }
 
     private static Assessment CreateCompletedAssessment(DateTimeOffset now)
@@ -129,10 +132,12 @@ public sealed class AssessmentTests
         var (assessment, testDefId1, _) = CreateAssessmentWithTwoTests(Now);
         assessment.StartTest(testDefId1, Now);
         var test = assessment.Tests.Single(t => t.TestDefinitionId == testDefId1);
-        test.UpsertAnswer(Guid.NewGuid(), Guid.NewGuid(), 3, null, 1000, Now);
-        test.UpsertAnswer(Guid.NewGuid(), Guid.NewGuid(), 4, null, 1000, Now);
+        var q1 = Guid.NewGuid();
+        var q2 = Guid.NewGuid();
+        test.UpsertAnswer(Guid.NewGuid(), q1, 3, null, 1000, Now);
+        test.UpsertAnswer(Guid.NewGuid(), q2, 4, null, 1000, Now);
 
-        assessment.CompleteTest(testDefId1, Now);
+        assessment.CompleteTest(testDefId1, [q1, q2], Now);
 
         assessment.DomainEvents.Should().ContainSingle(e => e is TestCompletedEvent);
     }

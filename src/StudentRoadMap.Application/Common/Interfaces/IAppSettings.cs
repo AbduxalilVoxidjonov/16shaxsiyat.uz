@@ -9,4 +9,13 @@ public interface IAppSettings
 {
     /// <summary>O'quvchi sessiya tokenining amal qilish muddati, kunlarda (`docs/08` 4-bo'lim: 7 kun).</summary>
     int SessionLifetimeDays { get; }
+
+    /// <summary>
+    /// O'quvchiga qisqartirilgan natijani ko'rsatish (`GET /api/public/sessions/result`,
+    /// `docs/07` 1.9-bo'lim) yoqilganmi. Standart qiymat — **`false`** (`prompts/12`
+    /// cheklovi): bu `PROGRESS.md` ochiq savol #1 — loyiha egasidan hali javob kelmagan,
+    /// shuning uchun ehtiyotkor sozlama tanlangan, superadmin `App:ShowResultToStudent`
+    /// orqali yoqadi.
+    /// </summary>
+    bool ShowResultToStudent { get; }
 }

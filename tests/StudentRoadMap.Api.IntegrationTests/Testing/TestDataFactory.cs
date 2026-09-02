@@ -39,7 +39,14 @@ internal static class TestDataFactory
         return school;
     }
 
-    /// <summary>Bitta nashr qilingan, faol anketa — `Custom` (`IsSystem = false`), `questionCount` savol bilan.</summary>
+    /// <summary>
+    /// Bitta nashr qilingan, faol anketa — `Custom` (`IsSystem = false`), `questionCount` savol
+    /// bilan. `requiredCount` — nechta SAVOL (1-chidan boshlab, tartib bo'yicha) `IsRequired = true`
+    /// bo'lishi; standart qiymat "hammasi majburiy" (mavjud testlarning aksariyati shunga tayanadi).
+    /// Qolgan `questionCount - requiredCount` savol `IsRequired = false` (ixtiyoriy) — QA
+    /// tuzatmasi (`prompts/12`): `CompleteTest` faqat majburiy savollarni talab qilishini sinash
+    /// uchun.
+    /// </summary>
     public static async Task<TestDefinition> CreatePublishedTestAsync(
         AppDbContext db,
         DateTimeOffset now,
@@ -47,7 +54,8 @@ internal static class TestDataFactory
         int displayOrder,
         int questionCount = 2,
         int pageSize = 10,
-        bool shuffleQuestions = false)
+        bool shuffleQuestions = false,
+        int requiredCount = int.MaxValue)
     {
         var testId = Guid.NewGuid();
         var test = TestDefinition.Create(
@@ -72,7 +80,83 @@ internal static class TestDataFactory
                 QuestionType.Likert5,
                 "GEN",
                 scaleDirection: 1,
-                weight: 1.0m);
+                weight: 1.0m,
+                isRequired: i <= requiredCount);
+
+            test.AddQuestion(question, now);
+        }
+
+        test.Publish(now);
+
+        db.TestDefinitions.Add(test);
+        await db.SaveChangesAsync();
+
+        return test;
+    }
+
+    /// <summary>
+    /// `RIASEC` strategiyasi talab qiladigan ANIQ tuzilishda (6 tip × 8 savol, hammasi
+    /// majburiy, `direction=+1`, `docs/03` §4.1) anketa + ustiga `extraOptionalCount` ta
+    /// IXTIYORIY ("FILLER" shkalali — `RiasecStrategy` bu shkalani butunlay e'tiborsiz
+    /// qoldiradi, chunki faqat `docs/03` §4.1 dagi 6 tipni biladi) savol qo'shadi.
+    /// `CompleteTest`ning ixtiyoriy savolni bloklamasligini HAQIQIY (muvaffaqiyatli scoring
+    /// bilan) integratsiya darajasida sinash uchun (`prompts/12` QA tuzatmasi) — `SUM`
+    /// strategiyasi bu maqsadga yaramaydi, chunki `InterpretationBands` talab qiladi
+    /// (`TestScale` entity hali P33'da yo'q), `RIASEC` esa bandssiz ishlaydi.
+    /// </summary>
+    public static async Task<TestDefinition> CreatePublishedRiasecShapedTestWithOptionalExtrasAsync(
+        AppDbContext db,
+        DateTimeOffset now,
+        string code,
+        int displayOrder,
+        int extraOptionalCount = 2)
+    {
+        var testId = Guid.NewGuid();
+        var test = TestDefinition.Create(
+            testId,
+            code,
+            $"{code} nomi",
+            displayOrder,
+            estimatedMinutes: 5,
+            scoringStrategyCode: "RIASEC",
+            now: now,
+            pageSize: 60);
+
+        var types = new[] { "R", "I", "ART", "SOC", "ENT", "CONV" };
+        var order = 1;
+        foreach (var type in types)
+        {
+            for (var i = 1; i <= 8; i++)
+            {
+                var question = Question.Create(
+                    Guid.NewGuid(),
+                    testId,
+                    $"{code}-{type}-{i:00}",
+                    order++,
+                    $"{code} {type} savoli {i}",
+                    QuestionType.Likert5,
+                    type,
+                    scaleDirection: 1,
+                    weight: 1.0m,
+                    isRequired: true);
+
+                test.AddQuestion(question, now);
+            }
+        }
+
+        for (var i = 1; i <= extraOptionalCount; i++)
+        {
+            var question = Question.Create(
+                Guid.NewGuid(),
+                testId,
+                $"{code}-FILLER-{i:00}",
+                order++,
+                $"{code} ixtiyoriy savol {i}",
+                QuestionType.Likert5,
+                "FILLER",
+                scaleDirection: 1,
+                weight: 1.0m,
+                isRequired: false);
 
             test.AddQuestion(question, now);
         }

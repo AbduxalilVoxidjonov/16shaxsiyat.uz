@@ -215,7 +215,7 @@ public sealed class PublicSaveAnswersRegressionTests : IClassFixture<PublicApiTe
         assessment.AddTest(assessmentTest);
         assessment.StartTest(test.Id, now);
         assessmentTest.UpsertAnswer(Guid.NewGuid(), question.Id, 3, null, 100, now);
-        assessmentTest.Complete(now);
+        assessmentTest.Complete(now, [question.Id]);
 
         db.Assessments.Add(assessment);
         await db.SaveChangesAsync();

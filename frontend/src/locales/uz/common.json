@@ -70,9 +70,29 @@
       "genericSubmitError": "Yuborishda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
     },
     "test": { "title": "Test savollari" },
-    "testDone": { "title": "Blok tugadi" },
-    "finish": { "title": "Test yakunlandi" },
-    "result": { "title": "Natija" },
+    "testDone": {
+      "title": "Blok tugadi",
+      "heading": "Ajoyib! Blok tugadi",
+      "remainingHeading": "Yana {{count}} ta blok qoldi · ~{{minutes}} daqiqa",
+      "continueCta": "Davom etish",
+      "laterCta": "Keyinroq davom ettiraman"
+    },
+    "finish": {
+      "title": "Test yakunlandi",
+      "heading": "Rahmat! Barcha savollarga javob berding.",
+      "analyzing": "Natijang tahlil qilinmoqda…",
+      "viewResultCta": "Natijani ko'rish",
+      "sentToPsychologist": "Natijalar maktab psixologiga yuboriladi."
+    },
+    "result": {
+      "title": "Natija",
+      "strengthsHeading": "Kuchli tomonlaring",
+      "careerFieldsHeading": "Senga mos yo'nalishlar",
+      "notReadyTitle": "Natija hali tayyor emas",
+      "notReadyDescription": "Tahlil hali tugallanmadi. Birozdan keyin qayta urinib ko'ring.",
+      "forbiddenTitle": "Natija ko'rsatilmaydi",
+      "forbiddenDescription": "Natijalaring maktabingizga yuboriladi, u yerdan bilib olasan."
+    },
     "login": { "title": "Tizimga kirish" },
     "dashboard": { "title": "Boshqaruv paneli" },
     "schools": { "title": "Maktablar" },
@@ -85,6 +105,23 @@
     "audit": { "title": "Audit jurnali" },
     "settings": { "title": "Sozlamalar" },
     "notFound": { "title": "Sahifa topilmadi" }
+  },
+  "test": {
+    "sessionExpiredTitle": "Sessiya muddati tugagan. Iltimos, qaytadan boshlang.",
+    "invalidTestTitle": "Test topilmadi",
+    "invalidTestDescription": "Bunday test bloki mavjud emas. Boshlanish sahifasiga qaytamiz.",
+    "blockIndicator": "{{current}}/{{total}} blok",
+    "blockIndicatorLabel": "{{current}}-blok, jami {{total}} ta blokdan",
+    "progressLabel": "{{answered}} ta savoldan {{total}} tasiga javob berildi",
+    "progressText": "{{answered}}/{{total}} savol",
+    "offlineBanner": "Internet yo'q — javoblaring saqlanmoqda, ulanish tiklanganda yuboriladi.",
+    "saveStatus": {
+      "saving": "Saqlanmoqda…",
+      "saved": "Saqlandi"
+    },
+    "question": {
+      "requiredError": "Bu savolga javob bering."
+    }
   },
   "register": {
     "consentLabel": "Ma'lumotlarim ta'lim maqsadida ishlatilishiga roziman",

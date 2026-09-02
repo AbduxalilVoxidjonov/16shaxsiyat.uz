@@ -239,7 +239,14 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
             var assessmentTest = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, testDefinition.Id, testDefinition.DisplayOrder, activeQuestionCount);
             assessment.AddTest(assessmentTest);
 
-            tests.Add(new PublicTestSummaryDto(testDefinition.Code, TestStatus.NotStarted.ToString(), 0, activeQuestionCount, testDefinition.DisplayOrder));
+            tests.Add(new PublicTestSummaryDto(
+                testDefinition.Code,
+                testDefinition.NameUz,
+                TestStatus.NotStarted.ToString(),
+                0,
+                activeQuestionCount,
+                testDefinition.DisplayOrder,
+                testDefinition.EstimatedMinutes));
         }
 
         if (isNewStudent)
@@ -269,21 +276,27 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
             cancellationToken).ConfigureAwait(false);
 
         var testDefinitionIds = assessmentTests.Select(t => t.TestDefinitionId).ToList();
-        var codesByTestDefinitionId = await _executor.ToListAsync(
+        var definitionsByTestDefinitionId = await _executor.ToListAsync(
             _context.TestDefinitions
                 .Where(t => testDefinitionIds.Contains(t.Id))
-                .Select(t => new { t.Id, t.Code }),
+                .Select(t => new { t.Id, t.Code, t.NameUz, t.EstimatedMinutes }),
             cancellationToken).ConfigureAwait(false);
 
-        var codeLookup = codesByTestDefinitionId.ToDictionary(x => x.Id, x => x.Code);
+        var definitionLookup = definitionsByTestDefinitionId.ToDictionary(x => x.Id, x => x);
 
         return assessmentTests
-            .Select(t => new PublicTestSummaryDto(
-                codeLookup.GetValueOrDefault(t.TestDefinitionId, "?"),
-                t.Status.ToString(),
-                t.AnsweredCount,
-                t.TotalCount,
-                t.DisplayOrder))
+            .Select(t =>
+            {
+                var definition = definitionLookup.GetValueOrDefault(t.TestDefinitionId);
+                return new PublicTestSummaryDto(
+                    definition?.Code ?? "?",
+                    definition?.NameUz ?? definition?.Code ?? "?",
+                    t.Status.ToString(),
+                    t.AnsweredCount,
+                    t.TotalCount,
+                    t.DisplayOrder,
+                    definition?.EstimatedMinutes ?? 0);
+            })
             .ToList();
     }
 

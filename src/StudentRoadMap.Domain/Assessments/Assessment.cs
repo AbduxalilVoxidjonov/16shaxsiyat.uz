@@ -158,8 +158,14 @@ public sealed class Assessment : AggregateRoot
         UpdatedAt = now;
     }
 
-    /// <summary>Bitta test blokini yakunlaydi (butun sessiyani emas) — `TestCompletedEvent` ko'taradi.</summary>
-    public void CompleteTest(Guid testDefinitionId, DateTimeOffset now)
+    /// <summary>
+    /// Bitta test blokini yakunlaydi (butun sessiyani emas) — `TestCompletedEvent` ko'taradi.
+    /// `requiredQuestionIds` — shu test blokidagi MAJBURIY savollar ID'lari (Application
+    /// qatlami `Catalog.Question.IsRequired`dan hisoblab beradi, `Assessment` Catalog'ga
+    /// bog'liq emas — faqat ID ro'yxati) — `AssessmentTest.Complete` shularning barchasi
+    /// javoblanganini tekshiradi (QA tuzatmasi: ixtiyoriy savol javobsiz qolishi mumkin).
+    /// </summary>
+    public void CompleteTest(Guid testDefinitionId, IReadOnlyCollection<Guid> requiredQuestionIds, DateTimeOffset now)
     {
         if (Status != AssessmentStatus.InProgress)
         {
@@ -167,7 +173,7 @@ public sealed class Assessment : AggregateRoot
         }
 
         var test = FindTestOrThrow(testDefinitionId);
-        test.Complete(now);
+        test.Complete(now, requiredQuestionIds);
         UpdatedAt = now;
 
         RaiseDomainEvent(new TestCompletedEvent(Id, test.Id, testDefinitionId, now));

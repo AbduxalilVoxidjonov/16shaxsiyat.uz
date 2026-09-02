@@ -68,3 +68,69 @@ export type StartSessionResponse = components['schemas']['StartSessionResult'];
 
 /** `GET /api/public/sessions/me` javobi — `docs/07` 1.3-bo'lim. */
 export type SessionStateResponse = components['schemas']['GetSessionStateResult'];
+
+/**
+ * Test oqimi (E-3) DTO'lari — docs/07-api-shartnoma.md, 1.4–1.6-bo'lim (`prompts/21`).
+ * `PublicSessionController`ning shu 3 endpoint'i P11'da tayyor bo'lgani uchun `schema.d.ts`da
+ * to'liq generatsiya qilingan — quyidagilar ham re-export, qo'lda yozilgan nusxa YO'Q.
+ */
+
+/** `POST /sessions/tests/{testCode}/start` javobi — `docs/07` 1.4-bo'lim. */
+export type StartTestResponse = components['schemas']['StartTestResult'];
+
+/** `GET /sessions/tests/{testCode}/questions` javobi — `docs/07` 1.5-bo'lim. */
+export type TestQuestionsResponse = components['schemas']['GetTestQuestionsResult'];
+
+/** Bitta savol — `docs/07` 1.5-bo'lim. `scale`/`scaleDirection` backend tomonidan hech qachon yuborilmaydi. */
+export type PublicQuestion = components['schemas']['PublicQuestionDto'];
+
+/** Ko'p tanlovli savol varianti (`type !== 'Likert5'` bo'lganda) — `docs/07` 1.5-bo'lim. */
+export type PublicAnswerOption = components['schemas']['PublicAnswerOptionDto'];
+
+/** Likert shkalasi yorlig'i (1..5) — `docs/07` 1.5-bo'lim. */
+export type PublicScaleLabel = components['schemas']['PublicScaleLabelDto'];
+
+/** `POST /sessions/tests/{testCode}/answers` so'rov elementi — `docs/07` 1.6-bo'lim. */
+export type SaveAnswerItem = components['schemas']['SaveAnswerItemRequest'];
+
+/** `POST /sessions/tests/{testCode}/answers` javobi — `docs/07` 1.6-bo'lim. */
+export type SaveAnswersResponse = components['schemas']['SaveAnswersResult'];
+
+/**
+ * MUVAQQAT QO'LDA YOZILGAN TIPLAR — docs/07-api-shartnoma.md, 1.7–1.9-bo'lim.
+ *
+ * P12 (`CompleteTest`/`CompleteSession`/`GetStudentResult`) hali backend'da yozilmoqda (parallel
+ * agent) — bu endpoint'lar hozircha swagger'da yo'q, shu sabab `schema.d.ts`da mavjud emas.
+ * `docs/10` 6-bo'limdagi "faqat generatsiya, qo'lda DTO yo'q" qoidasidan bu FAQAT shu sabab —
+ * P12 tayyor bo'lishini kutmasdan E-4/E-5/E-6'ni shartnoma bo'yicha yozish uchun (`prompts/21`
+ * ko'rsatmasi) — vaqtincha chetlanadi. P12 tugagach: `npm run generate:api` ishga tushiriladi,
+ * bu 3 tip pastdagi kabi `components['schemas'][...]`dan re-export bilan almashtiriladi va
+ * maydon nomi/nullability'da farq chiqsa ishlatuvchi kod (`FinishPage`, `StudentResultPage`,
+ * `TestCompletePage`, tegishli testlar) shunga qarab tuzatiladi.
+ */
+
+/** `POST /sessions/tests/{testCode}/complete` javobi — `docs/07` 1.7-bo'lim. */
+export interface CompleteTestResponse {
+  testCode: string;
+  status: string;
+  nextTestCode?: string | null;
+  allTestsCompleted: boolean;
+}
+
+/** `POST /sessions/complete` javobi — `docs/07` 1.8-bo'lim. */
+export interface CompleteSessionResponse {
+  status: string;
+  message: string;
+  showResultToStudent: boolean;
+  resultAvailableAt?: string | null;
+}
+
+/** `GET /sessions/result` javobi — `docs/07` 1.9-bo'lim. Aktivlik ball/bayroq/xom ball YO'Q. */
+export interface StudentResultResponse {
+  personalityType: string;
+  typeName: string;
+  shortDescription: string;
+  topStrengths: string[];
+  careerFields: string[];
+  note: string;
+}

@@ -85,16 +85,30 @@ public sealed class AssessmentTest : Entity
         }
     }
 
-    public void Complete(DateTimeOffset now)
+    /// <summary>
+    /// `InProgress ──▶ Completed`. Faqat `requiredQuestionIds`da ko'rsatilgan (MAJBURIY,
+    /// `Catalog.Question.IsRequired = true`) savollar javoblangan bo'lishi shart — ixtiyoriy
+    /// savollar javobsiz qolishi mumkin (QA tuzatmasi, `prompts/12`: avval bu yerda
+    /// `AnsweredCount &lt; TotalCount` — ya'ni BARCHA faol savol — tekshirilar edi, bu P33'da
+    /// superadmin ixtiyoriy savol qo'shganda o'quvchini asossiz bloklardi). `TotalCount`/
+    /// `AnsweredCount` semantikasi O'ZGARMAYDI — ular hamon progress ko'rsatkichi
+    /// (`GetSessionState` "answered/total"), majburiylikni bu ikkisi ANIQLAMAYDI.
+    /// `requiredQuestionIds` — chaqiruvchi (Application) tomonidan uzatiladi, `AssessmentTest`
+    /// o'zi Catalog'ga bog'lanmaydi (faqat ID ro'yxati qabul qilinadi).
+    /// </summary>
+    public void Complete(DateTimeOffset now, IReadOnlyCollection<Guid> requiredQuestionIds)
     {
+        ArgumentNullException.ThrowIfNull(requiredQuestionIds);
+
         if (Status != TestStatus.InProgress)
         {
             throw new DomainException("ASSESSMENT_TEST_INVALID_TRANSITION", $"Test '{Status}' holatida yakunlanmaydi.");
         }
 
-        if (AnsweredCount < TotalCount)
+        var answeredQuestionIds = _answers.Select(a => a.QuestionId).ToHashSet();
+        if (requiredQuestionIds.Any(id => !answeredQuestionIds.Contains(id)))
         {
-            throw new DomainException("ASSESSMENT_TEST_NOT_ANSWERED", "Barcha savollarga javob berilmasdan turib testni yakunlab bo'lmaydi.");
+            throw new DomainException("ASSESSMENT_TEST_NOT_ANSWERED", "Barcha majburiy savollarga javob berilmasdan turib testni yakunlab bo'lmaydi.");
         }
 
         Status = TestStatus.Completed;

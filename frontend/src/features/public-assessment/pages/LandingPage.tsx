@@ -42,6 +42,7 @@ export default function LandingPage() {
   const sessionToken = useSessionStore((state) => state.sessionToken);
   const storedSlug = useSessionStore((state) => state.slug);
   const clearSession = useSessionStore((state) => state.clear);
+  const setTestCatalog = useSessionStore((state) => state.setTestCatalog);
   const hasResumableSession = Boolean(sessionToken) && storedSlug === slug;
   const sessionStateQuery = useSessionState(hasResumableSession);
 
@@ -53,6 +54,15 @@ export default function LandingPage() {
       clearSession();
     }
   }, [sessionStateQuery.error, clearSession]);
+
+  // Test/blok-yakuni sahifalarida `accessToken` (`k`) yo'q — test nomi va qolgan bloklar
+  // vaqtini ko'rsatish uchun katalog shu yerda (token mavjud paytda) saqlab qo'yiladi
+  // (`sessionStore.ts` izohiga qarang).
+  useEffect(() => {
+    if (schoolInfoQuery.data) {
+      setTestCatalog(schoolInfoQuery.data.tests);
+    }
+  }, [schoolInfoQuery.data, setTestCatalog]);
 
   const registerHref = `${ROUTES.public.register(slug)}?k=${encodeURIComponent(accessToken)}`;
 

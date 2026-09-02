@@ -217,6 +217,11 @@ Barcha xatolar `application/problem+json`:
 | `SESSION_EXPIRED` | 410 | Sessiya muddati o'tgan |
 | `DUPLICATE_ASSESSMENT` | 409 | BR-1 buzildi |
 | `ACCESS_CODE_INVALID` | 400 | Maktab kirish kodi noto'g'ri (P10) |
+
+> **`ProblemDetails` qo'shimcha maydonlari.** `Error` tipida ixtiyoriy `Extensions` lug'ati bor;
+> u `ProblemDetails.Extensions` ga ko'chiriladi. Shu orqali xato bilan birga kontekst yuboriladi —
+> masalan `VALIDATION_ERROR` bilan `unansweredCount` (P12, testni yakunlashda nechta savol
+> javobsiz qolgani). Frontend shu maydonga tayanib aniqroq xabar ko'rsatadi.
 | `TEST_NOT_UNLOCKED` | 409 | Oldingi test tugamagan |
 | `SYSTEM_TEST_LOCKED` | 409 | Tizim metodikasini o'zgartirishga urinish |
 | `TEST_NOT_PUBLISHABLE` | 400 | Anketa nashr validatsiyasidan o'tmadi |

@@ -104,4 +104,19 @@ public sealed class TestResult : Entity
             testVersion,
             computedAt);
     }
+
+    /// <summary>
+    /// Keyinroq hisoblangan kompozit ko'rsatkichni (masalan `MaturityIndex`) yozadi —
+    /// `docs/03` §3.3: "BIG5 va ACTIVITY natijalari tayyor bo'lgach hisoblanadi" —
+    /// `CompositeScorer.ApplyMaturityIndex` natijasi shu orqali BIG5 `TestResult`iga qo'shiladi
+    /// (`CompleteSessionCommandHandler`, `prompts/12`). Faqat `CompositeIndex`/`LevelsJson`
+    /// yangilanadi — xom/normallashtirilgan ballar (`RawScoresJson`/`NormalizedScoresJson`)
+    /// o'zgarmaydi, chunki ular hali ham `CompleteTestCommandHandler` hisoblagan BIG5ning
+    /// o'z natijasi.
+    /// </summary>
+    public void ApplyCompositeIndex(double compositeIndex, string levelsJson)
+    {
+        CompositeIndex = compositeIndex;
+        LevelsJson = levelsJson;
+    }
 }

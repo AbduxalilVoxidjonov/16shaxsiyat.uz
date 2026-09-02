@@ -47,8 +47,9 @@ public sealed class AssessmentTestTests
     {
         var test = CreateTest(1);
         test.Start(Now);
-        test.UpsertAnswer(Guid.NewGuid(), Guid.NewGuid(), 3, null, 1000, Now);
-        test.Complete(Now);
+        var questionId = Guid.NewGuid();
+        test.UpsertAnswer(Guid.NewGuid(), questionId, 3, null, 1000, Now);
+        test.Complete(Now, [questionId]);
 
         var act = () => test.Start(Now);
 
@@ -57,16 +58,37 @@ public sealed class AssessmentTestTests
     }
 
     [Fact]
-    public void Complete_WhenNotAllQuestionsAnswered_ThrowsDomainException()
+    public void Complete_WhenRequiredQuestionUnanswered_ThrowsDomainException()
     {
         var test = CreateTest(2);
         test.Start(Now);
-        test.UpsertAnswer(Guid.NewGuid(), Guid.NewGuid(), 3, null, 1000, Now); // faqat 1/2
+        var answeredQuestionId = Guid.NewGuid();
+        var unansweredRequiredQuestionId = Guid.NewGuid();
+        test.UpsertAnswer(Guid.NewGuid(), answeredQuestionId, 3, null, 1000, Now); // majburiy 2 tadan faqat 1 tasi javoblangan
 
-        var act = () => test.Complete(Now);
+        var act = () => test.Complete(Now, [answeredQuestionId, unansweredRequiredQuestionId]);
 
         var ex = act.Should().Throw<DomainException>().Which;
         ex.Code.Should().Be("ASSESSMENT_TEST_NOT_ANSWERED");
+    }
+
+    [Fact]
+    public void Complete_WhenOnlyOptionalQuestionUnanswered_Succeeds()
+    {
+        // QA tuzatmasi (`prompts/12`): `TotalCount` (progress ko'rsatkichi) barcha FAOL
+        // savolni sanaydi, lekin `Complete` faqat `requiredQuestionIds`dagilarni talab qiladi —
+        // ixtiyoriy savol (bu yerda `TotalCount=2`ning ikkinchisi) javobsiz qolishi mumkin.
+        var test = CreateTest(2);
+        test.Start(Now);
+        var requiredQuestionId = Guid.NewGuid();
+        test.UpsertAnswer(Guid.NewGuid(), requiredQuestionId, 3, null, 1000, Now); // ixtiyoriy savol ATAYLAB javobsiz qoldiriladi
+
+        var act = () => test.Complete(Now, [requiredQuestionId]);
+
+        act.Should().NotThrow();
+        test.Status.Should().Be(TestStatus.Completed);
+        test.AnsweredCount.Should().Be(1);
+        test.TotalCount.Should().Be(2, "TotalCount semantikasi o'zgarmaydi — barcha faol savol, majburiylikni aniqlamaydi");
     }
 
     [Fact]
@@ -74,21 +96,23 @@ public sealed class AssessmentTestTests
     {
         var test = CreateTest();
 
-        var act = () => test.Complete(Now);
+        var act = () => test.Complete(Now, []);
 
         var ex = act.Should().Throw<DomainException>().Which;
         ex.Code.Should().Be("ASSESSMENT_TEST_INVALID_TRANSITION");
     }
 
     [Fact]
-    public void Complete_WhenAllQuestionsAnswered_TransitionsToCompleted()
+    public void Complete_WhenAllRequiredQuestionsAnswered_TransitionsToCompleted()
     {
         var test = CreateTest(2);
         test.Start(Now);
-        test.UpsertAnswer(Guid.NewGuid(), Guid.NewGuid(), 3, null, 1000, Now);
-        test.UpsertAnswer(Guid.NewGuid(), Guid.NewGuid(), 4, null, 1000, Now);
+        var q1 = Guid.NewGuid();
+        var q2 = Guid.NewGuid();
+        test.UpsertAnswer(Guid.NewGuid(), q1, 3, null, 1000, Now);
+        test.UpsertAnswer(Guid.NewGuid(), q2, 4, null, 1000, Now);
 
-        test.Complete(Now.AddMinutes(5));
+        test.Complete(Now.AddMinutes(5), [q1, q2]);
 
         test.Status.Should().Be(TestStatus.Completed);
         test.CompletedAt.Should().Be(Now.AddMinutes(5));
@@ -138,8 +162,9 @@ public sealed class AssessmentTestTests
     {
         var test = CreateTest(1);
         test.Start(Now);
-        test.UpsertAnswer(Guid.NewGuid(), Guid.NewGuid(), 3, null, 1000, Now);
-        test.Complete(Now);
+        var questionId = Guid.NewGuid();
+        test.UpsertAnswer(Guid.NewGuid(), questionId, 3, null, 1000, Now);
+        test.Complete(Now, [questionId]);
 
         var act = () => test.SetQuestionOrder([Guid.NewGuid()]);
 

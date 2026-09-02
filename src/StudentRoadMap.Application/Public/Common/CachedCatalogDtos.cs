@@ -5,9 +5,13 @@ namespace StudentRoadMap.Application.Public.Common;
 /// <summary>
 /// `PublicCatalogCache` orqali 10 daqiqaga keshlanadigan `TestDefinition` proyeksiyasi
 /// (`prompts/11`). Faqat ommaviy oqim uchun kerakli maydonlar — `scale`/`scaleDirection`
-/// bu yerda YO'Q (`CLAUDE.md` 9-qoida).
+/// bu yerda YO'Q (`CLAUDE.md` 9-qoida). `Version`/`ScoringStrategyCode` `prompts/12` uchun
+/// qo'shildi — `CompleteTestCommandHandler` `ScoringEngine.Score(strategyCode, ...)`ni
+/// chaqirish va `TestResult.TestVersion`ni yozish uchun ishlatadi (`docs/03` §8: "Formula
+/// o'zgarsa `TestDefinition.Version` oshiriladi... `TestResult.ScoringVersion`da qaysi versiya
+/// ishlatilgani qoladi").
 /// </summary>
-public sealed record CachedTestDefinitionDto(Guid Id, string Code, int PageSize, bool ShuffleQuestions);
+public sealed record CachedTestDefinitionDto(Guid Id, string Code, int PageSize, bool ShuffleQuestions, int Version, string ScoringStrategyCode);
 
 /// <summary>
 /// Keshlangan savol proyeksiyasi. **Diqqat:** `Scale`/`ScaleDirection`/`Weight` ATAYLAB bu

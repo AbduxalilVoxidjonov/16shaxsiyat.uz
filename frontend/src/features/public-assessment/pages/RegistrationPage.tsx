@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
@@ -76,6 +76,7 @@ export default function RegistrationPage() {
   const schoolInfoQuery = useSchoolInfo(slug, accessToken);
   const startSession = useStartSession();
   const setSession = useSessionStore((state) => state.setSession);
+  const setTestCatalog = useSessionStore((state) => state.setTestCatalog);
 
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -100,6 +101,16 @@ export default function RegistrationPage() {
   // esa kontekst orqali obuna bo'lib xavfsiz qayta render qiladi.
   const consentAccepted = useWatch({ control, name: 'consentAccepted' });
   const genderValue = useWatch({ control, name: 'gender' });
+
+  // Test/blok-yakuni sahifalarida `accessToken` (`k`) yo'q — test nomi va qolgan bloklar
+  // vaqtini ko'rsatish uchun katalog shu yerda saqlab qo'yiladi (`sessionStore.ts` izohiga qarang).
+  // (Odatda `LandingPage`da allaqachon saqlangan bo'ladi — bu yerdagi nusxa faqat to'g'ridan-to'g'ri
+  // ro'yxatdan o'tish havolasi ochilgan holat uchun ehtiyot chorasi.)
+  useEffect(() => {
+    if (schoolInfoQuery.data) {
+      setTestCatalog(schoolInfoQuery.data.tests);
+    }
+  }, [schoolInfoQuery.data, setTestCatalog]);
 
   function applyServerError(error: AppError): void {
     if (error.code === 'VALIDATION_ERROR' && error.errors) {

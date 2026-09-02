@@ -44,3 +44,23 @@
 ```bash
 dotnet test tests/StudentRoadMap.Api.IntegrationTests --filter "Analysis"
 ```
+
+## ⚠️ P18-R1 (MAJBURIY) — navbatga qo'yish tranzaksiya commit'idan KEYIN
+
+`CompleteSessionCommandHandler` hozir `IBackgroundJobQueue.EnqueueAiAnalysisAsync` ni
+**handler ichida**, ya'ni `TransactionBehavior` ochgan tranzaksiya commit bo'lishidan **oldin**
+chaqiradi. Bugun bu zararsiz (`NoOpJobQueue`), lekin haqiqiy navbat ulanganda klassik poyga
+holatiga aylanadi:
+
+- fon ishchisi vazifani darhol olib, hali **commit qilinmagan** `Assessment` ni o'qishga uradi
+  → "topilmadi" xatosi yoki eski holat;
+- tranzaksiya rollback bo'lsa, navbatda **mavjud bo'lmagan sessiya uchun** vazifa qolib ketadi.
+
+Talab: navbatga qo'yish tranzaksiya **muvaffaqiyatli commit bo'lgandan keyin** bajarilsin.
+Yechim variantlari (qaysi biri toza chiqsa — o'shani tanla va sababini yoz):
+- `AssessmentCompletedEvent` ni commit'dan keyin publish qilib, hodisa ishlovchisida navbatga qo'yish;
+- yoki `TransactionBehavior` ga "commit'dan keyin bajariladigan amallar" ro'yxatini qo'shish;
+- yoki outbox jadvali (eng ishonchli, lekin qimmatroq).
+
+**P18-R2 (majburiy test):** tranzaksiya rollback bo'lganda navbatga **hech narsa qo'yilmasligi**
+tasdiqlansin; muvaffaqiyatli holatda esa qo'yilgan vazifa commit qilingan ma'lumotni ko'ra olsin.

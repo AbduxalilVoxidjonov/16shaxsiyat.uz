@@ -6,8 +6,11 @@ using StudentRoadMap.Api.Auth;
 using StudentRoadMap.Api.Common;
 using StudentRoadMap.Api.Contracts.Public;
 using StudentRoadMap.Api.Extensions;
+using StudentRoadMap.Application.Public.CompleteSession;
+using StudentRoadMap.Application.Public.CompleteTest;
 using StudentRoadMap.Application.Public.GetSchoolInfo;
 using StudentRoadMap.Application.Public.GetSession;
+using StudentRoadMap.Application.Public.GetStudentResult;
 using StudentRoadMap.Application.Public.GetTestQuestions;
 using StudentRoadMap.Application.Public.SaveAnswers;
 using StudentRoadMap.Application.Public.StartSession;
@@ -18,8 +21,8 @@ namespace StudentRoadMap.Api.Controllers;
 /// <summary>
 /// O'quvchi (ommaviy) oqimi — maktab havolasini tekshirish, sessiya ochish, sessiya holatini
 /// o'qish (`docs/07-api-shartnoma.md` 1.1–1.3-bo'lim, `prompts/10`), test boshlash, savollarni
-/// olish va javoblarni saqlash (`docs/07` 1.4–1.6-bo'lim, `prompts/11`). Testni yakunlash
-/// (1.7/1.8/1.9) keyingi promptlarda qo'shiladi.
+/// olish va javoblarni saqlash (`docs/07` 1.4–1.6-bo'lim, `prompts/11`). Testni/sessiyani
+/// yakunlash va qisqartirilgan natija (1.7/1.8/1.9-bo'lim, `prompts/12`).
 ///
 /// **Swagger javob sxemalari:** har endpoint `ActionResult&lt;T&gt;` qaytaradi va
 /// `[ProducesResponseType]` bilan HAQIQIY (handler kodidan tekshirilgan) status kodlari
@@ -168,5 +171,75 @@ public sealed class PublicSessionController : ControllerBase
         var result = await _sender.Send(command, cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>
+    /// `POST /api/public/sessions/tests/{testCode}/complete` — `docs/07` 1.7-bo'lim.
+    /// `ScoringEngine` sinxron chaqiriladi, `TestResult` yoziladi.
+    /// </summary>
+    [HttpPost("sessions/tests/{testCode}/complete")]
+    [Authorize(AuthenticationSchemes = SessionTokenAuthenticationHandler.SchemeName)]
+    [ProducesResponseType(typeof(CompleteTestResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status410Gone, "application/problem+json")]
+    public async Task<ActionResult<CompleteTestResult>> CompleteTest(string testCode, CancellationToken cancellationToken)
+    {
+        var assessmentId = (Guid)HttpContext.Items["AssessmentId"]!;
+
+        var result = await _sender.Send(new CompleteTestCommand(assessmentId, testCode), cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>
+    /// `POST /api/public/sessions/complete` — `docs/07` 1.8-bo'lim. Barcha testlar tugagach
+    /// yakuniy tasdiq: ishonchlilik hisoblanadi, `MaturityIndex` BIG5 natijasiga yoziladi,
+    /// AI navbatga qo'yiladi (`Analyzing`). **Idempotent** — ikkinchi chaqiruv xato bermaydi.
+    /// </summary>
+    [HttpPost("sessions/complete")]
+    [Authorize(AuthenticationSchemes = SessionTokenAuthenticationHandler.SchemeName)]
+    [ProducesResponseType(typeof(CompleteSessionResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status410Gone, "application/problem+json")]
+    public async Task<ActionResult<CompleteSessionResult>> CompleteSession(CancellationToken cancellationToken)
+    {
+        var assessmentId = (Guid)HttpContext.Items["AssessmentId"]!;
+
+        var result = await _sender.Send(new CompleteSessionCommand(assessmentId), cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>
+    /// `GET /api/public/sessions/result` — `docs/07` 1.9-bo'lim. O'quvchiga **qisqartirilgan**
+    /// natija — faqat superadmin sozlamasi (`App:ShowResultToStudent`, standart `false`) yoqilgan
+    /// bo'lsa. Tahlil hali tayyor bo'lmasa (`Analyzed` holatiga yetmagan — AI ulanmaguncha,
+    /// P18'gacha, bu HAR DOIM shu holat) — tana yo'q `202 Accepted`.
+    /// </summary>
+    [HttpGet("sessions/result")]
+    [Authorize(AuthenticationSchemes = SessionTokenAuthenticationHandler.SchemeName)]
+    [ProducesResponseType(typeof(GetStudentResultResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status410Gone, "application/problem+json")]
+    public async Task<ActionResult<GetStudentResultResult>> GetStudentResult(CancellationToken cancellationToken)
+    {
+        var assessmentId = (Guid)HttpContext.Items["AssessmentId"]!;
+
+        var result = await _sender.Send(new GetStudentResultQuery(assessmentId), cancellationToken).ConfigureAwait(false);
+
+        if (!result.IsSuccess)
+        {
+            return this.ToProblem(result.Error);
+        }
+
+        return result.Value is null ? Accepted() : Ok(result.Value);
     }
 }

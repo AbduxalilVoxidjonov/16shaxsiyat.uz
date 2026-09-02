@@ -17,7 +17,14 @@ internal sealed class AppSettingsProvider : IAppSettings
         // (`Microsoft.Extensions.Configuration.Binder`) qo'lda parse qilinadi.
         var raw = configuration["App:SessionLifetimeDays"];
         SessionLifetimeDays = int.TryParse(raw, out var value) ? value : DefaultSessionLifetimeDays;
+
+        // `bool.TryParse` topilmagan/bo'sh qiymatda `false` qaytaradi — bu aynan xohlangan
+        // ehtiyotkor standart (`prompts/12`, `IAppSettings.ShowResultToStudent` izohi).
+        _ = bool.TryParse(configuration["App:ShowResultToStudent"], out var showResultToStudent);
+        ShowResultToStudent = showResultToStudent;
     }
 
     public int SessionLifetimeDays { get; }
+
+    public bool ShowResultToStudent { get; }
 }

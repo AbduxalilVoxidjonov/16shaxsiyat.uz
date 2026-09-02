@@ -57,12 +57,12 @@ internal sealed class GetSessionStateQueryHandler : IRequestHandler<GetSessionSt
             cancellationToken).ConfigureAwait(false);
 
         var testDefinitionIds = assessmentTests.Select(t => t.TestDefinitionId).ToList();
-        var codeLookup = (await _executor.ToListAsync(
+        var definitionLookup = (await _executor.ToListAsync(
                 _context.AsNoTracking(_context.TestDefinitions)
                     .Where(t => testDefinitionIds.Contains(t.Id))
-                    .Select(t => new { t.Id, t.Code }),
+                    .Select(t => new { t.Id, t.Code, t.NameUz, t.EstimatedMinutes }),
                 cancellationToken).ConfigureAwait(false))
-            .ToDictionary(x => x.Id, x => x.Code);
+            .ToDictionary(x => x.Id, x => x);
 
         var tests = new List<PublicTestSummaryDto>(assessmentTests.Count);
         string? currentTestCode = null;
@@ -70,7 +70,8 @@ internal sealed class GetSessionStateQueryHandler : IRequestHandler<GetSessionSt
 
         foreach (var test in assessmentTests)
         {
-            var code = codeLookup.GetValueOrDefault(test.TestDefinitionId, "?");
+            var definition = definitionLookup.GetValueOrDefault(test.TestDefinitionId);
+            var code = definition?.Code ?? "?";
             string status;
 
             if (locked)
@@ -88,7 +89,14 @@ internal sealed class GetSessionStateQueryHandler : IRequestHandler<GetSessionSt
                 locked = true; // Birinchi tugallanmagan testdan keyingilari qulflangan (`docs/07` 1.3 namunasi).
             }
 
-            tests.Add(new PublicTestSummaryDto(code, status, test.AnsweredCount, test.TotalCount, test.DisplayOrder));
+            tests.Add(new PublicTestSummaryDto(
+                code,
+                definition?.NameUz ?? code,
+                status,
+                test.AnsweredCount,
+                test.TotalCount,
+                test.DisplayOrder,
+                definition?.EstimatedMinutes ?? 0));
         }
 
         var totalAnswered = assessmentTests.Sum(t => t.AnsweredCount);

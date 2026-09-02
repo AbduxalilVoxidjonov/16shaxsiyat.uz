@@ -41,6 +41,8 @@ public static class DependencyInjection
         services.AddSingleton<ITokenGenerator, TokenGenerator>();
         services.AddScoped<IIpHasher, IpHasher>();
         services.AddSingleton<IAppSettings, AppSettingsProvider>();
+        // `prompts/12`: AI navbati hozircha yo'q — `NoOpJobQueue` kontraktni bajaradi, P18 da almashadi.
+        services.AddSingleton<IBackgroundJobQueue, NoOpJobQueue>();
         services.AddScoped<DbSeeder>();
 
         // `prompts/11`: ommaviy katalog keshi (10 daqiqa) va savollarni aralashtirish abstraksiyasi.
