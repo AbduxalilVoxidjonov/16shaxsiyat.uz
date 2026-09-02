@@ -32,6 +32,12 @@ const AiProvidersPage = lazy(() => import('@/features/ai-settings/pages/AiProvid
 const AuditLogPage = lazy(() => import('@/features/audit/pages/AuditLogPage'));
 const SettingsPage = lazy(() => import('@/features/settings/pages/SettingsPage'));
 
+// Faqat dev rejimida — widget'larni namunaviy ma'lumot bilan ko'rish uchun (P26 tekshiruvi:
+// "cd frontend && npm run test -- widgets && npm run dev — /admin/_widgets ni och"). Production
+// build'ida `import.meta.env.DEV === false`, shu sabab route ro'yxatga umuman qo'shilmaydi va
+// `WidgetsDemoPage` chunk'i ham build qilinmaydi.
+const WidgetsDemoPage = lazy(() => import('@/widgets/__demo__/WidgetsDemoPage'));
+
 /** `React.lazy` komponentini `<Suspense>` bilan o'raydi — docs/10, 7-bo'lim (route bo'yicha `lazy()`). */
 function withSuspense(Component: ComponentType): ReactElement {
   return (
@@ -74,6 +80,9 @@ const router = createBrowserRouter([
       { path: ROUTE_PATTERNS.admin.ai, element: withSuspense(AiProvidersPage) },
       { path: ROUTE_PATTERNS.admin.audit, element: withSuspense(AuditLogPage) },
       { path: ROUTE_PATTERNS.admin.settings, element: withSuspense(SettingsPage) },
+      ...(import.meta.env.DEV
+        ? [{ path: '/admin/_widgets', element: withSuspense(WidgetsDemoPage) }]
+        : []),
     ],
   },
   { path: '*', element: <NotFoundPage /> },

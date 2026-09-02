@@ -93,6 +93,17 @@ builder.Services.AddCors(options =>
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// `MockAiProvider` — tarmoqqa chiqmaydi, doim to'g'ri JSON qaytaradi. FAQAT Development/Test
+// muhitida ro'yxatga olinadi (`prompts/16` MAXSUS DIQQAT #5) — bu qaror ATAYLAB shu yerda,
+// composition root'da (`Infrastructure`ning o'zi muhitni bilmaydi): production'da bu satr
+// hech qachon ishlamaydi, shu bilan haqiqiy AI tahlil o'rniga soxta javob ketib qolishining
+// oldi olinadi. `WebApplicationFactory` standart holatda "Development" muhitini ishlatadi —
+// integratsiya testlari ham shu orqali `MockAiProvider`ni ko'radi.
+if (builder.Environment.IsDevelopment() || builder.Environment.EnvironmentName == "Test")
+{
+    builder.Services.AddSingleton<StudentRoadMap.Application.Common.Interfaces.IAiAnalysisProvider, StudentRoadMap.Infrastructure.Ai.MockAiProvider>();
+}
+
 var app = builder.Build();
 
 // --- Fail-fast: `Jwt:Key` 32 baytdan qisqa/yo'q bo'lsa ilova SHU YERDA (start-upda) xato bilan

@@ -222,13 +222,13 @@ export function AdminLayout() {
       >
         {t('common.skipToContent')}
       </a>
-      <aside className="hidden border-r border-neutral-200 bg-white md:block">
+      <aside className="hidden border-r border-neutral-200 bg-white md:block print:hidden">
         <div className="px-4 py-5 text-lg font-semibold text-neutral-900">{t('app.name')}</div>
         <SidebarNav ariaLabel={t('nav.dashboard')} />
       </aside>
       <MobileSidebarDrawer open={isDrawerOpen} onClose={() => setDrawerOpen(false)} />
       <div className="flex min-w-0 flex-col">
-        <header className="flex h-14 items-center justify-between gap-3 border-b border-neutral-200 bg-white px-4">
+        <header className="flex h-14 items-center justify-between gap-3 border-b border-neutral-200 bg-white px-4 print:hidden">
           <div className="flex items-center gap-3">
             <button
               type="button"

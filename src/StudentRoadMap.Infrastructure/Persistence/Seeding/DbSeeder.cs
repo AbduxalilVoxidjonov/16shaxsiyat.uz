@@ -4,8 +4,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Seeding;
+using StudentRoadMap.Domain.Ai;
 using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Identity;
+using StudentRoadMap.Infrastructure.Ai;
 
 namespace StudentRoadMap.Infrastructure.Persistence.Seeding;
 
@@ -69,6 +71,7 @@ public sealed class DbSeeder
             await SeedTestDefinitionsAsync(cancellationToken).ConfigureAwait(false);
             await SeedTypeCatalogAsync(cancellationToken).ConfigureAwait(false);
             await SeedCareerMapAsync(cancellationToken).ConfigureAwait(false);
+            await SeedPromptTemplatesAsync(cancellationToken).ConfigureAwait(false);
             await SeedSuperAdminAsync(cancellationToken).ConfigureAwait(false);
 
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
@@ -274,6 +277,43 @@ public sealed class DbSeeder
 
         await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         _logger.LogInformation("Kasb xaritasi seed qilindi: {Count} yo'nalish.", entries.Count);
+    }
+
+    /// <summary>
+    /// `prompt_templates`ga `full_analysis`/`v1.0` shablonini yozadi (`prompts/16` vazifa #5,
+    /// DoD: "Prompt shabloni seed qilinadi va versiyasi `AiAnalysis`ga yoziladi"). Matn/sxema
+    /// `DefaultPromptTemplates`/`AnalysisJsonSchema` bilan bir xil — kodda IKKI joyda mustaqil
+    /// yozilgan matn bo'lmasligi uchun (`PromptBuilder`dagi embedded fallback ham shu yerdan).
+    /// (`Key`, `Version`) juftligi bo'yicha idempotent — mavjud bo'lsa hech narsa qilinmaydi
+    /// (`prompt_templates` versiyalangan — versiya matni RUNTIME'da o'zgartirilmaydi, yangi
+    /// matn kerak bo'lsa yangi versiya qo'shiladi).
+    /// </summary>
+    private async Task SeedPromptTemplatesAsync(CancellationToken cancellationToken)
+    {
+        var exists = await _dbContext.PromptTemplates
+            .AnyAsync(t => t.Key == DefaultPromptTemplates.Key && t.Version == DefaultPromptTemplates.Version, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (exists)
+        {
+            _logger.LogInformation("Prompt shabloni allaqachon mavjud: {Key}/{Version} — o'tkazib yuborildi.", DefaultPromptTemplates.Key, DefaultPromptTemplates.Version);
+            return;
+        }
+
+        var now = _dateTime.UtcNow;
+        var template = PromptTemplate.Create(
+            Guid.NewGuid(),
+            DefaultPromptTemplates.Key,
+            DefaultPromptTemplates.Version,
+            DefaultPromptTemplates.SystemTextV1,
+            DefaultPromptTemplates.UserTextV1,
+            AnalysisJsonSchema.RawJson,
+            now);
+        template.Activate();
+
+        _dbContext.PromptTemplates.Add(template);
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        _logger.LogInformation("Prompt shabloni seed qilindi: {Key}/{Version}.", DefaultPromptTemplates.Key, DefaultPromptTemplates.Version);
     }
 
     private async Task SeedSuperAdminAsync(CancellationToken cancellationToken)

@@ -1,0 +1,63 @@
+import { describe, expect, it } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { AiReportView, type AiReportSections } from './AiReportView';
+
+const FULL_SECTIONS: AiReportSections = {
+  summary: 'Umumiy xulosa matni',
+  personalityPortrait: 'Shaxsiyat portreti matni',
+  strengths: [{ title: 'Tahliliy fikrlash', description: 'Tavsif', evidence: 'Asos' }],
+  growthAreas: [{ title: "O'sish zonasi", description: 'Tavsif', actionStep: 'Qadam' }],
+  learningStyle: "O'quv uslubi matni",
+  motivationProfile: 'Motivatsiya matni',
+  activityAssessment: 'Aktivlik matni',
+  careerSuggestions: [{ field: 'IT', why: 'Sabab', nextSteps: ['Kurs', 'Amaliyot'] }],
+  studentRecommendations: ["O'quvchi tavsiyasi"],
+  teacherNotes: ["O'qituvchi eslatmasi"],
+  parentNotes: ['Ota-ona eslatmasi'],
+  attentionFlags: [{ code: 'LOW_MOTIVATION', message: 'Motivatsiya past', severity: 'attention' }],
+  disclaimer: 'Bu tahlil tashxis emas.',
+};
+
+describe('AiReportView', () => {
+  it("to'liq ma'lumot bilan barcha bo'limlarni render qiladi", () => {
+    render(<AiReportView sections={FULL_SECTIONS} />);
+    expect(screen.getByText('Umumiy xulosa matni')).toBeInTheDocument();
+    expect(screen.getByText('Tahliliy fikrlash')).toBeInTheDocument();
+    expect(screen.getByText('Motivatsiya past')).toBeInTheDocument();
+    expect(screen.getByText('Bu tahlil tashxis emas.')).toBeInTheDocument();
+  });
+
+  it("bo'sh obyekt bilan yiqilmaydi va bo'sh holat matnini ko'rsatadi", () => {
+    render(<AiReportView sections={{}} />);
+    expect(screen.getByText('AI hisobot hali mavjud emas.')).toBeInTheDocument();
+  });
+
+  it('null massivlar bilan yiqilmaydi', () => {
+    render(
+      <AiReportView
+        sections={{
+          summary: 'Qisqa xulosa',
+          strengths: null,
+          growthAreas: null,
+          careerSuggestions: null,
+          studentRecommendations: null,
+          teacherNotes: null,
+          parentNotes: null,
+          attentionFlags: null,
+        }}
+      />,
+    );
+    expect(screen.getByText('Qisqa xulosa')).toBeInTheDocument();
+  });
+
+  it("attentionFlags bo'sh bo'lsa alohida karta ko'rinmaydi", () => {
+    render(<AiReportView sections={{ summary: 'Xulosa', attentionFlags: [] }} />);
+    expect(screen.queryByText("E'tibor talab qiladigan holatlar")).not.toBeInTheDocument();
+  });
+
+  it('dangerouslySetInnerHTML ishlatmasdan matnni oddiy matn sifatida chiqaradi', () => {
+    render(<AiReportView sections={{ summary: '<script>alert(1)</script>' }} />);
+    expect(screen.getByText('<script>alert(1)</script>')).toBeInTheDocument();
+    expect(document.querySelector('script')).toBeNull();
+  });
+});

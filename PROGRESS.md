@@ -4,7 +4,7 @@
 > PM har vazifa boshlanganda va tugaganda **darhol** yangilaydi.
 
 **Loyiha:** Salohiyat (`salohiyat.uz`) · ichki nom `StudentRoadMap`
-**Oxirgi yangilanish:** 2026-09-02 · **Joriy bosqich:** B4 (AI modul) ‖ B6 (Admin UI) · **Joriy vazifa:** P16 (AI) ‖ P25 (individual profil)
+**Oxirgi yangilanish:** 2026-09-02 · **Joriy bosqich:** B4 (AI modul) ‖ B6 (Admin UI) · **Joriy vazifa:** P34–P36 loyihalash (dastur/biriktirish modeli)
 
 ---
 
@@ -33,7 +33,7 @@
 | P13 | Auth va JWT | backend-dotnet | ✅ | — | QA: PASS · TOTP poyga holati tuzatildi |
 | P14 | Maktab va o'quvchi admin API | backend-dotnet | ✅ | — | QA: PASS · xotirada saralash tuzatildi |
 | P15 | Sessiya va dashboard API | backend-dotnet | ✅ | — | QA: FAIL→PASS · kesh bloklovchisi tuzatildi |
-| P16 | AI abstraksiya va prompt | ai-integration | ⬜ | — | |
+| P16 | AI abstraksiya va prompt | ai-integration | ✅ | — | maxfiylik testi majburiy · validator 5 bosqich |
 | P17 | 3 provider (Gemini/OpenAI/Anthropic) | ai-integration | ⬜ | — | Real kalit kerak (§8-1) |
 | P18 | Fon navbati, fallback | ai-integration | ⬜ | — | |
 | P19 | Frontend skeleti | frontend-react | ✅ | — | QA: PASS · 18 test · Vite qoldiqlari tozalandi |
@@ -42,8 +42,8 @@
 | P22 | Admin skelet va login | frontend-react | ✅ | — | QA: PASS · 171 test · DataTable qayta ishlatiladi |
 | P23 | Admin: maktablar va havolalar | frontend-react | ✅ | — | QA: PASS · 183 test · QR, havola, drawer |
 | P24 | Admin: o'quvchilar ro'yxati | frontend-react | ✅ | — | QA: PASS · 200 test |
-| P25 | Individual profil sahifasi | frontend-react | ⬜ | — | **Asosiy ekran** |
-| P26 | Diagramma widgetlari | frontend-react | ⬜ | — | |
+| P25 | Individual profil sahifasi | frontend-react | ✅ | — | **Asosiy ekran** · axe toza |
+| P26 | Diagramma widgetlari | frontend-react | ✅ | — | 7 widget · neytral palitra |
 | P27 | Excel va PDF eksport | backend-dotnet | ⬜ | — | P28, P29 bilan parallel |
 | P28 | AI sozlamalari UI | frontend-react | ⬜ | — | |
 | P29 | Katalog va audit UI | frontend-react | ⬜ | — | |
@@ -258,6 +258,7 @@
 | ~~3 ta test SQLite `DateTimeOffset` cheklovi sababli `Skip`~~ — **yopildi (P15)**: sinov muhitiga value converter qo'shildi, `Skip` soni **0** | Saralash faqat Postgres'da sinaladi | P30 (E2E) da Testcontainers/Postgres bilan yopiladi |
 | `frontend` da `sessionStore.testCatalog` hamon bor (backend endi `name`/`estimatedMinutes` beradi) | Ikki manba — kelajakda nomuvofiqlik | Kichik tozalash: `testCatalog` olib tashlanib, nom `GET /sessions/me` dan olinsin. P22 bilan birga |
 | 390px/1440px real brauzer vizual tekshiruvi hech bir ekranda qilinmagan | Gorizontal scroll yoki konsol xatosi sezilmay qolishi mumkin | Chrome MCP kengaytmasi ulanmagan; subagent uni ocholmaydi. Egasi yoqsa P21 dan boshlab tekshiriladi, aks holda P30 (E2E) da Playwright bilan |
+| `frontend/src/shared/config/env.ts` bo'sh `VITE_API_BASE_URL` ni "berilmagan" deb hisoblab `http://localhost:5000` ga qaytadi | "Bir origin ostida ishla" (nisbiy yo'l) konfiguratsiyasini ifodalab bo'lmaydi; HTTPS sahifada bu **mixed content** bloklanishiga olib keladi va so'rov API'ga umuman yetmaydi — xato tushunarsiz bo'ladi | 2026-09-02 da namoyish paytida aynan shu xato yuz berdi. P32 da tuzatiladi: bo'sh qiymat = same-origin; konfiguratsiya yo'q bo'lsa ishlab chiqarishda **baland ovozda** xato bersin, jimgina `localhost` ga qaytmasin |
 | `429` javobida `retry-after` yo'q | Foydalanuvchi qancha kutishni bilmaydi | P31 (mustahkamlash) da `ProblemDetails` ga qo'shiladi |
 | QA topgan 5 ta zaif savol (cross-loading): `MB-Q58` (SN↔JP), `B5-Q36` (O↔E), `B5-Q49` (A↔ish uslubi), `AC-Q15` (SOCA↔SELF), va `MB-Q01`≈`AC-Q27` deyarli bir xil misol | Omillar orasida ortiqcha korrelyatsiya; ball biroz aniqroq bo'lishi mumkin edi | Bloklovchi emas (professional testlarda ham uchraydi). Pilotdan keyin real ma'lumot bilan qayta ko'riladi — `docs/14` 5-bo'lim |
 | EF Core 9.x paketlari net10.0 loyihada (Npgsql EF10 provayderi yo'q) | P03 da runtime muammosi bo'lishi mumkin | P03 boshida DbContext bilan haqiqiy so'rov sinab ko'riladi; provayder chiqqach yangilanadi |

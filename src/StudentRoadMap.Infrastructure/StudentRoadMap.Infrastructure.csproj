@@ -22,6 +22,9 @@
          MAXSUS DIQQAT #4). `PngByteQRCode` — `System.Drawing`ga bog'liq emas, Linux/Docker'da
          muammosiz ishlaydi. -->
     <PackageReference Include="QRCoder" Version="1.6.0" />
+    <!-- `AiResponseValidator` 2-bosqichi (`docs/09` 6-bo'lim) — AI javobini `AnalysisJsonSchema`ga
+         qarshi tekshiradi (P16, tarmoq chaqiruvisiz). -->
+    <PackageReference Include="JsonSchema.Net" Version="9.4.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -43,6 +46,12 @@
       <Link>SeedData\%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <!-- `AnalysisJsonSchema` — `docs/09` 5-bo'limidagi JSON sxema embedded resurs sifatida
+       (P16 vazifa #3: "embedded resurs sifatida"). -->
+  <ItemGroup>
+    <EmbeddedResource Include="Ai\Resources\analysis-schema.v1.json" />
   </ItemGroup>
 
 </Project>

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StudentRoadMap.Application.Common.Interfaces;
+using StudentRoadMap.Infrastructure.Ai;
 using StudentRoadMap.Infrastructure.Common;
 using StudentRoadMap.Infrastructure.Identity;
 using StudentRoadMap.Infrastructure.Persistence;
@@ -51,6 +52,12 @@ public static class DependencyInjection
         // `prompts/12`: AI navbati hozircha yo'q — `NoOpJobQueue` kontraktni bajaradi, P18 da almashadi.
         services.AddSingleton<IBackgroundJobQueue, NoOpJobQueue>();
         services.AddScoped<DbSeeder>();
+
+        // `prompts/16`: prompt qurish (`prompt_templates`ga bog'liq — Scoped) va AI javob
+        // validatsiyasi (holatsiz — Singleton). `MockAiProvider` BU YERDA ro'yxatdan
+        // o'tkazilmaydi — faqat Development/Test muhitida, composition root'da (`Api/Program.cs`).
+        services.AddScoped<IPromptBuilder, PromptBuilder>();
+        services.AddSingleton<IAiResponseValidator, AiResponseValidator>();
 
         // `prompts/11`: ommaviy katalog keshi (10 daqiqa) va savollarni aralashtirish abstraksiyasi.
         services.AddMemoryCache();

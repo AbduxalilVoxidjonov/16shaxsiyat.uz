@@ -406,5 +406,220 @@
         "Unreliable": "Ishonchsiz"
       }
     }
+  },
+  "widgets": {
+    "axisBar": {
+      "pole": {
+        "EI": { "zero": "Introversiya", "hundred": "Ekstraversiya" },
+        "SN": { "zero": "Sezish", "hundred": "Intuitsiya" },
+        "TF": { "zero": "Fikrlash", "hundred": "His-tuyg'u" },
+        "JP": { "zero": "Moslashuvchan", "hundred": "Tartibli" }
+      },
+      "ariaLabel": "{{zeroLabel}} va {{hundredLabel}} o'qi: {{hundredLetter}} tomon {{pct}} foiz",
+      "borderline": "Muvozanat",
+      "resultColumn": "Natija"
+    },
+    "personalityRadar": {
+      "title": "Shaxsiyatning 5 omili",
+      "factor": {
+        "O": "Ochiqlik",
+        "C": "Vijdonlilik",
+        "E": "Ekstraversiya",
+        "A": "Kelishuvchanlik",
+        "Stability": "Emotsional barqarorlik"
+      },
+      "level": {
+        "veryLow": "Juda past",
+        "low": "Past",
+        "medium": "O'rtacha",
+        "high": "Yuqori",
+        "veryHigh": "Juda yuqori"
+      },
+      "ariaLabel": "Shaxsiyatning 5 omili radar diagrammasi: {{values}}",
+      "tableFactorColumn": "Omil",
+      "tableValueColumn": "Qiymat",
+      "tableLevelColumn": "Daraja"
+    },
+    "riasecChart": {
+      "title": "Kasb qiziqishlari (RIASEC)",
+      "type": {
+        "R": "Realistik",
+        "I": "Tadqiqotchi",
+        "ART": "Artistik",
+        "SOC": "Ijtimoiy",
+        "ENT": "Tadbirkor",
+        "CONV": "Konvensional"
+      },
+      "ariaLabel": "Kasb qiziqishlari diagrammasi, Holland kodi {{resultCode}}: {{values}}",
+      "hollandCodeLabel": "Holland kodi:",
+      "lowDifferentiation": "qiziqishlar hali aniq shakllanmagan",
+      "differentiationValue": "farqlanish darajasi {{value}}",
+      "tableTypeColumn": "Tip",
+      "tableValueColumn": "Qiymat"
+    },
+    "indexGauge": {
+      "ariaLabel": "{{label}}: {{value}}, daraja — {{level}}",
+      "tableLabelColumn": "Ko'rsatkich",
+      "tableValueColumn": "Qiymat",
+      "tableLevelColumn": "Daraja"
+    },
+    "activityBars": {
+      "scale": {
+        "MOT": "Ta'lim motivatsiyasi",
+        "SELF": "O'z-o'zini boshqarish",
+        "SOCA": "Ijtimoiy faollik",
+        "ENG": "Band bo'lish darajasi"
+      },
+      "barAriaLabel": "{{label}}: {{value}} foiz",
+      "tableCaption": "Aktivlik shkalalari",
+      "tableScaleColumn": "Shkala",
+      "tableValueColumn": "Qiymat",
+      "indexLabel": "Aktivlik indeksi"
+    },
+    "reliabilityBadge": {
+      "label": {
+        "Reliable": "Ishonchli",
+        "Questionable": "Shubhali",
+        "Unreliable": "Ishonchsiz"
+      },
+      "explanation": {
+        "Reliable": "Javoblar izchil — natija ishonchli.",
+        "Questionable": "Ba'zi javoblarda shubha bor — natijani ehtiyot bilan talqin qiling.",
+        "Unreliable": "Javoblar juda tez yoki bir xil berilgan — natija ishonchsiz bo'lishi mumkin."
+      }
+    },
+    "aiReportView": {
+      "empty": "AI hisobot hali mavjud emas.",
+      "attentionFlagsTitle": "E'tibor talab qiladigan holatlar",
+      "severity": {
+        "info": "Ma'lumot",
+        "attention": "E'tibor",
+        "high": "Muhim"
+      },
+      "section": {
+        "summary": "Umumiy xulosa",
+        "personalityPortrait": "Shaxsiyat portreti",
+        "strengths": "Kuchli tomonlar ({{count}})",
+        "growthAreas": "O'sish zonalari ({{count}})",
+        "profile": "O'quv uslubi · Motivatsiya · Aktivlik",
+        "careerSuggestions": "Kasb yo'nalishlari ({{count}})",
+        "recommendations": "Tavsiyalar"
+      },
+      "actionStepLabel": "Keyingi qadam:",
+      "learningStyleLabel": "O'quv uslubi",
+      "motivationProfileLabel": "Motivatsiya",
+      "activityAssessmentLabel": "Aktivlik baholovi",
+      "audienceStudent": "O'quvchiga",
+      "audienceTeacher": "O'qituvchiga",
+      "audienceParent": "Ota-onaga"
+    }
+  },
+  "widgetsDemo": {
+    "title": "Widget'lar namunasi (dev)",
+    "description": "Bu sahifa faqat dasturchi rejimida ko'rinadi — barcha diagramma widget'lari namunaviy ma'lumot bilan."
+  },
+  "studentProfile": {
+    "backCta": "Orqaga",
+    "yearsShort": "yosh",
+    "notFoundTitle": "O'quvchi topilmadi",
+    "notFoundDescription": "Bunday o'quvchi topilmadi yoki o'chirilgan.",
+    "header": {
+      "downloadPdfCta": "PDF yuklab olish",
+      "rerunAnalysisCta": "Qayta tahlil",
+      "moreActionsCta": "Boshqa amallar",
+      "rawAnswersCta": "Xom javoblar",
+      "deleteCta": "O'chirish"
+    },
+    "summarySectionHeading": "Yig'ma ko'rsatkichlar",
+    "diagramsSectionHeading": "Diagrammalar",
+    "cards": {
+      "personalityType": "Shaxsiyat tipi",
+      "maturityIndex": "Yetuklik indeksi",
+      "activityIndex": "Aktivlik indeksi",
+      "hollandCode": "Kasb qiziqishlari",
+      "noData": "Hali natija yo'q"
+    },
+    "diagrams": {
+      "axesHeading": "16 tip o'qlari",
+      "radarHeading": "Shaxsiyatning 5 omili",
+      "riasecHeading": "Kasb qiziqishlari",
+      "activityHeading": "Aktivlik va motivatsiya",
+      "noData": "Bu testning natijasi hali mavjud emas."
+    },
+    "ai": {
+      "heading": "AI tahlil",
+      "historyToggle": "Tarix",
+      "analyzingTitle": "Tahlil tayyorlanmoqda",
+      "analyzingDescription": "Odatda 1 daqiqa vaqt ketadi. Sahifa avtomatik yangilanadi.",
+      "failedTitle": "Tahlil muvaffaqiyatsiz",
+      "failedDescription": "AI tahlil yakunlanmadi. Boshqa provider bilan qayta urinib ko'ring.",
+      "retryCta": "Qayta urinish",
+      "fallbackBadge": "Avtomatik shablon hisobot",
+      "unreliableBanner": "Javoblar juda tez berilgan, natija ishonchsiz bo'lishi mumkin. Qayta topshirish tavsiya etiladi.",
+      "noAnalysisYet": "Bu sessiya uchun AI tahlil hali mavjud emas.",
+      "providerMeta": "{{provider}} · {{promptVersion}} · {{date}}"
+    },
+    "history": {
+      "heading": "Sessiyalar tarixi",
+      "ariaLabel": "Oldingi sessiyalar jadvali",
+      "startedAt": "Boshlangan",
+      "completedAt": "Yakunlangan",
+      "duration": "Davomiyligi",
+      "reliability": "Ishonchlilik",
+      "status": "Holat",
+      "current": "Joriy",
+      "durationMinutes": "{{count}} daq",
+      "empty": "Hali sessiya yo'q"
+    },
+    "aiHistory": {
+      "heading": "AI tahlillar tarixi",
+      "ariaLabel": "AI tahlillar ro'yxati",
+      "openCta": "Ochish",
+      "current": "Joriy",
+      "status": {
+        "Pending": "Navbatda",
+        "Running": "Ishlamoqda",
+        "Succeeded": "Tahlil qilingan",
+        "Failed": "Muvaffaqiyatsiz"
+      }
+    },
+    "rawAnswers": {
+      "title": "Xom javoblar",
+      "description": "Savol, javob va vaqt bo'yicha audit ma'lumoti.",
+      "testLabel": "Test bloki",
+      "testNames": {
+        "MBTI16": "16 tipli shaxsiyat modeli",
+        "BIG5": "Shaxsiyatning 5 omili",
+        "RIASEC": "Kasb qiziqishlari",
+        "ACTIVITY": "Aktivlik va motivatsiya"
+      },
+      "questionColumn": "Savol",
+      "valueColumn": "Javob",
+      "durationColumn": "Vaqt",
+      "revisionColumn": "Tahrirlar",
+      "durationMs": "{{count}} ms",
+      "empty": "Bu blok uchun javob topilmadi",
+      "loadError": "Xom javoblarni yuklab bo'lmadi"
+    },
+    "rerunDialog": {
+      "title": "Qayta tahlil",
+      "description": "Tanlangan AI provider bilan yangi tahlil boshlanadi. Joriy hisobot tahlil yakunlanguncha ko'rinishda qoladi.",
+      "providerLabel": "Provider",
+      "noProviders": "Faol AI provider topilmadi. Avval AI sozlamalarida provider ulang.",
+      "submitCta": "Boshlash",
+      "success": "Qayta tahlil boshlandi",
+      "error": "Qayta tahlilni boshlab bo'lmadi. Birozdan so'ng qayta urinib ko'ring."
+    },
+    "deleteDialog": {
+      "title": "O'quvchini o'chirish",
+      "description": "Bu amalni ortga qaytarib bo'lmaydi. O'quvchi va uning barcha natijalari o'chiriladi.",
+      "confirmCta": "O'chirish",
+      "success": "O'quvchi o'chirildi",
+      "error": "O'chirishda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
+    },
+    "pdf": {
+      "error": "PDF hisobotni yuklab bo'lmadi. Birozdan so'ng qayta urinib ko'ring."
+    },
+    "loadError": "O'quvchi profilini yuklab bo'lmadi"
   }
 }
