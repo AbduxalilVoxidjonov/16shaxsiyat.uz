@@ -51,6 +51,9 @@
 | P31 | Xavfsizlik va mustahkamlash | qa-reviewer | ⬜ | — | |
 | P32 | Docker, CI/CD, yakuniy hujjat | backend-dotnet | ⬜ | — | |
 | P33 | Anketa konstruktori | backend + frontend | ⬜ | — | P29 dan keyin |
+| P34 | Dastur modeli va biriktirish | backend-dotnet | ⬜ | — | **Yangi** (2026-09-02, egasi talabi) |
+| P35 | Admin: savollar, dasturlar, biriktirish | frontend-react | ⬜ | — | **Yangi** · P34 dan keyin |
+| P36 | Ommaviy: dastur tanlash, so'rovnoma | frontend-react | ⬜ | — | **Yangi** · P34 dan keyin |
 
 ---
 
