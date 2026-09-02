@@ -3,6 +3,7 @@ using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
 using StudentRoadMap.Application.Public.Common;
 using StudentRoadMap.Domain.Assessments;
+using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Common;
 using StudentRoadMap.Domain.Scoring;
 using StudentRoadMap.Domain.Students;
@@ -97,12 +98,18 @@ internal sealed class CompleteSessionCommandHandler : IRequestHandler<CompleteSe
 
         ApplyMaturityIndexIfPossible(testResults);
 
-        // P12-R1: ishonchlilik — xronologik tartibda tuzilgan `ReliabilityInput`.
-        var testBlocks = await BuildTestBlocksAsync(assessmentTests, cancellationToken).ConfigureAwait(false);
+        // P12-R1: ishonchlilik — xronologik tartibda tuzilgan `ReliabilityInput`. ⚠️ `Survey`
+        // test bloklari (`nonSurveyAssessmentTestIds`) CHIQARIB TASHLANADI — nafaqat
+        // `testBlocks` (savol ro'yxati), balki JAVOBLAR SO'ROVI HAM shu ro'yxat bilan
+        // cheklanadi: `ReliabilityCalculator.CalculateFastAnswerPenalty` xom `answers`/
+        // `durations` lug'atlaridan TO'G'RIDAN-TO'G'RI o'qiydi (`input.Questions` orqali
+        // FILTRLANMAYDI) — agar Survey javoblari shu lug'atlarda qolib ketsa, ularning
+        // duration'i (masalan o'ta tez) "FastAnswers" jarimasiga jimgina qo'shilib ketardi
+        // (QA topilmasi: `PublicSurveyExcludedFromReliabilityEndpointTests` buni ushladi).
+        var (testBlocks, nonSurveyAssessmentTestIds) = await BuildTestBlocksAsync(assessmentTests, cancellationToken).ConfigureAwait(false);
 
-        var assessmentTestIds = assessmentTests.Select(t => t.Id).ToList();
         var allAnswers = await _executor.ToListAsync(
-            _context.AsNoTracking(_context.Answers).Where(a => assessmentTestIds.Contains(a.AssessmentTestId)),
+            _context.AsNoTracking(_context.Answers).Where(a => nonSurveyAssessmentTestIds.Contains(a.AssessmentTestId)),
             cancellationToken).ConfigureAwait(false);
 
         var answersById = allAnswers.ToDictionary(a => a.QuestionId, a => a.RawValue);
@@ -180,12 +187,33 @@ internal sealed class CompleteSessionCommandHandler : IRequestHandler<CompleteSe
         bigFive.ApplyCompositeIndex(updated.Value.CompositeIndex!.Value, TestResultJson.Serialize(updated.Value.Levels));
     }
 
-    /// <summary>Har bir sessiya test bloki uchun (sessiya ICHIDAGI tartib + faol savollar metama'lumoti) — `ReliabilityInputBuilder.Build` kirishi.</summary>
-    private async Task<IReadOnlyList<ReliabilityInputBuilder.TestBlock>> BuildTestBlocksAsync(
+    /// <summary>
+    /// Har bir sessiya test bloki uchun (sessiya ICHIDAGI tartib + faol savollar metama'lumoti) —
+    /// `ReliabilityInputBuilder.Build` kirishi. ⚠️ `Survey` (`docs/06` 8-bo'lim, `prompts/34`
+    /// D-band) test bloklari BU YERDA chetlab o'tiladi — ballanmagan javobda teskira savol
+    /// tushunchasi yo'q, `ReliabilityCalculator`ga berish ballni buzadi (P12-R1 ruhida).
+    /// `NonSurveyAssessmentTestIds` — chaqiruvchi (`Handle`) shu ro'yxat bilan JAVOBLAR
+    /// so'rovini ham cheklashi shart (`CalculateFastAnswerPenalty` xom `answers`/`durations`
+    /// lug'atlaridan `input.Questions`siz o'qiydi — filtrlanmagan lug'at Survey javoblarini
+    /// jimgina jarima hisobiga qo'shib qo'yardi).
+    /// </summary>
+    private async Task<(IReadOnlyList<ReliabilityInputBuilder.TestBlock> TestBlocks, IReadOnlyList<Guid> NonSurveyAssessmentTestIds)> BuildTestBlocksAsync(
         IReadOnlyList<AssessmentTest> assessmentTests,
         CancellationToken cancellationToken)
     {
         var testDefinitionIds = assessmentTests.Select(t => t.TestDefinitionId).ToList();
+
+        var scoringModeByTestDefinitionId = (await _executor.ToListAsync(
+                _context.AsNoTracking(_context.TestDefinitions)
+                    .Where(t => testDefinitionIds.Contains(t.Id))
+                    .Select(t => new { t.Id, t.ScoringMode }),
+                cancellationToken).ConfigureAwait(false))
+            .ToDictionary(x => x.Id, x => x.ScoringMode);
+
+        var surveyExcludedAssessmentTests = assessmentTests
+            .Where(t => scoringModeByTestDefinitionId.GetValueOrDefault(t.TestDefinitionId) != TestScoringMode.Survey)
+            .ToList();
+
         var questions = await _executor.ToListAsync(
             _context.AsNoTracking(_context.Questions).Where(q => testDefinitionIds.Contains(q.TestDefinitionId) && q.IsActive),
             cancellationToken).ConfigureAwait(false);
@@ -194,13 +222,17 @@ internal sealed class CompleteSessionCommandHandler : IRequestHandler<CompleteSe
             .GroupBy(q => q.TestDefinitionId)
             .ToDictionary(g => g.Key, g => g.ToList());
 
-        return assessmentTests
+        var testBlocks = surveyExcludedAssessmentTests
             .Select(t => new ReliabilityInputBuilder.TestBlock(
                 t.DisplayOrder,
                 (questionsByTestDefinitionId.TryGetValue(t.TestDefinitionId, out var testQuestions) ? testQuestions : [])
                     .Select(q => new QuestionMeta(q.Id, q.Code, q.Scale, q.ScaleDirection, q.Weight, q.QuestionType, q.DisplayOrder))
                     .ToList()))
             .ToList();
+
+        var nonSurveyAssessmentTestIds = surveyExcludedAssessmentTests.Select(t => t.Id).ToList();
+
+        return (testBlocks, nonSurveyAssessmentTestIds);
     }
 
     /// <summary>
@@ -233,7 +265,7 @@ internal sealed class CompleteSessionCommandHandler : IRequestHandler<CompleteSe
         var riasec = testResults.FirstOrDefault(r => r.TestCode == "RIASEC");
 
         ActivityLevel? activityLevel = null;
-        var needsAttention = false;
+        var needsAttention = student.NeedsAttention;
         if (activity is not null)
         {
             var levels = TestResultJson.DeserializeLevels(activity.LevelsJson);
@@ -245,12 +277,19 @@ internal sealed class CompleteSessionCommandHandler : IRequestHandler<CompleteSe
             needsAttention = TestResultJson.DeserializeFlags(activity.FlagsJson).Contains("NeedsAttention");
         }
 
+        // ⚠️ P34 D-band ("ENG NOZIK #2"): ma'lumotsiz sessiya eski qiymatni O'CHIRMAYDI —
+        // shu sessiyada mos test bo'lmasa (masalan faqat `Survey` yoki faqat RIASEC dasturi),
+        // o'sha maydon `student`ning OLDINGI qiymatida qoladi (`?? student.Last...`). `null`
+        // faqat student HALIGACHA hech qachon mos ma'lumotga ega bo'lmagan bo'lsa qaytadi.
+        // `bigFive?.CompositeIndex` ham shu qoidaga tabiiy bo'ysunadi: BIG5 bor-u ACTIVITY yo'q
+        // bo'lsa `CompositeIndex` (MaturityIndex) hisoblanmagan (`ApplyMaturityIndexIfPossible`)
+        // — demak `null`, va shu yerda eski qiymatga qaytadi (0 emas!).
         student.UpdateSnapshot(
-            lastPersonalityType: mbti?.ResultCode,
-            lastMaturityIndex: bigFive?.CompositeIndex,
-            lastActivityIndex: activity?.CompositeIndex,
-            lastActivityLevel: activityLevel,
-            lastHollandCode: riasec?.ResultCode,
+            lastPersonalityType: mbti?.ResultCode ?? student.LastPersonalityType,
+            lastMaturityIndex: bigFive?.CompositeIndex ?? student.LastMaturityIndex,
+            lastActivityIndex: activity?.CompositeIndex ?? student.LastActivityIndex,
+            lastActivityLevel: activityLevel ?? student.LastActivityLevel,
+            lastHollandCode: riasec?.ResultCode ?? student.LastHollandCode,
             needsAttention: needsAttention,
             lastAssessmentAt: now,
             completedAssessmentCount: student.CompletedAssessmentCount + 1,

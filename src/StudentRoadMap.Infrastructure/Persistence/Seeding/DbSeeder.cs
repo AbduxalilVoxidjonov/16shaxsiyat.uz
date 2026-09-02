@@ -69,6 +69,7 @@ public sealed class DbSeeder
         try
         {
             await SeedTestDefinitionsAsync(cancellationToken).ConfigureAwait(false);
+            await SeedSystemProgramAsync(cancellationToken).ConfigureAwait(false);
             await SeedTypeCatalogAsync(cancellationToken).ConfigureAwait(false);
             await SeedCareerMapAsync(cancellationToken).ConfigureAwait(false);
             await SeedPromptTemplatesAsync(cancellationToken).ConfigureAwait(false);
@@ -167,6 +168,93 @@ public sealed class DbSeeder
         }
 
         _logger.LogInformation("Tizim metodikasi yangilandi: {Code}", dto.Code);
+    }
+
+    /// <summary>
+    /// `docs/06` 8-bo'lim (2026-09-02 qaror) + `prompts/34` B7-band: mavjud 4 tizim metodikasi
+    /// (MBTI16/BIG5/RIASEC/ACTIVITY) bitta tizim dasturiga (`PERSONALITY_PROFILE`, "Shaxsiyat
+    /// profili") birlashtiriladi — `Kind = System`, `Visibility = Public`, `IsSystem = true`,
+    /// `Status = Published`. Mavjud BARCHA `assessments` (eski, migratsiyadan oldingi sessiyalar)
+    /// shu dasturga bog'lanadi — orqaga moslik: eski oqim (tanlov ekranisiz) buzilmaydi.
+    ///
+    /// **Idempotent** (`SeedTestDefinitionsAsync` naqshiga ergashadi): dastur `Code` bo'yicha
+    /// topilsa hech narsa qilinmaydi (tarkib BR-8 bo'yicha runtime'da o'zgartirilmaydi — yangi
+    /// tizim metodikasi qo'shilishi alohida migratsiya talab qiladi, xuddi savol qo'shish kabi).
+    /// `assessments.program_id IS NULL` bo'lgan qatorlar esa HAR safar (dastur eski/yangi bo'lishidan
+    /// qat'i nazar) xom SQL bilan to'ldiriladi — ikki bosqichli migratsiya (`CLAUDE.md` 7-qoida):
+    /// ustun HOZIRCHA nullable, ikkinchi migratsiyada `NOT NULL` qilinadi.
+    /// </summary>
+    private async Task SeedSystemProgramAsync(CancellationToken cancellationToken)
+    {
+        const string programCode = "PERSONALITY_PROFILE";
+
+        var now = _dateTime.UtcNow;
+
+        var existingProgram = await _dbContext.AssessmentPrograms
+            .FirstOrDefaultAsync(p => p.Code == programCode, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (existingProgram is null)
+        {
+            var systemTestCodes = new[] { "MBTI16", "BIG5", "RIASEC", "ACTIVITY" };
+            var systemTestDefinitions = await _dbContext.TestDefinitions
+                .Where(t => systemTestCodes.Contains(t.Code))
+                .OrderBy(t => t.DisplayOrder)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            if (systemTestDefinitions.Count == 0)
+            {
+                // Test bankiga oid seed katalogi topilmagan muhitda (yuqoridagi
+                // `SeedTestDefinitionsAsync` ogohlantirishi bilan bir xil holat) — tizim
+                // dasturi ham yaratilmaydi, jimgina o'tkazib yuboriladi.
+                _logger.LogWarning("Tizim metodikalari topilmadi — '{ProgramCode}' tizim dasturi yaratilmadi.", programCode);
+                return;
+            }
+
+            var programId = Guid.NewGuid();
+            var program = AssessmentProgram.CreateSystemPublished(
+                programId,
+                programCode,
+                "Shaxsiyat profili",
+                descriptionUz: "To'rt ilmiy metodikadan iborat yaxlit batareya: shaxsiyat tipi, Big Five, kasb qiziqishlari va aktivlik.",
+                displayOrder: 1,
+                tests: systemTestDefinitions.Select(t => (t.Id, t.DisplayOrder)).ToList(),
+                now: now);
+
+            _dbContext.AssessmentPrograms.Add(program);
+            await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+            _logger.LogInformation(
+                "Tizim dasturi yaratildi: {Code} ({TestCount} ta test).", programCode, systemTestDefinitions.Count);
+
+            existingProgram = program;
+        }
+        else
+        {
+            _logger.LogInformation("Tizim dasturi allaqachon mavjud: {Code} — o'tkazib yuborildi.", programCode);
+        }
+
+        // Ma'lumot migratsiyasi (idempotent): eski sessiyalar (`program_id IS NULL`) shu
+        // dasturga bog'lanadi. Xom SQL — DB ustuni birinchi migratsiyadan keyin HALI nullable
+        // (`AddAssessmentPrograms`), lekin `Assessment.ProgramId` C# darajasida ENDI `Guid`
+        // (non-nullable) — NULL qiymatli qatorlarni oddiy EF LINQ/`SaveChanges` orqali
+        // materiallashtirish (`Guid` maydonga NULL o'qishga urinish) xato beradi, shu sabab
+        // to'g'ridan-to'g'ri `UPDATE` ishlatiladi (`docs/08` 3-bo'lim ruhidagi xom SQL ruxsati,
+        // `IncrementRegistrationCounterAsync` bilan bir xil uslub). Ikkinchi migratsiya
+        // (`RequireAssessmentProgramId`) DB ustunini ham `NOT NULL` qiladi — shu UPDATE undan
+        // OLDIN ishga tushishi shart (seed migratsiyadan keyin, ikkinchi migratsiyadan oldin
+        // chaqiriladi).
+        var updatedRows = await _dbContext.Database
+            .ExecuteSqlInterpolatedAsync(
+                $"UPDATE assessments SET program_id = {existingProgram.Id} WHERE program_id IS NULL",
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        if (updatedRows > 0)
+        {
+            _logger.LogInformation("{Count} ta eski sessiya '{Code}' tizim dasturiga bog'landi.", updatedRows, programCode);
+        }
     }
 
     private async Task SeedTypeCatalogAsync(CancellationToken cancellationToken)

@@ -146,8 +146,9 @@ public sealed class PublicStartSessionEndpointTests : IClassFixture<PublicApiTes
             var question = testDefinition.Questions.First();
 
             var startedAt = now.AddDays(-10);
+            var programId = await TestDataFactory.GetOrCreateDefaultProgramIdAsync(db, now);
             var assessment = Assessment.Create(
-                Guid.NewGuid(), student.Id, school.Id, $"completed-token-{Guid.NewGuid():N}", "uz",
+                Guid.NewGuid(), student.Id, school.Id, $"completed-token-{Guid.NewGuid():N}", "uz", programId,
                 startedAt, expiresAt: startedAt.AddDays(7), now: startedAt);
 
             var assessmentTest = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, testDefinition.Id, 1, 1);

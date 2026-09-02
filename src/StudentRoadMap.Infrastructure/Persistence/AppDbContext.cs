@@ -47,6 +47,12 @@ public sealed class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<Question> Questions => Set<Question>();
 
+    public DbSet<AssessmentProgram> AssessmentPrograms => Set<AssessmentProgram>();
+
+    public DbSet<ProgramTest> ProgramTests => Set<ProgramTest>();
+
+    public DbSet<SchoolProgram> SchoolPrograms => Set<SchoolProgram>();
+
     public DbSet<AnswerOption> AnswerOptions => Set<AnswerOption>();
 
     public DbSet<TypeCatalogEntry> TypeCatalog => Set<TypeCatalogEntry>();
@@ -85,6 +91,12 @@ public sealed class AppDbContext : DbContext, IAppDbContext
     IQueryable<TestDefinition> IAppDbContext.TestDefinitions => TestDefinitions;
 
     IQueryable<Question> IAppDbContext.Questions => Questions;
+
+    IQueryable<AssessmentProgram> IAppDbContext.AssessmentPrograms => AssessmentPrograms;
+
+    IQueryable<ProgramTest> IAppDbContext.ProgramTests => ProgramTests;
+
+    IQueryable<SchoolProgram> IAppDbContext.SchoolPrograms => SchoolPrograms;
 
     IQueryable<AnswerOption> IAppDbContext.AnswerOptions => AnswerOptions;
 

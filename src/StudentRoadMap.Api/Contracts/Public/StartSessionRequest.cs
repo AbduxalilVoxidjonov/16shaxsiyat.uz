@@ -23,7 +23,9 @@ public sealed record StartSessionRequest(
     string? ParentPhone,
     string? Email,
     bool ConsentAccepted,
-    string? LanguageCode)
+    string? LanguageCode,
+    /// <summary>`docs/06` 8-bo'lim (2026-09-02 qaror) — maktabda bitta dastur bo'lsa ixtiyoriy.</summary>
+    string? ProgramCode = null)
 {
     /// <summary>`IpAddress`/`UserAgent`ni server tomonida qo'shib, `Application` qatlami buyrug'iga aylantiradi.</summary>
     public StartSessionCommand ToCommand(string? ipAddress, string? userAgent) =>
@@ -41,6 +43,7 @@ public sealed record StartSessionRequest(
             Email,
             ConsentAccepted,
             LanguageCode,
+            ProgramCode,
             ipAddress,
             userAgent);
 }

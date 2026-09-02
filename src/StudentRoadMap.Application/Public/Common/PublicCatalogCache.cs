@@ -73,7 +73,8 @@ internal sealed class PublicCatalogCache
             testDefinition.PageSize,
             testDefinition.ShuffleQuestions,
             testDefinition.Version,
-            testDefinition.ScoringStrategyCode);
+            testDefinition.ScoringStrategyCode,
+            testDefinition.ScoringMode);
         _cache.Set(cacheKey, dto, CacheDuration);
         return dto;
     }

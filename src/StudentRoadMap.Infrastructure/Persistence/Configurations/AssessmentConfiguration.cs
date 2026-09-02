@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using StudentRoadMap.Domain.Assessments;
+using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Schools;
 using StudentRoadMap.Domain.Students;
 
@@ -18,6 +19,7 @@ internal sealed class AssessmentConfiguration : IEntityTypeConfiguration<Assessm
 
         builder.Property(a => a.StudentId).IsRequired();
         builder.Property(a => a.SchoolId).IsRequired();
+        builder.Property(a => a.ProgramId).IsRequired();
         builder.Property(a => a.SessionToken).HasMaxLength(64).IsRequired();
         builder.Property(a => a.Status).HasConversion<short>().IsRequired().HasDefaultValue(AssessmentStatus.Draft);
         builder.Property(a => a.LanguageCode).HasMaxLength(5).IsRequired().HasDefaultValue("uz");
@@ -54,7 +56,17 @@ internal sealed class AssessmentConfiguration : IEntityTypeConfiguration<Assessm
             .HasForeignKey(a => a.SchoolId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // FK ustuni hozircha nullable (yuqoridagi izoh) — Postgres'da NULL qiymatlar FK
+        // cheklovini buzmaydi (standart SQL semantikasi), shu sabab ikkinchi migratsiyadan
+        // OLDIN ham bu cheklov xavfsiz qo'shiladi.
+        builder.HasOne<AssessmentProgram>()
+            .WithMany()
+            .HasForeignKey(a => a.ProgramId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(a => a.SessionToken).IsUnique().HasDatabaseName("ux_assessments_token");
+
+        builder.HasIndex(a => a.ProgramId).HasDatabaseName("ix_assessments_program");
 
         builder.HasIndex(a => new { a.StudentId, a.StartedAt })
             .HasDatabaseName("ix_assessments_student")

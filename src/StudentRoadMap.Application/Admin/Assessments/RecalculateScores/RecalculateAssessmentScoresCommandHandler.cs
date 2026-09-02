@@ -5,6 +5,7 @@ using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
 using StudentRoadMap.Application.Public.Common;
 using StudentRoadMap.Domain.Assessments;
+using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Common;
 using StudentRoadMap.Domain.Identity;
 using StudentRoadMap.Domain.Scoring;
@@ -143,7 +144,11 @@ internal sealed class RecalculateAssessmentScoresCommandHandler
             var durationsDict = testAnswers.ToDictionary(a => a.QuestionId, a => a.DurationMs);
 
             var scoringInput = new ScoringInput(questionMetas, answersDict, durationsDict, new StudentContext(null, null, null));
-            var scoringResult = _scoringEngine.Score(testDefinition.ScoringStrategyCode, scoringInput);
+            // Bu yerga faqat `TestResult`i bor (ya'ni `Scored` rejimida yakunlangan) test bloklari
+            // yetib keladi (`testResultByAssessmentTestId.TryGetValue` yuqorida) — `Survey`
+            // testlarda hech qachon `TestResult` yaratilmagani uchun `ScoringStrategyCode` bu
+            // yerda amalda har doim mavjud (`docs/06` 8-bo'lim).
+            var scoringResult = _scoringEngine.Score(testDefinition.ScoringStrategyCode ?? string.Empty, scoringInput);
             if (scoringResult.IsFailure)
             {
                 // Seed/konfiguratsiya xatosi (strategiya topilmadi) — `CompleteTestCommandHandler`
@@ -168,7 +173,14 @@ internal sealed class RecalculateAssessmentScoresCommandHandler
         // ⚠️ P12-R1 (MAJBURIY, `prompts/15` "ENG MUHIM"): `ReliabilityInputBuilder.Build` orqali
         // — sessiya ICHIDAGI test tartibi (`AssessmentTest.DisplayOrder`) + har test ICHIDAGI
         // savol tartibi. Butun ro'yxatga bittalikda `.OrderBy(q => q.DisplayOrder)` TAQIQLANGAN.
-        var testBlocks = assessmentTests
+        // `Survey` (`docs/06` 8-bo'lim) test bloklari CHIQARIB TASHLANADI — ballanmagan javobda
+        // teskari savol tushunchasi yo'q, `ReliabilityCalculator`ga berish ballni buzadi
+        // (`prompts/34` D-band, `CompleteSessionCommandHandler` bilan bir xil qoida).
+        var nonSurveyAssessmentTests = assessmentTests
+            .Where(t => testDefinitionById.GetValueOrDefault(t.TestDefinitionId)?.ScoringMode != TestScoringMode.Survey)
+            .ToList();
+
+        var testBlocks = nonSurveyAssessmentTests
             .Select(t => new ReliabilityInputBuilder.TestBlock(
                 t.DisplayOrder,
                 questionsByTestDefinitionId.GetValueOrDefault(t.TestDefinitionId, [])
@@ -176,8 +188,15 @@ internal sealed class RecalculateAssessmentScoresCommandHandler
                     .ToList()))
             .ToList();
 
-        var reliabilityAnswers = allAnswers.ToDictionary(a => a.QuestionId, a => a.RawValue);
-        var reliabilityDurations = allAnswers.ToDictionary(a => a.QuestionId, a => a.DurationMs);
+        // ⚠️ `Survey` javoblari JAVOBLAR LUG'ATIDAN ham chiqarilishi shart — `ReliabilityCalculator.
+        // CalculateFastAnswerPenalty` xom `answers`/`durations`ni `input.Questions`siz o'qiydi,
+        // shu sabab filtrlanmagan lug'at Survey javoblarining (masalan o'ta tez) jarimasini
+        // jimgina qo'shib qo'yardi (`CompleteSessionCommandHandler` bilan bir xil tuzatish).
+        var nonSurveyAssessmentTestIds = nonSurveyAssessmentTests.Select(t => t.Id).ToHashSet();
+        var nonSurveyAnswers = allAnswers.Where(a => nonSurveyAssessmentTestIds.Contains(a.AssessmentTestId)).ToList();
+
+        var reliabilityAnswers = nonSurveyAnswers.ToDictionary(a => a.QuestionId, a => a.RawValue);
+        var reliabilityDurations = nonSurveyAnswers.ToDictionary(a => a.QuestionId, a => a.DurationMs);
         var totalDuration = TimeSpan.FromSeconds(assessment.TotalDurationSeconds ?? 0);
 
         var reliabilityInput = ReliabilityInputBuilder.Build(testBlocks, reliabilityAnswers, reliabilityDurations, totalDuration);

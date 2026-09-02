@@ -77,7 +77,8 @@ public sealed class AdminAssessmentsRecalculateScoresEndpointTests : IClassFixtu
         await db.SaveChangesAsync();
 
         // `Draft` holatida — hech qanday test yakunlanmagan, `TestResult` yo'q.
-        var assessment = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, "assess-recalc-draft-session-01234", "uz", now, now.AddDays(7), now);
+        var programId = await TestDataFactory.GetOrCreateDefaultProgramIdAsync(db, now);
+        var assessment = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, "assess-recalc-draft-session-01234", "uz", programId, now, now.AddDays(7), now);
         db.Assessments.Add(assessment);
         await db.SaveChangesAsync();
 

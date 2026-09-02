@@ -49,7 +49,7 @@
 | P29 | Katalog va audit UI | frontend-react | ⬜ | — | |
 | P30 | E2E testlar | qa-reviewer | ⬜ | — | |
 | P31 | Xavfsizlik va mustahkamlash | qa-reviewer | ⬜ | — | |
-| P32 | Docker, CI/CD, yakuniy hujjat | backend-dotnet | ⬜ | — | |
+| P32 | Docker, CI/CD, yakuniy hujjat | backend-dotnet | 🟡 | — | Dockerfile.api/web va compose tayyor; CI/CD va hujjat qoldi |
 | P33 | Anketa konstruktori | backend + frontend | ⬜ | — | P29 dan keyin |
 | P34 | Dastur modeli va biriktirish | backend-dotnet | ⬜ | — | **Yangi** (2026-09-02, egasi talabi) |
 | P35 | Admin: savollar, dasturlar, biriktirish | frontend-react | ⬜ | — | **Yangi** · P34 dan keyin |
@@ -261,7 +261,7 @@
 | ~~3 ta test SQLite `DateTimeOffset` cheklovi sababli `Skip`~~ — **yopildi (P15)**: sinov muhitiga value converter qo'shildi, `Skip` soni **0** | Saralash faqat Postgres'da sinaladi | P30 (E2E) da Testcontainers/Postgres bilan yopiladi |
 | `frontend` da `sessionStore.testCatalog` hamon bor (backend endi `name`/`estimatedMinutes` beradi) | Ikki manba — kelajakda nomuvofiqlik | Kichik tozalash: `testCatalog` olib tashlanib, nom `GET /sessions/me` dan olinsin. P22 bilan birga |
 | 390px/1440px real brauzer vizual tekshiruvi hech bir ekranda qilinmagan | Gorizontal scroll yoki konsol xatosi sezilmay qolishi mumkin | Chrome MCP kengaytmasi ulanmagan; subagent uni ocholmaydi. Egasi yoqsa P21 dan boshlab tekshiriladi, aks holda P30 (E2E) da Playwright bilan |
-| `frontend/src/shared/config/env.ts` bo'sh `VITE_API_BASE_URL` ni "berilmagan" deb hisoblab `http://localhost:5000` ga qaytadi | "Bir origin ostida ishla" (nisbiy yo'l) konfiguratsiyasini ifodalab bo'lmaydi; HTTPS sahifada bu **mixed content** bloklanishiga olib keladi va so'rov API'ga umuman yetmaydi — xato tushunarsiz bo'ladi | 2026-09-02 da namoyish paytida aynan shu xato yuz berdi. P32 da tuzatiladi: bo'sh qiymat = same-origin; konfiguratsiya yo'q bo'lsa ishlab chiqarishda **baland ovozda** xato bersin, jimgina `localhost` ga qaytmasin |
+| ~~`env.ts` bo'sh `VITE_API_BASE_URL` ni `localhost:5000` ga qaytaradi~~ — **tuzatildi (2026-09-02)**: standart qiymat endi same-origin (bo'sh satr), `/api/...` nisbiy yo'li ishlatiladi |
 | `429` javobida `retry-after` yo'q | Foydalanuvchi qancha kutishni bilmaydi | P31 (mustahkamlash) da `ProblemDetails` ga qo'shiladi |
 | QA topgan 5 ta zaif savol (cross-loading): `MB-Q58` (SN↔JP), `B5-Q36` (O↔E), `B5-Q49` (A↔ish uslubi), `AC-Q15` (SOCA↔SELF), va `MB-Q01`≈`AC-Q27` deyarli bir xil misol | Omillar orasida ortiqcha korrelyatsiya; ball biroz aniqroq bo'lishi mumkin edi | Bloklovchi emas (professional testlarda ham uchraydi). Pilotdan keyin real ma'lumot bilan qayta ko'riladi — `docs/14` 5-bo'lim |
 | EF Core 9.x paketlari net10.0 loyihada (Npgsql EF10 provayderi yo'q) | P03 da runtime muammosi bo'lishi mumkin | P03 boshida DbContext bilan haqiqiy so'rov sinab ko'riladi; provayder chiqqach yangilanadi |

@@ -3,6 +3,7 @@ using System.Text;
 using MediatR;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
+using StudentRoadMap.Application.Public.Common;
 using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Common;
 using StudentRoadMap.Domain.Schools;
@@ -71,6 +72,8 @@ internal sealed class GetSchoolInfoQueryHandler : IRequestHandler<GetSchoolInfoQ
                 testDefinition.DisplayOrder));
         }
 
+        var programs = await BuildProgramsAsync(school.Id, cancellationToken).ConfigureAwait(false);
+
         var result = new GetSchoolInfoResult(
             school.Id,
             school.Name,
@@ -79,9 +82,47 @@ internal sealed class GetSchoolInfoQueryHandler : IRequestHandler<GetSchoolInfoQ
             RequiresAccessCode: !string.IsNullOrEmpty(school.AccessCode),
             tests,
             TotalEstimatedMinutes: tests.Sum(t => t.EstimatedMinutes),
-            ConsentText: ConsentTextPlaceholder);
+            ConsentText: ConsentTextPlaceholder,
+            Programs: programs);
 
         return Result.Success(result);
+    }
+
+    /// <summary>`prompts/34` C8-band — maktab uchun mavjud dasturlar (`ProgramAvailability`), har biri uchun test/savol soni va taxminiy vaqt.</summary>
+    private async Task<IReadOnlyList<PublicProgramSummaryDto>> BuildProgramsAsync(Guid schoolId, CancellationToken cancellationToken)
+    {
+        var availablePrograms = await ProgramAvailability.GetAvailableProgramsAsync(_context, _executor, schoolId, cancellationToken).ConfigureAwait(false);
+
+        var programs = new List<PublicProgramSummaryDto>(availablePrograms.Count);
+        foreach (var program in availablePrograms)
+        {
+            var programTestDefinitionIds = await _executor.ToListAsync(
+                _context.AsNoTracking(_context.ProgramTests).Where(pt => pt.ProgramId == program.Id).Select(pt => pt.TestDefinitionId),
+                cancellationToken).ConfigureAwait(false);
+
+            var programTestDefinitions = await _executor.ToListAsync(
+                _context.AsNoTracking(_context.TestDefinitions)
+                    .Where(t => programTestDefinitionIds.Contains(t.Id) && t.Status == TestDefinitionStatus.Published && t.IsActive),
+                cancellationToken).ConfigureAwait(false);
+
+            var questionCount = 0;
+            foreach (var testDefinition in programTestDefinitions)
+            {
+                questionCount += await _executor.CountAsync(
+                    _context.AsNoTracking(_context.Questions).Where(q => q.TestDefinitionId == testDefinition.Id && q.IsActive),
+                    cancellationToken).ConfigureAwait(false);
+            }
+
+            programs.Add(new PublicProgramSummaryDto(
+                program.Code,
+                program.NameUz,
+                program.DescriptionUz,
+                TestCount: programTestDefinitions.Count,
+                QuestionCount: questionCount,
+                EstimatedMinutes: programTestDefinitions.Sum(t => t.EstimatedMinutes)));
+        }
+
+        return programs;
     }
 
     /// <summary>

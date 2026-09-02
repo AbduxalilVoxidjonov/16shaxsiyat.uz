@@ -11,7 +11,11 @@ namespace StudentRoadMap.Application.Public.Common;
 /// o'zgarsa `TestDefinition.Version` oshiriladi... `TestResult.ScoringVersion`da qaysi versiya
 /// ishlatilgani qoladi").
 /// </summary>
-public sealed record CachedTestDefinitionDto(Guid Id, string Code, int PageSize, bool ShuffleQuestions, int Version, string ScoringStrategyCode);
+/// <summary>
+/// `ScoringStrategyCode` — `Survey` (`ScoringMode`) rejimida `null` (`docs/06` 8-bo'lim,
+/// 2026-09-02 qaror, `prompts/34` A4-band): ballanmaydi, strategiya ishlatilmaydi.
+/// </summary>
+public sealed record CachedTestDefinitionDto(Guid Id, string Code, int PageSize, bool ShuffleQuestions, int Version, string? ScoringStrategyCode, TestScoringMode ScoringMode);
 
 /// <summary>
 /// Keshlangan savol proyeksiyasi. **Diqqat:** `Scale`/`ScaleDirection`/`Weight` ATAYLAB bu

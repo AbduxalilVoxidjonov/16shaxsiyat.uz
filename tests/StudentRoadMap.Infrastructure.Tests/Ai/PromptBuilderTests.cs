@@ -50,7 +50,7 @@ public sealed class PromptBuilderTests
 
     private static Assessment CreateAssessment(double reliabilityScore = 82.5, ReliabilityFlag flag = ReliabilityFlag.Reliable, string language = "uz")
     {
-        var assessment = Assessment.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "session-token-xyz", language, Now, Now.AddDays(7), Now);
+        var assessment = Assessment.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "session-token-xyz", language, Guid.NewGuid(), Now, Now.AddDays(7), Now);
         assessment.SetReliability(reliabilityScore, flag, Now);
         return assessment;
     }

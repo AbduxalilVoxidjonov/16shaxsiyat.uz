@@ -80,8 +80,9 @@ public sealed class AdminDashboardStatsEndpointTests : IClassFixture<PublicApiTe
         string testCodeSeed)
     {
         var testDefinition = await TestDataFactory.CreatePublishedTestAsync(db, startedAt, testCodeSeed, displayOrder: 1, questionCount: 1);
+        var programId = await TestDataFactory.GetOrCreateDefaultProgramIdAsync(db, startedAt);
 
-        var assessment = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, sessionToken, "uz", startedAt: startedAt, expiresAt: startedAt.AddDays(7), now: startedAt);
+        var assessment = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, sessionToken, "uz", programId, startedAt: startedAt, expiresAt: startedAt.AddDays(7), now: startedAt);
         var assessmentTest = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, testDefinition.Id, 1, totalCount: 1);
         assessment.AddTest(assessmentTest);
 
@@ -154,8 +155,9 @@ public sealed class AdminDashboardStatsEndpointTests : IClassFixture<PublicApiTe
         db.Students.Add(inProgressStudent);
         await db.SaveChangesAsync();
         var inProgressTest = await TestDataFactory.CreatePublishedTestAsync(db, now, "DASH-B", displayOrder: 1, questionCount: 1);
+        var inProgressProgramId = await TestDataFactory.GetOrCreateDefaultProgramIdAsync(db, now);
         var inProgressAssessment = Assessment.Create(
-            Guid.NewGuid(), inProgressStudent.Id, activeSchool.Id, "dash-session-inprogress-0123456789ab", "uz",
+            Guid.NewGuid(), inProgressStudent.Id, activeSchool.Id, "dash-session-inprogress-0123456789ab", "uz", inProgressProgramId,
             startedAt: now.AddMinutes(-20), expiresAt: now.AddDays(7), now: now);
         var inProgressAssessmentTest = AssessmentTest.Create(Guid.NewGuid(), inProgressAssessment.Id, inProgressTest.Id, 1, totalCount: 1);
         inProgressAssessment.AddTest(inProgressAssessmentTest);

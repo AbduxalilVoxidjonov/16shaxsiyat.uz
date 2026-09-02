@@ -17,6 +17,9 @@ public static class ProblemCodes
     public const string TestNotUnlocked = "TEST_NOT_UNLOCKED";
     public const string SystemTestLocked = "SYSTEM_TEST_LOCKED";
     public const string TestNotPublishable = "TEST_NOT_PUBLISHABLE";
+
+    /// <summary>`prompts/34` — `AssessmentProgram.Publish` kamida bitta test talab qiladi (`TEST_NOT_PUBLISHABLE` bilan bir xil uslub, 400).</summary>
+    public const string ProgramNotPublishable = "PROGRAM_NOT_PUBLISHABLE";
     public const string TestInUse = "TEST_IN_USE";
     public const string RateLimited = "RATE_LIMITED";
     public const string AiProviderError = "AI_PROVIDER_ERROR";
@@ -29,6 +32,13 @@ public static class ProblemCodes
     /// `docs/07`ga rasman qo'shilishi kerakmi?
     /// </summary>
     public const string AccessCodeInvalid = "ACCESS_CODE_INVALID";
+
+    /// <summary>
+    /// `prompts/34` C9-band: maktabda bir nechta dastur mavjud, lekin `programCode` berilmagan
+    /// — o'quvchi qaysi dasturni tanlashi kerakligini bildirmagan. `docs/06`da yo'q, PM'ga
+    /// savol: rasman kiritilsinmi (`AccessCodeInvalid` bilan bir xil uslub, 400).
+    /// </summary>
+    public const string ProgramRequired = "PROGRAM_REQUIRED";
 
     /// <summary>
     /// P13 (`prompts/13-auth-va-jwt.md`) superadmin auth oqimi uchun qo'shildi — PM tomonidan
@@ -80,11 +90,13 @@ public static class ProblemCodes
         [TestNotUnlocked] = StatusCodes.Status409Conflict,
         [SystemTestLocked] = StatusCodes.Status409Conflict,
         [TestNotPublishable] = StatusCodes.Status400BadRequest,
+        [ProgramNotPublishable] = StatusCodes.Status400BadRequest,
         [TestInUse] = StatusCodes.Status409Conflict,
         [RateLimited] = StatusCodes.Status429TooManyRequests,
         [AiProviderError] = StatusCodes.Status502BadGateway,
         [InternalError] = StatusCodes.Status500InternalServerError,
         [AccessCodeInvalid] = StatusCodes.Status400BadRequest,
+        [ProgramRequired] = StatusCodes.Status400BadRequest,
         [AccountLocked] = StatusCodes.Status423Locked,
         [TotpRequired] = StatusCodes.Status401Unauthorized,
         [TotpAlreadyEnabled] = StatusCodes.Status409Conflict,

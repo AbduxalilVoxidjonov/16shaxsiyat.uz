@@ -70,7 +70,8 @@ public sealed class AdminAssessmentsDeleteEndpointTests : IClassFixture<PublicAp
         db.Students.Add(student);
         await db.SaveChangesAsync();
 
-        var assessment = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, "assess-delete-session-0123456789ab", "uz", now, now.AddDays(7), now);
+        var programId = await TestDataFactory.GetOrCreateDefaultProgramIdAsync(db, now);
+        var assessment = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, "assess-delete-session-0123456789ab", "uz", programId, now, now.AddDays(7), now);
         db.Assessments.Add(assessment);
         await db.SaveChangesAsync();
 

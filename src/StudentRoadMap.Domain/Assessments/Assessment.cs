@@ -25,6 +25,16 @@ public sealed class Assessment : AggregateRoot
 
     public Guid SchoolId { get; private set; }
 
+    /// <summary>
+    /// Sessiya bog'langan dastur (`docs/06` 8-bo'lim, 2026-09-02 qaror, `prompts/34` A5-band).
+    /// Majburiy — `Assessment.Create` dasturni talab qiladi. Ikki bosqichli migratsiya
+    /// (`CLAUDE.md` 7-qoida) yakunlandi: birinchi migratsiya (`AddAssessmentPrograms`) ustunni
+    /// nullable qo'shdi, `DbSeeder.SeedSystemProgramAsync` mavjud sessiyalarni `PERSONALITY_PROFILE`
+    /// tizim dasturiga bog'ladi, ikkinchi migratsiya (`RequireAssessmentProgramId`) `NOT NULL`
+    /// qildi.
+    /// </summary>
+    public Guid ProgramId { get; private set; }
+
     public string SessionToken { get; private set; } = null!;
 
     public AssessmentStatus Status { get; private set; }
@@ -66,6 +76,7 @@ public sealed class Assessment : AggregateRoot
         Guid schoolId,
         string sessionToken,
         string languageCode,
+        Guid programId,
         DateTimeOffset startedAt,
         DateTimeOffset expiresAt,
         string? ipHash,
@@ -77,6 +88,7 @@ public sealed class Assessment : AggregateRoot
         SchoolId = schoolId;
         SessionToken = sessionToken;
         LanguageCode = languageCode;
+        ProgramId = programId;
         Status = AssessmentStatus.Draft;
         StartedAt = startedAt;
         ExpiresAt = expiresAt;
@@ -86,13 +98,18 @@ public sealed class Assessment : AggregateRoot
         UpdatedAt = now;
     }
 
-    /// <summary>Yangi sessiya — `Draft` holatida yaratiladi, `AssessmentStartedEvent` ko'taradi.</summary>
+    /// <summary>
+    /// Yangi sessiya — `Draft` holatida yaratiladi, `AssessmentStartedEvent` ko'taradi.
+    /// `programId` majburiy (`docs/06` 8-bo'lim, 2026-09-02 qaror) — sessiyaga faqat shu
+    /// dasturning testlari qo'shiladi (`prompts/34` A5-band).
+    /// </summary>
     public static Assessment Create(
         Guid id,
         Guid studentId,
         Guid schoolId,
         string sessionToken,
         string languageCode,
+        Guid programId,
         DateTimeOffset startedAt,
         DateTimeOffset expiresAt,
         DateTimeOffset now,
@@ -114,7 +131,7 @@ public sealed class Assessment : AggregateRoot
             throw new ArgumentException("Amal qilish muddati boshlanish vaqtidan keyin bo'lishi kerak.", nameof(expiresAt));
         }
 
-        var assessment = new Assessment(id, studentId, schoolId, sessionToken, languageCode, startedAt, expiresAt, ipHash, userAgent, now);
+        var assessment = new Assessment(id, studentId, schoolId, sessionToken, languageCode, programId, startedAt, expiresAt, ipHash, userAgent, now);
         assessment.RaiseDomainEvent(new AssessmentStartedEvent(id, studentId, schoolId, now));
         return assessment;
     }

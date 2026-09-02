@@ -31,4 +31,19 @@ public static class AuditActions
 
     public const string AssessmentDeleted = "Assessment.Deleted";
     public const string AssessmentScoresRecalculated = "Assessment.ScoresRecalculated";
+
+    // --- P34 (`prompts/34-dastur-modeli-va-biriktirish.md`) — `AssessmentProgram` admin
+    // harakatlari (E16-band ro'yxati: "Program.Created/Updated/Published/Archived/Assigned/
+    // Unassigned"). ---
+
+    public const string ProgramCreated = "Program.Created";
+    public const string ProgramUpdated = "Program.Updated";
+    public const string ProgramPublished = "Program.Published";
+    public const string ProgramArchived = "Program.Archived";
+    public const string ProgramToggledActive = "Program.ToggledActive";
+    public const string ProgramTestAdded = "Program.TestAdded";
+    public const string ProgramTestRemoved = "Program.TestRemoved";
+    public const string ProgramTestsReordered = "Program.TestsReordered";
+    public const string ProgramSchoolAssigned = "Program.Assigned";
+    public const string ProgramSchoolUnassigned = "Program.Unassigned";
 }

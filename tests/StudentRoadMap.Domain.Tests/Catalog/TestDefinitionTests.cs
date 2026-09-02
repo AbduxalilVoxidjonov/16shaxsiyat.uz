@@ -284,4 +284,46 @@ public sealed class TestDefinitionTests
 
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
+
+    // ---------- ScoringMode (`docs/06` 8-bo'lim, 2026-09-02 qaror, `prompts/34` A4-band) ----------
+
+    [Fact]
+    public void Create_ScoredWithoutStrategyCode_ThrowsArgumentException()
+    {
+        var act = () => TestDefinition.Create(
+            Guid.NewGuid(), "SCORED-1", "Nomi", 1, 10, scoringStrategyCode: null, Now,
+            scoringMode: TestScoringMode.Scored);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Create_SurveyWithoutStrategyCode_SucceedsAndScoringStrategyCodeIsNull()
+    {
+        var testDefinition = TestDefinition.Create(
+            Guid.NewGuid(), "SURVEY-1", "So'rovnoma", 1, 10, scoringStrategyCode: null, Now,
+            scoringMode: TestScoringMode.Survey);
+
+        testDefinition.ScoringMode.Should().Be(TestScoringMode.Survey);
+        testDefinition.ScoringStrategyCode.Should().BeNull();
+    }
+
+    [Fact]
+    public void Create_SurveyWithStrategyCodeProvided_IgnoresIt()
+    {
+        // `docs/06` 8-bo'lim: "Survey'da ScoringStrategyCode ishlatilmaydi" — berilgan bo'lsa ham e'tiborsiz qoldiriladi (`null`ga tushadi).
+        var testDefinition = TestDefinition.Create(
+            Guid.NewGuid(), "SURVEY-2", "So'rovnoma", 1, 10, scoringStrategyCode: "SUM", Now,
+            scoringMode: TestScoringMode.Survey);
+
+        testDefinition.ScoringStrategyCode.Should().BeNull();
+    }
+
+    [Fact]
+    public void Create_WithoutExplicitScoringMode_DefaultsToScored()
+    {
+        var testDefinition = CreateCustomTestDefinition();
+
+        testDefinition.ScoringMode.Should().Be(TestScoringMode.Scored);
+    }
 }

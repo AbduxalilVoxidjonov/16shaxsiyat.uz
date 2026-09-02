@@ -26,5 +26,10 @@ public sealed record StartSessionCommand(
     string? Email,
     bool ConsentAccepted,
     string? LanguageCode,
+    /// <summary>
+    /// `docs/06` 8-bo'lim, 2026-09-02 qaror (`prompts/34` C9-band). Maktabda aynan bitta dastur
+    /// mavjud bo'lsa bo'sh qoldirilishi mumkin — o'sha avtomatik tanlanadi.
+    /// </summary>
+    string? ProgramCode = null,
     string? IpAddress = null,
     string? UserAgent = null) : IRequest<Result<StartSessionResult>>;

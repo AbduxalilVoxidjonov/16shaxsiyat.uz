@@ -39,7 +39,12 @@ public sealed class PublicGetStudentResultEndpointTests : IClassFixture<ShowResu
         await TestDataFactory.CreatePublishedTestAsync(db, now, "RNR1", 1, questionCount: 2);
 
         using var client = _factory.CreateClient();
-        var sessionToken = await StartSessionAsync(client, school, accessToken, "Tursunov Alisher Farrukovich", new DateOnly(2010, 5, 5));
+        // `programCode` ANIQ ko'rsatiladi (`TestDataFactory.DefaultProgramCode` izohiga qarang) —
+        // shu sinfdagi BOSHQA fact (`GetStudentResult_AnalyzedHolatida_...`) haqiqiy
+        // `DbSeeder.SeedAsync()`ni chaqiradi (`PERSONALITY_PROFILE` tizim dasturini yaratadi),
+        // shared `IClassFixture` bazasida ikkalasi ham "mavjud dastur" bo'lib qolishi mumkin.
+        var sessionToken = await StartSessionAsync(
+            client, school, accessToken, "Tursunov Alisher Farrukovich", new DateOnly(2010, 5, 5), TestDataFactory.DefaultProgramCode);
         client.DefaultRequestHeaders.Add("X-Session-Token", sessionToken);
 
         // Sessiya hali `Draft` — tahlil (`Analyzed`) HAR DOIM bu bosqichda tayyor emas
@@ -84,7 +89,8 @@ public sealed class PublicGetStudentResultEndpointTests : IClassFixture<ShowResu
         db.Students.Add(student);
 
         const string sessionToken = "get-student-result-test-session-token-0123456789";
-        var assessment = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, sessionToken, "uz", startedAt: now.AddMinutes(-20), expiresAt: now.AddDays(7), now: now);
+        var programId = await TestDataFactory.GetOrCreateDefaultProgramIdAsync(db, now);
+        var assessment = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, sessionToken, "uz", programId, startedAt: now.AddMinutes(-20), expiresAt: now.AddDays(7), now: now);
 
         var mbtiTest = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, mbtiDefinitionId, 1, totalCount: 1);
         var riasecTest = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, riasecDefinitionId, 2, totalCount: 1);
@@ -147,11 +153,11 @@ public sealed class PublicGetStudentResultEndpointTests : IClassFixture<ShowResu
         }
     }
 
-    private static async Task<string> StartSessionAsync(HttpClient client, StudentRoadMap.Domain.Schools.School school, string accessToken, string fullName, DateOnly birthDate)
+    private static async Task<string> StartSessionAsync(HttpClient client, StudentRoadMap.Domain.Schools.School school, string accessToken, string fullName, DateOnly birthDate, string? programCode = null)
     {
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, fullName, birthDate, Gender.Male, 9, "A",
-            "+998901234567", null, null, true, "uz");
+            "+998901234567", null, null, true, "uz", programCode);
 
         var response = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
         response.EnsureSuccessStatusCode();

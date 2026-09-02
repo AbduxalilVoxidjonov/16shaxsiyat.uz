@@ -118,24 +118,31 @@ internal sealed class CompleteTestCommandHandler : IRequestHandler<CompleteTestC
             // shu bilan izchil (ixtiyoriy savol javobsiz qolsa ham domen bloklamasin).
             assessment.CompleteTest(testDefinition.Id, requiredQuestionIds, now);
 
-            var scoringResult = await ScoreAsync(testDefinition, targetTest, questions, cancellationToken).ConfigureAwait(false);
+            // `Survey` (`docs/06` 8-bo'lim, 2026-09-02 qaror, `prompts/34` D-band): javoblari
+            // saqlanadi (yuqorida), lekin `TestResult` ball YOZILMAYDI — ballanmaydi, scoring
+            // va AI xulosasiga ta'sir qilmaydi, `ReliabilityCalculator` kirishiga kirmaydi
+            // (`CompleteSessionCommandHandler.BuildTestBlocksAsync` shu testni chetlab o'tadi).
+            if (testDefinition.ScoringMode != TestScoringMode.Survey)
+            {
+                var scoringResult = await ScoreAsync(testDefinition, targetTest, questions, cancellationToken).ConfigureAwait(false);
 
-            var testResult = TestResult.Create(
-                Guid.NewGuid(),
-                targetTest.Id,
-                assessment.Id,
-                testDefinition.Code,
-                TestResultJson.Serialize(scoringResult.RawScores),
-                TestResultJson.Serialize(scoringResult.NormalizedScores),
-                scoringResult.ScoringVersion,
-                testDefinition.Version,
-                now,
-                resultCode: scoringResult.ResultCode,
-                levelsJson: TestResultJson.Serialize(scoringResult.Levels),
-                compositeIndex: scoringResult.CompositeIndex,
-                flagsJson: TestResultJson.SerializeFlags(scoringResult.Flags));
+                var testResult = TestResult.Create(
+                    Guid.NewGuid(),
+                    targetTest.Id,
+                    assessment.Id,
+                    testDefinition.Code,
+                    TestResultJson.Serialize(scoringResult.RawScores),
+                    TestResultJson.Serialize(scoringResult.NormalizedScores),
+                    scoringResult.ScoringVersion,
+                    testDefinition.Version,
+                    now,
+                    resultCode: scoringResult.ResultCode,
+                    levelsJson: TestResultJson.Serialize(scoringResult.Levels),
+                    compositeIndex: scoringResult.CompositeIndex,
+                    flagsJson: TestResultJson.SerializeFlags(scoringResult.Flags));
 
-            _context.Add(testResult);
+                _context.Add(testResult);
+            }
 
             await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
@@ -191,7 +198,9 @@ internal sealed class CompleteTestCommandHandler : IRequestHandler<CompleteTestC
         // faqat "strategiya topilmadi" holatini qayta ishlaymiz — u seed konfiguratsiyasi
         // xatosini bildiradi, ommaviy API foydalanuvchisiga aloqasi yo'q, shuning uchun
         // `DomainException`ga aylantirib xuddi shu yo'l bilan yuqoriga uzatiladi.
-        var result = _scoringEngine.Score(testDefinition.ScoringStrategyCode, scoringInput);
+        // Faqat `ScoringMode != Survey` bo'lganda chaqiriladi (yuqoridagi `Handle` sharti) — shu
+        // sabab `ScoringStrategyCode` bu yerda amalda har doim mavjud.
+        var result = _scoringEngine.Score(testDefinition.ScoringStrategyCode ?? string.Empty, scoringInput);
         if (result.IsFailure)
         {
             throw new DomainException(result.Error.Code, result.Error.Message);

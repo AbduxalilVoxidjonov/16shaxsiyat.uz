@@ -31,6 +31,12 @@ public interface IAppDbContext
 
     IQueryable<Question> Questions { get; }
 
+    IQueryable<AssessmentProgram> AssessmentPrograms { get; }
+
+    IQueryable<ProgramTest> ProgramTests { get; }
+
+    IQueryable<SchoolProgram> SchoolPrograms { get; }
+
     IQueryable<AnswerOption> AnswerOptions { get; }
 
     IQueryable<TypeCatalogEntry> TypeCatalog { get; }

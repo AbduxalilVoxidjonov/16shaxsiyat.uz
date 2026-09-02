@@ -65,8 +65,9 @@ public sealed class AdminAssessmentsSortEndpointTests : IClassFixture<PublicApiT
         db.Students.Add(student);
         await db.SaveChangesAsync();
 
-        var older = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, "assess-sort-older-0123456789ab", "uz", now.AddDays(-2), now.AddDays(5), now);
-        var newer = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, "assess-sort-newer-0123456789ab", "uz", now, now.AddDays(7), now);
+        var programId1 = await TestDataFactory.GetOrCreateDefaultProgramIdAsync(db, now);
+        var older = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, "assess-sort-older-0123456789ab", "uz", programId1, now.AddDays(-2), now.AddDays(5), now);
+        var newer = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, "assess-sort-newer-0123456789ab", "uz", programId1, now, now.AddDays(7), now);
         db.Assessments.AddRange(older, newer);
         await db.SaveChangesAsync();
 
@@ -90,9 +91,10 @@ public sealed class AdminAssessmentsSortEndpointTests : IClassFixture<PublicApiT
         db.Students.Add(student);
         await db.SaveChangesAsync();
 
-        var low = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, "assess-sort-low-0123456789abcd", "uz", now, now.AddDays(7), now);
+        var programId2 = await TestDataFactory.GetOrCreateDefaultProgramIdAsync(db, now);
+        var low = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, "assess-sort-low-0123456789abcd", "uz", programId2, now, now.AddDays(7), now);
         low.SetReliability(30.0, ReliabilityFlag.Unreliable, now);
-        var high = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, "assess-sort-high-0123456789abcd", "uz", now, now.AddDays(7), now);
+        var high = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, "assess-sort-high-0123456789abcd", "uz", programId2, now, now.AddDays(7), now);
         high.SetReliability(90.0, ReliabilityFlag.Reliable, now);
         db.Assessments.AddRange(low, high);
         await db.SaveChangesAsync();

@@ -18,6 +18,7 @@ public sealed class AssessmentTests
         Guid.NewGuid(),
         "session-token-abc",
         "uz",
+        Guid.NewGuid(),
         now,
         now.AddDays(7),
         now);
@@ -73,7 +74,7 @@ public sealed class AssessmentTests
     [Fact]
     public void Create_WithEmptySessionToken_ThrowsArgumentException()
     {
-        var act = () => Assessment.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), " ", "uz", Now, Now.AddDays(7), Now);
+        var act = () => Assessment.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), " ", "uz", Guid.NewGuid(), Now, Now.AddDays(7), Now);
 
         act.Should().Throw<ArgumentException>();
     }
@@ -81,7 +82,7 @@ public sealed class AssessmentTests
     [Fact]
     public void Create_WithExpiresAtNotAfterStartedAt_ThrowsArgumentException()
     {
-        var act = () => Assessment.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "token", "uz", Now, Now, Now);
+        var act = () => Assessment.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "token", "uz", Guid.NewGuid(), Now, Now, Now);
 
         act.Should().Throw<ArgumentException>();
     }

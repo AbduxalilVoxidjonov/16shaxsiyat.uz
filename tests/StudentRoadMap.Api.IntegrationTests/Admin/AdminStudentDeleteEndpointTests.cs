@@ -58,7 +58,8 @@ public sealed class AdminStudentDeleteEndpointTests : IClassFixture<PublicApiTes
         db.Students.Add(student);
 
         var sessionToken = $"{slugSeed}-session-token-0123456789abcdef01234567";
-        var assessment = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, sessionToken, "uz", startedAt: now.AddMinutes(-10), expiresAt: now.AddDays(7), now: now);
+        var programId = await TestDataFactory.GetOrCreateDefaultProgramIdAsync(db, now);
+        var assessment = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, sessionToken, "uz", programId, startedAt: now.AddMinutes(-10), expiresAt: now.AddDays(7), now: now);
         var assessmentTest = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, testDefinition.Id, 1, totalCount: 1);
         assessment.AddTest(assessmentTest);
 

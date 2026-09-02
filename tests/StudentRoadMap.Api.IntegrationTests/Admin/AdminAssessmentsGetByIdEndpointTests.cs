@@ -81,7 +81,8 @@ public sealed class AdminAssessmentsGetByIdEndpointTests : IClassFixture<PublicA
         db.Students.Add(student);
 
         const string sessionToken = "assess-getbyid-session-token-0123456789ab";
-        var assessment = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, sessionToken, "uz", startedAt: now.AddMinutes(-30), expiresAt: now.AddDays(7), now: now);
+        var programId = await TestDataFactory.GetOrCreateDefaultProgramIdAsync(db, now);
+        var assessment = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, sessionToken, "uz", programId, startedAt: now.AddMinutes(-30), expiresAt: now.AddDays(7), now: now);
         var assessmentTest = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, mbtiTest.Id, 1, totalCount: 1);
         assessment.AddTest(assessmentTest);
 

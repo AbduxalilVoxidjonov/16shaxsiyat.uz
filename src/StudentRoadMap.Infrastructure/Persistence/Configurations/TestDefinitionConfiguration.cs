@@ -39,7 +39,9 @@ internal sealed class TestDefinitionConfiguration : IEntityTypeConfiguration<Tes
         // EF'ga aniq aytamiz — aks holda "sentinel value sozlanmagan" ogohlantirishi chiqadi.
         builder.Property(t => t.Kind).HasConversion<short>().IsRequired().HasDefaultValue(TestKind.Standard).HasSentinel(default(TestKind));
         builder.Property(t => t.IsSystem).IsRequired().HasDefaultValue(false);
-        builder.Property(t => t.ScoringStrategyCode).HasColumnName("scoring_strategy").HasMaxLength(20).IsRequired();
+        // `Survey` rejimida `null` (`docs/06` 8-bo'lim, 2026-09-02 qaror) — shu sabab ENDI ixtiyoriy.
+        builder.Property(t => t.ScoringStrategyCode).HasColumnName("scoring_strategy").HasMaxLength(20);
+        builder.Property(t => t.ScoringMode).HasConversion<short>().IsRequired().HasDefaultValue(TestScoringMode.Scored).HasSentinel(default(TestScoringMode));
         builder.Property(t => t.Status).HasConversion<short>().IsRequired().HasDefaultValue(TestDefinitionStatus.Published).HasSentinel(default(TestDefinitionStatus));
         builder.Property(t => t.CreatedByAdminUserId);
         builder.Property(t => t.PublishedAt);

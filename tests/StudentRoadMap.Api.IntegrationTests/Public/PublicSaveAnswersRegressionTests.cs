@@ -208,8 +208,9 @@ public sealed class PublicSaveAnswersRegressionTests : IClassFixture<PublicApiTe
         await db.SaveChangesAsync();
 
         var sessionToken = $"completed-token-{Guid.NewGuid():N}";
+        var programId = await TestDataFactory.GetOrCreateDefaultProgramIdAsync(db, now);
         var assessment = Assessment.Create(
-            Guid.NewGuid(), student.Id, school.Id, sessionToken, "uz",
+            Guid.NewGuid(), student.Id, school.Id, sessionToken, "uz", programId,
             startedAt: now, expiresAt: now.AddDays(7), now: now);
         var assessmentTest = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, test.Id, 1, 1);
         assessment.AddTest(assessmentTest);

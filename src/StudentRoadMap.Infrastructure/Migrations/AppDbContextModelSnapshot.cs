@@ -411,6 +411,10 @@ namespace StudentRoadMap.Infrastructure.Migrations
                         .HasDefaultValue("uz")
                         .HasColumnName("language_code");
 
+                    b.Property<Guid>("ProgramId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("program_id");
+
                     b.Property<short?>("ReliabilityFlag")
                         .HasColumnType("smallint")
                         .HasColumnName("reliability_flag");
@@ -462,6 +466,9 @@ namespace StudentRoadMap.Infrastructure.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_assessments");
+
+                    b.HasIndex("ProgramId")
+                        .HasDatabaseName("ix_assessments_program");
 
                     b.HasIndex("SessionToken")
                         .IsUnique()
@@ -670,6 +677,94 @@ namespace StudentRoadMap.Infrastructure.Migrations
                     b.ToTable("answer_options", (string)null);
                 });
 
+            modelBuilder.Entity("StudentRoadMap.Domain.Catalog.AssessmentProgram", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid?>("CreatedByAdminUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_admin_user_id");
+
+                    b.Property<string>("DescriptionUz")
+                        .HasColumnType("text")
+                        .HasColumnName("description_uz");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("display_order");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsSystem")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_system");
+
+                    b.Property<short>("Kind")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint")
+                        .HasDefaultValue((short)2)
+                        .HasColumnName("kind");
+
+                    b.Property<string>("NameUz")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("name_uz");
+
+                    b.Property<short>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint")
+                        .HasDefaultValue((short)1)
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<short>("Visibility")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint")
+                        .HasDefaultValue((short)2)
+                        .HasColumnName("visibility");
+
+                    b.HasKey("Id")
+                        .HasName("pk_assessment_programs");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_assessment_programs_code");
+
+                    b.HasIndex("IsActive", "DisplayOrder")
+                        .HasDatabaseName("ix_assessment_programs_active")
+                        .HasFilter("status = 2");
+
+                    b.ToTable("assessment_programs", (string)null);
+                });
+
             modelBuilder.Entity("StudentRoadMap.Domain.Catalog.CareerMapEntry", b =>
                 {
                     b.Property<Guid>("Id")
@@ -714,6 +809,42 @@ namespace StudentRoadMap.Infrastructure.Migrations
                         .HasDatabaseName("ix_career_map_code");
 
                     b.ToTable("career_map", (string)null);
+                });
+
+            modelBuilder.Entity("StudentRoadMap.Domain.Catalog.ProgramTest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("display_order");
+
+                    b.Property<Guid>("ProgramId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("program_id");
+
+                    b.Property<Guid>("TestDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("test_definition_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_program_tests");
+
+                    b.HasIndex("TestDefinitionId")
+                        .HasDatabaseName("ix_program_tests_test_definition_id");
+
+                    b.HasIndex("ProgramId", "DisplayOrder")
+                        .HasDatabaseName("ix_program_tests_order");
+
+                    b.HasIndex("ProgramId", "TestDefinitionId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_program_tests");
+
+                    b.ToTable("program_tests", (string)null);
                 });
 
             modelBuilder.Entity("StudentRoadMap.Domain.Catalog.Question", b =>
@@ -804,6 +935,41 @@ namespace StudentRoadMap.Infrastructure.Migrations
                     b.ToTable("questions", (string)null);
                 });
 
+            modelBuilder.Entity("StudentRoadMap.Domain.Catalog.SchoolProgram", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("ProgramId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("program_id");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("school_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_school_programs");
+
+                    b.HasIndex("ProgramId")
+                        .HasDatabaseName("ix_school_programs_program");
+
+                    b.HasIndex("SchoolId", "ProgramId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_school_programs");
+
+                    b.ToTable("school_programs", (string)null);
+                });
+
             modelBuilder.Entity("StudentRoadMap.Domain.Catalog.TestDefinition", b =>
                 {
                     b.Property<Guid>("Id")
@@ -874,8 +1040,13 @@ namespace StudentRoadMap.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("published_at");
 
+                    b.Property<short>("ScoringMode")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint")
+                        .HasDefaultValue((short)1)
+                        .HasColumnName("scoring_mode");
+
                     b.Property<string>("ScoringStrategyCode")
-                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
                         .HasColumnName("scoring_strategy");
@@ -1569,6 +1740,13 @@ namespace StudentRoadMap.Infrastructure.Migrations
 
             modelBuilder.Entity("StudentRoadMap.Domain.Assessments.Assessment", b =>
                 {
+                    b.HasOne("StudentRoadMap.Domain.Catalog.AssessmentProgram", null)
+                        .WithMany()
+                        .HasForeignKey("ProgramId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_assessments_assessment_programs_program_id");
+
                     b.HasOne("StudentRoadMap.Domain.Schools.School", null)
                         .WithMany()
                         .HasForeignKey("SchoolId")
@@ -1628,6 +1806,23 @@ namespace StudentRoadMap.Infrastructure.Migrations
                         .HasConstraintName("fk_answer_options_questions_question_id");
                 });
 
+            modelBuilder.Entity("StudentRoadMap.Domain.Catalog.ProgramTest", b =>
+                {
+                    b.HasOne("StudentRoadMap.Domain.Catalog.AssessmentProgram", null)
+                        .WithMany("Tests")
+                        .HasForeignKey("ProgramId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_program_tests_assessment_programs_program_id");
+
+                    b.HasOne("StudentRoadMap.Domain.Catalog.TestDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("TestDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_program_tests_test_definitions_test_definition_id");
+                });
+
             modelBuilder.Entity("StudentRoadMap.Domain.Catalog.Question", b =>
                 {
                     b.HasOne("StudentRoadMap.Domain.Catalog.TestDefinition", null)
@@ -1636,6 +1831,23 @@ namespace StudentRoadMap.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_questions_test_definitions_test_definition_id");
+                });
+
+            modelBuilder.Entity("StudentRoadMap.Domain.Catalog.SchoolProgram", b =>
+                {
+                    b.HasOne("StudentRoadMap.Domain.Catalog.AssessmentProgram", null)
+                        .WithMany()
+                        .HasForeignKey("ProgramId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_school_programs_assessment_programs_program_id");
+
+                    b.HasOne("StudentRoadMap.Domain.Schools.School", null)
+                        .WithMany()
+                        .HasForeignKey("SchoolId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_school_programs_schools_school_id");
                 });
 
             modelBuilder.Entity("StudentRoadMap.Domain.Identity.AdminTotpBackupCode", b =>
@@ -1695,6 +1907,11 @@ namespace StudentRoadMap.Infrastructure.Migrations
             modelBuilder.Entity("StudentRoadMap.Domain.Assessments.AssessmentTest", b =>
                 {
                     b.Navigation("Answers");
+                });
+
+            modelBuilder.Entity("StudentRoadMap.Domain.Catalog.AssessmentProgram", b =>
+                {
+                    b.Navigation("Tests");
                 });
 
             modelBuilder.Entity("StudentRoadMap.Domain.Catalog.Question", b =>

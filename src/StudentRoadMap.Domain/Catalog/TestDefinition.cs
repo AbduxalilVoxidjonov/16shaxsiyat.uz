@@ -37,7 +37,12 @@ public sealed class TestDefinition : AggregateRoot
     /// <summary>Seed'dan kelgan tizim metodikasi — o'chirilmaydi, qulflangan (BR-8).</summary>
     public bool IsSystem { get; private set; }
 
-    public string ScoringStrategyCode { get; private set; } = null!;
+    /// <summary>`Survey` (`ScoringMode`) rejimida `null` — ballanmaydi, strategiya ishlatilmaydi
+    /// (`docs/06` 8-bo'lim, 2026-09-02 qaror, `prompts/34` A4-band).</summary>
+    public string? ScoringStrategyCode { get; private set; }
+
+    /// <summary>`Scored` — ballanadigan anketa; `Survey` — oddiy so'rovnoma (`ScoringStrategyCode` ishlatilmaydi).</summary>
+    public TestScoringMode ScoringMode { get; private set; }
 
     public TestDefinitionStatus Status { get; private set; }
 
@@ -67,7 +72,8 @@ public sealed class TestDefinition : AggregateRoot
         int pageSize,
         TestKind kind,
         bool isSystem,
-        string scoringStrategyCode,
+        string? scoringStrategyCode,
+        TestScoringMode scoringMode,
         Guid? createdByAdminUserId,
         DateTimeOffset now)
         : base(id)
@@ -84,6 +90,7 @@ public sealed class TestDefinition : AggregateRoot
         Kind = kind;
         IsSystem = isSystem;
         ScoringStrategyCode = scoringStrategyCode;
+        ScoringMode = scoringMode;
         Status = TestDefinitionStatus.Draft;
         CreatedByAdminUserId = createdByAdminUserId;
         CreatedAt = now;
@@ -96,14 +103,15 @@ public sealed class TestDefinition : AggregateRoot
         string nameUz,
         int displayOrder,
         int estimatedMinutes,
-        string scoringStrategyCode,
+        string? scoringStrategyCode,
         DateTimeOffset now,
         TestKind kind = TestKind.Custom,
         bool isSystem = false,
         int pageSize = 10,
         bool shuffleQuestions = false,
         string? descriptionUz = null,
-        Guid? createdByAdminUserId = null)
+        Guid? createdByAdminUserId = null,
+        TestScoringMode scoringMode = TestScoringMode.Scored)
     {
         if (string.IsNullOrWhiteSpace(code))
         {
@@ -115,7 +123,9 @@ public sealed class TestDefinition : AggregateRoot
             throw new ArgumentException("Anketa nomi bo'sh bo'lishi mumkin emas.", nameof(nameUz));
         }
 
-        if (string.IsNullOrWhiteSpace(scoringStrategyCode))
+        // `Survey` (`docs/06` 8-bo'lim, 2026-09-02 qaror) — `ScoringStrategyCode` ishlatilmaydi,
+        // shu sabab bo'sh bo'lishi mumkin. `Scored` uchun hamon majburiy (mavjud xatti-harakat).
+        if (scoringMode == TestScoringMode.Scored && string.IsNullOrWhiteSpace(scoringStrategyCode))
         {
             throw new ArgumentException("Scoring strategiyasi kodi bo'sh bo'lishi mumkin emas.", nameof(scoringStrategyCode));
         }
@@ -125,7 +135,9 @@ public sealed class TestDefinition : AggregateRoot
             throw new ArgumentOutOfRangeException(nameof(pageSize), "Sahifa hajmi musbat bo'lishi kerak.");
         }
 
-        return new TestDefinition(id, code, nameUz, descriptionUz, displayOrder, estimatedMinutes, shuffleQuestions, pageSize, kind, isSystem, scoringStrategyCode, createdByAdminUserId, now);
+        var effectiveScoringStrategyCode = scoringMode == TestScoringMode.Survey ? null : scoringStrategyCode;
+
+        return new TestDefinition(id, code, nameUz, descriptionUz, displayOrder, estimatedMinutes, shuffleQuestions, pageSize, kind, isSystem, effectiveScoringStrategyCode, scoringMode, createdByAdminUserId, now);
     }
 
     /// <summary>Yangi savol qo'shadi. Tizim metodikasida taqiqlangan (BR-8).</summary>
@@ -289,6 +301,7 @@ public sealed class TestDefinition : AggregateRoot
             TestKind.Standard,
             isSystem: true,
             scoringStrategyCode,
+            TestScoringMode.Scored,
             createdByAdminUserId: null,
             now);
 

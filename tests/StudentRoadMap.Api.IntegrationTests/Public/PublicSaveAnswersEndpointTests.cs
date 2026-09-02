@@ -210,8 +210,9 @@ public sealed class PublicSaveAnswersEndpointTests : IClassFixture<PublicApiTest
         await db.SaveChangesAsync();
 
         var expiredToken = $"expired-token-{Guid.NewGuid():N}";
+        var programId = await TestDataFactory.GetOrCreateDefaultProgramIdAsync(db, now);
         var assessment = Assessment.Create(
-            Guid.NewGuid(), student.Id, school.Id, expiredToken, "uz",
+            Guid.NewGuid(), student.Id, school.Id, expiredToken, "uz", programId,
             startedAt, expiresAt: startedAt.AddDays(7), now: startedAt);
         var assessmentTest = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, test.Id, 1, 1);
         assessment.AddTest(assessmentTest);

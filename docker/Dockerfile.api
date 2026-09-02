@@ -1,0 +1,35 @@
+# --- Build bosqichi ----------------------------------------------------------------
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+# Avval faqat loyiha fayllari — restore keshi saqlanadi (kod o'zgarganda qayta restore bo'lmaydi).
+COPY Directory.Build.props StudentRoadMap.sln ./
+COPY src/StudentRoadMap.Domain/*.csproj          src/StudentRoadMap.Domain/
+COPY src/StudentRoadMap.Application/*.csproj     src/StudentRoadMap.Application/
+COPY src/StudentRoadMap.Infrastructure/*.csproj  src/StudentRoadMap.Infrastructure/
+COPY src/StudentRoadMap.Api/*.csproj             src/StudentRoadMap.Api/
+COPY tests/StudentRoadMap.Domain.Tests/*.csproj          tests/StudentRoadMap.Domain.Tests/
+COPY tests/StudentRoadMap.Application.Tests/*.csproj     tests/StudentRoadMap.Application.Tests/
+COPY tests/StudentRoadMap.Infrastructure.Tests/*.csproj  tests/StudentRoadMap.Infrastructure.Tests/
+COPY tests/StudentRoadMap.Api.IntegrationTests/*.csproj  tests/StudentRoadMap.Api.IntegrationTests/
+# Butun solution restore qilinadi — `Microsoft.EntityFrameworkCore.Design` ning
+# tranzitiv paketlari (masalan `Humanizer.Core`) faqat shunda to'liq tushadi.
+RUN dotnet restore StudentRoadMap.sln
+
+COPY src/ src/
+RUN dotnet publish src/StudentRoadMap.Api/StudentRoadMap.Api.csproj -c Release -o /app/publish
+
+# --- Ishga tushirish bosqichi -------------------------------------------------------
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+WORKDIR /app
+COPY --from=build /app/publish ./
+
+# Root'siz ishlaydi (xavfsizlik) — rasmiy .NET image'ida tayyor `app` foydalanuvchisi bor.
+USER app
+
+ENV ASPNETCORE_URLS=http://0.0.0.0:8080
+EXPOSE 8080
+
+# Argumentlar o'tadi: `--migrate` va `--seed` alohida bosqich sifatida ishlatiladi
+# (`docs/05` 4-bo'lim 5-band: production'da migratsiya avtomatik emas).
+ENTRYPOINT ["dotnet", "StudentRoadMap.Api.dll"]

@@ -18,24 +18,44 @@ services:
       interval: 10s
       retries: 5
 
-  # --- Namoyish/sinov uchun (P32 gacha vaqtinchalik) --------------------------------
-  # `app` va `tunnel` faqat `--profile tunnel` bilan ko'tariladi, shuning uchun
-  # oddiy `docker compose up -d` faqat bazani ishga tushiradi.
-  #
-  # Hozircha API (`dotnet run`) va frontend (`npm run dev`) HOST da ishlaydi, shuning
-  # uchun `app` ular tomon `host.docker.internal` orqali proksilaydi. P32 da
-  # `Dockerfile.api`/`Dockerfile.web` tayyor bo'lgach bu ikkisi haqiqiy servislarga
-  # almashadi va `host.docker.internal` keraksiz bo'ladi.
-  app:
-    image: nginx:alpine
-    profiles: [tunnel]
-    volumes:
-      - ./docker/app-proxy.conf:/etc/nginx/conf.d/default.conf:ro
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+  # --- Ilova (P32) ------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      # Konteyner ichida baza `db` xosti orqali ko'rinadi (host'dagi `localhost` emas).
+      ConnectionStrings__Postgres: "Host=db;Port=5432;Database=studentroadmap;Username=srm;Password=${DB_PASSWORD:?DB_PASSWORD .env faylida berilishi shart}"
+      Jwt__Key: ${Jwt__Key:?Jwt__Key .env faylida berilishi shart}
+      Security__EncryptionKey: ${Security__EncryptionKey:?Security__EncryptionKey .env faylida berilishi shart}
+      Security__IpHashSalt: ${Security__IpHashSalt:-}
+      # `app` konteyneri ishonchli proksi — usiz X-Forwarded-For e'tiborsiz qoladi va
+      # rate limiting hamda IP audit bitta manzilga yig'ilib qoladi (P10 QA topilmasi).
+      App__KnownProxies: ${App__KnownProxies:-}
+      App__FrontendUrl: ${App__FrontendUrl:-http://localhost:8080}
+      App__SeedOnStartup: ${App__SeedOnStartup:-false}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
 
-  # Cloudflare tunnel — ilovani ommaviy domenga chiqaradi.
+  # Frontend (qurilgan statik fayllar) + `/api` proksisi — bitta origin.
+  # Nomi `app`: Cloudflare tunnel konfiguratsiyasi `http://app:8080` ga qaraydi.
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+    depends_on:
+      - api
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    restart: unless-stopped
+
+  # Cloudflare tunnel — faqat `--profile tunnel` bilan ko'tariladi.
   # Token SIR: faqat `.env` da (`TUNNEL_TOKEN`), repoga tushmaydi (CLAUDE.md 4-qoida).
   tunnel:
     image: cloudflare/cloudflared:latest

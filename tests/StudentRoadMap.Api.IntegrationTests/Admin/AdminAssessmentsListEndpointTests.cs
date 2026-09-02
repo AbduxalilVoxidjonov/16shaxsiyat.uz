@@ -54,8 +54,8 @@ public sealed class AdminAssessmentsListEndpointTests : IClassFixture<PublicApiT
     private static Student MakeStudent(Guid schoolId, DateTimeOffset now, string fullName, string phone) =>
         Student.Create(Guid.NewGuid(), schoolId, fullName, new DateOnly(2010, 1, 1), Gender.Male, 9, PhoneNumber.Create(phone).Value, now, now);
 
-    private static Assessment MakeAssessment(Student student, School school, DateTimeOffset now, string sessionToken) =>
-        Assessment.Create(Guid.NewGuid(), student.Id, school.Id, sessionToken, "uz", startedAt: now, expiresAt: now.AddDays(7), now: now);
+    private static Assessment MakeAssessment(Student student, School school, DateTimeOffset now, string sessionToken, Guid programId) =>
+        Assessment.Create(Guid.NewGuid(), student.Id, school.Id, sessionToken, "uz", programId, startedAt: now, expiresAt: now.AddDays(7), now: now);
 
     [Fact]
     public async Task List_Tokensiz_401Qaytaradi()
@@ -82,8 +82,9 @@ public sealed class AdminAssessmentsListEndpointTests : IClassFixture<PublicApiT
         db.Students.AddRange(studentA, studentB);
         await db.SaveChangesAsync();
 
-        var draftInSchoolA = MakeAssessment(studentA, schoolA, now, "assess-list-draft-a-0123456789ab");
-        var draftInSchoolB = MakeAssessment(studentB, schoolB, now, "assess-list-draft-b-0123456789ab");
+        var listProgramId = await TestDataFactory.GetOrCreateDefaultProgramIdAsync(db, now);
+        var draftInSchoolA = MakeAssessment(studentA, schoolA, now, "assess-list-draft-a-0123456789ab", listProgramId);
+        var draftInSchoolB = MakeAssessment(studentB, schoolB, now, "assess-list-draft-b-0123456789ab", listProgramId);
         db.Assessments.AddRange(draftInSchoolA, draftInSchoolB);
         await db.SaveChangesAsync();
 
@@ -114,7 +115,8 @@ public sealed class AdminAssessmentsListEndpointTests : IClassFixture<PublicApiT
         db.Students.Add(student);
         await db.SaveChangesAsync();
 
-        var assessment = MakeAssessment(student, school, now, "assess-list-tobe-deleted-0123456789");
+        var deletedProgramId = await TestDataFactory.GetOrCreateDefaultProgramIdAsync(db, now);
+        var assessment = MakeAssessment(student, school, now, "assess-list-tobe-deleted-0123456789", deletedProgramId);
         assessment.MarkDeleted(now);
         db.Assessments.Add(assessment);
         await db.SaveChangesAsync();

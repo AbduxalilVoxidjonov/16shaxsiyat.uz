@@ -73,7 +73,8 @@ public sealed class AdminAssessmentsAnswersEndpointTests : IClassFixture<PublicA
         var student = Student.Create(Guid.NewGuid(), school.Id, "Ergasheva Nodira Bahodirovna", new DateOnly(2009, 3, 3), Gender.Female, 9, phone, now, now);
         db.Students.Add(student);
 
-        var assessment = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, "assess-answers-session-0123456789ab", "uz", now.AddMinutes(-30), now.AddDays(7), now);
+        var programId = await TestDataFactory.GetOrCreateDefaultProgramIdAsync(db, now);
+        var assessment = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, "assess-answers-session-0123456789ab", "uz", programId, now.AddMinutes(-30), now.AddDays(7), now);
         var assessmentTestA = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, testA.Id, 1, totalCount: 2);
         var assessmentTestB = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, testB.Id, 2, totalCount: 1);
         assessment.AddTest(assessmentTestA);

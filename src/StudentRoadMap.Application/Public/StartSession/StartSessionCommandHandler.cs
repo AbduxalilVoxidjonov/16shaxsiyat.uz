@@ -189,6 +189,18 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
                 email: request.Email);
         }
 
+        // `docs/06` 8-bo'lim (2026-09-02 qaror), `prompts/34` C9-band: dastur tanlanadi —
+        // bo'sh `programCode` + bitta mavjud dastur bo'lsa avtomatik, aks holda aniq
+        // ko'rsatilishi shart. Muvaffaqiyatsiz bo'lsa (`400`/`404`) kunlik hisoblagich
+        // OSHIRILMAYDI (pastdagi "BR-1" izohi bilan bir xil qoida — assessment hali yaratilmadi).
+        var programResult = await ResolveProgramAsync(school.Id, request.ProgramCode, cancellationToken).ConfigureAwait(false);
+        if (programResult.IsFailure)
+        {
+            return Result.Failure<StartSessionResult>(programResult.Error);
+        }
+
+        var program = programResult.Value;
+
         // BR-1 kunlik ro'yxatdan o'tish limiti — FAQAT shu nuqtadan boshlab, ya'ni yangi
         // `Assessment` chindan yaratilishidan oldin, atomik oshiriladi (PM qarori, sinf
         // izohiga qarang: `resumed`/`409` holatlarida hisoblagich o'zgarmaydi).
@@ -202,11 +214,18 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
             return Result.Failure<StartSessionResult>(new Error(ProblemCodes.RateLimited, "Ushbu maktab uchun kunlik ro'yxatdan o'tish limiti tugadi."));
         }
 
-        var testDefinitions = await _executor.ToListAsync(
-            _context.TestDefinitions
-                .Where(t => t.Status == TestDefinitionStatus.Published && t.IsActive)
-                .OrderBy(t => t.DisplayOrder),
+        // Sessiyaga FAQAT shu dasturning testlari, DASTURDAGI tartibda qo'shiladi (`prompts/34`
+        // C10-band) — `TestDefinition.DisplayOrder` EMAS, `ProgramTest.DisplayOrder`.
+        var programTests = await _executor.ToListAsync(
+            _context.ProgramTests.Where(pt => pt.ProgramId == program.Id).OrderBy(pt => pt.DisplayOrder),
             cancellationToken).ConfigureAwait(false);
+
+        var programTestDefinitionIds = programTests.Select(pt => pt.TestDefinitionId).ToList();
+        var testDefinitionsById = (await _executor.ToListAsync(
+                _context.TestDefinitions
+                    .Where(t => programTestDefinitionIds.Contains(t.Id) && t.Status == TestDefinitionStatus.Published && t.IsActive),
+                cancellationToken).ConfigureAwait(false))
+            .ToDictionary(t => t.Id);
 
         var sessionToken = _tokenGenerator.GenerateUrlSafeToken(SessionTokenByteLength);
         var expiresAt = now.AddDays(_appSettings.SessionLifetimeDays);
@@ -218,15 +237,21 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
             school.Id,
             sessionToken,
             string.IsNullOrWhiteSpace(request.LanguageCode) ? "uz" : request.LanguageCode,
+            program.Id,
             startedAt: now,
             expiresAt: expiresAt,
             now: now,
             ipHash: ipHash,
             userAgent: request.UserAgent);
 
-        var tests = new List<PublicTestSummaryDto>(testDefinitions.Count);
-        foreach (var testDefinition in testDefinitions)
+        var tests = new List<PublicTestSummaryDto>(programTests.Count);
+        foreach (var programTest in programTests)
         {
+            if (!testDefinitionsById.TryGetValue(programTest.TestDefinitionId, out var testDefinition))
+            {
+                continue;
+            }
+
             var activeQuestionCount = await _executor.CountAsync(
                 _context.Questions.Where(q => q.TestDefinitionId == testDefinition.Id && q.IsActive),
                 cancellationToken).ConfigureAwait(false);
@@ -236,7 +261,7 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
                 continue;
             }
 
-            var assessmentTest = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, testDefinition.Id, testDefinition.DisplayOrder, activeQuestionCount);
+            var assessmentTest = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, testDefinition.Id, programTest.DisplayOrder, activeQuestionCount);
             assessment.AddTest(assessmentTest);
 
             tests.Add(new PublicTestSummaryDto(
@@ -245,7 +270,7 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
                 TestStatus.NotStarted.ToString(),
                 0,
                 activeQuestionCount,
-                testDefinition.DisplayOrder,
+                programTest.DisplayOrder,
                 testDefinition.EstimatedMinutes));
         }
 
@@ -298,6 +323,41 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
                     definition?.EstimatedMinutes ?? 0);
             })
             .ToList();
+    }
+
+    /// <summary>
+    /// Dastur tanlash mantiqi (`docs/06` 8-bo'lim, 2026-09-02 qaror, `prompts/34` C9-band):
+    /// - `programCode` bo'sh va maktabda aynan bitta mavjud dastur bo'lsa — o'sha tanlanadi;
+    /// - bir nechta bo'lsa va `programCode` berilmasa — `400 PROGRAM_REQUIRED`;
+    /// - berilgan `programCode` shu maktabda mavjud (`ProgramAvailability`) bo'lmasa — `404`
+    ///   (boshqa maktabga biriktirilgan yoki umuman mavjud bo'lmagan dastur bir xil javob
+    ///   beradi — mavjudligini oshkor qilmaslik uchun, `GetSchoolInfoQueryHandler` uslubida).
+    /// </summary>
+    private async Task<Result<AssessmentProgram>> ResolveProgramAsync(Guid schoolId, string? programCode, CancellationToken cancellationToken)
+    {
+        var availablePrograms = await ProgramAvailability.GetAvailableProgramsAsync(_context, _executor, schoolId, cancellationToken).ConfigureAwait(false);
+
+        if (string.IsNullOrWhiteSpace(programCode))
+        {
+            if (availablePrograms.Count == 1)
+            {
+                return Result.Success(availablePrograms[0]);
+            }
+
+            var message = availablePrograms.Count == 0
+                ? "Ushbu maktabga hech qanday dastur biriktirilmagan."
+                : "Maktabda bir nechta dastur mavjud — dastur tanlanishi shart.";
+
+            return Result.Failure<AssessmentProgram>(new Error(ProblemCodes.ProgramRequired, message));
+        }
+
+        var matched = availablePrograms.FirstOrDefault(p => p.Code == programCode);
+        if (matched is null)
+        {
+            return Result.Failure<AssessmentProgram>(new Error(ProblemCodes.NotFound, "Dastur topilmadi."));
+        }
+
+        return Result.Success(matched);
     }
 
     /// <summary>Fixed-time solishtirish (`docs/08` 3-bo'lim) — havola tokeni va kirish kodi uchun.</summary>
