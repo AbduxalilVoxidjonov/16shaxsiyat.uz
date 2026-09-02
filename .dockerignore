@@ -1,0 +1,37 @@
+# Docker build kontekstidan chetlatiladi (context: repo ildizi — `docker-compose.yml`).
+#
+# MUHIM: bu fayl bo'lmasa `docker/Dockerfile.web` dagi `COPY frontend/ ./` buyrug'i
+# host'dagi `frontend/node_modules`/`dist` papkasini ham nusxalaydi (agar dasturchi
+# mashinasida `npm install`/`npm run build` ilgari ishlatilgan bo'lsa) va bu `npm ci`
+# o'rnatgan Linux-mos paketlarni (masalan, `@rollup/rollup-darwin-arm64` kabi macOS-ga
+# xos "native" ikkilik fayllar bilan) USTIDAN YOZIB, image ichidagi `npm run build`ni
+# buzadi. Xato faqat host mashinasida `node_modules` mavjud bo'lgandagina chiqadi —
+# aks holda CI kabi toza muhitda sezilmay qolib, keyin production build'da "birdan"
+# paydo bo'ladi. Xuddi shu sabab `.NET` uchun ham `bin`/`obj` chetlatiladi.
+
+# .NET
+**/bin/
+**/obj/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results/
+
+# Versiya nazorati va IDE
+.git/
+.vs/
+.vscode/
+
+# Hujjatlar va vaqtinchalik — image'ga kerak emas
+docs/
+prompts/
+*.md
+.env
+.env.*
+!.env.example
+.srm_bundle.json
+backups/

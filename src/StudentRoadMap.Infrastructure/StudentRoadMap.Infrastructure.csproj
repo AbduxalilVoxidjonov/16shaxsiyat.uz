@@ -25,6 +25,10 @@
     <!-- `AiResponseValidator` 2-bosqichi (`docs/09` 6-bo'lim) — AI javobini `AnalysisJsonSchema`ga
          qarshi tekshiradi (P16, tarmoq chaqiruvisiz). -->
     <PackageReference Include="JsonSchema.Net" Version="9.4.0" />
+    <!-- `prompts/17`: uchta real AI provider (`AddHttpClient`, nomlangan `HttpClient`,
+         `IHttpClientFactory`) — `Microsoft.Extensions.DependencyInjection`ning o'zida yo'q,
+         alohida paket kerak. -->
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.9" />
   </ItemGroup>
 
   <ItemGroup>

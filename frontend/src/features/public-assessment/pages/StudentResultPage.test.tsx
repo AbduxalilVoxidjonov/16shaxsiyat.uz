@@ -108,4 +108,29 @@ describe('StudentResultPage', () => {
 
     expect(await screen.findByText('LANDING_STUB')).toBeInTheDocument();
   });
+
+  // `prompts/36` MAXSUS DIQQAT 3-band — shaxsiyat batareyasisiz dastur: backend `200` bilan
+  // bo'sh maydonlar qaytaradi (`GetStudentResultQueryHandler`), sahifa buni "natija yo'q"
+  // holati sifatida ko'rsatishi kerak — bo'sh joy yoki "0" YO'Q.
+  it("shaxsiyat batareyasi bo'lmagan dasturda (bo'sh personalityType) tip kartasi o'rniga tushunarli xabar ko'rsatadi", async () => {
+    seedSession();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({
+          personalityType: '',
+          typeName: '',
+          shortDescription: '',
+          topStrengths: [],
+          careerFields: [],
+          note: 'Bu natija tashxis emas — hozirgi holatingiz surati.',
+        }),
+      ),
+    );
+
+    renderPage();
+
+    expect(await screen.findByText("Bu dastur uchun natija yo'q")).toBeInTheDocument();
+    expect(screen.queryByText('0')).not.toBeInTheDocument();
+  });
 });

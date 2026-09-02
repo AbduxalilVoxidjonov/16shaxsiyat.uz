@@ -10,7 +10,11 @@ services:
       POSTGRES_USER: srm
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD .env faylida berilishi shart}
     ports:
-      - "5432:5432"
+      # FAQAT lokal interfeys — baza tashqi tarmoqdan ko'rinmaydi. Konteynerlar bir-birini
+      # compose tarmog'i orqali (`Host=db`) topadi, port chiqarish faqat host'dan `psql`
+      # bilan ulanish uchun kerak. `0.0.0.0` da ochiq qoldirish bir xil Wi-Fi'dagi
+      # istalgan qurilmaga bazaga urinish imkonini berardi.
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -93,3 +97,17 @@ services:
 
 volumes:
   pgdata:
+
+# Tarmoq subneti QAT'IY belgilangan (172.26.0.0/16 — joriy production bilan bir xil,
+# `docker network inspect 16shaxsiyat_default` bilan tasdiqlangan). Sabab: `App__KnownProxies`
+# (.env) shu subnetga tayanadi — agar tarmoq qayta yaratilganda Docker'ning avtomatik
+# tanlagan subneti o'zgarib qolsa, `ForwardedHeadersSetup` `X-Forwarded-For`/`X-Forwarded-Proto`
+# header'iga ISHONMAY QO'YADI va bu JIMGINA sodir bo'ladi (xato chiqmaydi) — natijada rate
+# limiting va IP audit barcha so'rovlarni bitta (proksi) manzilga yig'ib qo'yadi
+# (`docs/13` MAXSUS DIQQAT, P10 QA topilmasi). Subnet shu yerda qotirilgani uchun
+# `docker compose down && up` tarmoqni qayta yaratsa ham qiymat o'zgarmaydi.
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.26.0.0/16

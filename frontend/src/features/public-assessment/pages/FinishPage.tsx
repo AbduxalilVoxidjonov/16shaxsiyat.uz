@@ -117,6 +117,23 @@ export default function FinishPage() {
     );
   }
 
+  // `docs/06` 8-bo'lim, CLAUDE.md MAXSUS DIQQAT 2/3-band: shaxsiyat batareyasisiz (yoki faqat
+  // `Survey` blokli) dasturda ball/tip HECH QACHON hisoblanmaydi — `GetStudentResult` "MBTI16"
+  // topa olmay bo'sh maydonlar bilan qaytaradi. Bu yerda buni oldindan bilamiz (dastur tarkibida
+  // "MBTI16" yo'q), shu sabab natija ekraniga umuman taklif qilinmaydi — "bo'sh joy/0" o'rniga
+  // shunchaki "javoblaringiz saqlandi" ko'rinishi ko'rsatiladi. `StudentResultPage` o'zi ham
+  // (to'g'ridan-to'g'ri havola bilan kirilsa) xuddi shu holatni ushlaydi (himoya ikki qatlamda).
+  const hasPersonalityBattery = sessionState.tests.some((test) => test.code === 'MBTI16');
+
+  if (!hasPersonalityBattery) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-16 text-center">
+        <h1 className="text-xl font-bold text-neutral-900">{t('publicAssessment.survey.thanksHeading')}</h1>
+        <p className="text-neutral-600">{t('publicAssessment.survey.thanksMessage')}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center gap-4 py-16 text-center">
       <h1 className="text-xl font-bold text-neutral-900">{t('pages.finish.heading')}</h1>

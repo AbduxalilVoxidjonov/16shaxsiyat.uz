@@ -140,4 +140,22 @@ describe('FinishPage', () => {
     expect(await screen.findByText('Natijalar maktab psixologiga yuboriladi.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: "Natijani ko'rish" })).not.toBeInTheDocument();
   });
+
+  // `prompts/36` MAXSUS DIQQAT 2/3-band — shaxsiyat batareyasi (MBTI16) yo'q dastur (masalan
+  // faqat `Survey` blokli so'rovnoma): ball ko'rsatilmaydi, natija ekraniga taklif qilinmaydi.
+  it("dasturda shaxsiyat batareyasi (MBTI16) bo'lmasa — 'javoblar saqlandi' xabari, natija tugmasi YO'Q", async () => {
+    seedSession();
+    mockFetch({
+      sessionState: {
+        ...allTestsCompletedState(),
+        tests: [{ code: 'CAREER_SURVEY_Q', status: 'Completed', answered: 20, total: 20, order: 1 }],
+      },
+      completeSession: { status: 'Analyzing', message: 'Tahlil qilinmoqda', showResultToStudent: true, resultAvailableAt: null },
+    });
+    renderPage();
+
+    expect(await screen.findByText('Javoblaringiz saqlandi, rahmat.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: "Natijani ko'rish" })).not.toBeInTheDocument();
+    expect(screen.queryByText('Natijang tahlil qilinmoqda…')).not.toBeInTheDocument();
+  });
 });

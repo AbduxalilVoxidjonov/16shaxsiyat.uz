@@ -91,6 +91,20 @@ export default function StudentResultPage() {
     return <ResultSkeleton />;
   }
 
+  // `docs/06` 8-bo'lim, CLAUDE.md MAXSUS DIQQAT 3-band: dasturda shaxsiyat batareyasi
+  // (MBTI16) bo'lmasa `GetStudentResultQueryHandler` baribir `200` qaytaradi, lekin
+  // `personalityType`/`typeName`/`shortDescription` BO'SH QATOR bo'ladi — bo'sh tip kartasi
+  // ko'rsatish "0" ko'rsatish bilan bir xil xato (soxta xulosa). Shu sabab bo'sh
+  // `personalityType` — "natija yo'q" holati, xato EMAS.
+  if (!result.personalityType) {
+    return (
+      <EmptyState
+        title={t('publicAssessment.noBattery.title')}
+        description={t('publicAssessment.noBattery.description')}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col gap-5">
       <Card className="flex flex-col items-center gap-1 text-center">
@@ -99,27 +113,31 @@ export default function StudentResultPage() {
         <p className="mt-2 text-sm text-neutral-600">{result.shortDescription}</p>
       </Card>
 
-      <Card title={t('pages.result.strengthsHeading')}>
-        <ul className="flex flex-col gap-1.5 text-sm text-neutral-700">
-          {result.topStrengths.map((strength) => (
-            <li key={strength} className="flex items-start gap-2">
-              <span aria-hidden="true">•</span>
-              {strength}
-            </li>
-          ))}
-        </ul>
-      </Card>
+      {result.topStrengths.length > 0 && (
+        <Card title={t('pages.result.strengthsHeading')}>
+          <ul className="flex flex-col gap-1.5 text-sm text-neutral-700">
+            {result.topStrengths.map((strength) => (
+              <li key={strength} className="flex items-start gap-2">
+                <span aria-hidden="true">•</span>
+                {strength}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
-      <Card title={t('pages.result.careerFieldsHeading')}>
-        <ul className="flex flex-col gap-1.5 text-sm text-neutral-700">
-          {result.careerFields.map((field) => (
-            <li key={field} className="flex items-start gap-2">
-              <span aria-hidden="true">•</span>
-              {field}
-            </li>
-          ))}
-        </ul>
-      </Card>
+      {result.careerFields.length > 0 && (
+        <Card title={t('pages.result.careerFieldsHeading')}>
+          <ul className="flex flex-col gap-1.5 text-sm text-neutral-700">
+            {result.careerFields.map((field) => (
+              <li key={field} className="flex items-start gap-2">
+                <span aria-hidden="true">•</span>
+                {field}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       <p className="text-center text-xs text-neutral-500">{result.note}</p>
     </div>

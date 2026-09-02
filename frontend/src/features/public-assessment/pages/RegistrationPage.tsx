@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate, useParams, useSearchParams } from 'react-router';
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { usePageTitle } from '@/shared/hooks/usePageTitle';
 import { Button, ErrorState, Input, Select, Skeleton } from '@/shared/ui';
@@ -76,7 +76,8 @@ export default function RegistrationPage() {
   const schoolInfoQuery = useSchoolInfo(slug, accessToken);
   const startSession = useStartSession();
   const setSession = useSessionStore((state) => state.setSession);
-  const setTestCatalog = useSessionStore((state) => state.setTestCatalog);
+  const storedSelectedProgramSlug = useSessionStore((state) => state.selectedProgramSlug);
+  const storedSelectedProgramCode = useSessionStore((state) => state.selectedProgramCode);
 
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -84,6 +85,13 @@ export default function RegistrationPage() {
 
   const requiresAccessCode = schoolInfoQuery.data?.requiresAccessCode ?? false;
   const schema = useMemo(() => buildRegistrationSchema(requiresAccessCode), [requiresAccessCode]);
+
+  // `prompts/36` — Landing (E-1) bir nechta dastur bo'lganda tanlovni talab qiladi. Bitta
+  // dastur bo'lsa (ORQAGA MOSLIK — hozirgi oqim) `programCode` umuman yuborilmaydi (backend
+  // yagona mavjud dasturni o'zi tanlaydi, `prompts/34` C9-band).
+  const programs = schoolInfoQuery.data?.programs ?? [];
+  const requiresProgramSelection = programs.length > 1;
+  const selectedProgramCode = storedSelectedProgramSlug === slug ? storedSelectedProgramCode : null;
 
   const {
     register,
@@ -102,17 +110,16 @@ export default function RegistrationPage() {
   const consentAccepted = useWatch({ control, name: 'consentAccepted' });
   const genderValue = useWatch({ control, name: 'gender' });
 
-  // Test/blok-yakuni sahifalarida `accessToken` (`k`) yo'q — test nomi va qolgan bloklar
-  // vaqtini ko'rsatish uchun katalog shu yerda saqlab qo'yiladi (`sessionStore.ts` izohiga qarang).
-  // (Odatda `LandingPage`da allaqachon saqlangan bo'ladi — bu yerdagi nusxa faqat to'g'ridan-to'g'ri
-  // ro'yxatdan o'tish havolasi ochilgan holat uchun ehtiyot chorasi.)
-  useEffect(() => {
-    if (schoolInfoQuery.data) {
-      setTestCatalog(schoolInfoQuery.data.tests);
-    }
-  }, [schoolInfoQuery.data, setTestCatalog]);
-
   function applyServerError(error: AppError): void {
+    if (error.code === 'PROGRAM_REQUIRED') {
+      // Maktabda bir nechta dastur bor, lekin `programCode` yubormadik/mos kelmadi (masalan
+      // sessionStore boshqa oynada tozalangan) — o'quvchi tanlov ekraniga qaytariladi
+      // (CLAUDE.md MAXSUS DIQQAT 4-band).
+      toast.show({ variant: 'info', title: t('publicAssessment.programRequired.message') });
+      navigate(`${ROUTES.public.landing(slug)}?k=${encodeURIComponent(accessToken)}`, { replace: true });
+      return;
+    }
+
     if (error.code === 'VALIDATION_ERROR' && error.errors) {
       let mappedAny = false;
       for (const [key, messages] of Object.entries(error.errors)) {
@@ -176,6 +183,7 @@ export default function RegistrationPage() {
       email: values.email || undefined,
       consentAccepted: values.consentAccepted,
       languageCode: 'uz',
+      programCode: requiresProgramSelection ? (selectedProgramCode ?? undefined) : undefined,
     };
 
     try {
@@ -221,6 +229,15 @@ export default function RegistrationPage() {
   }
 
   const school = schoolInfoQuery.data;
+
+  // Bir nechta dastur bor, lekin tanlov yo'q (masalan to'g'ridan-to'g'ri havola ochilgan yoki
+  // boshqa oynada `sessionStore` tozalangan) — tanlov ekraniga qaytariladi, forma
+  // ko'rsatilmaydi (server `400 PROGRAM_REQUIRED` bilan javob berishini kutish shart emas).
+  if (requiresProgramSelection && !selectedProgramCode) {
+    return (
+      <Navigate to={`${ROUTES.public.landing(slug)}?k=${encodeURIComponent(accessToken)}`} replace />
+    );
+  }
 
   return (
     <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex flex-col gap-5">

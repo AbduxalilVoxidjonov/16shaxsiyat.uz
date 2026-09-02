@@ -46,11 +46,12 @@ function TestPageSkeleton() {
  * E-3 Test sahifasi (`/t/:slug/test/:testCode`) — docs/11 E-3, docs/07 1.4–1.6-bo'lim,
  * docs/10 4.3-bo'lim, CLAUDE.md MAXSUS DIQQAT 1–5-band.
  *
- * Test nomi bu sahifaning o'z endpoint'laridan kelmaydi (`PublicTestSummaryDto`da faqat
- * `code`/`status`/`answered`/`total`/`order` bor — docs/07 1.3-bo'lim) — `sessionStore.
- * testCatalog` (Landing/Registration `GET /schools/{slug}` javobidan saqlab qo'yadi) orqali
- * olinadi; u yo'q bo'lsa (masalan `localStorage` tozalangan holatda to'g'ridan-to'g'ri havola
- * ochilgan) `testCode`ning o'zi ko'rsatiladi (fallback).
+ * Test nomi bu sahifaning o'z endpoint'laridan kelmaydi to'g'ridan-to'g'ri sahifa parametridan
+ * emas — `GET /sessions/me` (`PublicTestSummaryDto`, docs/07 1.3-bo'lim) qaytaradigan
+ * `tests[].name` ishlatiladi (P36: backend endi shu maydonni ham qaytaradi). Bu — sessiyaning
+ * HAQIQIY dasturi bilan bog'liq ro'yxat (bir nechta dastur bo'lganda maktabning BARCHA
+ * testlari emas), shu sabab alohida "katalog" saqlash kerak emas. `sessionStateQuery.data`
+ * hali yuklanmagan bo'lsa `testCode`ning o'zi ko'rsatiladi (fallback).
  */
 export default function TestPage() {
   const { t } = useTranslation();
@@ -61,15 +62,15 @@ export default function TestPage() {
 
   const sessionToken = useSessionStore((state) => state.sessionToken);
   const storedSlug = useSessionStore((state) => state.slug);
-  const testCatalog = useSessionStore((state) => state.testCatalog);
   const hasSession = Boolean(sessionToken) && storedSlug === slug;
-  const testName = testCatalog?.find((item) => item.code === testCode)?.name ?? testCode;
 
   const handleSessionExpired = useSessionExpiredGuard(slug);
 
   const sessionStateQuery = useSessionState(hasSession);
   const startTest = useStartTest();
   const completeTest = useCompleteTest();
+  const testInfo = sessionStateQuery.data?.tests.find((test) => test.code === testCode);
+  const testName = testInfo?.name ?? testCode;
 
   const [page, setPage] = useState(1);
   const [invalidIds, setInvalidIds] = useState<ReadonlySet<string>>(new Set());
@@ -112,7 +113,6 @@ export default function TestPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `startTest`/`handleSessionExpired` barqaror emas, `testCode` bo'yicha ref bilan qo'lda himoyalangan
   }, [hasSession, testCode]);
 
-  const testInfo = sessionStateQuery.data?.tests.find((test) => test.code === testCode);
   const started = startTest.data?.testCode === testCode ? startTest.data : undefined;
 
   // Sahifa yangilanganda o'sha joydan davom etish — `answered` soni bo'yicha resume sahifasini hisoblaydi.
@@ -217,7 +217,9 @@ export default function TestPage() {
           navigate(ROUTES.public.finish(slug));
         } else {
           navigate(ROUTES.public.testDone(slug, testCode), {
-            state: { nextTestCode: result.nextTestCode ?? null },
+            // `tests` — TestCompletePage'ga qo'shimcha `GET /sessions/me` so'rovisiz "qolgan
+            // bloklar" ro'yxatini (nom/vaqt) berish uchun (P36, `sessionStore.ts` izohiga qarang).
+            state: { nextTestCode: result.nextTestCode ?? null, tests: sessionStateQuery.data?.tests },
           });
         }
       },

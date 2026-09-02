@@ -1,0 +1,6 @@
+/** `features/catalog` uchun TanStack Query kalitlari — `docs/10`, 5.2-bo'lim konvensiyasi. */
+export const CATALOG_QUERY_KEYS = {
+  list: () => ['catalog', 'tests', 'list'] as const,
+  detail: (id: string) => ['catalog', 'tests', 'detail', id] as const,
+  questions: (id: string) => ['catalog', 'tests', 'questions', id] as const,
+};

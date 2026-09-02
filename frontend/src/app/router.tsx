@@ -28,6 +28,9 @@ const AssessmentDetailPage = lazy(
   () => import('@/features/assessments/pages/AssessmentDetailPage'),
 );
 const CatalogPage = lazy(() => import('@/features/catalog/pages/CatalogPage'));
+const CatalogTestDetailPage = lazy(() => import('@/features/catalog/pages/CatalogTestDetailPage'));
+const ProgramsPage = lazy(() => import('@/features/programs/pages/ProgramsPage'));
+const ProgramDetailPage = lazy(() => import('@/features/programs/pages/ProgramDetailPage'));
 const AiProvidersPage = lazy(() => import('@/features/ai-settings/pages/AiProvidersPage'));
 const AuditLogPage = lazy(() => import('@/features/audit/pages/AuditLogPage'));
 const SettingsPage = lazy(() => import('@/features/settings/pages/SettingsPage'));
@@ -77,6 +80,12 @@ const router = createBrowserRouter([
       { path: ROUTE_PATTERNS.admin.assessments, element: withSuspense(AssessmentsPage) },
       { path: ROUTE_PATTERNS.admin.assessmentDetail, element: withSuspense(AssessmentDetailPage) },
       { path: ROUTE_PATTERNS.admin.catalog, element: withSuspense(CatalogPage) },
+      {
+        path: ROUTE_PATTERNS.admin.catalogTestDetail,
+        element: withSuspense(CatalogTestDetailPage),
+      },
+      { path: ROUTE_PATTERNS.admin.programs, element: withSuspense(ProgramsPage) },
+      { path: ROUTE_PATTERNS.admin.programDetail, element: withSuspense(ProgramDetailPage) },
       { path: ROUTE_PATTERNS.admin.ai, element: withSuspense(AiProvidersPage) },
       { path: ROUTE_PATTERNS.admin.audit, element: withSuspense(AuditLogPage) },
       { path: ROUTE_PATTERNS.admin.settings, element: withSuspense(SettingsPage) },

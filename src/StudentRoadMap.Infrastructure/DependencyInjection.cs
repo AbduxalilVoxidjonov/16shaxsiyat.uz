@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using StudentRoadMap.Application.Ai;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Infrastructure.Ai;
+using StudentRoadMap.Infrastructure.Ai.Providers;
 using StudentRoadMap.Infrastructure.Common;
 using StudentRoadMap.Infrastructure.Identity;
 using StudentRoadMap.Infrastructure.Persistence;
@@ -58,6 +60,18 @@ public static class DependencyInjection
         // o'tkazilmaydi — faqat Development/Test muhitida, composition root'da (`Api/Program.cs`).
         services.AddScoped<IPromptBuilder, PromptBuilder>();
         services.AddSingleton<IAiResponseValidator, AiResponseValidator>();
+
+        // `prompts/17`: uchta real provider — nomlangan `HttpClient`lar (`IHttpClientFactory`),
+        // taymeri `Ai:TimeoutSeconds`dan (standart 90s, `docs/09` 7-bo'lim). `AiProviderResolver`
+        // qaysi providerni ishlatishni `AiProviderConfig`dan (DB) tanlaydi — kod ichida
+        // qattiq yozilmagan (`CLAUDE.md` provider abstraksiyasi qoidasi).
+        var timeoutSecondsRaw = configuration["Ai:TimeoutSeconds"];
+        var timeout = TimeSpan.FromSeconds(int.TryParse(timeoutSecondsRaw, out var timeoutSeconds) && timeoutSeconds > 0 ? timeoutSeconds : 90);
+        services.AddHttpClient(GeminiProvider.HttpClientName, client => client.Timeout = timeout);
+        services.AddHttpClient(OpenAiProvider.HttpClientName, client => client.Timeout = timeout);
+        services.AddHttpClient(AnthropicProvider.HttpClientName, client => client.Timeout = timeout);
+        services.AddScoped<IAiProviderResolver, AiProviderResolver>();
+        services.AddSingleton<IAiCostCalculator, AiCostCalculator>();
 
         // `prompts/11`: ommaviy katalog keshi (10 daqiqa) va savollarni aralashtirish abstraksiyasi.
         services.AddMemoryCache();

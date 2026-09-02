@@ -5,6 +5,7 @@ import { usePageTitle } from '@/shared/hooks/usePageTitle';
 import { Button, ErrorState, Skeleton } from '@/shared/ui';
 import { ROUTES } from '@/shared/config/routes';
 import { AppError } from '@/shared/api/AppError';
+import type { PublicTestSummary } from '@/shared/api/types';
 import { useSessionState } from '../api/useSessionState';
 import { useSessionStore } from '../store/sessionStore';
 import { useSessionExpiredGuard } from '../hooks/useSessionExpiredGuard';
@@ -12,6 +13,13 @@ import { pickNextTestCode } from '../lib/nextTest';
 
 interface TestCompleteLocationState {
   nextTestCode?: string | null;
+  /**
+   * `TestPage`dan uzatilgan sessiya test ro'yxati (`PublicTestSummaryDto[]`, `name`/
+   * `estimatedMinutes` bilan) — qo'shimcha `GET /sessions/me` so'rovisiz "qolgan bloklar"
+   * ro'yxatini qurish uchun (P36). Yo'q bo'lsa (to'g'ridan-to'g'ri havola/sahifa yangilanishi)
+   * pastda sessiya holatidan qayta so'raladi.
+   */
+  tests?: PublicTestSummary[];
 }
 
 function TestCompleteSkeleton() {
@@ -26,9 +34,12 @@ function TestCompleteSkeleton() {
 
 /**
  * E-4 Blok yakuni (`/t/:slug/test/:testCode/done`) — docs/11 E-4.
- * `TestPage` bu sahifaga `navigate(..., { state: { nextTestCode } })` bilan keladi (`allTestsCompleted:
- * false` bo'lganda). Sahifa yangilansa/to'g'ridan-to'g'ri ochilsa `location.state` yo'qoladi —
- * bu holda `GET /sessions/me` orqali qayta hisoblanadi (docs/07 1.3-bo'lim).
+ * `TestPage` bu sahifaga `navigate(..., { state: { nextTestCode, tests } })` bilan keladi
+ * (`allTestsCompleted: false` bo'lganda). Sahifa yangilansa/to'g'ridan-to'g'ri ochilsa
+ * `location.state` yo'qoladi — bu holda `GET /sessions/me` orqali qayta hisoblanadi
+ * (docs/07 1.3-bo'lim). `tests` — sessiyaning HAQIQIY dasturiga tegishli ro'yxat (P36:
+ * bir nechta dastur bo'lganda maktabning BARCHA testlari EMAS), shu sabab har doim shu
+ * manbadan olinadi — alohida "katalog" (`sessionStore`) YO'Q.
  */
 export default function TestCompletePage() {
   const { t } = useTranslation();
@@ -38,14 +49,14 @@ export default function TestCompletePage() {
 
   const sessionToken = useSessionStore((state) => state.sessionToken);
   const storedSlug = useSessionStore((state) => state.slug);
-  const testCatalog = useSessionStore((state) => state.testCatalog);
   const hasSession = Boolean(sessionToken) && storedSlug === slug;
 
   const handleSessionExpired = useSessionExpiredGuard(slug);
 
   const locationState = location.state as TestCompleteLocationState | null;
   const stateNextTestCode = locationState?.nextTestCode;
-  const needsSessionFetch = stateNextTestCode === undefined;
+  const stateTests = locationState?.tests;
+  const needsSessionFetch = stateNextTestCode === undefined || stateTests === undefined;
   const sessionStateQuery = useSessionState(hasSession && needsSessionFetch);
 
   usePageTitle(t('pages.testDone.title'));
@@ -61,6 +72,7 @@ export default function TestCompletePage() {
   }
 
   let nextTestCode: string | null = stateNextTestCode ?? null;
+  let remainingSourceTests: PublicTestSummary[] = stateTests ?? [];
   if (needsSessionFetch) {
     if (sessionStateQuery.isPending) {
       return <TestCompleteSkeleton />;
@@ -73,6 +85,7 @@ export default function TestCompletePage() {
       return <TestCompleteSkeleton />;
     }
     nextTestCode = data.currentTestCode ?? pickNextTestCode(data.tests);
+    remainingSourceTests = data.tests;
   }
 
   if (!nextTestCode) {
@@ -82,9 +95,9 @@ export default function TestCompletePage() {
   }
   const resolvedNextTestCode = nextTestCode;
 
-  const nextCatalogItem = (testCatalog ?? []).find((item) => item.code === resolvedNextTestCode);
+  const nextCatalogItem = remainingSourceTests.find((item) => item.code === resolvedNextTestCode);
   const remainingCatalogItems = nextCatalogItem
-    ? (testCatalog ?? []).filter((item) => item.order >= nextCatalogItem.order)
+    ? remainingSourceTests.filter((item) => item.order >= nextCatalogItem.order)
     : [];
   const remainingMinutes = remainingCatalogItems.reduce((sum, item) => sum + item.estimatedMinutes, 0);
 

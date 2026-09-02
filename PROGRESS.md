@@ -4,7 +4,7 @@
 > PM har vazifa boshlanganda va tugaganda **darhol** yangilaydi.
 
 **Loyiha:** Shaxsiyat (`16shaxsiyat.uz`) · ichki nom `StudentRoadMap`
-**Oxirgi yangilanish:** 2026-09-02 · **Joriy bosqich:** B4 (AI modul) ‖ B6 (Admin UI) · **Joriy vazifa:** P34–P36 loyihalash (dastur/biriktirish modeli)
+**Oxirgi yangilanish:** 2026-09-02 · **Joriy bosqich:** B4 (AI modul) ‖ B6 (Admin UI) · **Joriy vazifa:** P37 katalog backend ‖ keyingi to'lqin
 
 ---
 
@@ -34,7 +34,7 @@
 | P14 | Maktab va o'quvchi admin API | backend-dotnet | ✅ | — | QA: PASS · xotirada saralash tuzatildi |
 | P15 | Sessiya va dashboard API | backend-dotnet | ✅ | — | QA: FAIL→PASS · kesh bloklovchisi tuzatildi |
 | P16 | AI abstraksiya va prompt | ai-integration | ✅ | — | maxfiylik testi majburiy · validator 5 bosqich |
-| P17 | 3 provider (Gemini/OpenAI/Anthropic) | ai-integration | ⬜ | — | Real kalit kerak (§8-1) |
+| P17 | 3 provider (Gemini/OpenAI/Anthropic) | ai-integration | ✅ | — | 709 test · **jonli kalit bilan sinalmagan** |
 | P18 | Fon navbati, fallback | ai-integration | ⬜ | — | |
 | P19 | Frontend skeleti | frontend-react | ✅ | — | QA: PASS · 18 test · Vite qoldiqlari tozalandi |
 | P20 | Ommaviy UI: landing va anketa | frontend-react | ✅ | — | QA: PASS · 63 test · 390px vizual tekshiruv qoldi |
@@ -49,11 +49,12 @@
 | P29 | Katalog va audit UI | frontend-react | ⬜ | — | |
 | P30 | E2E testlar | qa-reviewer | ⬜ | — | |
 | P31 | Xavfsizlik va mustahkamlash | qa-reviewer | ⬜ | — | |
-| P32 | Docker, CI/CD, yakuniy hujjat | backend-dotnet | 🟡 | — | Dockerfile.api/web va compose tayyor; CI/CD va hujjat qoldi |
+| P32 | Docker, CI/CD, yakuniy hujjat | backend-dotnet | ✅ | — | CI 5 job · backup/restore sinaldi · CD ochiq (remote yo'q) |
 | P33 | Anketa konstruktori | backend + frontend | ⬜ | — | P29 dan keyin |
 | P34 | Dastur modeli va biriktirish | backend-dotnet | ✅ | — | QA: FAIL→PASS · migratsiya backfill tuzatildi |
-| P35 | Admin: savollar, dasturlar, biriktirish | frontend-react | ⬜ | — | **Yangi** · P34 dan keyin |
-| P36 | Ommaviy: dastur tanlash, so'rovnoma | frontend-react | ⬜ | — | **Yangi** · P34 dan keyin |
+| P35 | Admin: savollar, dasturlar, biriktirish | frontend-react | ✅ | — | Dasturlar ishlaydi; katalog P37 ni kutadi |
+| P36 | Ommaviy: dastur tanlash, so'rovnoma | frontend-react | ✅ | — | Bitta dasturda oqim o'zgarmadi (regressiya testi) |
+| P37 | Katalog CRUD (backend) | backend-dotnet | ⬜ | — | **Yangi** · P35 UI ulanadigan backend yo'qligi aniqlandi |
 
 ---
 
@@ -274,6 +275,8 @@
 | ~~3 ta test SQLite `DateTimeOffset` cheklovi sababli `Skip`~~ — **yopildi (P15)**: sinov muhitiga value converter qo'shildi, `Skip` soni **0** | Saralash faqat Postgres'da sinaladi | P30 (E2E) da Testcontainers/Postgres bilan yopiladi |
 | `frontend` da `sessionStore.testCatalog` hamon bor (backend endi `name`/`estimatedMinutes` beradi) | Ikki manba — kelajakda nomuvofiqlik | Kichik tozalash: `testCatalog` olib tashlanib, nom `GET /sessions/me` dan olinsin. P22 bilan birga |
 | 390px/1440px real brauzer vizual tekshiruvi hech bir ekranda qilinmagan | Gorizontal scroll yoki konsol xatosi sezilmay qolishi mumkin | Chrome MCP kengaytmasi ulanmagan; subagent uni ocholmaydi. Egasi yoqsa P21 dan boshlab tekshiriladi, aks holda P30 (E2E) da Playwright bilan |
+| "Dasturda shaxsiyat batareyasi bormi" frontend'da `"MBTI16"` kodini qidirish bilan aniqlanadi | Custom dastur boshqa kod ishlatsa yoki kod o'zgarsa — natija ekrani jimgina noto'g'ri holatga tushadi | Backend `GetSessionStateResult` va `programs[]` ga aniq `hasPersonalityBattery` bayrog'i qo'shsin. Keyingi backend to'lqinida |
+| `shared/api/types.ts` da `CompleteTestResponse`/`CompleteSessionResponse`/`StudentResultResponse` hamon qo'lda yozilgan ("MUVAQQAT") | Ikki manba — shartnoma o'zgarsa sezilmaydi | P35 tugagach umumiy `generate:api` o'tkazish va ularni re-export'ga almashtirish |
 | Havola ochilishi hisoblagichi botlar va takroriy ochish bilan shishadi (per-IP/qurilma dedup yo'q) | Voronkaning yuqori bo'g'ini haqiqiydan kattaroq ko'rinadi | MVP uchun qabul qilindi. Kerak bo'lsa `docs/13` da CDN/Cloudflare analitikasi bilan solishtirish yoki sessiya cookie bilan dedup |
 | `PublicApiTestFactory` `EnsureCreated()` ishlatadi — integratsiya testlari **migratsiyalarni umuman bajarmaydi** | Migratsiya xatolari testlarda ko'rinmaydi (P34 QA aynan shu sababli bloklovchini topdi) | P30 (E2E) da Testcontainers bilan haqiqiy `Database.Migrate()` yo'lini sinash |
 | ~~`env.ts` bo'sh `VITE_API_BASE_URL` ni `localhost:5000` ga qaytaradi~~ — **tuzatildi (2026-09-02)**: standart qiymat endi same-origin (bo'sh satr), `/api/...` nisbiy yo'li ishlatiladi |

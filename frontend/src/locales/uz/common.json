@@ -41,7 +41,8 @@
     "account": "Hisob",
     "comingSoon": "Tez orada",
     "openMenu": "Menyuni ochish",
-    "closeMenu": "Menyuni yopish"
+    "closeMenu": "Menyuni yopish",
+    "programs": "Dasturlar"
   },
   "dataTable": {
     "paginationLabel": "Sahifalash",
@@ -196,6 +197,15 @@
     },
     "notFound": {
       "title": "Sahifa topilmadi"
+    },
+    "programs": {
+      "title": "Dasturlar"
+    },
+    "programDetail": {
+      "title": "Dastur"
+    },
+    "catalogTestDetail": {
+      "title": "Test"
     }
   },
   "test": {
@@ -778,6 +788,222 @@
     "error": {
       "title": "Statistika yuklanmadi",
       "description": "Server bilan bog'lanishda xatolik yuz berdi."
+    }
+  },
+  "publicAssessment": {
+    "programSelect": {
+      "heading": "Dasturni tanlang",
+      "summary": "{{count}} ta dastur mavjud — birini tanlang.",
+      "meta": "{{tests}} ta test · {{questions}} ta savol · ~{{minutes}} daqiqa"
+    },
+    "noPrograms": {
+      "title": "Test hali tayyor emas",
+      "description": "Bu maktab uchun test hali tayyorlanmagan, maktabingizga murojaat qiling."
+    },
+    "programRequired": {
+      "message": "Iltimos, avval dasturni tanlang."
+    },
+    "survey": {
+      "thanksHeading": "Rahmat!",
+      "thanksMessage": "Javoblaringiz saqlandi, rahmat."
+    },
+    "noBattery": {
+      "title": "Bu dastur uchun natija yo'q",
+      "description": "Shaxsiyat tipi ushbu dasturda hisoblanmaydi. Batafsil ma'lumot uchun maktabingizga murojaat qiling."
+    }
+  },
+  "programs": {
+    "filters": {
+      "searchLabel": "Qidiruv",
+      "searchPlaceholder": "Nomi yoki kodi bo'yicha",
+      "statusLabel": "Holat",
+      "statusAll": "Hammasi",
+      "activeLabel": "Faollik",
+      "activeAll": "Hammasi",
+      "activeOnly": "Faqat faol",
+      "inactiveOnly": "Faqat nofaol"
+    },
+    "table": {
+      "ariaLabel": "Dasturlar ro'yxati",
+      "name": "Nomi",
+      "code": "Kodi",
+      "kind": "Turi",
+      "visibility": "Ko'rinishi",
+      "testCount": "Testlar soni",
+      "status": "Holat",
+      "active": "Faollik",
+      "emptyTitle": "Dastur topilmadi",
+      "emptyDescription": "Filtrlarni o'zgartiring yoki yangi dastur yarating."
+    },
+    "kind": {
+      "system": "Tizim",
+      "custom": "Mening"
+    },
+    "visibility": {
+      "public": "Ommaviy",
+      "assigned": "Biriktirilgan"
+    },
+    "status": {
+      "draft": "Qoralama",
+      "published": "Nashr etilgan",
+      "archived": "Arxiv"
+    },
+    "statusBadge": {
+      "active": "Faol",
+      "inactive": "Nofaol"
+    },
+    "actions": {
+      "create": "Yangi dastur",
+      "edit": "Tahrirlash",
+      "publish": "Nashr qilish",
+      "archive": "Arxivlash",
+      "activate": "Faollashtirish",
+      "deactivate": "Nofaollashtirish",
+      "addTest": "Test qo'shish"
+    },
+    "form": {
+      "createTitle": "Yangi dastur",
+      "editTitle": "Dasturni tahrirlash",
+      "codeLabel": "Dastur kodi",
+      "codeHint": "Faqat lotin katta harflari, raqam, '_' va '-' (masalan PROFILE_9)",
+      "codeLockedHint": "Kod yaratilgandan keyin o'zgartirilmaydi",
+      "nameLabel": "Nomi",
+      "descriptionLabel": "Tavsifi",
+      "displayOrderLabel": "Tartib raqami",
+      "visibilityLabel": "Ko'rinishi",
+      "visibilityHint": "Ommaviy — barcha maktabda; Biriktirilgan — faqat tanlangan maktablarda",
+      "submitCreateCta": "Yaratish",
+      "submitEditCta": "Saqlash",
+      "createSuccess": "Dastur yaratildi",
+      "editSuccess": "Dastur yangilandi",
+      "genericError": "Saqlashda xatolik yuz berdi"
+    },
+    "publishDialog": {
+      "title": "Dasturni nashr qilish",
+      "confirmCta": "Nashr qilish",
+      "successTitle": "Dastur nashr qilindi",
+      "notPublishableError": "Kamida bitta test biriktirilmasa dasturni nashr qilib bo'lmaydi",
+      "genericError": "Nashr qilishda xatolik yuz berdi",
+      "durationWarning": "Jami vaqt {{minutes}} daqiqa — sessiya juda uzun, o'quvchilar tashlab ketishi mumkin"
+    },
+    "archiveDialog": {
+      "title": "Dasturni arxivlash",
+      "description": "Arxivlangan dastur o'quvchilarga ko'rinmay qoladi. Bu amalni bekor qilib bo'lmaydi.",
+      "confirmCta": "Arxivlash",
+      "successTitle": "Dastur arxivlandi",
+      "genericError": "Arxivlashda xatolik yuz berdi"
+    },
+    "toggleActive": {
+      "success": "Dastur holati yangilandi",
+      "error": "Holatni o'zgartirishda xatolik yuz berdi"
+    },
+    "detail": {
+      "notFoundTitle": "Dastur topilmadi",
+      "notFoundDescription": "Bunday dastur mavjud emas yoki o'chirilgan",
+      "testsHeading": "Testlar",
+      "schoolsHeading": "Biriktirilgan maktablar",
+      "durationSummary": "{{questions}} ta savol · ~{{minutes}} daqiqa",
+      "durationUnknown": "Savol/vaqt ma'lumoti hali mavjud emas",
+      "noBatteryNotice": "Bu dasturda yetuklik va aktivlik indekslari hisoblanmaydi, AI hisoboti qisqartirilgan bo'ladi."
+    },
+    "testsList": {
+      "emptyTitle": "Hali test yo'q",
+      "emptyDescription": "\"Test qo'shish\" tugmasi bilan dasturga test biriktiring.",
+      "systemLockedNotice": "Tizim dasturining tarkibi (testlar) himoyalangan — o'zgartirilmaydi.",
+      "moveUp": "Yuqoriga ko'chirish",
+      "moveDown": "Pastga ko'chirish",
+      "remove": "Olib tashlash",
+      "removeConfirmTitle": "Testni dasturdan olib tashlash",
+      "removeConfirmCta": "Olib tashlash",
+      "removeSuccess": "Test dasturdan olib tashlandi",
+      "removeError": "Olib tashlashda xatolik yuz berdi",
+      "reorderError": "Tartiblashda xatolik yuz berdi"
+    },
+    "addTestDialog": {
+      "title": "Dasturga test qo'shish",
+      "searchLabel": "Qidiruv",
+      "searchPlaceholder": "Nomi yoki kodi bo'yicha",
+      "addCta": "Qo'shish",
+      "successTitle": "Test dasturga qo'shildi",
+      "genericError": "Qo'shishda xatolik yuz berdi",
+      "questionsAndMinutes": "{{questions}} ta savol · ~{{minutes}} daqiqa",
+      "catalogUnavailableTitle": "Test katalogi hozircha mavjud emas",
+      "catalogUnavailableDescription": "Testlarni ro'yxatlaydigan xizmat hali ulanmagan. Birozdan keyin qayta urinib ko'ring.",
+      "emptyTitle": "Qo'shiladigan test topilmadi",
+      "emptyDescription": "Barcha mos testlar allaqachon dasturga biriktirilgan yoki qidiruvga mos test yo'q."
+    },
+    "schoolPanel": {
+      "assignedHeading": "Biriktirilgan maktablar ({{count}})",
+      "noneAssignedTitle": "Hali maktab biriktirilmagan",
+      "noneAssignedDescription": "Quyidagi qidiruvdan maktab tanlang.",
+      "unassignAria": "{{name}} maktabini olib tashlash",
+      "searchLabel": "Maktab qidirish",
+      "searchPlaceholder": "Maktab nomi bo'yicha",
+      "assignCta": "Biriktirish",
+      "noProgramBadge": "Dastursiz",
+      "assignError": "Biriktirishda xatolik yuz berdi",
+      "unassignError": "Olib tashlashda xatolik yuz berdi"
+    },
+    "errors": {
+      "systemProgramLocked": "Tizim dasturining tarkibini o'zgartirib bo'lmaydi"
+    }
+  },
+  "catalog": {
+    "title": "Testlar katalogi",
+    "actions": {
+      "import": "Test yuklash"
+    },
+    "systemHeading": "Tizim metodikalari",
+    "customHeading": "Mening testlarim",
+    "systemEmptyTitle": "Tizim metodikalari topilmadi",
+    "systemEmptyDescription": "Katalog xizmati hali ulanmagan bo'lishi mumkin.",
+    "customEmptyTitle": "Hali test yuklanmagan",
+    "customEmptyDescription": "\"Test yuklash\" tugmasi bilan JSON fayldan yangi test qo'shing.",
+    "errorTitle": "Katalogni yuklab bo'lmadi",
+    "errorDescription": "Testlar katalogi xizmati hozircha mavjud emas. Birozdan keyin qayta urinib ko'ring.",
+    "status": {
+      "draft": "Qoralama",
+      "published": "Nashr etilgan",
+      "archived": "Arxiv"
+    },
+    "badge": {
+      "active": "Faol",
+      "inactive": "Nofaol",
+      "system": "Tizim"
+    },
+    "scoringMode": {
+      "scored": "Ballanadi",
+      "survey": "So'rovnoma"
+    },
+    "card": {
+      "summary": "{{questions}} ta savol · ~{{minutes}} daqiqa"
+    },
+    "importDialog": {
+      "title": "Test yuklash",
+      "description": "JSON fayl yuklang — seed sxemasi bilan bir xil (code, nameUz, questions[]).",
+      "chooseFile": "Faylni tanlang yoki shu yerga tashlang",
+      "fileHint": "Faqat .json fayl",
+      "previewSummary": "{{questions}} ta savol · ~{{minutes}} daqiqa",
+      "validOk": "Fayl to'g'ri — yuklashga tayyor",
+      "issuesTitle": "Topilgan xatolar ({{count}})",
+      "submitCta": "Yuklash",
+      "successTitle": "Test Qoralama holatida yaratildi",
+      "duplicateCodeError": "Bu kod bilan test allaqachon bor.",
+      "genericError": "Yuklashda xatolik yuz berdi"
+    },
+    "detail": {
+      "notFoundTitle": "Test topilmadi",
+      "notFoundDescription": "Bunday test mavjud emas yoki o'chirilgan",
+      "questionsHeading": "Savollar",
+      "systemLockedNotice": "Bu tizim metodikasi — savollar himoyalangan, faqat ko'rish uchun."
+    },
+    "questionsTable": {
+      "text": "Matni",
+      "scale": "Shkala",
+      "direction": "Yo'nalish",
+      "directionForward": "To'g'ri",
+      "directionReverse": "Teskari",
+      "weight": "Og'irlik"
     }
   }
 }

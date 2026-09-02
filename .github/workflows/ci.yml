@@ -1,0 +1,256 @@
+name: CI
+
+# Har PR va `main`ga push'da ishga tushadi (PM.md §9 "Sifat darvozalari" — hech qachon
+# o'tkazib yuborilmaydi). Push qilinmagan davrda bu fayl faqat tayyor turadi — Actions
+# faqat GitHub'dagi remote'ga ulanganda ishga tushadi (`PROGRESS.md`: repo hozircha
+# `origin`siz, egasi ruxsat berganda ulanadi).
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Eski run'lar yangi push kelganda bekor qilinadi — CI navbatida turib qolmaydi.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  DOTNET_EF_VERSION: '10.0.10'
+  NODE_VERSION: '22'
+  # Faqat build/test uchun — HAQIQIY sirlar emas (CLAUDE.md 4-qoida: sirlar kodda yo'q).
+  # `dotnet ef migrations has-pending-model-changes` va Swagger generatsiyasi uchun ilova
+  # ishga tushishi kerak, lekin haqiqiy DB'ga ulanmaydi (`Program.cs`: migratsiya/seed
+  # bayrog'isiz DB'ga umuman tegilmaydi — quyidagi "contract-sync" job izohiga qara).
+  CI_DUMMY_JWT_KEY: 'ci-only-dummy-signing-key-at-least-32-bytes-long-000000'
+  CI_DUMMY_ENCRYPTION_KEY: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+
+jobs:
+  # ---------------------------------------------------------------------------------------
+  # 1) Backend: build (0 ogohlantirish — TreatWarningsAsErrors), test, migratsiya sinxronligi.
+  # ---------------------------------------------------------------------------------------
+  backend:
+    name: Backend (build · test · migrations)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: NuGet keshi
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: dotnet restore
+        run: dotnet restore StudentRoadMap.sln
+
+      # `Directory.Build.props` da `TreatWarningsAsErrors=true` — shuning uchun oddiy
+      # `dotnet build` allaqachon "0 ogohlantirish" talabini o'zi bajaradi (backend-dotnet.md).
+      - name: dotnet build (0 xato, 0 ogohlantirish)
+        run: dotnet build StudentRoadMap.sln --no-restore --configuration Release
+
+      # Testlar haqiqiy Postgres/Docker talab qilmaydi: integratsiya testlari SQLite +
+      # `WebApplicationFactory` ichki `ConfigureAppConfiguration` orqali sozlanadi
+      # (`PublicApiTestFactory` — Jwt/Encryption kalitlari test konfiguratsiyasida qattiq
+      # yozilgan, muhit o'zgaruvchisi shart emas).
+      - name: dotnet test
+        run: >
+          dotnet test StudentRoadMap.sln --no-build --configuration Release
+          --collect:"XPlat Code Coverage" --results-directory ./coverage
+          --logger "trx;LogFileName=test-results.trx"
+
+      - name: Test natijalarini saqlash
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: |
+            **/*.trx
+            coverage/**
+          retention-days: 14
+
+      # `docs/12` §1: Domain/Scoring 100%, Application ≥70%, umumiy ≥60% qoplama talab
+      # qilinadi. Bu qadam hozircha faqat HISOBOT chiqaradi (artifact) — loyiha bo'yicha
+      # granulyar chegara (Domain ICHIDAGI faqat `Scoring` papkasi uchun 100%) test
+      # loyihalari csproj'iga qo'shiladigan `coverlet` threshold sozlamasini talab qiladi
+      # (`tests/**` — backend agentining fayli, shu prompt doirasida tegilmadi). Qattiq
+      # gate qo'shish keyingi qadam — hozircha "yashil bo'lish uchun" o'tkazib yuborilmasin.
+      - name: dotnet ef global tool
+        run: |
+          dotnet tool install --global dotnet-ef --version ${{ env.DOTNET_EF_VERSION }}
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      # Haqiqiy DB kerak EMAS — bu buyruq joriy modelni oxirgi migratsiya snapshotiga
+      # solishtiradi (kod darajasida), ulanishni ochmaydi. Shu sabab bu yerda ham faqat
+      # DUMMY qiymatlar (host nomi ham xayoliy) — `docs/13` MAXSUS DIQQAT bo'limida
+      # tasdiqlangan xulosa.
+      - name: dotnet ef migrations has-pending-model-changes
+        env:
+          ASPNETCORE_ENVIRONMENT: Production
+          ConnectionStrings__Postgres: 'Host=ci-dummy;Port=5432;Database=studentroadmap;Username=srm;Password=dummy'
+          Jwt__Key: ${{ env.CI_DUMMY_JWT_KEY }}
+          Security__EncryptionKey: ${{ env.CI_DUMMY_ENCRYPTION_KEY }}
+        run: >
+          dotnet ef migrations has-pending-model-changes
+          -p src/StudentRoadMap.Infrastructure -s src/StudentRoadMap.Api --no-build --configuration Release
+
+  # ---------------------------------------------------------------------------------------
+  # 2) Frontend: typecheck, lint, unit testlar, build.
+  # ---------------------------------------------------------------------------------------
+  frontend:
+    name: Frontend (typecheck · lint · test · build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test -- --coverage
+      - run: npm run build
+
+      - name: Build natijasini saqlash
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------------------
+  # 3) API kontrakt sinxronligi (PM.md §9 4-darvoza): `npm run generate:api`dan keyin
+  #    `git diff` BO'SH bo'lishi shart — aks holda backend va frontend TS tiplari orasida
+  #    kelishmovchilik bor. Buning uchun API'ni haqiqatan ko'tarish kerak (Swagger'ni
+  #    o'qish uchun) — lekin `--migrate`/`--seed` chaqirilmagani uchun DB'ga UMUMAN
+  #    ulanmaydi (`Program.cs`ni tekshirib tasdiqlangan: shu ikki bayroq bo'lmasa va
+  #    `App:SeedOnStartup=false` bo'lsa, startup DB'ga tegmaydi).
+  # ---------------------------------------------------------------------------------------
+  api-contract-sync:
+    name: API kontrakt sinxronligi (schema.d.ts)
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: API'ni fonda ko'tarish (DB'siz — faqat Swagger uchun)
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          ASPNETCORE_URLS: http://localhost:5402
+          ConnectionStrings__Postgres: 'Host=ci-dummy;Port=5432;Database=studentroadmap;Username=srm;Password=dummy'
+          Jwt__Key: ${{ env.CI_DUMMY_JWT_KEY }}
+          Security__EncryptionKey: ${{ env.CI_DUMMY_ENCRYPTION_KEY }}
+        run: |
+          dotnet run --project src/StudentRoadMap.Api --no-launch-profile > api.log 2>&1 &
+          echo $! > api.pid
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:5402/health >/dev/null; then echo "API tayyor"; exit 0; fi
+            sleep 2
+          done
+          echo "API 60 soniyada ko'tarilmadi:"; cat api.log; exit 1
+
+      - run: npm ci
+        working-directory: frontend
+
+      - name: schema.d.ts qayta generatsiya qilish
+        working-directory: frontend
+        env:
+          API_URL: http://localhost:5402
+        run: npm run generate:api
+
+      - name: API'ni to'xtatish
+        if: always()
+        run: kill "$(cat api.pid)" 2>/dev/null || true
+
+      - name: git diff bo'sh bo'lishi shart (kontrakt sinxron)
+        run: |
+          if ! git diff --exit-code -- frontend/src/shared/api/schema.d.ts; then
+            echo "::error::frontend/src/shared/api/schema.d.ts eskirgan — 'npm run generate:api' ishga tushirib, natijani commit qiling."
+            exit 1
+          fi
+
+  # ---------------------------------------------------------------------------------------
+  # 4) Docker image'lari — deploy'dan oldin qurilishi tekshiriladi (haqiqiy sirlar EMAS,
+  #    faqat qurish uchun zarur bo'lgan qiymatlar — konteynerlar ishga tushirilmaydi).
+  # ---------------------------------------------------------------------------------------
+  docker-build:
+    name: Docker image qurish (api · app)
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: docker compose config tekshiruvi
+        env:
+          DB_PASSWORD: ci-build-only-dummy
+          Jwt__Key: ${{ env.CI_DUMMY_JWT_KEY }}
+          Security__EncryptionKey: ${{ env.CI_DUMMY_ENCRYPTION_KEY }}
+          TUNNEL_TOKEN: ci-build-only-dummy
+        run: docker compose config --quiet
+
+      - name: Image'larni qurish
+        env:
+          DB_PASSWORD: ci-build-only-dummy
+          Jwt__Key: ${{ env.CI_DUMMY_JWT_KEY }}
+          Security__EncryptionKey: ${{ env.CI_DUMMY_ENCRYPTION_KEY }}
+          TUNNEL_TOKEN: ci-build-only-dummy
+        run: docker compose build api app
+
+  # ---------------------------------------------------------------------------------------
+  # 5) E2E (Playwright) — `docs/12` §8/§10: faqat `main`ga push'da, VA faqat stsenariylar
+  #    yozilgandan keyin (P30). Hozircha `frontend/playwright.config.*` yo'q — shu sabab
+  #    bu job avtomatik o'tkazib yuboriladi (yashil "skipped", qizil emas).
+  # ---------------------------------------------------------------------------------------
+  e2e:
+    name: E2E (Playwright, faqat main)
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Playwright sozlanganini tekshirish
+        id: check
+        run: |
+          if [ -f frontend/playwright.config.ts ] || [ -f frontend/playwright.config.js ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Playwright hali sozlanmagan (P30) — E2E job o'tkazib yuborildi."
+          fi
+
+      - if: steps.check.outputs.configured == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - if: steps.check.outputs.configured == 'true'
+        working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps
+          npm run test:e2e

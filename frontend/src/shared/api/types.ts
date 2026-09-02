@@ -60,11 +60,18 @@ export interface PagedResult<T> {
 
 export type Gender = NonNullable<components['schemas']['Gender']>;
 
-/** `docs/07` 1.1-bo'lim — boshlanish ekranidagi bitta test blokining ta'rifi. */
+/** `docs/07` 1.1-bo'lim — boshlanish ekranidagi bitta test blokining ta'rifi (ORQAGA MOSLIK — barcha nashr qilingan testlar, dasturdan qat'i nazar). */
 export type PublicTestCatalogItem = components['schemas']['PublicTestCatalogItemDto'];
 
 /** `GET /api/public/schools/{slug}?k=` — `docs/07` 1.1-bo'lim javobi. */
 export type PublicSchoolInfo = components['schemas']['GetSchoolInfoResult'];
+
+/**
+ * Maktab uchun mavjud bitta dastur (`docs/06` 8-bo'lim, `prompts/34`/`prompts/36`) —
+ * `GetSchoolInfoResult.programs[]`. Bir nechta bo'lsa Landing (E-1) shulardan tanlov
+ * ko'rsatadi; `code` — `POST /sessions` so'rov tanasidagi `programCode`ga uzatiladi.
+ */
+export type PublicProgramSummary = components['schemas']['PublicProgramSummaryDto'];
 
 /** `POST /api/public/sessions` so'rov tanasi — `docs/07` 1.2-bo'lim. */
 export type StartSessionRequestBody = components['schemas']['StartSessionRequest'];

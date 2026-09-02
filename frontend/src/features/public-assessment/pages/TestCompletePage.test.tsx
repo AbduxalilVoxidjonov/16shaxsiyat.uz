@@ -11,16 +11,17 @@ function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 }
 
-const CATALOG = [
-  { code: 'MBTI16', name: '16 tipli shaxsiyat modeli', questionCount: 60, estimatedMinutes: 9, order: 1 },
-  { code: 'BIG5', name: 'Shaxsiyatning 5 omili', questionCount: 50, estimatedMinutes: 8, order: 2 },
-  { code: 'RIASEC', name: 'Kasb qiziqishlari', questionCount: 48, estimatedMinutes: 7, order: 3 },
-  { code: 'ACTIVITY', name: 'Aktivlik va motivatsiya', questionCount: 32, estimatedMinutes: 5, order: 4 },
+// `PublicTestSummaryDto` shakli (docs/07 1.3-bo'lim, P36: `name`/`estimatedMinutes` bilan) —
+// `TestPage` xuddi shu ro'yxatni `navigate(..., { state: { tests } })` orqali uzatadi.
+const SESSION_TESTS = [
+  { code: 'MBTI16', name: '16 tipli shaxsiyat modeli', status: 'Completed', answered: 60, total: 60, order: 1, estimatedMinutes: 9 },
+  { code: 'BIG5', name: 'Shaxsiyatning 5 omili', status: 'Completed', answered: 50, total: 50, order: 2, estimatedMinutes: 8 },
+  { code: 'RIASEC', name: 'Kasb qiziqishlari', status: 'InProgress', answered: 0, total: 48, order: 3, estimatedMinutes: 7 },
+  { code: 'ACTIVITY', name: 'Aktivlik va motivatsiya', status: 'Locked', answered: 0, total: 32, order: 4, estimatedMinutes: 5 },
 ];
 
 function seedSession() {
   useSessionStore.getState().setSession('sess-token-1', 'demo-school', 'assessment-1');
-  useSessionStore.getState().setTestCatalog(CATALOG);
 }
 
 function renderPage(initialPath: string, state?: unknown) {
@@ -54,13 +55,13 @@ describe('TestCompletePage', () => {
   });
 
   it("sessiya yo'q bo'lsa landing'ga qaytaradi", async () => {
-    renderPage('/t/demo-school/test/BIG5/done', { nextTestCode: 'RIASEC' });
+    renderPage('/t/demo-school/test/BIG5/done', { nextTestCode: 'RIASEC', tests: SESSION_TESTS });
     expect(await screen.findByText('LANDING_STUB')).toBeInTheDocument();
   });
 
-  it("location.state'dagi nextTestCode bo'yicha qolgan bloklar va vaqtni ko'rsatadi (tabriknoma)", async () => {
+  it("location.state'dagi nextTestCode/tests bo'yicha qolgan bloklar va vaqtni ko'rsatadi (tabriknoma)", async () => {
     seedSession();
-    renderPage('/t/demo-school/test/BIG5/done', { nextTestCode: 'RIASEC' });
+    renderPage('/t/demo-school/test/BIG5/done', { nextTestCode: 'RIASEC', tests: SESSION_TESTS });
 
     expect(await screen.findByText('Ajoyib! Blok tugadi')).toBeInTheDocument();
     // Qolgan: RIASEC (7) + ACTIVITY (5) = 12 daqiqa, 2 ta blok.
@@ -72,7 +73,7 @@ describe('TestCompletePage', () => {
   it("'Davom etish' bosilganda keyingi test blokiga o'tadi", async () => {
     seedSession();
     const user = userEvent.setup();
-    renderPage('/t/demo-school/test/BIG5/done', { nextTestCode: 'RIASEC' });
+    renderPage('/t/demo-school/test/BIG5/done', { nextTestCode: 'RIASEC', tests: SESSION_TESTS });
 
     await user.click(await screen.findByRole('button', { name: 'Davom etish' }));
 
@@ -90,18 +91,37 @@ describe('TestCompletePage', () => {
           student: { firstNameShort: 'Sardor', grade: 9 },
           expiresAt: '2026-09-10T00:00:00Z',
           currentTestCode: 'RIASEC',
-          tests: [
-            { code: 'MBTI16', status: 'Completed', answered: 60, total: 60, order: 1 },
-            { code: 'BIG5', status: 'Completed', answered: 50, total: 50, order: 2 },
-            { code: 'RIASEC', status: 'InProgress', answered: 0, total: 48, order: 3 },
-            { code: 'ACTIVITY', status: 'Locked', answered: 0, total: 32, order: 4 },
-          ],
+          tests: SESSION_TESTS,
           progressPercent: 55,
         }),
       ),
     );
 
     renderPage('/t/demo-school/test/BIG5/done');
+
+    expect(await screen.findByText('Kasb qiziqishlari')).toBeInTheDocument();
+  });
+
+  it("location.state'da faqat nextTestCode bo'lsa (tests yo'q) sessiya holatidan qayta hisoblaydi", async () => {
+    // Eski (P36'gacha) `TestPage` faqat `nextTestCode`ni uzatgan bo'lishi mumkin edi —
+    // `tests` yo'qligida ham to'g'ri ishlashi kerak (fallback fetch).
+    seedSession();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        jsonResponse({
+          assessmentId: 'assessment-1',
+          status: 'InProgress',
+          student: { firstNameShort: 'Sardor', grade: 9 },
+          expiresAt: '2026-09-10T00:00:00Z',
+          currentTestCode: 'RIASEC',
+          tests: SESSION_TESTS,
+          progressPercent: 55,
+        }),
+      ),
+    );
+
+    renderPage('/t/demo-school/test/BIG5/done', { nextTestCode: 'RIASEC' });
 
     expect(await screen.findByText('Kasb qiziqishlari')).toBeInTheDocument();
   });

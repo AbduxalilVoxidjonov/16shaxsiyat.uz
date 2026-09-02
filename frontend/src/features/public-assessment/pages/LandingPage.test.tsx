@@ -20,7 +20,43 @@ const SCHOOL_INFO_BODY = {
   ],
   totalEstimatedMinutes: 31,
   consentText: "Farzandimning testdan o'tishiga roziman.",
+  // Migratsiyadan keyingi haqiqiy holat — bitta tizim dasturi (`docs/06` 8-bo'lim, `prompts/34`
+  // C7-band): `programs.length === 1` bo'lganda `LandingPage` ESKI (tanlovsiz) oqimni ishlatadi.
+  programs: [
+    {
+      code: 'PERSONALITY_PROFILE',
+      nameUz: 'Shaxsiyat profili',
+      descriptionUz: null,
+      testCount: 4,
+      questionCount: 190,
+      estimatedMinutes: 31,
+    },
+  ],
 };
+
+const TWO_PROGRAMS_BODY = {
+  ...SCHOOL_INFO_BODY,
+  programs: [
+    {
+      code: 'PERSONALITY_PROFILE',
+      nameUz: 'Shaxsiyat profili',
+      descriptionUz: "4 blokli to'liq baholash",
+      testCount: 4,
+      questionCount: 190,
+      estimatedMinutes: 31,
+    },
+    {
+      code: 'CAREER_SURVEY',
+      nameUz: 'Kasb so\'rovnomasi',
+      descriptionUz: 'Qisqa so\'rovnoma',
+      testCount: 1,
+      questionCount: 20,
+      estimatedMinutes: 4,
+    },
+  ],
+};
+
+const NO_PROGRAMS_BODY = { ...SCHOOL_INFO_BODY, programs: [] };
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -178,5 +214,59 @@ describe('LandingPage', () => {
       expect(useSessionStore.getState().sessionToken).toBeNull();
     });
     expect(screen.queryByRole('button', { name: 'Davom ettirish' })).not.toBeInTheDocument();
+  });
+
+  // `prompts/36` — dastur tanlovi.
+  it("bitta dastur bo'lganda tanlov ekrani ko'rsatilmaydi (regressiya)", async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(SCHOOL_INFO_BODY)));
+
+    renderLanding();
+
+    await screen.findByText(SCHOOL_INFO_BODY.name);
+    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
+    expect(screen.queryByText('Shaxsiyat profili')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Boshlash' })).toBeEnabled();
+  });
+
+  it("bir nechta dastur bo'lganda tanlov kartalarini ko'rsatadi, tanlanmaguncha Boshlash o'chiq bo'ladi", async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(TWO_PROGRAMS_BODY)));
+    const user = userEvent.setup();
+
+    renderLanding();
+
+    await screen.findByText(SCHOOL_INFO_BODY.name);
+    expect(screen.getByText('Shaxsiyat profili')).toBeInTheDocument();
+    expect(screen.getByText("Kasb so'rovnomasi")).toBeInTheDocument();
+    const startButton = screen.getByRole('button', { name: 'Boshlash' });
+    expect(startButton).toBeDisabled();
+
+    await user.click(screen.getByText('Shaxsiyat profili'));
+    expect(startButton).toBeEnabled();
+  });
+
+  it("dastur tanlab 'Boshlash' bosilganda tanlov sessionStore'da saqlanadi va ro'yxatdan o'tishga o'tadi", async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(TWO_PROGRAMS_BODY)));
+    const user = userEvent.setup();
+
+    renderLanding();
+
+    await user.click(await screen.findByText("Kasb so'rovnomasi"));
+    await user.click(screen.getByRole('button', { name: 'Boshlash' }));
+
+    expect(await screen.findByText('REGISTER_STUB')).toBeInTheDocument();
+    expect(useSessionStore.getState().selectedProgramCode).toBe('CAREER_SURVEY');
+    expect(useSessionStore.getState().selectedProgramSlug).toBe('demo-school');
+  });
+
+  it("maktabda dastur yo'q bo'lsa tushunarli xabar ko'rsatadi (Boshlash tugmasisiz)", async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(NO_PROGRAMS_BODY)));
+
+    renderLanding();
+
+    await screen.findByText(SCHOOL_INFO_BODY.name);
+    expect(
+      screen.getByText('Bu maktab uchun test hali tayyorlanmagan, maktabingizga murojaat qiling.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Boshlash' })).not.toBeInTheDocument();
   });
 });

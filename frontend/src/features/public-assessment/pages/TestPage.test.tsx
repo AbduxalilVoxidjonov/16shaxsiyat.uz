@@ -33,11 +33,13 @@ function sessionStateBody(overrides: Record<string, unknown> = {}) {
     student: { firstNameShort: 'Sardor', grade: 9 },
     expiresAt: '2026-09-10T00:00:00Z',
     currentTestCode: 'BIG5',
+    // `name`/`estimatedMinutes` — P36: backend `PublicTestSummaryDto`ga qo'shdi, `TestPage`
+    // endi test nomini shu yerdan oladi (`sessionStore.testCatalog` OLIB TASHLANDI).
     tests: [
-      { code: 'MBTI16', status: 'Completed', answered: 60, total: 60, order: 1 },
-      { code: 'BIG5', status: 'InProgress', answered: 0, total: 3, order: 2 },
-      { code: 'RIASEC', status: 'Locked', answered: 0, total: 48, order: 3 },
-      { code: 'ACTIVITY', status: 'Locked', answered: 0, total: 32, order: 4 },
+      { code: 'MBTI16', name: '16 tipli shaxsiyat modeli', status: 'Completed', answered: 60, total: 60, order: 1, estimatedMinutes: 9 },
+      { code: 'BIG5', name: 'Shaxsiyatning 5 omili', status: 'InProgress', answered: 0, total: 3, order: 2, estimatedMinutes: 8 },
+      { code: 'RIASEC', name: 'Kasb qiziqishlari', status: 'Locked', answered: 0, total: 48, order: 3, estimatedMinutes: 7 },
+      { code: 'ACTIVITY', name: 'Aktivlik va motivatsiya', status: 'Locked', answered: 0, total: 32, order: 4, estimatedMinutes: 5 },
     ],
     progressPercent: 25,
     ...overrides,
@@ -148,14 +150,6 @@ function renderTestPage(initialPath = '/t/demo-school/test/BIG5') {
 
 function seedSession() {
   useSessionStore.getState().setSession('sess-token-1', 'demo-school', 'assessment-1');
-  useSessionStore
-    .getState()
-    .setTestCatalog([
-      { code: 'MBTI16', name: '16 tipli shaxsiyat modeli', questionCount: 60, estimatedMinutes: 9, order: 1 },
-      { code: 'BIG5', name: 'Shaxsiyatning 5 omili', questionCount: 3, estimatedMinutes: 8, order: 2 },
-      { code: 'RIASEC', name: 'Kasb qiziqishlari', questionCount: 48, estimatedMinutes: 7, order: 3 },
-      { code: 'ACTIVITY', name: 'Aktivlik va motivatsiya', questionCount: 32, estimatedMinutes: 5, order: 4 },
-    ]);
 }
 
 describe('TestPage', () => {
@@ -176,7 +170,7 @@ describe('TestPage', () => {
     expect(await screen.findByText('LANDING_STUB')).toBeInTheDocument();
   });
 
-  it("test nomi (katalogdan), blok indikatori va savollarni ko'rsatadi", async () => {
+  it("test nomi (sessiya holatidan), blok indikatori va savollarni ko'rsatadi", async () => {
     seedSession();
     mockFetch();
     renderTestPage();

@@ -21,3 +21,7 @@ dist/
 .DS_Store
 .srm_bundle.json
 /tmp/
+
+# Zaxira nusxalar — shaxsiy ma'lumot (o'quvchi FISH, tug'ilgan sana) bo'lgani uchun
+# hech qachon repo'ga tushmasin (scripts/backup.sh, docs/13 §7).
+/backups/

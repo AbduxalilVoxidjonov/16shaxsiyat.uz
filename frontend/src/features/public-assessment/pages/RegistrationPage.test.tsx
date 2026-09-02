@@ -22,9 +22,38 @@ function schoolInfoBody(overrides: Record<string, unknown> = {}) {
     ],
     totalEstimatedMinutes: 9,
     consentText: CONSENT_TEXT,
+    programs: [
+      {
+        code: 'PERSONALITY_PROFILE',
+        nameUz: 'Shaxsiyat profili',
+        descriptionUz: null,
+        testCount: 1,
+        questionCount: 60,
+        estimatedMinutes: 9,
+      },
+    ],
     ...overrides,
   };
 }
+
+const TWO_PROGRAMS = [
+  {
+    code: 'PERSONALITY_PROFILE',
+    nameUz: 'Shaxsiyat profili',
+    descriptionUz: null,
+    testCount: 1,
+    questionCount: 60,
+    estimatedMinutes: 9,
+  },
+  {
+    code: 'CAREER_SURVEY',
+    nameUz: "Kasb so'rovnomasi",
+    descriptionUz: null,
+    testCount: 1,
+    questionCount: 20,
+    estimatedMinutes: 4,
+  },
+];
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -82,6 +111,7 @@ function renderRegistration(initialPath = '/t/demo-school/register?k=tok123') {
       <ToastProvider>
         <MemoryRouter initialEntries={[initialPath]}>
           <Routes>
+            <Route path="/t/:slug" element={<div>LANDING_STUB</div>} />
             <Route path="/t/:slug/register" element={<RegistrationPage />} />
             <Route path="/t/:slug/test/:testCode" element={<div>TEST_STUB</div>} />
             <Route path="/t/:slug/finish" element={<div>FINISH_STUB</div>} />
@@ -344,5 +374,71 @@ describe('RegistrationPage', () => {
     await user.click(screen.getByRole('button', { name: 'Testni boshlash' }));
 
     expect(await screen.findByText(/6-20 yosh oralig'iga to'g'ri kelishi kerak/)).toBeInTheDocument();
+  });
+
+  // `prompts/36` — dastur tanlovi.
+  it("bir nechta dastur bo'lganda tanlov qilinmagan bo'lsa tanlov ekraniga (landing) qaytaradi", async () => {
+    mockFetch({ schoolInfo: schoolInfoBody({ programs: TWO_PROGRAMS }) });
+    renderRegistration();
+
+    expect(await screen.findByText('LANDING_STUB')).toBeInTheDocument();
+  });
+
+  it("bir nechta dastur bo'lganda tanlangan dastur kodi POST /sessions'ga programCode sifatida yuboriladi", async () => {
+    useSessionStore.getState().setSelectedProgram('demo-school', 'CAREER_SURVEY');
+    const fetchMock = mockFetch({ schoolInfo: schoolInfoBody({ programs: TWO_PROGRAMS }) });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderRegistration();
+
+    await screen.findByText(CONSENT_TEXT);
+    await fillValidForm(user);
+    await user.click(screen.getByLabelText(CONSENT_LABEL));
+    await user.click(screen.getByRole('button', { name: 'Testni boshlash' }));
+
+    await waitFor(() => {
+      expect(useSessionStore.getState().sessionToken).toBe('sess-token-1');
+    });
+
+    const sessionCall = fetchMock.mock.calls.find(
+      ([input, init]) =>
+        String(input).includes('/api/public/sessions') && (init as RequestInit | undefined)?.method === 'POST',
+    );
+    const body = JSON.parse((sessionCall?.[1] as RequestInit).body as string) as Record<string, unknown>;
+    expect(body.programCode).toBe('CAREER_SURVEY');
+  });
+
+  it("bitta dastur bo'lganda programCode umuman yuborilmaydi (regressiya)", async () => {
+    const fetchMock = mockFetch({});
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderRegistration();
+
+    await screen.findByText(CONSENT_TEXT);
+    await fillValidForm(user);
+    await user.click(screen.getByLabelText(CONSENT_LABEL));
+    await user.click(screen.getByRole('button', { name: 'Testni boshlash' }));
+
+    await waitFor(() => {
+      expect(useSessionStore.getState().sessionToken).toBe('sess-token-1');
+    });
+
+    const sessionCall = fetchMock.mock.calls.find(
+      ([input, init]) =>
+        String(input).includes('/api/public/sessions') && (init as RequestInit | undefined)?.method === 'POST',
+    );
+    const body = JSON.parse((sessionCall?.[1] as RequestInit).body as string) as Record<string, unknown>;
+    expect(body.programCode).toBeUndefined();
+  });
+
+  it("400 PROGRAM_REQUIRED kelsa tanlov ekraniga (landing) qaytaradi", async () => {
+    mockFetch({ postSessionResponse: () => problemResponse('PROGRAM_REQUIRED', 400) });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderRegistration();
+
+    await screen.findByText(CONSENT_TEXT);
+    await fillValidForm(user);
+    await user.click(screen.getByLabelText(CONSENT_LABEL));
+    await user.click(screen.getByRole('button', { name: 'Testni boshlash' }));
+
+    expect(await screen.findByText('LANDING_STUB')).toBeInTheDocument();
   });
 });
