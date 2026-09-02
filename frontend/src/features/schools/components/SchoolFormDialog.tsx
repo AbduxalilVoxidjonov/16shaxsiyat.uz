@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
-import { Drawer } from '@/shared/ui/Drawer';
+import { Dialog } from '@/shared/ui/Dialog';
 import { Button } from '@/shared/ui/Button';
 import { Input } from '@/shared/ui/Input';
 import { Select } from '@/shared/ui/Select';
@@ -21,7 +21,7 @@ import {
 } from '../model/schoolFormSchema';
 import type { SchoolUpsertRequest } from '../model/types';
 
-export interface SchoolFormDrawerProps {
+export interface SchoolFormDialogProps {
   open: boolean;
   /** `null` — yaratish rejimi; berilsa — shu maktabni tahrirlash. */
   schoolId: string | null;
@@ -39,11 +39,11 @@ function emptyToUndefined(value: string | undefined): string | undefined {
 /**
  * Yaratish/tahrirlash drawer'i — docs/11-ux-va-ekranlar.md A-3; maydonlar `docs/02-biznes-
  * talablar.md` FR-1.1 bo'yicha ("nomi, viloyat, tuman, raqami, mas'ul shaxs, telefon,
- * kunlik limit, kirish kodi, izoh"). Submit tugmasi `Drawer`ning `footer`ida (`children`dan
+ * kunlik limit, kirish kodi, izoh"). Submit tugmasi `Dialog`ning `footer`ida (`children`dan
  * tashqarida) — shu sabab HTML `form`/`form` atributi orqali bog'langan (native submit,
  * Enter tugmasi ham ishlaydi).
  */
-export function SchoolFormDrawer({ open, schoolId, onClose }: SchoolFormDrawerProps) {
+export function SchoolFormDialog({ open, schoolId, onClose }: SchoolFormDialogProps) {
   const { t } = useTranslation();
   const toast = useToast();
   const isEdit = schoolId !== null;
@@ -114,7 +114,7 @@ export function SchoolFormDrawer({ open, schoolId, onClose }: SchoolFormDrawerPr
   const isLoadingDetail = isEdit && detailQuery.isPending;
 
   return (
-    <Drawer
+    <Dialog
       open={open}
       onClose={onClose}
       title={isEdit ? t('schools.form.editTitle') : t('schools.form.createTitle')}
@@ -190,6 +190,6 @@ export function SchoolFormDrawer({ open, schoolId, onClose }: SchoolFormDrawerPr
           />
         </form>
       )}
-    </Drawer>
+    </Dialog>
   );
 }

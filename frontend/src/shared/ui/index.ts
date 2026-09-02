@@ -5,7 +5,6 @@ export * from './Checkbox';
 export * from './ConfirmDialog';
 export * from './DataTable';
 export * from './Dialog';
-export * from './Drawer';
 export * from './EmptyState';
 export * from './ErrorState';
 export * from './Input';

@@ -71,7 +71,7 @@ interface FetchMockOptions {
 }
 
 /**
- * NOTE: `SchoolCombobox` va `Drawer`/`Dialog` bilan bir xil sabab — jsdom o'zi
+ * NOTE: `SchoolCombobox` va `Dialog` bilan bir xil sabab — jsdom o'zi
  * `HTMLDialogElement`ni amalga oshirmaydi, lekin bu sahifada dialog yo'q; shu sabab bu
  * yerda faqat `SchoolsPage.test.tsx` (P23) bilan bir xil `mockFetch` naqshi ishlatiladi.
  */

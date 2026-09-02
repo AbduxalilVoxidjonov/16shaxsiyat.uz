@@ -28,7 +28,7 @@ const DEFAULT_DAILY_LIMIT = 500;
  * qiladi (`schoolNumber?: string` kirishda, lekin `schoolNumber: string | undefined` chiqishda),
  * bu esa `zodResolver`ning `useForm<SchoolFormValues>` bilan ziddiyatiga olib keladi (TS2322).
  * Shu sabab bo'sh matnni `undefined`ga o'girish submit vaqtida chaqiruvchi tomonda qilinadi
- * (`SchoolFormDrawer.tsx`, `emptyToUndefined`).
+ * (`SchoolFormDialog.tsx`, `emptyToUndefined`).
  */
 function optionalTrimmed(maxLength: number, message: string) {
   return z.string().trim().max(maxLength, message).optional();

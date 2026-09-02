@@ -14,13 +14,13 @@ import { useToggleSchoolActive } from '../api/useToggleSchoolActive';
 import { SchoolFiltersBar } from '../components/SchoolFiltersBar';
 import { readSchoolsFilters } from '../model/schoolsFilters';
 import { SchoolLinkCell } from '../components/SchoolLinkCell';
-import { SchoolFormDrawer } from '../components/SchoolFormDrawer';
+import { SchoolFormDialog } from '../components/SchoolFormDialog';
 import { RegenerateLinkDialog } from '../components/RegenerateLinkDialog';
 import { DeleteSchoolDialog } from '../components/DeleteSchoolDialog';
 import { SchoolQrModal, type SchoolQrModalData } from '../components/SchoolQrModal';
 import type { SchoolListItemDto, SchoolsListQuery } from '../model/types';
 
-interface FormDrawerState {
+interface FormDialogState {
   open: boolean;
   schoolId: string | null;
 }
@@ -105,7 +105,7 @@ export default function SchoolsPage() {
   const schoolsQuery = useSchoolsQuery(query);
   const toggleActive = useToggleSchoolActive();
 
-  const [formState, setFormState] = useState<FormDrawerState>({ open: false, schoolId: null });
+  const [formState, setFormState] = useState<FormDialogState>({ open: false, schoolId: null });
   const [regenerateTarget, setRegenerateTarget] = useState<TargetSchool | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<TargetSchool | null>(null);
   const [qrState, setQrState] = useState<QrModalState>({ kind: 'closed' });
@@ -235,7 +235,7 @@ export default function SchoolsPage() {
         emptyDescription={t('schools.table.emptyDescription')}
       />
 
-      <SchoolFormDrawer
+      <SchoolFormDialog
         open={formState.open}
         schoolId={formState.schoolId}
         onClose={() => setFormState({ open: false, schoolId: null })}

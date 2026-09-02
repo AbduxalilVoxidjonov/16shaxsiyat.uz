@@ -214,7 +214,13 @@ export function AdminLayout() {
       >
         {t('common.skipToContent')}
       </a>
-      <aside className="hidden border-r border-neutral-200 bg-white md:block print:hidden">
+      {/*
+        Navigatsiya sahifa bilan birga siljimaydi: `sticky top-0` + `h-dvh` bilan ekranga
+        yopishtiriladi, faqat asosiy mazmun siljiydi. `self-start` grid katagining
+        cho'zilishini to'xtatadi (usiz `sticky` ishlamaydi). Ro'yxatning o'zi ekrandan
+        baland bo'lsa (kichik noutbuk, katta shrift) `overflow-y-auto` bilan ichida siljiydi.
+      */}
+      <aside className="sticky top-0 hidden h-dvh self-start overflow-y-auto border-r border-neutral-200 bg-white md:block print:hidden">
         <div className="px-4 py-5 text-lg font-semibold text-neutral-900">{t('app.name')}</div>
         <SidebarNav ariaLabel={t('nav.dashboard')} />
       </aside>

@@ -64,6 +64,18 @@
   --breakpoint-xl: 80rem;
 }
 
+/*
+  Native `<dialog>` `showModal()` da odatda `margin: auto` bilan ekran markazida turadi,
+  lekin Tailwind preflight barcha elementlarga `margin: 0` beradi — natijada oyna
+  yuqori-chap burchakka yopishib qoladi. Bu qoida markazlashtirishni qaytaradi.
+  Loyiha egasining qarori (2026-09-02): **har qanday oyna markazda ochiladi**.
+*/
+dialog:modal {
+  margin: auto;
+  max-height: calc(100dvh - 2rem);
+}
+
+
 @layer base {
   html {
     font-family: var(--font-sans);

@@ -70,7 +70,7 @@ interface FetchMockOptions {
 }
 
 /**
- * NOTE: jsdom `HTMLDialogElement.showModal()`ni amalga oshirmaydi (`Dialog.tsx`/`Drawer.tsx`
+ * NOTE: jsdom `HTMLDialogElement.showModal()`ni amalga oshirmaydi (`Dialog.tsx`
  * dagi himoyalangan chaqiruvga qarang), shu sabab dialog/drawer elementi `open` atributisiz
  * qoladi va `@testing-library`ning `getByRole` so'rovi (yashirin elementlarni chiqarib
  * tashlaydi) uni topa olmaydi — xuddi `SettingsPage.test.tsx`dagi TOTP dialog testidagi kabi.
@@ -155,7 +155,7 @@ describe('SchoolsPage', () => {
     expect(screen.getByText('120')).toBeInTheDocument();
     expect(screen.getByText('80')).toBeInTheDocument();
     // `within(table)` — "Faol" so'zi filtr paneldagi "Holat" select'ida ham bor
-    // (`SchoolFormDrawer` ham DOM'da doim mavjud, faqat `open`siz — pastdagi izohga qarang).
+    // (`SchoolFormDialog` ham DOM'da doim mavjud, faqat `open`siz — pastdagi izohga qarang).
     expect(within(screen.getByRole('table')).getByText('Faol')).toBeInTheDocument();
   });
 
@@ -190,7 +190,7 @@ describe('SchoolsPage', () => {
 
     await screen.findByText('12-son maktab');
 
-    // `within(filtrPanel)` — `SchoolFormDrawer`da ham "Viloyat" nomli maydon bor (DOM'da doim
+    // `within(filtrPanel)` — `SchoolFormDialog`da ham "Viloyat" nomli maydon bor (DOM'da doim
     // mavjud, `open` faqat `showModal()`ni boshqaradi — jsdom bunda `display:none` qo'ymaydi).
     const filtersBar = within(screen.getByTestId('schools-filters'));
     expect(filtersBar.getByLabelText('Viloyat')).toHaveValue("Farg'ona");
@@ -211,7 +211,7 @@ describe('SchoolsPage', () => {
     });
   });
 
-  it("yaratish drawer'i bo'sh formani yubormaydi — validatsiya xatolari ko'rsatiladi", async () => {
+  it("yaratish oynasi bo'sh formani yubormaydi — validatsiya xatolari ko'rsatiladi", async () => {
     const fetchMock = mockFetch();
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderSchoolsPage();
