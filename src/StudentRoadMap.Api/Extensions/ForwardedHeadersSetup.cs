@@ -6,7 +6,7 @@ namespace StudentRoadMap.Api.Extensions;
 
 /// <summary>
 /// Production'da API Caddy reverse-proksi ortida turadi (`docs/13-deploy-va-infratuzilma.md`
-/// 4-bo'lim: `api.salohiyat.uz` → `api` konteyner). Proksi orqasida `HttpContext.Connection
+/// 4-bo'lim: `api.16shaxsiyat.uz` → `api` konteyner). Proksi orqasida `HttpContext.Connection
 /// .RemoteIpAddress` doim proksining o'zi bo'ladi — shu sabab `X-Forwarded-For`'ni o'qib haqiqiy
 /// mijoz IP'siga almashtirish shart, aks holda IP-asosli tezlik cheklovi (`RateLimitSetup`) va
 /// IP xeshlash (`IIpHasher`) jimgina ishlamay qoladi (hamma foydalanuvchi bitta "IP" ostida

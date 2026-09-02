@@ -40,7 +40,7 @@ public sealed class AdminUserConcurrencyTests
         {
             await setupContext.Database.EnsureCreatedAsync();
 
-            var admin = AdminUser.Create(Guid.NewGuid(), "concurrency-admin", "concurrency@salohiyat.uz", "hash", Now);
+            var admin = AdminUser.Create(Guid.NewGuid(), "concurrency-admin", "concurrency@16shaxsiyat.uz", "hash", Now);
             setupContext.AdminUsers.Add(admin);
             await setupContext.SaveChangesAsync();
             adminId = admin.Id;
@@ -86,7 +86,7 @@ public sealed class AdminUserConcurrencyTests
         {
             await setupContext.Database.EnsureCreatedAsync();
 
-            var admin = AdminUser.Create(Guid.NewGuid(), "concurrency-admin-2", "concurrency2@salohiyat.uz", "hash", Now);
+            var admin = AdminUser.Create(Guid.NewGuid(), "concurrency-admin-2", "concurrency2@16shaxsiyat.uz", "hash", Now);
             setupContext.AdminUsers.Add(admin);
             await setupContext.SaveChangesAsync();
             adminId = admin.Id;

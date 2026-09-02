@@ -1,8 +1,8 @@
-# StudentRoadMap (Salohiyat)
+# StudentRoadMap (Shaxsiyat)
 
 O'quvchining shaxsiyati, psixologik yetukligi, qiziqishlari va aktivligini onlayn testlar orqali
-aniqlaydigan, natijalarni AI bilan tahlil qiladigan CRM platforma. Ommaviy nom — **Salohiyat**
-(`salohiyat.uz`); `StudentRoadMap` — ichki kod nomi.
+aniqlaydigan, natijalarni AI bilan tahlil qiladigan CRM platforma. Ommaviy nom — **Shaxsiyat**
+(`16shaxsiyat.uz`); `StudentRoadMap` — ichki kod nomi.
 
 Maktablarga shaxsiy havola beriladi; o'quvchi anketa to'ldirib 4 blok test (16 Personality,
 Big Five, Holland RIASEC, Aktivlik/motivatsiya) yechadi; bitta superadmin barcha natijalarni

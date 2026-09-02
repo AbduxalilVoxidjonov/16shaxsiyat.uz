@@ -12,7 +12,7 @@ const SCHOOL_1 = {
   region: "Farg'ona",
   district: "Qo'qon",
   slug: '12-maktab-qokon',
-  publicUrl: 'https://salohiyat.uz/t/12-maktab-qokon?k=abc123token',
+  publicUrl: 'https://16shaxsiyat.uz/t/12-maktab-qokon?k=abc123token',
   isActive: true,
   studentCount: 120,
   completedCount: 80,
@@ -86,7 +86,7 @@ function mockFetch(options: FetchMockOptions = {}) {
     if (url.includes('/api/admin/schools/school-1/regenerate-link')) {
       return Promise.resolve(
         jsonResponse({
-          publicUrl: 'https://salohiyat.uz/t/12-maktab-qokon-2?k=newtoken',
+          publicUrl: 'https://16shaxsiyat.uz/t/12-maktab-qokon-2?k=newtoken',
           qrCodeBase64: 'bmV3',
         }),
       );

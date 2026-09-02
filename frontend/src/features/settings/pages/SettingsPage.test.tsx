@@ -98,7 +98,7 @@ describe('SettingsPage', () => {
         return Promise.resolve(
           jsonResponse({
             secret: 'JBSWY3DPEHPK3PXP',
-            otpauthUrl: 'otpauth://totp/Salohiyat:admin?secret=JBSWY3DPEHPK3PXP',
+            otpauthUrl: 'otpauth://totp/Shaxsiyat:admin?secret=JBSWY3DPEHPK3PXP',
             recoveryCodes: ['CODE-1', 'CODE-2'],
           }),
         );

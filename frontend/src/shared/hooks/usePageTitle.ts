@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { env } from '@/shared/config/env';
 
-/** `document.title` ni `"<sahifa> · Salohiyat"` shaklida o'rnatadi. */
+/** `document.title` ni `"<sahifa> · Shaxsiyat"` shaklida o'rnatadi. */
 export function usePageTitle(title: string): void {
   useEffect(() => {
     const previous = document.title;

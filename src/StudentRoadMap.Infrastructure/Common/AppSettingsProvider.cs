@@ -11,7 +11,7 @@ internal sealed class AppSettingsProvider : IAppSettings
 {
     private const int DefaultSessionLifetimeDays = 7;
     private const int DefaultRefreshTokenDays = 14;
-    private const string DefaultPublicWebBaseUrl = "https://salohiyat.uz";
+    private const string DefaultPublicWebBaseUrl = "https://16shaxsiyat.uz";
 
     public AppSettingsProvider(IConfiguration configuration)
     {

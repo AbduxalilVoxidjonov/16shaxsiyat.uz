@@ -125,7 +125,7 @@ Bir vazifa "tugadi" deyilishi uchun **hammasi** bajarilgan bo'lishi kerak:
 |---|-------|------------|
 | 1 | O'quvchiga natija ko'rsatiladimi yoki faqat maktabgami? | `showResultToStudent` sozlamasi va E-6 ekrani |
 | 2 | Maktab bilan qanday shartnoma/rozilik formati bo'ladi? | `consentText` matni va huquqiy asos |
-| 3 | ~~Domen nomi va brend nomi?~~ **Hal qilindi:** brend **Salohiyat**, domen `salohiyat.uz` (olingan), API `api.salohiyat.uz` | — |
+| 3 | ~~Domen nomi va brend nomi?~~ **Hal qilindi:** brend **Shaxsiyat**, domen `16shaxsiyat.uz` (olingan), API `api.16shaxsiyat.uz` | — |
 | 4 | Boshlang'ich sinflar (1–4) ham qamraladimi? | Savol tili va metodika mosligi — hozircha 5–11 sinf mo'ljallangan |
 | 5 | Testni qayta topshirishga necha oydan keyin ruxsat? | BR-1 dagi 90 kun taxminiy |
 | 6 | Qaysi AI provider birinchi ishlatiladi (byudjet)? | Default provider va model tanlovi |

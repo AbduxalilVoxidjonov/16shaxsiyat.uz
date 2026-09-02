@@ -47,8 +47,8 @@ services:
       context: ./frontend
       dockerfile: ../docker/Dockerfile.web
       args:
-        VITE_API_BASE_URL: ${API_URL}          # https://api.salohiyat.uz
-        VITE_APP_NAME: Salohiyat
+        VITE_API_BASE_URL: ${API_URL}          # https://api.16shaxsiyat.uz
+        VITE_APP_NAME: Shaxsiyat
     depends_on: [ api ]
     ports: [ "80:80" ]
 
@@ -111,8 +111,8 @@ Internet
    │
    ▼
 Caddy / Nginx (TLS, Let's Encrypt)
-   ├── salohiyat.uz        → web konteyner (SPA)
-   └── api.salohiyat.uz    → api konteyner
+   ├── 16shaxsiyat.uz        → web konteyner (SPA)
+   └── api.16shaxsiyat.uz    → api konteyner
                                      │
                                      ▼
                               PostgreSQL 16 (konteyner yoki managed)
@@ -121,7 +121,7 @@ Caddy / Nginx (TLS, Let's Encrypt)
 Tavsiya: **4 vCPU / 8 GB RAM / 80 GB SSD** — 300 bir vaqtdagi foydalanuvchi uchun yetarli.
 DB kritik bo'lgani uchun managed Postgres (avtomatik backup bilan) afzalroq.
 
-### 4.1 DNS yozuvlari (`salohiyat.uz`)
+### 4.1 DNS yozuvlari (`16shaxsiyat.uz`)
 
 | Turi | Nomi | Qiymati | Izoh |
 |------|------|---------|------|
@@ -134,7 +134,7 @@ DB kritik bo'lgani uchun managed Postgres (avtomatik backup bilan) afzalroq.
 
 > Pochta yuborish MVP'da yo'q. Keyin xabarnoma qo'shilsa, SPF/DKIM/DMARC qayta sozlanadi.
 
-**TLS:** Caddy avtomatik Let's Encrypt oladi (`salohiyat.uz`, `www.salohiyat.uz`, `api.salohiyat.uz`).
+**TLS:** Caddy avtomatik Let's Encrypt oladi (`16shaxsiyat.uz`, `www.16shaxsiyat.uz`, `api.16shaxsiyat.uz`).
 Sertifikat muddati va avtomatik yangilanishi monitoringga qo'shiladi (30 kun qolganda alert).
 
 **`.uz` domeni bo'yicha eslatma:** yillik uzaytirishni **avtomatik** rejimga qo'ying yoki

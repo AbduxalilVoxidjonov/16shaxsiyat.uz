@@ -40,7 +40,7 @@ public sealed class AdminTotpBackupCodeConcurrencyTests
         {
             await setupContext.Database.EnsureCreatedAsync();
 
-            var admin = AdminUser.Create(Guid.NewGuid(), "totp-race-admin", "totp-race@salohiyat.uz", "hash", Now);
+            var admin = AdminUser.Create(Guid.NewGuid(), "totp-race-admin", "totp-race@16shaxsiyat.uz", "hash", Now);
             setupContext.AdminUsers.Add(admin);
 
             var backupCode = AdminTotpBackupCode.Create(Guid.NewGuid(), admin.Id, "hashed-code", Now);

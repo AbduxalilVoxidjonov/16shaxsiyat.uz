@@ -38,7 +38,7 @@ Yoqilganda 8 ta bir martalik zaxira kod beriladi (xeshlangan holda saqlanadi).
 
 ## 3. Maktab havolasi
 
-**Havola:** `https://salohiyat.uz/t/{slug}?k={accessToken}`
+**Havola:** `https://16shaxsiyat.uz/t/{slug}?k={accessToken}`
 
 - `slug` — o'qiladigan, unikal (`12-maktab-kokand`).
 - `accessToken` — 32 bayt `RandomNumberGenerator` → Base64Url (43 belgi).
@@ -122,7 +122,7 @@ X-Frame-Options: DENY
 Referrer-Policy: strict-origin-when-cross-origin
 Permissions-Policy: geolocation=(), microphone=(), camera=()
 Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline';
-                         script-src 'self'; connect-src 'self' https://api.salohiyat.uz
+                         script-src 'self'; connect-src 'self' https://api.16shaxsiyat.uz
 ```
 
 HTTP → HTTPS redirect; production'da HSTS yoqiladi.

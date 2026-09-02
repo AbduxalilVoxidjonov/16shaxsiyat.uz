@@ -1,7 +1,7 @@
-# Salohiyat — frontend
+# Shaxsiyat — frontend
 
 `StudentRoadMap` loyihasining React 19 + TypeScript + Vite frontend'i.
-Foydalanuvchiga ko'rinadigan barcha matnda **Salohiyat** nomi ishlatiladi
+Foydalanuvchiga ko'rinadigan barcha matnda **Shaxsiyat** nomi ishlatiladi
 (`docs/00`–`docs/15`, `CLAUDE.md`ga qarang).
 
 Arxitektura tafsilotlari: `docs/10-frontend-arxitektura.md`. UX/ekranlar: `docs/11-ux-va-ekranlar.md`.

@@ -10,7 +10,7 @@ namespace StudentRoadMap.Application.Identity.EnableTotp;
 internal sealed class EnableTotpCommandHandler : IRequestHandler<EnableTotpCommand, Result<EnableTotpResult>>
 {
     private const int BackupCodeCount = 8;
-    private const string IssuerName = "Salohiyat";
+    private const string IssuerName = "Shaxsiyat";
 
     private readonly IAppDbContext _context;
     private readonly IAsyncQueryExecutor _executor;

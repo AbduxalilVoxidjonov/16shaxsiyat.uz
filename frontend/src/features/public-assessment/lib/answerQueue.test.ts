@@ -86,7 +86,7 @@ describe('answerQueue', () => {
   });
 
   it("buzilgan JSON localStorage'da bo'lsa xatosiz bo'sh obyekt qaytaradi", () => {
-    localStorage.setItem('salohiyat.pendingAnswers', '{not-json');
+    localStorage.setItem('shaxsiyat.pendingAnswers', '{not-json');
     expect(readAnswerStore()).toEqual({});
   });
 });

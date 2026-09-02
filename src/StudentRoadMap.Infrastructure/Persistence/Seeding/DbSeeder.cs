@@ -426,7 +426,7 @@ public sealed class DbSeeder
         }
 
         var passwordHash = _passwordHasher.Hash(password);
-        var email = _configuration["ADMIN_EMAIL"] ?? _configuration["Admin:Email"] ?? $"{username}@salohiyat.uz";
+        var email = _configuration["ADMIN_EMAIL"] ?? _configuration["Admin:Email"] ?? $"{username}@16shaxsiyat.uz";
 
         var admin = AdminUser.Create(Guid.NewGuid(), username, email, passwordHash, _dateTime.UtcNow);
         _dbContext.AdminUsers.Add(admin);

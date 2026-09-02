@@ -21,7 +21,7 @@ internal sealed class GetSchoolInfoQueryHandler : IRequestHandler<GetSchoolInfoQ
     // TODO: rasmiy rozilik matni kutilmoqda (PROGRESS.md ochiq savol #2, loyiha egasidan javob
     // kelgach almashtiriladi). Hozircha vaqtinchalik, umumiy shakldagi matn ishlatilmoqda.
     private const string ConsentTextPlaceholder =
-        "Farzandimning \"Salohiyat\" platformasida psixologik-pedagogik testlardan o'tishiga " +
+        "Farzandimning \"Shaxsiyat\" platformasida psixologik-pedagogik testlardan o'tishiga " +
         "va natijalarning ta'lim maqsadlarida (o'quvchi profili, maktab hisobotlari) qayta " +
         "ishlanishiga roziman. Ma'lumotlar faqat maktab va superadmin tomonidan ko'riladi.";
 

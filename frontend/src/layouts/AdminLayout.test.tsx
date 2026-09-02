@@ -46,17 +46,15 @@ describe('AdminLayout', () => {
     useAuthStore.setState({ isRestoring: true, accessToken: null, user: null });
   });
 
-  it("hali tayyor bo'lmagan bo'limlarda 'Tez orada' belgisi ko'rsatiladi, Sozlamalarda esa yo'q", () => {
+  it("navigatsiyada 'Tez orada' belgisi ko'rsatilmaydi", () => {
     renderAdminLayout();
 
-    // Har bo'limning nomi ikki marta chiqadi (desktop `<aside>` + mobil drawer) — shu sabab
-    // `getAllBy*` ishlatiladi.
-    expect(screen.getAllByText('Tez orada').length).toBeGreaterThan(0);
+    // Belgi butunlay olib tashlandi: u `ready` bayrog'iga tayanardi, bayroq esa sahifalar
+    // qurilgan sari yangilanmay, tayyor bo'limlarda ham ko'rinib qolgan edi.
+    expect(screen.queryAllByText('Tez orada')).toHaveLength(0);
 
     const settingsLinks = screen.getAllByRole('link', { name: /Sozlamalar/ });
-    settingsLinks.forEach((link) => {
-      expect(link).not.toHaveTextContent('Tez orada');
-    });
+    expect(settingsLinks.length).toBeGreaterThan(0);
   });
 
   it("himoyalangan mazmun (Outlet) ko'rsatiladi", () => {

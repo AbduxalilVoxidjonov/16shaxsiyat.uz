@@ -25,8 +25,6 @@ interface NavItem {
   key: string;
   icon: typeof LayoutDashboard;
   end?: boolean;
-  /** `false` — bo'lim hali qurilmoqda, sidebarda "tez orada" belgisi bilan ko'rsatiladi. */
-  ready: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -35,15 +33,14 @@ const NAV_ITEMS: NavItem[] = [
     key: 'nav.dashboard',
     icon: LayoutDashboard,
     end: true,
-    ready: false,
   },
-  { to: ROUTES.admin.schools, key: 'nav.schools', icon: School, ready: false },
-  { to: ROUTES.admin.students, key: 'nav.students', icon: Users, ready: false },
-  { to: ROUTES.admin.assessments, key: 'nav.assessments', icon: ClipboardList, ready: false },
-  { to: ROUTES.admin.catalog, key: 'nav.catalog', icon: BookOpen, ready: false },
-  { to: ROUTES.admin.ai, key: 'nav.ai', icon: Sparkles, ready: false },
-  { to: ROUTES.admin.audit, key: 'nav.audit', icon: ScrollText, ready: false },
-  { to: ROUTES.admin.settings, key: 'nav.settings', icon: Settings, ready: true },
+  { to: ROUTES.admin.schools, key: 'nav.schools', icon: School },
+  { to: ROUTES.admin.students, key: 'nav.students', icon: Users },
+  { to: ROUTES.admin.assessments, key: 'nav.assessments', icon: ClipboardList },
+  { to: ROUTES.admin.catalog, key: 'nav.catalog', icon: BookOpen },
+  { to: ROUTES.admin.ai, key: 'nav.ai', icon: Sparkles },
+  { to: ROUTES.admin.audit, key: 'nav.audit', icon: ScrollText },
+  { to: ROUTES.admin.settings, key: 'nav.settings', icon: Settings },
 ];
 
 /** Ikkala (desktop `<aside>` va mobil drawer) joyda ishlatiladigan umumiy navigatsiya ro'yxati. */
@@ -51,7 +48,7 @@ function SidebarNav({ ariaLabel, onNavigate }: { ariaLabel: string; onNavigate?:
   const { t } = useTranslation();
   return (
     <nav aria-label={ariaLabel} className="flex flex-col gap-0.5 px-2">
-      {NAV_ITEMS.map(({ to, key, icon: Icon, end, ready }) => (
+      {NAV_ITEMS.map(({ to, key, icon: Icon, end }) => (
         <NavLink
           key={to}
           to={to}
@@ -66,11 +63,6 @@ function SidebarNav({ ariaLabel, onNavigate }: { ariaLabel: string; onNavigate?:
         >
           <Icon size={18} aria-hidden="true" />
           <span className="flex-1">{t(key)}</span>
-          {!ready && (
-            <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-500">
-              {t('nav.comingSoon')}
-            </span>
-          )}
         </NavLink>
       ))}
     </nav>

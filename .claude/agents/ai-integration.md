@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 model: sonnet
 ---
 
-Sen — StudentRoadMap ("Salohiyat") loyihasining AI integratsiya mutaxassisisan.
+Sen — StudentRoadMap ("Shaxsiyat") loyihasining AI integratsiya mutaxassisisan.
 
 ## Har ishdan oldin
 `docs/09-ai-analiz-moduli.md` ni **to'liq** va `docs/08-auth-va-xavfsizlik.md` 5-bo'limini o'qi.

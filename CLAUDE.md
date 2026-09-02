@@ -9,9 +9,9 @@ va har o'quvchining individual profilini boshqaradi.
 
 ## Brend
 
-Ommaviy nom — **Salohiyat** (`salohiyat.uz`), API `api.salohiyat.uz`.
+Ommaviy nom — **Shaxsiyat** (`16shaxsiyat.uz`), API `api.16shaxsiyat.uz`.
 `StudentRoadMap` — ichki kod nomi (repo, solution, konteynerlar). Foydalanuvchiga ko'rinadigan
-barcha matnda "Salohiyat" ishlatiladi.
+barcha matnda "Shaxsiyat" ishlatiladi.
 
 ## Stek
 

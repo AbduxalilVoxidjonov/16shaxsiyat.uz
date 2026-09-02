@@ -18,7 +18,7 @@ internal static class AdminTestDataFactory
         string? email = null,
         AdminRole role = AdminRole.SuperAdmin)
     {
-        var admin = AdminUser.Create(Guid.NewGuid(), username, email ?? $"{username}@salohiyat.uz", hasher.Hash(password), now, role);
+        var admin = AdminUser.Create(Guid.NewGuid(), username, email ?? $"{username}@16shaxsiyat.uz", hasher.Hash(password), now, role);
         db.AdminUsers.Add(admin);
         await db.SaveChangesAsync();
 

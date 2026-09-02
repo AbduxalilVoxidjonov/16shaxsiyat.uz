@@ -30,7 +30,7 @@ export interface SchoolQrModalProps {
 export function SchoolQrModal({ open, onClose, data, isLoading = false, isError = false, onRetry }: SchoolQrModalProps) {
   const { t } = useTranslation();
 
-  const fileName = data ? `salohiyat-${data.slug}-qr.png` : 'salohiyat-qr.png';
+  const fileName = data ? `shaxsiyat-${data.slug}-qr.png` : 'shaxsiyat-qr.png';
   const dataUrl = data ? `data:image/png;base64,${data.qrCodeBase64}` : undefined;
 
   return (

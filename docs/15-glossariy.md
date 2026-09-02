@@ -5,7 +5,7 @@
 | O'zbekcha | Inglizcha / kodda | Ma'nosi |
 |-----------|-------------------|---------|
 | Maktab | `School` | Platformaga ulangan ta'lim muassasasi; har biriga shaxsiy havola beriladi |
-| Shaxsiy havola | `access link` | `salohiyat.uz/t/{slug}?k={token}` — maktab o'quvchilari kiradigan URL |
+| Shaxsiy havola | `access link` | `16shaxsiyat.uz/t/{slug}?k={token}` — maktab o'quvchilari kiradigan URL |
 | Slug | `Slug` | Havoladagi o'qiladigan qism: `12-maktab-kokand` |
 | Kirish tokeni | `AccessToken` | Havoladagi maxfiy qism; qayta generatsiya qilinadi |
 | Kirish kodi | `AccessCode` | Ixtiyoriy 6 raqamli qo'shimcha himoya |

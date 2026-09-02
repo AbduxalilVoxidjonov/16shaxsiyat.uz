@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://salohiyat.uz/schemas/ai/full-analysis-v1.json",
+  "$id": "https://16shaxsiyat.uz/schemas/ai/full-analysis-v1.json",
   "title": "full_analysis v1.0",
   "type": "object",
   "required": ["summary","personalityPortrait","strengths","growthAreas","learningStyle",

@@ -3,7 +3,7 @@
 > Bu fayl **PM agentning xotirasi**. Sessiya uzilsa ham ish shu yerdan davom etadi.
 > PM har vazifa boshlanganda va tugaganda **darhol** yangilaydi.
 
-**Loyiha:** Salohiyat (`salohiyat.uz`) · ichki nom `StudentRoadMap`
+**Loyiha:** Shaxsiyat (`16shaxsiyat.uz`) · ichki nom `StudentRoadMap`
 **Oxirgi yangilanish:** 2026-09-02 · **Joriy bosqich:** B4 (AI modul) ‖ B6 (Admin UI) · **Joriy vazifa:** P34–P36 loyihalash (dastur/biriktirish modeli)
 
 ---
@@ -61,11 +61,11 @@
 
 | Sana | Qaror | Sabab | Qayerga yozildi |
 |------|-------|-------|-----------------|
-| 2026-08-31 | Brend "Salohiyat", domen `salohiyat.uz`, API `api.salohiyat.uz` | Domen olindi | `docs/01` 2a-bo'lim |
+| 2026-08-31 | Brend "Shaxsiyat", domen `16shaxsiyat.uz`, API `api.16shaxsiyat.uz` | Domen olindi | `docs/01` 2a-bo'lim |
 | 2026-08-31 | Superadmin uchun anketa konstruktori (`SUM` strategiyasi) qo'shildi | Superadmin o'z testini kirita olishi kerak | `docs/06` ADR-13..15 |
 | 2026-08-31 | Lokal git repozitoriysi ochildi (`main` + `feat/*`) | PM.md 6-bo'limidagi git intizomi shuni talab qiladi | `docs/06` 8-bo'lim |
 | 2026-08-31 | EF Core paketlari `9.x` da qulflandi (net10.0 da) | Npgsql'ning EF Core 10 provayderi hali yo'q | `docs/06` 8-bo'lim |
-| 2026-08-31 | **Push qilinmaydi** — faqat lokal commit va branch | Loyiha egasining ko'rsatmasi; repo `AbduxalilVoxidjonov/salohiyat` tayyor, keyinroq push qilinadi | shu jurnal |
+| 2026-08-31 | **Push qilinmaydi** — faqat lokal commit va branch | Loyiha egasining ko'rsatmasi; repo `AbduxalilVoxidjonov/shaxsiyat` tayyor, keyinroq push qilinadi | shu jurnal |
 
 ---
 
@@ -89,7 +89,7 @@
 
 ### 2026-08-31
 - Hujjatlar (`docs/00–15`) va promptlar (`prompts/00–33`) tayyorlandi.
-- Brend va domen qat'iylashtirildi: **Salohiyat**, `salohiyat.uz`.
+- Brend va domen qat'iylashtirildi: **Shaxsiyat**, `16shaxsiyat.uz`.
 - Anketa konstruktori qamrovga qo'shildi (P33).
 - PM agent (`PM.md`), 5 mutaxassis agent (`.claude/agents/`) va shu jurnal yaratildi.
 - **P01 bajarildi** — MVC shabloni `src/StudentRoadMap.Api/` ga aylantirildi; 4 `src/` + 3 `tests/`
@@ -266,4 +266,4 @@
 | QA topgan 5 ta zaif savol (cross-loading): `MB-Q58` (SN↔JP), `B5-Q36` (O↔E), `B5-Q49` (A↔ish uslubi), `AC-Q15` (SOCA↔SELF), va `MB-Q01`≈`AC-Q27` deyarli bir xil misol | Omillar orasida ortiqcha korrelyatsiya; ball biroz aniqroq bo'lishi mumkin edi | Bloklovchi emas (professional testlarda ham uchraydi). Pilotdan keyin real ma'lumot bilan qayta ko'riladi — `docs/14` 5-bo'lim |
 | EF Core 9.x paketlari net10.0 loyihada (Npgsql EF10 provayderi yo'q) | P03 da runtime muammosi bo'lishi mumkin | P03 boshida DbContext bilan haqiqiy so'rov sinab ko'riladi; provayder chiqqach yangilanadi |
 | `/health` va `/health/ready` hozir bir xil (bog'liqlik tekshiruvi yo'q) | Orkestrator noto'g'ri "ready" deb o'ylashi mumkin | P03 da DB health check qo'shilib, `tag` bo'yicha ajratiladi |
-| Push qilinmaydi (egasining qarori) — PR oqimi ishlamaydi | Ko'rikni faqat `qa-reviewer` beradi, tashqi review yo'q | Repo: `AbduxalilVoxidjonov/salohiyat`. Egasi aytganda `origin` qayta qo'shilib, barcha branch birdan push qilinadi |
+| Push qilinmaydi (egasining qarori) — PR oqimi ishlamaydi | Ko'rikni faqat `qa-reviewer` beradi, tashqi review yo'q | Repo: `AbduxalilVoxidjonov/shaxsiyat`. Egasi aytganda `origin` qayta qo'shilib, barcha branch birdan push qilinadi |

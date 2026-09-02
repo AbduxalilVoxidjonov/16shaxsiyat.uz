@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { ToastProvider } from '@/shared/ui/Toast';
 import { SchoolLinkCell } from './SchoolLinkCell';
 
-const PUBLIC_URL = 'https://salohiyat.uz/t/12-maktab-qokon?k=abc123token';
+const PUBLIC_URL = 'https://16shaxsiyat.uz/t/12-maktab-qokon?k=abc123token';
 
 function renderCell(onShowQr = vi.fn()) {
   return render(
@@ -39,7 +39,7 @@ describe('SchoolLinkCell', () => {
 
   it("havolani protokolsiz, qisqartirilgan ko'rinishda ko'rsatadi", () => {
     renderCell();
-    expect(screen.getByText('salohiyat.uz/t/12-maktab-qokon?k=abc123token')).toBeInTheDocument();
+    expect(screen.getByText('16shaxsiyat.uz/t/12-maktab-qokon?k=abc123token')).toBeInTheDocument();
   });
 
   it("nusxalash tugmasi bosilganda 'clipboard'ga yoziladi va tasdiq toast ko'rsatiladi", async () => {

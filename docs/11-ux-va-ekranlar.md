@@ -2,7 +2,7 @@
 
 ## 0. Brend
 
-Foydalanuvchiga ko'rinadigan nom — **Salohiyat** (`salohiyat.uz`). Sarlavha, logotip, sahifa
+Foydalanuvchiga ko'rinadigan nom — **Shaxsiyat** (`16shaxsiyat.uz`). Sarlavha, logotip, sahifa
 `<title>` va PDF kolontitulida shu nom turadi. `StudentRoadMap` hech qaysi ekranda ko'rinmaydi.
 
 Tag-line (landing sahifada, ixtiyoriy): *"O'zingni bilib, yo'lingni tanla"*.

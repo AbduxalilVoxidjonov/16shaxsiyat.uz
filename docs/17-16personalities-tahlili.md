@@ -120,7 +120,7 @@ o'zini himoyalangan his qilish · telefon qo'ng'irog'idan qochish.
 ```
 Bosh sahifa (ijtimoiy dalil: "1.57 mlrd test")
    ↓  "Testni topshirish"
-Test kirish ekrani — 3 karta: Testni topshirish · Batafsil natijalarni ochish · Salohiyatingizni oching
+Test kirish ekrani — 3 karta: Testni topshirish · Batafsil natijalarni ochish · Shaxsiyatingizni oching
    ↓
 60 savol · 10 sahifa · 6 savoldan
    ↓
@@ -221,9 +221,9 @@ manbalar asosida noldan yoziladi.
 
 ---
 
-## 11. "Salohiyat" bilan taqqoslash
+## 11. "Shaxsiyat" bilan taqqoslash
 
-| Jihat | 16Personalities | **Salohiyat** |
+| Jihat | 16Personalities | **Shaxsiyat** |
 |-------|-----------------|---------------|
 | Auditoriya | Kattalar, global | O'zbekiston maktab o'quvchilari (5–11 sinf) |
 | Metodika | 1 ta test (60 savol, 5 o'lcham) | **4 ta metodika, 190 savol**: 16 tip + Big Five + RIASEC + Aktivlik |

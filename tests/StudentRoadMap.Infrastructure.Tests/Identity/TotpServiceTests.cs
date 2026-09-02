@@ -31,11 +31,11 @@ public sealed class TotpServiceTests
     [Fact]
     public void BuildOtpauthUri_ContainsSecretIssuerAndAccount()
     {
-        var uri = _service.BuildOtpauthUri("JBSWY3DPEHPK3PXP", "superadmin", "Salohiyat");
+        var uri = _service.BuildOtpauthUri("JBSWY3DPEHPK3PXP", "superadmin", "Shaxsiyat");
 
         uri.Should().StartWith("otpauth://totp/");
         uri.Should().Contain("secret=JBSWY3DPEHPK3PXP");
-        uri.Should().Contain("issuer=Salohiyat");
+        uri.Should().Contain("issuer=Shaxsiyat");
     }
 
     [Fact]

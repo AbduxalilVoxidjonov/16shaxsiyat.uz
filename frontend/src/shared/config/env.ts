@@ -23,6 +23,6 @@ export const env = {
    * Boshqa domendagi backendga ulanish kerak bo'lsa — `VITE_API_BASE_URL` ni aniq bering.
    */
   apiBaseUrl: readEnv('VITE_API_BASE_URL'),
-  appName: readEnv('VITE_APP_NAME', 'Salohiyat'),
+  appName: readEnv('VITE_APP_NAME', 'Shaxsiyat'),
   sentryDsn: readEnv('VITE_SENTRY_DSN'),
 } as const;

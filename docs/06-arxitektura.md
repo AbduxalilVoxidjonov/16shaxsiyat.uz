@@ -245,7 +245,7 @@ Barcha xatolar `application/problem+json`:
   "ConnectionStrings": { "Postgres": "Host=db;Database=studentroadmap;Username=srm;Password=***" },
   "Jwt": { "Issuer": "studentroadmap", "Audience": "studentroadmap-admin",
            "Key": "***", "AccessTokenMinutes": 30, "RefreshTokenDays": 14 },
-  "App": { "FrontendUrl": "https://salohiyat.uz", "SessionLifetimeDays": 7,
+  "App": { "FrontendUrl": "https://16shaxsiyat.uz", "SessionLifetimeDays": 7,
            "SeedOnStartup": false },
   "Security": { "EncryptionKey": "***base64-32byte***", "IpHashSalt": "***" },
   "Ai": { "DefaultProvider": "Gemini", "TimeoutSeconds": 90, "MaxRetries": 3,

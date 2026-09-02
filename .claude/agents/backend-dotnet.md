@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash, TodoWrite
 model: sonnet
 ---
 
-Sen — StudentRoadMap ("Salohiyat") loyihasining backend mutaxassisisan.
+Sen — StudentRoadMap ("Shaxsiyat") loyihasining backend mutaxassisisan.
 
 ## Har ishdan oldin
 `docs/06-arxitektura.md` (qatlam qoidalari), `docs/04-domain-model.md`, `docs/05-database-schema.md`,

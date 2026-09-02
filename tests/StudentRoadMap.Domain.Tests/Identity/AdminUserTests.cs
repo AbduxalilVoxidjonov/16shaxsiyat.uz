@@ -12,12 +12,12 @@ public sealed class AdminUserTests
     private static readonly DateTimeOffset Now = new(2026, 1, 15, 10, 0, 0, TimeSpan.Zero);
 
     private static AdminUser CreateAdminUser() =>
-        AdminUser.Create(Guid.NewGuid(), "superadmin", "admin@salohiyat.uz", "hashed-password", Now);
+        AdminUser.Create(Guid.NewGuid(), "superadmin", "admin@16shaxsiyat.uz", "hashed-password", Now);
 
     [Fact]
     public void Create_WithEmptyUsername_ThrowsArgumentException()
     {
-        var act = () => AdminUser.Create(Guid.NewGuid(), "  ", "admin@salohiyat.uz", "hash", Now);
+        var act = () => AdminUser.Create(Guid.NewGuid(), "  ", "admin@16shaxsiyat.uz", "hash", Now);
 
         act.Should().Throw<ArgumentException>();
     }

@@ -137,7 +137,7 @@ public sealed class PromptBuilderTests
             fullName: "G'ulomjonov Sardorbek Baxtiyor o'g'li",
             birthDate: new DateOnly(2010, 5, 20),
             phone: "907654321",
-            email: "sardorbek.gulomjonov@salohiyat-maktab.uz");
+            email: "sardorbek.gulomjonov@shaxsiyat-maktab.uz");
         var assessment = CreateAssessment();
         var testResults = new List<TestResult>
         {
@@ -164,7 +164,7 @@ public sealed class PromptBuilderTests
         output.Should().NotContain("Baxtiyor", "F.I.Sh.ning otasining ismi chiqmasligi kerak");
         output.Should().NotContain("907654321", "telefon raqami chiqmasligi kerak");
         output.Should().NotContain("+998907654321", "normallashtirilgan telefon raqami chiqmasligi kerak");
-        output.Should().NotContain("sardorbek.gulomjonov@salohiyat-maktab.uz", "email chiqmasligi kerak");
+        output.Should().NotContain("sardorbek.gulomjonov@shaxsiyat-maktab.uz", "email chiqmasligi kerak");
         output.Should().NotContain("2010-05-20", "aniq tug'ilgan sana (ISO) chiqmasligi kerak");
         output.Should().NotContain("20.05.2010", "aniq tug'ilgan sana (mahalliy format) chiqmasligi kerak");
 

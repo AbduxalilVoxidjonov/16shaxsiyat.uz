@@ -26,7 +26,7 @@ public sealed class JwtTokenServiceTests
             .Build();
 
     private static AdminUser CreateAdminUser() =>
-        AdminUser.Create(Guid.NewGuid(), "superadmin", "admin@salohiyat.uz", "hashed-password", Now);
+        AdminUser.Create(Guid.NewGuid(), "superadmin", "admin@16shaxsiyat.uz", "hashed-password", Now);
 
     [Fact]
     public void Constructor_WithKeyShorterThan32Bytes_ThrowsInvalidOperationException()

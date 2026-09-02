@@ -14,7 +14,7 @@ Natijada:
 
 Onlayn platforma:
 
-1. Maktabga **shaxsiy havola** beriladi (masalan `salohiyat.uz/t/maktab-12-kokand`).
+1. Maktabga **shaxsiy havola** beriladi (masalan `16shaxsiyat.uz/t/maktab-12-kokand`).
 2. O'quvchi havoladan kiradi, anketa to'ldiradi (FISH, tug'ilgan sana, sinf, telefon).
 3. Ketma-ket 4 blok test yechadi: **16 Personality**, **Big Five**, **Holland RIASEC**, **Aktivlik/motivatsiya**.
 4. Tizim ballarni avtomatik hisoblaydi (deterministik scoring engine).
@@ -26,18 +26,18 @@ Onlayn platforma:
 
 | | Qiymat |
 |---|---|
-| **Ommaviy nom (brend)** | **Salohiyat** — o'quvchi, ota-ona va maktab ko'radigan nom |
+| **Ommaviy nom (brend)** | **Shaxsiyat** — o'quvchi, ota-ona va maktab ko'radigan nom |
 | **Ichki kod nomi** | `StudentRoadMap` — repozitoriy, solution, konteyner nomlari |
-| **Asosiy domen** | `salohiyat.uz` (olingan) |
-| **API subdomeni** | `api.salohiyat.uz` |
-| **Maktab havolasi** | `https://salohiyat.uz/t/{slug}?k={token}` |
-| **Xizmat pochtasi** | `info@salohiyat.uz` (aloqa), `noreply@salohiyat.uz` (tizim) |
+| **Asosiy domen** | `16shaxsiyat.uz` (olingan) |
+| **API subdomeni** | `api.16shaxsiyat.uz` |
+| **Maktab havolasi** | `https://16shaxsiyat.uz/t/{slug}?k={token}` |
+| **Xizmat pochtasi** | `info@16shaxsiyat.uz` (aloqa), `noreply@16shaxsiyat.uz` (tizim) |
 
-Nomning ma'nosi platformaning vazifasiga to'g'ri keladi: test o'quvchining **salohiyatini**
+Nomning ma'nosi platformaning vazifasiga to'g'ri keladi: test o'quvchining **shaxsiyatini**
 — ya'ni imkoniyat va o'sish yo'nalishini — ko'rsatadi, baho qo'ymaydi. Bu tanlov hisobot tilida ham
 saqlanadi: "kuchli tomonlar" va "o'sish zonalari", "yaxshi/yomon" emas.
 
-UI matnlarida platforma **"Salohiyat"** deb ataladi; `StudentRoadMap` faqat texnik hujjatlar va
+UI matnlarida platforma **"Shaxsiyat"** deb ataladi; `StudentRoadMap` faqat texnik hujjatlar va
 kodda qoladi. `docs/` va `prompts/` da `StudentRoadMap` nomi shu sababli o'zgarmaydi.
 
 ---

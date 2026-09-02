@@ -211,7 +211,7 @@ Tartib:
 ## 8. Muhit o'zgaruvchilari
 
 ```
-VITE_API_BASE_URL=https://api.salohiyat.uz
-VITE_APP_NAME=Salohiyat
+VITE_API_BASE_URL=https://api.16shaxsiyat.uz
+VITE_APP_NAME=Shaxsiyat
 VITE_SENTRY_DSN=            # ixtiyoriy
 ```
