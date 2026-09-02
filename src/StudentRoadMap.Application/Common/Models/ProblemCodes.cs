@@ -52,6 +52,21 @@ public static class ProblemCodes
     /// </summary>
     public const string ConcurrencyConflict = "CONCURRENCY_CONFLICT";
 
+    /// <summary>
+    /// `P14` (`prompts/14-admin-maktab-va-oquvchi-api.md`) MAXSUS DIQQAT #3: maktab slug'i
+    /// uchun `ux_schools_slug` unique cheklovi ChIN bir vaqtdagi poyga holatida buzilganda
+    /// (`UniqueConstraintViolationException`) — jimgina `500` o'rniga tushunarli `409`.
+    /// `docs/06`da yo'q, PM'ga savol: rasman kiritilsinmi?
+    /// </summary>
+    public const string UniqueConstraintConflict = "UNIQUE_CONSTRAINT_CONFLICT";
+
+    /// <summary>
+    /// `P14` MAXSUS DIQQAT #5: maktabni o'chirishga (soft) urinishda unda hali o'quvchi(lar)
+    /// bo'lsa. `docs/06`da yo'q — `TestInUse` (409, testni o'chirishda ishlatilgan bo'lsa) bilan
+    /// bir xil uslubda, PM'ga savol: rasman kiritilsinmi?
+    /// </summary>
+    public const string SchoolHasStudents = "SCHOOL_HAS_STUDENTS";
+
     /// <summary>`Error.Code` → HTTP status. Ro'yxatda yo'q kod uchun standart qiymat `409` (domen holat mashinasi konflikti).</summary>
     public static readonly IReadOnlyDictionary<string, int> HttpStatusByCode = new Dictionary<string, int>(StringComparer.Ordinal)
     {
@@ -75,6 +90,8 @@ public static class ProblemCodes
         [TotpAlreadyEnabled] = StatusCodes.Status409Conflict,
         [TotpNotEnabled] = StatusCodes.Status409Conflict,
         [ConcurrencyConflict] = StatusCodes.Status409Conflict,
+        [UniqueConstraintConflict] = StatusCodes.Status409Conflict,
+        [SchoolHasStudents] = StatusCodes.Status409Conflict,
     };
 
     /// <summary>Default (`docs/06` jadvaliga kirmagan domen kodlari uchun) — holat mashinasi konflikti.</summary>

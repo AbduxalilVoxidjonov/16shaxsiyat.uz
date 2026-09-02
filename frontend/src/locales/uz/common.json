@@ -10,6 +10,7 @@
     "close": "Yopish",
     "save": "Saqlash",
     "cancel": "Bekor qilish",
+    "confirm": "Tasdiqlash",
     "back": "Orqaga",
     "next": "Keyingi",
     "search": "Qidiruv",
@@ -228,6 +229,99 @@
       "oct": "Oktyabr",
       "nov": "Noyabr",
       "dec": "Dekabr"
+    }
+  },
+  "schools": {
+    "loadError": "Maktablar ro'yxatini yuklab bo'lmadi",
+    "filters": {
+      "searchLabel": "Qidiruv",
+      "searchPlaceholder": "Maktab nomi bo'yicha qidirish…",
+      "regionLabel": "Viloyat",
+      "regionPlaceholder": "Barcha viloyatlar",
+      "statusLabel": "Holat",
+      "statusAll": "Barchasi",
+      "statusActive": "Faol",
+      "statusInactive": "Nofaol"
+    },
+    "table": {
+      "ariaLabel": "Maktablar jadvali",
+      "name": "Nomi",
+      "location": "Viloyat/Tuman",
+      "link": "Havola",
+      "students": "O'quvchi",
+      "completed": "Yakunlangan",
+      "status": "Holat",
+      "actions": "Amallar",
+      "emptyTitle": "Hali maktab yo'q",
+      "emptyDescription": "Yangi maktab qo'shib, unga o'ziga xos havola yarating."
+    },
+    "statusBadge": {
+      "active": "Faol",
+      "inactive": "Nofaol"
+    },
+    "actions": {
+      "create": "Yangi maktab",
+      "edit": "Tahrirlash",
+      "copyLink": "Havolani nusxalash",
+      "showQr": "QR kodni ko'rish",
+      "regenerateLink": "Havolani yangilash",
+      "activate": "Faollashtirish",
+      "deactivate": "Nofaol qilish",
+      "delete": "O'chirish"
+    },
+    "linkCopied": "Havola nusxalandi",
+    "linkCopyErrorTitle": "Havolani nusxalab bo'lmadi",
+    "linkCopyErrorDescription": "Brauzeringiz nusxalashni qo'llab-quvvatlamaydi. Havolani qo'lda nusxalang: {{url}}",
+    "regenerateDialog": {
+      "title": "Havolani yangilashni tasdiqlang",
+      "warning": "Eski havola darhol ishlamay qoladi. Maktabga yangi havolani yuborishni unutmang.",
+      "confirmCta": "Ha, yangilash",
+      "successTitle": "Havola yangilandi",
+      "errorTitle": "Havolani yangilab bo'lmadi. Birozdan so'ng qayta urinib ko'ring."
+    },
+    "deleteDialog": {
+      "title": "Maktabni o'chirishni tasdiqlang",
+      "description": "Bu amalni bekor qilib bo'lmaydi.",
+      "confirmCta": "Ha, o'chirish",
+      "hasStudentsError": "Bu maktabda o'quvchilar bor. Avval ularni ko'chiring yoki maktabni nofaol qiling.",
+      "genericError": "Maktabni o'chirishda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring.",
+      "successTitle": "Maktab o'chirildi"
+    },
+    "toggleActive": {
+      "activateSuccess": "Maktab faollashtirildi",
+      "deactivateSuccess": "Maktab nofaol qilindi",
+      "error": "Holatni o'zgartirib bo'lmadi. Birozdan so'ng qayta urinib ko'ring."
+    },
+    "qrModal": {
+      "title": "QR kod",
+      "linkLabel": "Havola",
+      "downloadCta": "PNG yuklab olish",
+      "printCta": "Chop etish",
+      "loadError": "QR kodni yuklab bo'lmadi"
+    },
+    "form": {
+      "createTitle": "Yangi maktab",
+      "editTitle": "Maktabni tahrirlash",
+      "nameLabel": "Nomi",
+      "regionLabel": "Viloyat",
+      "regionPlaceholder": "Tanlang",
+      "districtLabel": "Tuman",
+      "schoolNumberLabel": "Maktab raqami",
+      "schoolNumberHint": "Ixtiyoriy",
+      "contactPersonLabel": "Mas'ul shaxs (F.I.Sh.)",
+      "contactPersonHint": "Ixtiyoriy",
+      "contactPhoneLabel": "Telefon raqami",
+      "contactPhoneHint": "Ixtiyoriy",
+      "dailyLimitLabel": "Kunlik ro'yxatdan o'tish limiti",
+      "accessCodeLabel": "Kirish kodi",
+      "accessCodeHint": "Ixtiyoriy — bo'sh qoldirilsa hamma ro'yxatdan o'ta oladi",
+      "notesLabel": "Izoh",
+      "notesHint": "Ixtiyoriy",
+      "submitCreateCta": "Yaratish",
+      "submitEditCta": "Saqlash",
+      "createSuccess": "Maktab yaratildi",
+      "editSuccess": "O'zgarishlar saqlandi",
+      "genericError": "Saqlashda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
     }
   }
 }

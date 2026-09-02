@@ -218,6 +218,8 @@ Barcha xatolar `application/problem+json`:
 | `DUPLICATE_ASSESSMENT` | 409 | BR-1 buzildi |
 | `ACCESS_CODE_INVALID` | 400 | Maktab kirish kodi noto'g'ri (P10) |
 | `ACCOUNT_LOCKED` | 423 | 5 xato urinishdan keyin 15 daqiqalik blokirovka (P13) |
+| `SCHOOL_HAS_STUDENTS` | 409 | O'quvchisi bor maktabni o'chirib bo'lmaydi (P14) |
+| `UNIQUE_CONSTRAINT_CONFLICT` | 409 | Unique indeks buzildi (masalan slug poyga holatida) (P14) |
 | `TOTP_REQUIRED` | 401 | Foydalanuvchida 2FA yoqilgan, `totpCode` kerak (P13) |
 | `TOTP_ALREADY_ENABLED` | 409 | 2FA allaqachon yoqilgan (P13) |
 | `TOTP_NOT_ENABLED` | 409 | 2FA yoqilmagan, o'chirib bo'lmaydi (P13) |
@@ -293,3 +295,6 @@ Barcha xatolar `application/problem+json`:
 | 2026-09-02 | `admin_totp_backup_codes` jadvali va `admin_users.totp_last_used_step` ustuni qo'shildi | PM (P13) | Zaxira kodlarni xom saqlash mumkin emas — har biri alohida xeshlangan qator; `totp_last_used_step` bir TOTP kodini ikki marta ishlatishni bloklaydi. `docs/05` yangilandi |
 | 2026-09-02 | `POST /api/auth/totp/disable` `{currentPassword}` talab qiladi | PM (P13) | `docs/07` da tana ko'rsatilmagan edi. Parolsiz o'chirish o'g'irlangan sessiyaga 2FA ni yechib tashlash imkonini berardi — ya'ni 2FA ning ma'nosi yo'qolardi |
 | 2026-09-02 | Admin login rate limit: 10 urinish / 5 daqiqa / IP | PM (P13) | `AdminUser` blokirovkasi (5/15daq) hisob bo'yicha ishlaydi; rate limit esa IP bo'yicha — birgalikda parol terish va hisob sanash hujumlarini qoplaydi |
+| 2026-09-02 | Admin ro'yxatlarida saralash **doim DB darajasida**; SQLite tarjima qila olmaydigan `DateTimeOffset` testlari `Skip` bilan o'tkazib yuboriladi | PM (P14) | Dastlab saralash xotiraga ko'chirilgan edi (SQLite cheklovi uchun) — bu filtrga mos **barcha** o'quvchini yuklardi, `ix_students_last_at` indeksini foydasiz qilardi va "1000 o'quvchida <300ms" talabini buzardi. Sinov muhiti qulayligi uchun ishlab chiqarish kodi pasaytirilmaydi |
+| 2026-09-02 | `GET /api/admin/schools/{id}` javobida ham `qrCodeBase64` qaytadi | PM (P14/P23) | Aks holda admin QR ko'rish uchun `regenerate-link` chaqirishga majbur bo'lardi — bu eski havolani darhol o'ldiradi va maktab o'quvchilarini yarim yo'lda qoldiradi |
+| 2026-09-02 | Admin API umumiy rate limit: 300/daqiqa/IP | PM (P14) | `docs/07` §4 da talab qilingan, lekin P13 dan beri hech bir admin endpointda yo'q edi |

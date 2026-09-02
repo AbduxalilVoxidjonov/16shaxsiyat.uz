@@ -11,6 +11,7 @@ internal sealed class AppSettingsProvider : IAppSettings
 {
     private const int DefaultSessionLifetimeDays = 7;
     private const int DefaultRefreshTokenDays = 14;
+    private const string DefaultPublicWebBaseUrl = "https://salohiyat.uz";
 
     public AppSettingsProvider(IConfiguration configuration)
     {
@@ -26,6 +27,9 @@ internal sealed class AppSettingsProvider : IAppSettings
 
         var refreshDaysRaw = configuration["Jwt:RefreshTokenDays"];
         RefreshTokenDays = int.TryParse(refreshDaysRaw, out var refreshDays) ? refreshDays : DefaultRefreshTokenDays;
+
+        var publicWebBaseUrl = configuration["App:FrontendUrl"];
+        PublicWebBaseUrl = string.IsNullOrWhiteSpace(publicWebBaseUrl) ? DefaultPublicWebBaseUrl : publicWebBaseUrl.TrimEnd('/');
     }
 
     public int SessionLifetimeDays { get; }
@@ -33,4 +37,6 @@ internal sealed class AppSettingsProvider : IAppSettings
     public bool ShowResultToStudent { get; }
 
     public int RefreshTokenDays { get; }
+
+    public string PublicWebBaseUrl { get; }
 }

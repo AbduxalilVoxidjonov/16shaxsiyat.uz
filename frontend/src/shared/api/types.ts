@@ -23,12 +23,21 @@ export interface ProblemDetails {
   errors?: Record<string, string[]>;
 }
 
-/** `PagedResult<T>` — admin ro'yxat endpointlari uchun umumiy shakl. */
+/**
+ * `PagedResult<T>` — admin ro'yxat endpointlari uchun umumiy shakl.
+ * docs/07-api-shartnoma.md, 4-bo'lim ("Umumiy konvensiyalar — Pagination") shakli bilan aynan
+ * bir xil qilib to'g'irlandi (P23, `features/schools`): oldingi qisqartirilgan shakl (`total`
+ * yolg'iz) hech qayerda ishlatilmagan edi, endi bu tipni birinchi ishlatuvchi shu — kelasi
+ * ro'yxatlar (P24 o'quvchilar, P29) ham shu haqiqiy shaklga tayanadi.
+ */
 export interface PagedResult<T> {
   items: T[];
   page: number;
   pageSize: number;
-  total: number;
+  totalCount: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
 }
 
 /**

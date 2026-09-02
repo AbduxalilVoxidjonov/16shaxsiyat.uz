@@ -14,13 +14,14 @@ internal static class TestDataFactory
         string accessToken,
         int dailyRegistrationLimit = 500,
         bool isActive = true,
-        string? accessCode = null)
+        string? accessCode = null,
+        string? region = null)
     {
         var slug = SchoolSlug.Create(slugSeed).Value;
         var school = School.Create(
             Guid.NewGuid(),
             $"Maktab {slugSeed}",
-            "Toshkent",
+            region ?? "Toshkent",
             "Chilonzor",
             slug,
             accessToken,

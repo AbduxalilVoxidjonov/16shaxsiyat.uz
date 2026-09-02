@@ -46,6 +46,8 @@ public static class DependencyInjection
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
         services.AddSingleton<ITotpService, TotpService>();
         services.AddSingleton<IAppSettings, AppSettingsProvider>();
+        // `prompts/14`: maktab havolasi QR kodi — holatsiz (sof funksiya), `Singleton`.
+        services.AddSingleton<IQrCodeGenerator, QrCodeGenerator>();
         // `prompts/12`: AI navbati hozircha yo'q — `NoOpJobQueue` kontraktni bajaradi, P18 da almashadi.
         services.AddSingleton<IBackgroundJobQueue, NoOpJobQueue>();
         services.AddScoped<DbSeeder>();

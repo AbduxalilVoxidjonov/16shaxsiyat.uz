@@ -62,6 +62,15 @@ public interface IAppDbContext
     IQueryable<TEntity> AsNoTracking<TEntity>(IQueryable<TEntity> query)
         where TEntity : class;
 
+    /// <summary>
+    /// Global so'rov filtrini (soft-delete: `School`/`Student`/`Assessment` — `is_deleted`)
+    /// e'tiborsiz qoldiradi — `prompts/14` MAXSUS DIQQAT #5: o'quvchini `hard=true` bilan
+    /// TO'LIQ o'chirishda avval SOFT o'chirilgan sessiyalar ham (agar bo'lsa) topilib
+    /// tozalanishi kerak, aks holda ular yetim (orphan) qolib ketardi.
+    /// </summary>
+    IQueryable<TEntity> IgnoreQueryFilters<TEntity>(IQueryable<TEntity> query)
+        where TEntity : class;
+
     /// <summary>Yangi entity'ni o'zgarishlarni kuzatish grafigiga qo'shadi.</summary>
     void Add<TEntity>(TEntity entity)
         where TEntity : class;

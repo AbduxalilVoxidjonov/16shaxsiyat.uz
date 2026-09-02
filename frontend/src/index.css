@@ -77,3 +77,36 @@
     @apply outline-2 outline-offset-2 outline-primary-600;
   }
 }
+
+/*
+ * Chop etish uchun bitta hudud ko'rsatish naqshi — P23 (`SchoolQrModal`, maktab QR kodi
+ * A5 formatda chop etiladi, `docs/11` A-3). `.print-only-area` bilan belgilangan elementdan
+ * tashqari hech narsa chop etilmaydi; boshqa modallarda ham (masalan kelajakdagi hisobot
+ * chop etish ekranlarida) qayta ishlatilishi mumkin, shu sabab global joylashtirilgan.
+ */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .print-only-area,
+  .print-only-area * {
+    visibility: visible;
+  }
+
+  .print-only-area {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1.5cm;
+  }
+
+  @page {
+    size: A5;
+    margin: 1cm;
+  }
+}

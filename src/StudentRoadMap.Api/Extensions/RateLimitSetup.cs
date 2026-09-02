@@ -29,6 +29,17 @@ public static class RateLimitSetup
     /// </summary>
     public const string AdminLogin = "AdminLogin";
 
+    /// <summary>
+    /// Himoyalangan admin API endpointlari (`SchoolsController`/`StudentsController`/
+    /// `AuthController`ning `[Authorize]`li amallari) — IP bo'yicha 300/daqiqa (`docs/07`
+    /// 4-bo'lim: "Admin API (umumiy) 300/daqiqa"). IP bo'yicha (foydalanuvchi emas) — chunki
+    /// `UseRateLimiter()` `UseAuthentication()`dan OLDIN ishga tushadi (`Program.cs`), shu
+    /// sabab JWT `sub` claim'i limiter ishlagan paytda hali mavjud emas (`AdminLogin`dagi
+    /// bilan bir xil sabab/izoh). Amaliy oqibat: bir xil IP/NAT orqasidagi bir nechta admin
+    /// bitta kvotani baham ko'radi — MVP uchun qabul qilingan (yagona superadmin, `docs/01`).
+    /// </summary>
+    public const string AdminApi = "AdminApi";
+
     public static IServiceCollection AddRateLimitPolicies(this IServiceCollection services)
     {
         services.AddRateLimiter(options =>
@@ -91,6 +102,15 @@ public static class RateLimitSetup
                 factory: _ => new FixedWindowRateLimiterOptions
                 {
                     PermitLimit = 120,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0,
+                }));
+
+            options.AddPolicy(AdminApi, httpContext => RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: GetClientIp(httpContext),
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 300,
                     Window = TimeSpan.FromMinutes(1),
                     QueueLimit = 0,
                 }));

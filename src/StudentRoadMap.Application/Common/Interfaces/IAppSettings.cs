@@ -25,4 +25,12 @@ public interface IAppSettings
     /// o'laroq bu shu interfeys orqali beriladi.
     /// </summary>
     int RefreshTokenDays { get; }
+
+    /// <summary>
+    /// Ommaviy frontend bazaviy manzili — maktab havolasi shu asosda quriladi:
+    /// `{PublicWebBaseUrl}/t/{slug}?k={accessToken}` (`docs/08-auth-va-xavfsizlik.md` 3-bo'lim,
+    /// `P14`). `App:FrontendUrl` konfiguratsiyasi bilan bir xil manba (`Program.cs`da CORS uchun
+    /// ham ishlatiladi) — standart `https://salohiyat.uz`.
+    /// </summary>
+    string PublicWebBaseUrl { get; }
 }

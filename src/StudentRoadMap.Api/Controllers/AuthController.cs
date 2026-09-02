@@ -104,6 +104,7 @@ public sealed class AuthController : ControllerBase
     /// <summary>`GET /api/auth/me` — `docs/07` 2-bo'lim.</summary>
     [HttpGet("me")]
     [Authorize(Policy = JwtAuthenticationSetup.SuperAdminPolicy)]
+    [EnableRateLimiting(RateLimitSetup.AdminApi)]
     [ProducesResponseType(typeof(AdminUserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
     public async Task<ActionResult<AdminUserDto>> Me(CancellationToken cancellationToken)
@@ -116,6 +117,7 @@ public sealed class AuthController : ControllerBase
     /// <summary>`POST /api/auth/change-password` — `docs/07` 2-bo'lim.</summary>
     [HttpPost("change-password")]
     [Authorize(Policy = JwtAuthenticationSetup.SuperAdminPolicy)]
+    [EnableRateLimiting(RateLimitSetup.AdminApi)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
@@ -129,6 +131,7 @@ public sealed class AuthController : ControllerBase
     /// <summary>`POST /api/auth/totp/enable` — `docs/07` 2-bo'lim.</summary>
     [HttpPost("totp/enable")]
     [Authorize(Policy = JwtAuthenticationSetup.SuperAdminPolicy)]
+    [EnableRateLimiting(RateLimitSetup.AdminApi)]
     [ProducesResponseType(typeof(EnableTotpResult), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
@@ -142,6 +145,7 @@ public sealed class AuthController : ControllerBase
     /// <summary>`POST /api/auth/totp/disable` — `docs/07` 2-bo'lim.</summary>
     [HttpPost("totp/disable")]
     [Authorize(Policy = JwtAuthenticationSetup.SuperAdminPolicy)]
+    [EnableRateLimiting(RateLimitSetup.AdminApi)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]

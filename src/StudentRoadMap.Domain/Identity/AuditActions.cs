@@ -14,4 +14,14 @@ public static class AuditActions
     public const string AuthTotpEnabled = "Auth.TotpEnabled";
     public const string AuthTotpDisabled = "Auth.TotpDisabled";
     public const string SecurityRefreshReuse = "Security.RefreshReuse";
+
+    // --- P14 (`prompts/14-admin-maktab-va-oquvchi-api.md`) — `docs/08` 8-bo'limida ro'yxat
+    // qilingan maktab/o'quvchi harakatlari. ---
+
+    public const string SchoolCreated = "School.Created";
+    public const string SchoolUpdated = "School.Updated";
+    public const string SchoolDeleted = "School.Deleted";
+    public const string SchoolLinkRegenerated = "School.LinkRegenerated";
+    public const string SchoolToggledActive = "School.ToggledActive";
+    public const string StudentDeleted = "Student.Deleted";
 }

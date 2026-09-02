@@ -18,6 +18,10 @@
     <!-- Superadmin JWT access tokenini yaratish uchun (`docs/08` 2-bo'lim) — tekshirish (validation)
          `Api`dagi `Microsoft.AspNetCore.Authentication.JwtBearer` orqali amalga oshadi. -->
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
+    <!-- Maktab havolasi QR kodi (`docs/07` 3.1: `regenerate-link` → `qrCodeBase64`, `prompts/14`
+         MAXSUS DIQQAT #4). `PngByteQRCode` — `System.Drawing`ga bog'liq emas, Linux/Docker'da
+         muammosiz ishlaydi. -->
+    <PackageReference Include="QRCoder" Version="1.6.0" />
   </ItemGroup>
 
   <ItemGroup>

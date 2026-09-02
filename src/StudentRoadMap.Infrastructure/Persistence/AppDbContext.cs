@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using StudentRoadMap.Application.Common.Events;
 using StudentRoadMap.Application.Common.Exceptions;
 using StudentRoadMap.Application.Common.Interfaces;
+using StudentRoadMap.Application.Common.Models;
 using StudentRoadMap.Domain.Ai;
 using StudentRoadMap.Domain.Assessments;
 using StudentRoadMap.Domain.Catalog;
@@ -108,6 +109,8 @@ public sealed class AppDbContext : DbContext, IAppDbContext
 
     IQueryable<TEntity> IAppDbContext.AsNoTracking<TEntity>(IQueryable<TEntity> query) => query.AsNoTracking();
 
+    IQueryable<TEntity> IAppDbContext.IgnoreQueryFilters<TEntity>(IQueryable<TEntity> query) => query.IgnoreQueryFilters();
+
     void IAppDbContext.Add<TEntity>(TEntity entity) => Set<TEntity>().Add(entity);
 
     void IAppDbContext.Remove<TEntity>(TEntity entity) => Set<TEntity>().Remove(entity);
@@ -197,6 +200,19 @@ public sealed class AppDbContext : DbContext, IAppDbContext
             // shu yerda ushlanadi.
             throw new ConcurrencyConflictException(
                 "Ma'lumot boshqa so'rov tomonidan bir vaqtda o'zgartirildi. Qaytadan urinib ko'ring.", ex);
+        }
+        catch (DbUpdateException ex)
+        {
+            // `P14` (`prompts/14`) MAXSUS DIQQAT #3: DB darajasidagi unique cheklov (masalan
+            // `ux_schools_slug`) ChIN bir vaqtdagi poyga holatida buzilishi mumkin —
+            // `Application` qatlami EF Core paketiga bog'lanmasligi uchun portativ istisnoga
+            // aylantiriladi (`ConcurrencyConflictException` bilan bir xil naqsh). `DbUpdateException`
+            // `DbUpdateConcurrencyException`ning bazaviy klassi — shu sabab bu `catch` yuqoridagi
+            // aniqrog'idan KEYIN turadi (C# birinchi mos keladigan `catch`ni tanlaydi).
+            throw new UniqueConstraintViolationException(
+                ProblemCodes.UniqueConstraintConflict,
+                "Bu amal boshqa yozuv bilan ziddiyatga keldi (masalan, bir xil havola bandligi). Qaytadan urinib ko'ring.",
+                ex);
         }
 
         await PublishDomainEventsAsync(cancellationToken).ConfigureAwait(false);

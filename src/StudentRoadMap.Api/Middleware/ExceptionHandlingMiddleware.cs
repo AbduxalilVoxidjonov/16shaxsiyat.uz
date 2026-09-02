@@ -4,6 +4,7 @@ using StudentRoadMap.Application.Common.Models;
 using StudentRoadMap.Domain.Common;
 using ApplicationValidationException = StudentRoadMap.Application.Common.Exceptions.ValidationException;
 using ConcurrencyConflictException = StudentRoadMap.Application.Common.Exceptions.ConcurrencyConflictException;
+using UniqueConstraintViolationException = StudentRoadMap.Application.Common.Exceptions.UniqueConstraintViolationException;
 
 namespace StudentRoadMap.Api.Middleware;
 
@@ -77,6 +78,13 @@ public sealed class ExceptionHandlingMiddleware : IExceptionHandler
                 409,
                 ProblemCodes.ConcurrencyConflict,
                 concurrency.Message,
+                null),
+            // `P14` MAXSUS DIQQAT #3: DB unique cheklov poyga holati — tushunarli `409`,
+            // jimgina `500` emas (`AppDbContext.SaveChangesAsync` izohiga qarang).
+            UniqueConstraintViolationException unique => (
+                ProblemCodes.HttpStatusByCode.GetValueOrDefault(unique.Code, ProblemCodes.DefaultDomainErrorStatus),
+                unique.Code,
+                unique.Message,
                 null),
             DomainException domain => (
                 ProblemCodes.HttpStatusByCode.GetValueOrDefault(domain.Code, ProblemCodes.DefaultDomainErrorStatus),
