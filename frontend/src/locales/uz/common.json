@@ -70,6 +70,10 @@
       "totpInvalid": "Tasdiqlash kodi noto'g'ri.",
       "totpRequired": "Davom etish uchun autentifikatsiya ilovasidagi kodni kiriting.",
       "genericError": "Kirishda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
+    },
+    "restore": {
+      "errorTitle": "Sessiyani tekshirib bo'lmadi",
+      "errorDescription": "Server bilan aloqa uzildi. Tizimdan chiqarilmadingiz — qayta urinib ko'ring."
     }
   },
   "settings": {
@@ -171,6 +175,9 @@
     "schools": {
       "title": "Maktablar"
     },
+    "schoolDetail": {
+      "title": "Maktab"
+    },
     "students": {
       "title": "O'quvchilar"
     },
@@ -269,6 +276,40 @@
   },
   "schools": {
     "loadError": "Maktablar ro'yxatini yuklab bo'lmadi",
+    "detail": {
+      "backToList": "Maktablar ro'yxatiga qaytish",
+      "openCta": "Maktabni ochish",
+      "notFoundTitle": "Maktab topilmadi",
+      "notFoundDescription": "Bunday maktab mavjud emas yoki o'chirilgan.",
+      "stats": {
+        "heading": "Ishtirok statistikasi",
+        "ariaLabel": "Maktab ishtirok statistikasi",
+        "registered": "Ro'yxatdan o'tgan",
+        "registeredHint": "Anketani to'ldirgan o'quvchilar",
+        "completed": "Testni yakunlagan",
+        "completedHint": "To'liq topshirganlar",
+        "completionRate": "Yakunlash ulushi",
+        "inProgress": "Jarayonda",
+        "inProgressHint": "Boshlagan, lekin tugatmagan",
+        "lastActivity": "Oxirgi topshirilgan"
+      },
+      "info": {
+        "heading": "Maktab ma'lumotlari",
+        "schoolNumber": "Maktab raqami",
+        "contactPerson": "Mas'ul shaxs",
+        "contactPhone": "Telefon raqami",
+        "dailyLimit": "Kunlik ro'yxatdan o'tish limiti",
+        "accessCode": "Kirish kodi",
+        "createdAt": "Yaratilgan sana",
+        "link": "Havola",
+        "notes": "Izoh"
+      },
+      "students": {
+        "heading": "O'quvchilar",
+        "description": "Bu maktabda {{count}} ta o'quvchi ro'yxatdan o'tgan.",
+        "cta": "Shu maktab o'quvchilarini ko'rish"
+      }
+    },
     "filters": {
       "searchLabel": "Qidiruv",
       "searchPlaceholder": "Maktab nomi bo'yicha qidirish…",
@@ -951,7 +992,24 @@
   "catalog": {
     "title": "Testlar katalogi",
     "actions": {
-      "import": "Test yuklash"
+      "import": "Test yuklash",
+      "edit": "Tahrirlash",
+      "duplicate": "Nusxa olish",
+      "publish": "Nashr qilish",
+      "activate": "Faollashtirish",
+      "deactivate": "Faollikni to'xtatish",
+      "archive": "Arxivlash",
+      "delete": "O'chirish",
+      "addQuestion": "Savol qo'shish",
+      "editQuestionAria": "{{code}} savolini tahrirlash",
+      "moveUpAria": "{{code}} savolini yuqoriga ko'chirish",
+      "moveDownAria": "{{code}} savolini pastga ko'chirish",
+      "deleteQuestion": "Savolni o'chirish",
+      "deleteQuestionAria": "{{code}} savolini o'chirish",
+      "addScale": "Shkala qo'shish",
+      "editScaleAria": "{{code}} shkalasini tahrirlash",
+      "deleteScale": "Shkalani o'chirish",
+      "deleteScaleAria": "{{code}} shkalasini o'chirish"
     },
     "systemHeading": "Tizim metodikalari",
     "customHeading": "Mening testlarim",
@@ -995,7 +1053,14 @@
       "notFoundTitle": "Test topilmadi",
       "notFoundDescription": "Bunday test mavjud emas yoki o'chirilgan",
       "questionsHeading": "Savollar",
-      "systemLockedNotice": "Bu tizim metodikasi — savollar himoyalangan, faqat ko'rish uchun."
+      "systemEditableNotice": "Bu tizim metodikasi. Nomi, tavsifi va savol matnlarini tahrirlash mumkin; shkala, yo'nalish va og'irlik qulflangan, savol qo'shib yoki o'chirib bo'lmaydi — ular ballash formulalariga bog'liq. Metodikaning o'zini o'zgartirmoqchi bo'lsangiz, \"Nusxa olish\" bilan erkin tahrirlanadigan nusxa yarating.",
+      "publishedEditWarning": "Bu anketa nashr etilgan. Savol matnini o'zgartirsangiz, u hozir test yechayotgan o'quvchilarga ham darhol ko'rinadi. Ballar o'zgarmaydi — hisoblash shkala va og'irlikka tayanadi, ular bu yerda o'zgartirilmaydi.",
+      "questionsEmptyTitle": "Savollar yo'q",
+      "questionsEmptyDescription": "\"Savol qo'shish\" tugmasi bilan birinchi savolni qo'shing.",
+      "questionsEmptySystemDescription": "Bu metodikada hali savollar yuklanmagan.",
+      "scalesHeading": "Shkalalar",
+      "scalesEmptyTitle": "Shkala qo'shilmagan",
+      "scalesEmptyDescription": "Savollar shkala kodi bo'yicha guruhlanadi — avval shkala qo'shing, keyin savollarni unga bog'lang."
     },
     "questionsTable": {
       "text": "Matni",
@@ -1003,7 +1068,267 @@
       "direction": "Yo'nalish",
       "directionForward": "To'g'ri",
       "directionReverse": "Teskari",
-      "weight": "Og'irlik"
+      "weight": "Og'irlik",
+      "state": "Holati",
+      "actions": "Amallar"
+    },
+    "questionType": {
+      "Likert5": "Likert (5 ball)",
+      "Likert7": "Likert (7 ball)",
+      "Binary": "Ha / Yo'q",
+      "SingleChoice": "Bitta variant",
+      "ForcedChoice": "Majburiy tanlov"
+    },
+    "meta": {
+      "title": "Anketa ma'lumotlarini tahrirlash",
+      "nameLabel": "Nomi",
+      "descriptionLabel": "Tavsifi",
+      "displayOrderLabel": "Katalogdagi tartib raqami",
+      "displayOrderHint": "API joriy tartib raqamini qaytarmaydi — saqlansa, tartib shu yerda kiritilgan songa o'rnatiladi.",
+      "minutesLabel": "Taxminiy vaqt (daqiqa)",
+      "minutesHint": "O'quvchiga ko'rsatiladigan taxminiy davomiylik.",
+      "pageSizeLabel": "Bir sahifadagi savollar soni",
+      "pageSizeHint": "O'quvchi ekranida bir sahifada nechta savol chiqishi.",
+      "shuffleLabel": "Savollar tartibi aralashtirilsin",
+      "successTitle": "Anketa ma'lumotlari saqlandi"
+    },
+    "questionForm": {
+      "createTitle": "Yangi savol qo'shish",
+      "createDescription": "Savol shu anketaga qo'shiladi.",
+      "editTitle": "Savolni tahrirlash",
+      "codeLabel": "Savol kodi",
+      "codeHint": "Anketa ichida unikal, masalan ST-Q01.",
+      "codeLockedHint": "Savol kodi yaratilgandan keyin o'zgarmaydi.",
+      "typeLabel": "Savol turi",
+      "typeLockedHint": "Savol turi yaratilgandan keyin o'zgarmaydi.",
+      "textUzLabel": "Matni (o'zbekcha)",
+      "textRuLabel": "Matni (ruscha)",
+      "textEnLabel": "Matni (inglizcha)",
+      "optionalHint": "Ixtiyoriy.",
+      "orderLabel": "Tartib raqami",
+      "isActiveLabel": "Savol faol (o'quvchiga ko'rsatiladi)",
+      "isRequiredLabel": "Javob berish majburiy",
+      "scaleHint": "Savol qaysi shkalaga ball qo'shishi.",
+      "directionHint": "Teskari savolda javob qiymati aylantiriladi.",
+      "weightHint": "Ballash formulasidagi og'irlik koeffitsiyenti.",
+      "systemLockedHint": "Tizim metodikasida shkala, yo'nalish va og'irlik o'zgartirilmaydi — ular ballash formulalariga bog'liq (faqat ko'rish uchun).",
+      "createSuccess": "Savol qo'shildi",
+      "editSuccess": "Savol saqlandi"
+    },
+    "questionDelete": {
+      "title": "Savolni o'chirish",
+      "warning": "Savol butunlay o'chiriladi. Agar shu savolga berilgan javoblar bo'lsa, eski hisobotlar unga tayanmay qoladi.",
+      "successTitle": "Savol o'chirildi"
+    },
+    "scaleForm": {
+      "createTitle": "Yangi shkala qo'shish",
+      "editTitle": "Shkalani tahrirlash",
+      "codeLabel": "Shkala kodi",
+      "codeHint": "Katta lotin harflari, masalan STRESS.",
+      "codeLockedHint": "Shkala kodi yaratilgandan keyin o'zgarmaydi.",
+      "nameLabel": "Nomi",
+      "descriptionLabel": "Tavsifi",
+      "displayOrderLabel": "Tartib raqami",
+      "bandsPreserved": "Talqin oraliqlari ({{count}} ta) shu ko'rinishda saqlanadi — bu oynada tahrirlanmaydi.",
+      "createSuccess": "Shkala qo'shildi",
+      "editSuccess": "Shkala saqlandi"
+    },
+    "scalesList": {
+      "questionCount": "{{count}} ta savol"
+    },
+    "scaleDelete": {
+      "title": "Shkalani o'chirish",
+      "warning": "Shkalada savollar bo'lsa u o'chirilmaydi — avval savollarni boshqa shkalaga o'tkazing.",
+      "successTitle": "Shkala o'chirildi"
+    },
+    "duplicate": {
+      "title": "Anketadan nusxa olish",
+      "description": "Nusxa Qoralama holatida yaratiladi va unda hamma narsa tahrirlanadi.",
+      "codeLabel": "Yangi anketa kodi",
+      "codeHint": "Katta lotin harflari, raqam, '-' va '_' belgilaridan iborat, 20 belgigacha.",
+      "codeError": "Kod noto'g'ri: faqat katta lotin harflari, raqam, '-' va '_', 20 belgigacha.",
+      "confirmCta": "Nusxa olish",
+      "successTitle": "Nusxa yaratildi"
+    },
+    "publish": {
+      "successTitle": "Anketa nashr etildi"
+    },
+    "toggleActive": {
+      "successTitle": "Anketa faolligi yangilandi"
+    },
+    "archive": {
+      "title": "Anketani arxivlash",
+      "warning": "Arxivlangan anketa yangi sessiyalarga qo'shilmaydi. Eski natijalar saqlanib qoladi.",
+      "successTitle": "Anketa arxivlandi"
+    },
+    "delete": {
+      "title": "Anketani o'chirish",
+      "warning": "Anketa butunlay o'chiriladi. Bu faqat hech qaysi sessiyada ishlatilmagan Custom anketalarda mumkin.",
+      "successTitle": "Anketa o'chirildi"
+    },
+    "errors": {
+      "systemTestLocked": "Bu tizim metodikasi: shkala, yo'nalish va og'irlik o'zgartirilmaydi, savol qo'shilmaydi/o'chirilmaydi. Nusxa olib, nusxada tahrirlang.",
+      "testNotPublishable": "Anketa nashrga tayyor emas: kamida bitta faol savol bo'lishi, har bir savolga shkala biriktirilgan bo'lishi va nomi unikal bo'lishi kerak.",
+      "invalidTransition": "Anketaning joriy holatida bu amalni bajarib bo'lmaydi.",
+      "testInUse": "Bu anketa sessiyalarda ishlatilgan — o'chirib bo'lmaydi, uni arxivlang.",
+      "testCodeDuplicate": "Bu kod bilan anketa allaqachon mavjud.",
+      "testNameDuplicate": "Bu nom bilan anketa allaqachon mavjud.",
+      "questionCodeDuplicate": "Bu kod bilan savol allaqachon mavjud.",
+      "scaleCodeDuplicate": "Bu kod bilan shkala allaqachon mavjud.",
+      "scaleInUse": "Bu shkalada savollar bor — avval ularni boshqa shkalaga o'tkazing.",
+      "notFound": "Yozuv topilmadi — u o'chirilgan bo'lishi mumkin.",
+      "forbidden": "Bu amal uchun ruxsat yo'q.",
+      "rateLimited": "So'rovlar juda tez-tez yuborildi. Bir oz kutib, qayta urinib ko'ring.",
+      "concurrencyConflict": "Yozuv bir vaqtda boshqa joyda o'zgartirildi. Sahifani yangilab, qayta urining.",
+      "network": "Server bilan bog'lanib bo'lmadi. Internet aloqasini tekshirib, qayta urining.",
+      "generic": "Amalni bajarib bo'lmadi. Birozdan keyin qayta urinib ko'ring."
+    }
+  },
+  "aiSettings": {
+    "provider": {
+      "apiKeyLabel": "API kaliti",
+      "apiKeyChangeCta": "O'zgartirish",
+      "apiKeyMaskedHint": "Kalit shifrlangan holda saqlanadi va boshqa hech qayerda to'liq ko'rsatilmaydi.",
+      "apiKeyPlaceholder": "Yangi API kalitini kiriting",
+      "apiKeyBlankHint": "Bo'sh qoldirsangiz — mavjud kalit o'zgarmaydi. Kalitni tasodifan o'chirib qo'ymaslik uchun faqat almashtirmoqchi bo'lsangiz to'ldiring.",
+      "status": {
+        "noKey": "Kalit kiritilmagan",
+        "default": "Default",
+        "active": "Faol",
+        "inactive": "Nofaol"
+      },
+      "names": {
+        "Gemini": "Gemini",
+        "OpenAi": "OpenAI",
+        "Anthropic": "Anthropic"
+      },
+      "modelLabel": "Model nomi",
+      "modelHint": "Tavsiya etilgan: {{recommended}} (majburiy emas — istalgan model nomini kiritishingiz mumkin)",
+      "maxOutputTokensLabel": "Maksimal token soni",
+      "temperatureLabel": "Temperature",
+      "isActiveLabel": "Faol (tahlilda ishlatiladi)",
+      "setDefaultCta": "Default qilish",
+      "saveSuccess": "Sozlamalar saqlandi",
+      "saveError": "Sozlamalarni saqlab bo'lmadi",
+      "setDefaultSuccess": "Default provayder o'zgartirildi",
+      "setDefaultError": "Default provayderni o'zgartirib bo'lmadi",
+      "confirmKeyChangeTitle": "API kalitini almashtirishni tasdiqlang",
+      "confirmKeyChangeDescription": "Yangi kalit saqlangach eskisi darhol ishlamay qoladi. Kalit to'g'ri kiritilganiga ishonch hosil qiling.",
+      "confirmKeyChangeCta": "Ha, almashtirish",
+      "confirmDefaultTitle": "\"{{name}}\" ni default qilishni tasdiqlang",
+      "confirmDefaultDescription": "Default provayder — kalit kiritilmagan yoki tahlil boshqa sabab bilan muvaffaqiyatsiz bo'lganda birinchi navbatda ishlatiladi. Bu ishlab chiqarishda AI xarajati va javob vaqtiga ta'sir qiladi.",
+      "confirmDefaultCta": "Ha, default qilish",
+      "testConnection": {
+        "cta": "Aloqani tekshirish",
+        "success": "Ishlayapti · {{latency}} ms",
+        "unknownError": "Aloqa tekshiruvi muvaffaqiyatsiz tugadi",
+        "networkError": "Tekshiruvni yuborib bo'lmadi — tarmoqni tekshiring"
+      }
+    },
+    "fallback": {
+      "heading": "Fallback tartibi",
+      "description": "Birinchi provayder ishlamasa (kalit xato, limit tugagan, javob bermadi), tizim ro'yxatdagi keyingi provayderga o'tadi.",
+      "reorderSuccess": "Tartib yangilandi",
+      "reorderError": "Tartibni yangilab bo'lmadi",
+      "moveUp": "Yuqoriga ko'chirish",
+      "moveDown": "Pastga ko'chirish"
+    },
+    "noActiveProviderBanner": "AI tahlil ishlamaydi — kamida bitta provayder sozlanishi kerak.",
+    "usage": {
+      "heading": "Foydalanish statistikasi",
+      "totalCalls": "Chaqiruvlar (joriy oy)",
+      "inputTokens": "Kirish tokenlari",
+      "outputTokens": "Chiqish tokenlari",
+      "estimatedCost": "Taxminiy xarajat",
+      "emptyTitle": "Hali chaqiruvlar yo'q",
+      "emptyDescription": "Joriy oyda AI tahlili ishlatilganda shu yerda statistika ko'rinadi.",
+      "breakdownAriaLabel": "Provayder kesimida chaqiruvlar taqsimoti",
+      "callsCount": "{{count}} ta"
+    },
+    "prompts": {
+      "heading": "Promptlar",
+      "emptyTitle": "Prompt shablonlari yo'q",
+      "emptyDescription": "Hali birorta prompt versiyasi yaratilmagan.",
+      "activeBadge": "Faol",
+      "createdAt": "Yaratilgan: {{date}}",
+      "viewCta": "Ko'rish",
+      "systemTextLabel": "System matni",
+      "userTextLabel": "User matni"
+    }
+  },
+  "audit": {
+    "filters": {
+      "actionLabel": "Harakat turi",
+      "actionAll": "Barcha harakatlar",
+      "entityTypeLabel": "Obyekt turi",
+      "entityTypeAll": "Barcha obyektlar",
+      "fromLabel": "Sanadan",
+      "toLabel": "Sanagacha",
+      "clear": "Filtrlarni tozalash"
+    },
+    "table": {
+      "ariaLabel": "Audit jurnali jadvali",
+      "createdAt": "Sana",
+      "adminUser": "Foydalanuvchi",
+      "action": "Harakat",
+      "entityType": "Obyekt turi",
+      "entityId": "Obyekt",
+      "actions": "Amallar",
+      "viewDetail": "Batafsil",
+      "emptyTitle": "Audit yozuvlari topilmadi",
+      "emptyDescription": "Tanlangan filtrlarga mos yozuv yo'q."
+    },
+    "detail": {
+      "noEntity": "—",
+      "entityId": "Obyekt ID",
+      "adminUser": "Administrator",
+      "unknownUser": "Noma'lum",
+      "ipHash": "IP xeshi",
+      "diffHeading": "O'zgarishlar",
+      "noDiff": "Bu yozuvda qo'shimcha ma'lumot yo'q.",
+      "diffChange": {
+        "added": "Qo'shildi",
+        "removed": "Olib tashlandi",
+        "changed": "O'zgardi"
+      }
+    },
+    "actionLabels": {
+      "AuthLoginSucceeded": "Tizimga kirish (muvaffaqiyatli)",
+      "AuthLoginFailed": "Tizimga kirish (muvaffaqiyatsiz)",
+      "AuthPasswordChanged": "Parol o'zgartirildi",
+      "AuthTotpEnabled": "2FA yoqildi",
+      "AuthTotpDisabled": "2FA o'chirildi",
+      "SecurityRefreshReuse": "Shubhali refresh token urinishi",
+      "SchoolCreated": "Maktab yaratildi",
+      "SchoolUpdated": "Maktab yangilandi",
+      "SchoolDeleted": "Maktab o'chirildi",
+      "SchoolLinkRegenerated": "Maktab havolasi yangilandi",
+      "SchoolToggledActive": "Maktab faolligi o'zgartirildi",
+      "StudentDeleted": "O'quvchi o'chirildi",
+      "AssessmentDeleted": "Sessiya o'chirildi",
+      "AssessmentScoresRecalculated": "Ballar qayta hisoblandi",
+      "AssessmentAnalysisRerun": "AI tahlili qayta ishga tushirildi",
+      "ProgramCreated": "Dastur yaratildi",
+      "ProgramUpdated": "Dastur yangilandi",
+      "ProgramPublished": "Dastur nashr etildi",
+      "ProgramArchived": "Dastur arxivlandi",
+      "ProgramToggledActive": "Dastur faolligi o'zgartirildi",
+      "ProgramTestAdded": "Dasturga test qo'shildi",
+      "ProgramTestRemoved": "Dasturdan test olib tashlandi",
+      "ProgramTestsReordered": "Dastur testlari qayta tartiblandi",
+      "ProgramSchoolAssigned": "Dastur maktabga biriktirildi",
+      "ProgramSchoolUnassigned": "Dastur maktabdan uzildi",
+      "AiConfigUpdated": "AI sozlamalari yangilandi",
+      "AiConfigKeyChanged": "AI API kaliti almashtirildi",
+      "CatalogQuestionUpdated": "Katalog savoli tahrirlandi",
+      "ExportStudentsDownloaded": "O'quvchilar ro'yxati eksport qilindi"
+    },
+    "entityTypeLabels": {
+      "School": "Maktab",
+      "Student": "O'quvchi",
+      "Assessment": "Sessiya",
+      "AssessmentProgram": "Dastur",
+      "AiProviderConfig": "AI provayder"
     }
   }
 }

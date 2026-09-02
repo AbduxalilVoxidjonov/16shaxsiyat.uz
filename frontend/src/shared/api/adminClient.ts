@@ -24,6 +24,17 @@ export function setOnAdminSessionExpired(handler: (() => void) | null): void {
   onSessionExpired = handler;
 }
 
+/**
+ * Fon refresh'i yangi access token olganda chaqiriladi. Usiz `authStore.accessToken` eski
+ * qiymatda qolib ketardi — HTTP qatlami bilan React qatlami bir-biriga zid bo'lib,
+ * `ProtectedRoute` ko'radigan token bilan haqiqatda yuborilayotgan token farq qilardi.
+ */
+let onTokenRefreshed: ((token: string) => void) | null = null;
+
+export function setOnAdminTokenRefreshed(handler: ((token: string) => void) | null): void {
+  onTokenRefreshed = handler;
+}
+
 interface RefreshResponse {
   accessToken: string;
   refreshToken?: string;
@@ -52,6 +63,7 @@ async function performRefresh(): Promise<boolean> {
       credentials: 'include',
     });
     setAdminAccessToken(result.accessToken);
+    onTokenRefreshed?.(result.accessToken);
     return true;
   } catch {
     setAdminAccessToken(null);

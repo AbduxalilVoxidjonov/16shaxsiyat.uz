@@ -85,7 +85,7 @@ public sealed class GeminiProvider : IAiAnalysisProvider
 
         return outcome.Success
             ? new AiHealthResult(true, $"Gemini ulanishi muvaffaqiyatli ({stopwatch.ElapsedMilliseconds} ms).")
-            : new AiHealthResult(false, outcome.ErrorMessage);
+            : new AiHealthResult(false, outcome.ErrorMessage, outcome.ErrorKind);
     }
 
     private HttpRequestMessage BuildRequest(string systemText, string userText, JsonElement schema, int maxOutputTokens, double temperature)

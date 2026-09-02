@@ -56,6 +56,16 @@ public sealed class AiAnalysis : AggregateRoot
 
     public bool IsCurrent { get; private set; }
 
+    /// <summary>
+    /// `true` — bu yozuv haqiqiy AI javobi EMAS, barcha provayderlar/urinishlar muvaffaqiyatsiz
+    /// bo'lgandan keyin `TypeCatalog`/`CareerMap`dan yig'ilgan shablon hisobot (`docs/09-ai-analiz-moduli.md`
+    /// 11-bo'lim, P18). Faqat `CreateFallbackReport` orqali `true` bo'ladi. UI'da "Avtomatik
+    /// shablon hisobot" deb belgilanishi va "Qayta urinish" tugmasi ko'rsatilishi kerak
+    /// (bu bayroqni admin DTO'ga ulash P18 qamroviga kirmaydi — `Application.Admin.Students`
+    /// boshqa agent hududi, PM'ga hisobotda alohida qayd etilgan).
+    /// </summary>
+    public bool IsFallbackReport { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
 
     /// <summary>EF Core uchun parametrsiz konstruktor.</summary>
@@ -175,4 +185,74 @@ public sealed class AiAnalysis : AggregateRoot
 
     /// <summary>Yangi urinish joriy bo'lganda avvalgi muvaffaqiyatli yozuvda chaqiriladi.</summary>
     public void MarkNotCurrent() => IsCurrent = false;
+
+    /// <summary>
+    /// `CreateFallbackReport` yozuvini "joriy" deb belgilaydi — chaqiruvchi (orkestrator) buni
+    /// FAQAT shu `Assessment` uchun ILGARI hech qanday `IsCurrent = true` yozuv bo'lmaganda
+    /// chaqiradi (eski, haqiqiy muvaffaqiyatli tahlil zaxira shablon bilan yashirilmasligi kerak).
+    /// </summary>
+    public void MarkCurrent() => IsCurrent = true;
+
+    /// <summary>
+    /// Faqat butun fallback zanjiri (`docs/09` 7-bo'lim) muvaffaqiyatsiz bo'lgandan KEYIN,
+    /// zanjirdagi OXIRGI urinishning xabarini aniqroq qilish uchun (`CLAUDE.md` MAXSUS DIQQAT
+    /// #1: "hamma provider BadRequest bersa ... 'so'rov shakli noto'g'ri' deb yozilsin"). Har
+    /// bir alohida urinishning texnik xabari `Fail()` orqali allaqachon yozilgan — bu faqat
+    /// ZANJIRNING YAKUNIY sababini almashtiradi.
+    /// </summary>
+    public void OverrideErrorMessage(string errorMessage)
+    {
+        if (Status != AiAnalysisStatus.Failed)
+        {
+            throw new DomainException("AI_ANALYSIS_INVALID_TRANSITION", $"Xato xabarini faqat 'Failed' holatida almashtirish mumkin (joriy: '{Status}').");
+        }
+
+        if (string.IsNullOrWhiteSpace(errorMessage))
+        {
+            throw new ArgumentException("Xato xabari bo'sh bo'lishi mumkin emas.", nameof(errorMessage));
+        }
+
+        ErrorMessage = errorMessage;
+    }
+
+    /// <summary>
+    /// Zaxira (fallback) shablon hisobot — haqiqiy AI chaqiruvi YO'Q, `Pending → Running` bosqichlarini
+    /// aylanib o'tadi va `AiAnalysisSucceededEvent` KO'TARMAYDI (bu haqiqiy AI muvaffaqiyati emas —
+    /// `Assessment.Status` chaqiruvchida ataylab `AnalysisFailed`da qoldiriladi, `docs/09` 11-bo'lim).
+    /// `lastAttemptedProvider` — faqat izoh uchun (qaysi provider oxirgi bo'lib urinilgani);
+    /// hech qanday provider sinalmagan bo'lsa chaqiruvchi shartli qiymat beradi
+    /// (`MockAiProvider.Kind` bilan bir xil naqsh — enumda "yo'q" degan a'zo yo'q).
+    /// </summary>
+    public static AiAnalysis CreateFallbackReport(
+        Guid id,
+        Guid assessmentId,
+        AiProvider lastAttemptedProvider,
+        string promptVersion,
+        int attemptNumber,
+        string summary,
+        string personalityPortrait,
+        string? strengthsJson,
+        string? growthAreasJson,
+        string? careerSuggestionsJson,
+        string? teacherNotes,
+        string? parentNotes,
+        string? attentionFlagsJson,
+        DateTimeOffset now)
+    {
+        var analysis = new AiAnalysis(id, assessmentId, lastAttemptedProvider, "template", promptVersion, null, attemptNumber, now)
+        {
+            Status = AiAnalysisStatus.Succeeded,
+            Summary = summary,
+            PersonalityPortrait = personalityPortrait,
+            StrengthsJson = strengthsJson,
+            GrowthAreasJson = growthAreasJson,
+            CareerSuggestionsJson = careerSuggestionsJson,
+            TeacherNotes = teacherNotes,
+            ParentNotes = parentNotes,
+            AttentionFlagsJson = attentionFlagsJson,
+            IsFallbackReport = true,
+        };
+
+        return analysis;
+    }
 }

@@ -120,4 +120,15 @@ public sealed class QuestionTests
 
         question.DisplayOrder.Should().Be(3);
     }
+
+    [Fact]
+    public void UpdateRequired_OnSystemQuestion_Succeeds()
+    {
+        // BR-8 doirasiga kirmaydi — `docs/07` §3.4 faqat `Scale`/`Direction`/`Weight`ni cheklaydi.
+        var question = CreateSystemQuestion();
+
+        question.UpdateRequired(false);
+
+        question.IsRequired.Should().BeFalse();
+    }
 }

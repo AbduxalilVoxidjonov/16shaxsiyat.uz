@@ -14,7 +14,11 @@ services:
       # compose tarmog'i orqali (`Host=db`) topadi, port chiqarish faqat host'dan `psql`
       # bilan ulanish uchun kerak. `0.0.0.0` da ochiq qoldirish bir xil Wi-Fi'dagi
       # istalgan qurilmaga bazaga urinish imkonini berardi.
-      - "127.0.0.1:5432:5432"
+      #
+      # Standart **5433**, 5432 EMAS: shu mashinada boshqa loyihaning Postgres'i 5432 ni
+      # egallab turgani aniqlandi va butun stek "port is already allocated" bilan ko'tarilmay
+      # qolgan edi. Boshqa port kerak bo'lsa `.env` da `DB_PORT` bilan o'zgartiriladi.
+      - "127.0.0.1:${DB_PORT:-5433}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

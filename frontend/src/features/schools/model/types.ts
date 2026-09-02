@@ -33,6 +33,29 @@ export interface SchoolListItemDto {
   lastActivityAt: string | null;
 }
 
+/**
+ * Maktabning ISHTIROK statistikasi — `SchoolDetailDto.stats` (docs/07 3.1).
+ *
+ * **Birliklar (docs/07 3.1 va 3.6 bilan bir xil qoida):**
+ * - `completionRate` — **ulush (0..1), foiz EMAS**: ko'rsatishdan oldin `× 100` qilinadi
+ *   (`dashboard`dagi `SchoolBreakdownTable` bilan bir xil; ilgari aynan shu birlik chalkashligi
+ *   sababli 50% yakunlagan maktab "1%" ko'ringan). Hech kim ro'yxatdan o'tmagan bo'lsa —
+ *   `null` (nisbat ANIQLANMAGAN), `0` EMAS.
+ * - `lastActivityAt` — ma'lumot yo'q bo'lsa `null` (UI'da `—`).
+ * - Uchta hisoblagich esa DOIM son: hech kim topshirmagan bo'lsa `0` ko'rsatiladi, `—` emas.
+ */
+export interface SchoolStatsDto {
+  /** Ro'yxatdan o'tgan o'quvchilar (o'chirilganlar kirmaydi). */
+  studentCount: number;
+  /** Testni to'liq yakunlagan o'quvchilar. */
+  completedCount: number;
+  /** Jarayondagi (boshlangan, lekin tugatilmagan) sessiyalar. */
+  inProgressCount: number;
+  /** Ulush 0..1 (foiz emas); `studentCount === 0` bo'lsa `null`. */
+  completionRate: number | null;
+  lastActivityAt: string | null;
+}
+
 /** `GET /api/admin/schools/{id}` — "Batafsil + statistika" (docs/07 3.1). */
 export interface SchoolDetailDto {
   id: string;
@@ -50,9 +73,9 @@ export interface SchoolDetailDto {
   /** Taxminiy maydon — yuqoridagi TODO izohiga qarang. */
   qrCodeBase64: string;
   isActive: boolean;
-  studentCount: number;
-  completedCount: number;
   createdAt: string;
+  updatedAt: string;
+  stats: SchoolStatsDto;
 }
 
 /** `GET /api/admin/schools` so'rov parametrlari — docs/07 3.1. */

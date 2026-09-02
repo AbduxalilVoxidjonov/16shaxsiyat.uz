@@ -95,6 +95,34 @@ describe('ProtectedRoute', () => {
     expect(useAuthStore.getState().user).toEqual({ id: 'u1', username: 'admin' });
   });
 
+  // REGRESSIYA (2026-09-02, egasining xabari): API bir lahzaga javob bermasa — konteyner
+  // qayta ishga tushayotgan bo'lsa `502`, tarmoq uzilsa `status: 0` — ilgari `ProtectedRoute`
+  // har qanday xatoda `clear()` chaqirib, HAQIQIY sessiyasi bor superadminni login sahifasiga
+  // uloqtirardi. Endi sessiya faqat serverning aniq `401`ida tugatiladi.
+  it("`502` kelganda sessiyani tugatmaydi va login'ga yubormaydi — qayta urinish taklif qiladi", async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response('<html>502</html>', { status: 502 })),
+    );
+
+    renderProtected('/admin/students');
+
+    expect(await screen.findByRole('button', { name: /qayta/i })).toBeInTheDocument();
+    expect(screen.queryByText('LOGIN_STUB')).not.toBeInTheDocument();
+    // Eng muhimi: `isRestoring` o'chirilmagan, ya'ni sessiya "yo'q" deb belgilanmagan.
+    expect(useAuthStore.getState().isRestoring).toBe(true);
+  });
+
+  it("tarmoq uzilganda ham (fetch reject) sessiyani tugatmaydi", async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+
+    renderProtected('/admin/students');
+
+    expect(await screen.findByRole('button', { name: /qayta/i })).toBeInTheDocument();
+    expect(screen.queryByText('LOGIN_STUB')).not.toBeInTheDocument();
+    expect(useAuthStore.getState().isRestoring).toBe(true);
+  });
+
   it("tiklash davomida spinner (yuklanish holati) ko'rsatiladi, darhol login'ga qaytarmaydi", () => {
     // `fetch` hech qachon `resolve` bo'lmaydi — `isRestoring: true` holatida qolamiz.
     vi.stubGlobal(

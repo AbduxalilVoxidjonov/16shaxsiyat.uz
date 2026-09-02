@@ -21,6 +21,7 @@ const StudentResultPage = lazy(
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'));
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'));
 const SchoolsPage = lazy(() => import('@/features/schools/pages/SchoolsPage'));
+const SchoolDetailPage = lazy(() => import('@/features/schools/pages/SchoolDetailPage'));
 const StudentsPage = lazy(() => import('@/features/students/pages/StudentsPage'));
 const StudentProfilePage = lazy(() => import('@/features/students/pages/StudentProfilePage'));
 const AssessmentsPage = lazy(() => import('@/features/assessments/pages/AssessmentsPage'));
@@ -75,6 +76,7 @@ const router = createBrowserRouter([
     children: [
       { path: ROUTE_PATTERNS.admin.dashboard, element: withSuspense(DashboardPage) },
       { path: ROUTE_PATTERNS.admin.schools, element: withSuspense(SchoolsPage) },
+      { path: ROUTE_PATTERNS.admin.schoolDetail, element: withSuspense(SchoolDetailPage) },
       { path: ROUTE_PATTERNS.admin.students, element: withSuspense(StudentsPage) },
       { path: ROUTE_PATTERNS.admin.studentProfile, element: withSuspense(StudentProfilePage) },
       { path: ROUTE_PATTERNS.admin.assessments, element: withSuspense(AssessmentsPage) },

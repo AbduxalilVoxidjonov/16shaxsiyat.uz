@@ -38,19 +38,22 @@ internal sealed class CompleteSessionCommandHandler : IRequestHandler<CompleteSe
     private readonly IDateTime _dateTime;
     private readonly IAppSettings _appSettings;
     private readonly IBackgroundJobQueue _backgroundJobQueue;
+    private readonly IPostCommitActions _postCommitActions;
 
     public CompleteSessionCommandHandler(
         IAppDbContext context,
         IAsyncQueryExecutor executor,
         IDateTime dateTime,
         IAppSettings appSettings,
-        IBackgroundJobQueue backgroundJobQueue)
+        IBackgroundJobQueue backgroundJobQueue,
+        IPostCommitActions postCommitActions)
     {
         _context = context;
         _executor = executor;
         _dateTime = dateTime;
         _appSettings = appSettings;
         _backgroundJobQueue = backgroundJobQueue;
+        _postCommitActions = postCommitActions;
     }
 
     public async Task<Result<CompleteSessionResult>> Handle(CompleteSessionCommand request, CancellationToken cancellationToken)
@@ -122,14 +125,20 @@ internal sealed class CompleteSessionCommandHandler : IRequestHandler<CompleteSe
 
         assessment.SetReliability(reliabilityResult.Score, reliabilityResult.Flag, now);
 
-        // AI navbati P18 da ulanadi — hozircha `NoOpJobQueue` (`prompts/12`).
+        // AI navbati P18 da ulandi (`AnalysisJobQueue`, `Infrastructure/Jobs`).
         assessment.MarkAnalyzing(now);
 
         await UpdateStudentSnapshotAsync(assessment, testResults, now, cancellationToken).ConfigureAwait(false);
 
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        await _backgroundJobQueue.EnqueueAiAnalysisAsync(assessment.Id, cancellationToken).ConfigureAwait(false);
+        // ⚠️ P18-R1 (MAJBURIY): navbatga qo'yish DARHOL emas — `TransactionBehavior`
+        // tranzaksiyasi muvaffaqiyatli commit bo'lgandan KEYIN (`IPostCommitActions`). Aks
+        // holda fon ishchisi hali commit qilinmagan `Assessment`ni o'qishga urinardi, yoki
+        // tranzaksiya rollback bo'lganda mavjud bo'lmagan sessiya uchun vazifa navbatda
+        // qolib ketardi (`IPostCommitActions` izohiga qarang).
+        var assessmentId = assessment.Id;
+        _postCommitActions.Enqueue(ct => _backgroundJobQueue.EnqueueAiAnalysisAsync(assessmentId, cancellationToken: ct));
 
         return Result.Success(BuildResult(assessment));
     }

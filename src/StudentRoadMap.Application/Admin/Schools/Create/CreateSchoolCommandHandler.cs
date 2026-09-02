@@ -98,7 +98,7 @@ internal sealed class CreateSchoolCommandHandler : IRequestHandler<CreateSchoolC
 
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        var dto = SchoolMapping.ToDetailDto(school, _appSettings, _qrCodeGenerator, new AdminSchoolStatsDto(0, 0, null));
+        var dto = SchoolMapping.ToDetailDto(school, _appSettings, _qrCodeGenerator, new AdminSchoolStatsDto(0, 0, 0, null, null));
 
         return Result.Success(dto);
     }

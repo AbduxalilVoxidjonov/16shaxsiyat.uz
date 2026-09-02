@@ -34,9 +34,17 @@ const SCHOOL_DETAIL = {
   publicUrl: SCHOOL_1.publicUrl,
   qrCodeBase64: 'aGVsbG8=',
   isActive: true,
-  studentCount: SCHOOL_1.studentCount,
-  completedCount: SCHOOL_1.completedCount,
   createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-01-02T00:00:00Z',
+  // `docs/07` 3.1: statistika `stats` obyektida keladi (ro'yxat qatoridagi tekis
+  // `studentCount`/`completedCount` bilan chalkashtirilmasin).
+  stats: {
+    studentCount: SCHOOL_1.studentCount,
+    completedCount: SCHOOL_1.completedCount,
+    inProgressCount: 5,
+    completionRate: 0.667,
+    lastActivityAt: SCHOOL_1.lastActivityAt,
+  },
 };
 
 function jsonResponse(body: unknown, status = 200): Response {

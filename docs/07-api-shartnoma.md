@@ -227,6 +227,30 @@ O'quvchiga **qisqartirilgan** natija (superadmin sozlamasi yoqilgan bo'lsa).
 
 `SchoolListItemDto`: `id, name, region, district, slug, publicUrl, isActive, studentCount, completedCount, lastActivityAt`
 
+**`GET /api/admin/schools/{id}` — 200** (`SchoolDetailDto`): `id, name, region, district,
+schoolNumber, contactPerson, contactPhone, slug, publicUrl, qrCodeBase64, accessCode,
+dailyRegistrationLimit, isActive, notes, createdAt, updatedAt, stats`
+
+```json
+{
+  "stats": {
+    "studentCount": 120,        // ro'yxatdan o'tgan o'quvchilar (soft-delete qilinganlar KIRMAYDI)
+    "completedCount": 80,       // testni TO'LIQ yakunlagan o'quvchilar
+    "inProgressCount": 7,       // hozir jarayonda bo'lgan sessiyalar (`status = InProgress`;
+                                // `Draft` va `Abandoned` KIRMAYDI)
+    "completionRate": 0.667,    // ULUSH (0..1), foiz emas — UI `× 100` qiladi
+    "lastActivityAt": "2026-08-30T10:00:00Z"
+  }
+}
+```
+
+> **Birlik:** `stats.completionRate` — **ulush (0..1)**, `schoolBreakdown.completionRate`
+> (3.6-bo'lim) bilan BIR XIL qoida va formula (`completedCount / studentCount`).
+> `studentCount == 0` bo'lsa **`null`** (hech qachon `0` emas) — "hali hech kim ro'yxatdan
+> o'tmagan" bilan "yakunlash ulushi HAQIQIY 0%" chalkashtirilmasin. `lastActivityAt` ham
+> ma'lumot bo'lmaganda `null`. Qolgan uchta son esa **doim butun son** (`0` bo'lishi mumkin,
+> `null` emas) — "hech kim topshirmagan" UI'da `0` deb ko'rsatiladi.
+
 ### 3.2 O'quvchilar
 | Metod | Yo'l | Izoh |
 |-------|------|------|

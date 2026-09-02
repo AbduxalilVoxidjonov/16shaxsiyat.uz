@@ -137,4 +137,26 @@ internal sealed class PublicCatalogCache
             "en" when !string.IsNullOrWhiteSpace(textEn) => textEn,
             _ => textUz,
         };
+
+    /// <summary>
+    /// P37 (`prompts/37-katalog-crud-backend.md`, "ENG MUHIM" #2): admin katalog CRUD endpoint'lari
+    /// (nashr, savol/shkala qo'shish-o'chirish, metadata yangilash) `TestDefinition`/`Question`ni
+    /// o'zgartirganda shu metod chaqiriladi — aks holda o'quvchi 10 daqiqagacha ESKI savollarni
+    /// ko'radi va bu HECH KIM tomonidan payqalmaydi (jimgina buziladigan holat). Barcha til
+    /// yozuvlarini (`uz`/`ru`/`en`) bekor qiladi — `QuestionsCacheKey` tilga bog'liq bo'lgani
+    /// uchun aniq qaysi til(lar) o'zgarganini bilmasdan hammasini tozalash yagona xavfsiz yo'l.
+    /// `testCode` `null` bo'lishi mumkin (masalan yangi savol import qilinganda test hali
+    /// keshda umuman yo'q bo'lishi mumkin) — bunda faqat savollar kaliti tozalanadi.
+    /// </summary>
+    public void InvalidateTestDefinition(Guid testDefinitionId, string? testCode)
+    {
+        if (!string.IsNullOrWhiteSpace(testCode))
+        {
+            _cache.Remove(TestDefinitionCacheKey(testCode));
+        }
+
+        _cache.Remove(QuestionsCacheKey(testDefinitionId, "uz"));
+        _cache.Remove(QuestionsCacheKey(testDefinitionId, "ru"));
+        _cache.Remove(QuestionsCacheKey(testDefinitionId, "en"));
+    }
 }

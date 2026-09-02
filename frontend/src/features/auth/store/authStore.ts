@@ -1,5 +1,9 @@
 import { create } from 'zustand';
-import { setAdminAccessToken, setOnAdminSessionExpired } from '@/shared/api/adminClient';
+import {
+  setAdminAccessToken,
+  setOnAdminSessionExpired,
+  setOnAdminTokenRefreshed,
+} from '@/shared/api/adminClient';
 import type { AdminUser } from '../model/types';
 
 export type { AdminUser };
@@ -45,4 +49,14 @@ export const useAuthStore = create<AuthState>((set) => ({
 // `adminClient` refresh ham 401 bersa shu yerga xabar beradi — sessiya avtomatik tozalanadi.
 setOnAdminSessionExpired(() => {
   useAuthStore.getState().clear();
+});
+
+// Fon refresh'i tokenni almashtirganda store'ni ham yangilaymiz. Faqat sessiya ALLAQACHON
+// o'rnatilgan bo'lsa — tiklash paytida (`isRestoring`) tokenni `ProtectedRoute` effekti
+// `setSession` bilan `user` bilan birga qo'yadi, bu yerda erta qo'yish `user`siz render'ga
+// olib kelardi.
+setOnAdminTokenRefreshed((token) => {
+  if (useAuthStore.getState().accessToken !== null) {
+    useAuthStore.setState({ accessToken: token });
+  }
 });

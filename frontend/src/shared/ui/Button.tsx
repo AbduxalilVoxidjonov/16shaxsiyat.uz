@@ -43,7 +43,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         SIZE_CLASSES[size],
         className,
       )}
-      disabled={disabled ?? isLoading}
+      // `??` EMAS, `||`: chaqiruvchi `disabled={isLocked}` kabi ANIQ `false` bersa,
+      // `false ?? isLoading` → `false` bo'lib, yuklanayotgan tugma ochiq qolardi va
+      // ikki marta bosish ikkita so'rov yuborardi (audit jurnalida 176 ms farq bilan
+      // ikkita `Auth.LoginSucceeded` aynan shundan). Yuklanish har doim bloklaydi.
+      disabled={disabled || isLoading}
       aria-busy={isLoading || undefined}
       {...props}
     >

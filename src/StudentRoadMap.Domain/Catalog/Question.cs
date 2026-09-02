@@ -156,6 +156,9 @@ public sealed class Question : Entity
 
     public void Deactivate() => IsActive = false;
 
+    /// <summary>BR-8 doirasiga kirmaydi — tizim savolida ham o'zgartirish mumkin (`docs/07` §3.4 faqat `Scale`/`Direction`/`Weight`ni cheklaydi).</summary>
+    public void UpdateRequired(bool isRequired) => IsRequired = isRequired;
+
     public void AddOption(AnswerOption option)
     {
         if (QuestionType is not (QuestionType.SingleChoice or QuestionType.ForcedChoice))

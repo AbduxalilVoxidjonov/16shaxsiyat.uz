@@ -33,8 +33,11 @@ public sealed class TestDefinitionTests
         kind: TestKind.Standard,
         isSystem: true);
 
-    private static Question CreateQuestion(Guid testDefinitionId, string code = "Q1", bool isSystem = false) =>
-        Question.Create(Guid.NewGuid(), testDefinitionId, code, 1, "Savol matni", QuestionType.Likert5, "EI", 1, 1.0m, isSystem: isSystem);
+    private static Question CreateQuestion(Guid testDefinitionId, string code = "Q1", bool isSystem = false, string scale = "EI") =>
+        Question.Create(Guid.NewGuid(), testDefinitionId, code, 1, "Savol matni", QuestionType.Likert5, scale, 1, 1.0m, isSystem: isSystem);
+
+    private static TestScale CreateScale(Guid testDefinitionId, string code = "STRESS") =>
+        TestScale.Create(Guid.NewGuid(), testDefinitionId, code, "Stress", 1);
 
     [Fact]
     public void AddQuestion_ToSystemTestDefinition_ThrowsDomainException()
@@ -325,5 +328,115 @@ public sealed class TestDefinitionTests
         var testDefinition = CreateCustomTestDefinition();
 
         testDefinition.ScoringMode.Should().Be(TestScoringMode.Scored);
+    }
+
+    // --- P37 (`prompts/37-katalog-crud-backend.md`) — TestScale CRUD + BR-8 ---------------------
+
+    [Fact]
+    public void AddScale_ToCustomTestDefinition_Succeeds()
+    {
+        var testDefinition = CreateCustomTestDefinition();
+        var scale = CreateScale(testDefinition.Id);
+
+        testDefinition.AddScale(scale, Now);
+
+        testDefinition.Scales.Should().ContainSingle().Which.Code.Should().Be("STRESS");
+    }
+
+    [Fact]
+    public void AddScale_ToSystemTestDefinition_ThrowsDomainException()
+    {
+        var testDefinition = CreateSystemTestDefinition();
+        var scale = CreateScale(testDefinition.Id);
+
+        var act = () => testDefinition.AddScale(scale, Now);
+
+        var ex = act.Should().Throw<DomainException>().Which;
+        ex.Code.Should().Be("SYSTEM_TEST_LOCKED");
+    }
+
+    [Fact]
+    public void AddScale_DuplicateCode_ThrowsDomainException()
+    {
+        var testDefinition = CreateCustomTestDefinition();
+        testDefinition.AddScale(CreateScale(testDefinition.Id, "STRESS"), Now);
+
+        var act = () => testDefinition.AddScale(CreateScale(testDefinition.Id, "STRESS"), Now);
+
+        var ex = act.Should().Throw<DomainException>().Which;
+        ex.Code.Should().Be("SCALE_CODE_DUPLICATE");
+    }
+
+    [Fact]
+    public void RemoveScale_FromSystemTestDefinition_ThrowsDomainException()
+    {
+        var testDefinition = CreateSystemTestDefinition();
+
+        var act = () => testDefinition.RemoveScale(Guid.NewGuid(), Now);
+
+        var ex = act.Should().Throw<DomainException>().Which;
+        ex.Code.Should().Be("SYSTEM_TEST_LOCKED");
+    }
+
+    [Fact]
+    public void RemoveScale_WithQuestionsAssigned_ThrowsDomainException()
+    {
+        var testDefinition = CreateCustomTestDefinition();
+        var scale = CreateScale(testDefinition.Id, "STRESS");
+        testDefinition.AddScale(scale, Now);
+        testDefinition.AddQuestion(CreateQuestion(testDefinition.Id, "Q1", scale: "STRESS"), Now);
+
+        var act = () => testDefinition.RemoveScale(scale.Id, Now);
+
+        var ex = act.Should().Throw<DomainException>().Which;
+        ex.Code.Should().Be("SCALE_IN_USE");
+    }
+
+    [Fact]
+    public void RemoveScale_WithoutQuestions_Succeeds()
+    {
+        var testDefinition = CreateCustomTestDefinition();
+        var scale = CreateScale(testDefinition.Id, "STRESS");
+        testDefinition.AddScale(scale, Now);
+
+        testDefinition.RemoveScale(scale.Id, Now);
+
+        testDefinition.Scales.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AddScale_ToPublishedTestDefinition_BumpsVersion()
+    {
+        var testDefinition = CreateCustomTestDefinition();
+        testDefinition.AddQuestion(CreateQuestion(testDefinition.Id), Now);
+        testDefinition.Publish(Now);
+        var versionBeforeScale = testDefinition.Version;
+
+        testDefinition.AddScale(CreateScale(testDefinition.Id), Now);
+
+        testDefinition.Version.Should().Be(versionBeforeScale + 1);
+    }
+
+    [Fact]
+    public void Duplicate_CopiesScales()
+    {
+        var testDefinition = CreateCustomTestDefinition();
+        testDefinition.AddScale(CreateScale(testDefinition.Id, "STRESS"), Now);
+
+        var copy = testDefinition.Duplicate(Guid.NewGuid(), "CUSTOM-1-COPY", Now);
+
+        copy.Scales.Should().ContainSingle().Which.Code.Should().Be("STRESS");
+    }
+
+    [Fact]
+    public void Deactivate_ThenActivate_TogglesIsActive()
+    {
+        var testDefinition = CreateCustomTestDefinition();
+
+        testDefinition.Deactivate(Now);
+        testDefinition.IsActive.Should().BeFalse();
+
+        testDefinition.Activate(Now);
+        testDefinition.IsActive.Should().BeTrue();
     }
 }

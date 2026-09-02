@@ -71,6 +71,20 @@ public sealed class AiProviderResolver : IAiProviderResolver
             .ToList();
     }
 
+    public async Task<IAiAnalysisProvider> ResolveForTestAsync(AiProvider provider, CancellationToken cancellationToken)
+    {
+        var config = await _executor.FirstOrDefaultAsync(
+            _context.AsNoTracking(_context.AiProviderConfigs).Where(c => c.Provider == provider && c.ApiKeyEncrypted != null),
+            cancellationToken).ConfigureAwait(false);
+
+        if (config is null)
+        {
+            throw new InvalidOperationException($"'{provider}' uchun API kaliti kiritilmagan.");
+        }
+
+        return CreateProvider(config);
+    }
+
     private async Task<List<AiProviderConfig>> LoadActiveConfigsAsync(CancellationToken cancellationToken) =>
         await _executor.ToListAsync(
             _context.AsNoTracking(_context.AiProviderConfigs)

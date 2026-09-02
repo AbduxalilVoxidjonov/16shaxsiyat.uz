@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Pencil, Plus, Power, RefreshCw, Trash2 } from 'lucide-react';
 import { usePageTitle } from '@/shared/hooks/usePageTitle';
+import { ROUTES } from '@/shared/config/routes';
 import { useServerTableState } from '@/shared/hooks/useServerTableState';
 import { DataTable, type DataTableColumn } from '@/shared/ui/DataTable';
 import { Badge } from '@/shared/ui/Badge';
@@ -144,7 +145,16 @@ export default function SchoolsPage() {
       id: 'name',
       header: t('schools.table.name'),
       sortable: true,
-      cell: (row) => <span className="font-medium text-neutral-900">{row.name}</span>,
+      // Nom — maktab ICHKI sahifasiga havola (`/admin/schools/:id`): u yerda ishtirok
+      // statistikasi (nechta o'quvchi topshirgani) ko'rsatiladi.
+      cell: (row) => (
+        <Link
+          to={ROUTES.admin.schoolDetail(row.id)}
+          className="font-medium text-primary-700 hover:underline"
+        >
+          {row.name}
+        </Link>
+      ),
     },
     {
       id: 'location',

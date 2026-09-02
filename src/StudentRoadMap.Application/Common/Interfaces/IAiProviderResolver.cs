@@ -24,4 +24,13 @@ public interface IAiProviderResolver
     /// "urinish 2/3" mantig'i shu ro'yxat bo'yicha ketma-ket sinaladi.
     /// </summary>
     Task<IReadOnlyList<IAiAnalysisProvider>> GetFallbackChainAsync(AiProvider primary, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// P18 (`Application.Admin.Ai.TestProvider`, `docs/07` §3.5 "POST .../test"): superadmin
+    /// hali `IsActive = false` (faollashtirishdan OLDIN) bo'lgan providerni ham sinab ko'ra olishi
+    /// kerak — shu sabab `ResolveAsync`dan farqli o'laroq `IsActive`ni TEKSHIRMAYDI, faqat kalit
+    /// kiritilganini (`ApiKeyEncrypted != null`) talab qiladi. Kalit yo'q/config topilmasa
+    /// `InvalidOperationException`.
+    /// </summary>
+    Task<IAiAnalysisProvider> ResolveForTestAsync(AiProvider provider, CancellationToken cancellationToken);
 }

@@ -15,6 +15,13 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="9.0.9" />
+    <!-- `prompts/27`: o'quvchilar ro'yxatini `.xlsx`ga eksport qilish (`IExcelExporter`, P27
+         MAXSUS DIQQAT #7: `docs/06` da ko'rsatilgan kutubxona). -->
+    <PackageReference Include="ClosedXML" Version="0.105.1" />
+    <!-- `prompts/27`: individual profil PDF hisoboti (`IPdfExporter`). Bepul Community
+         litsenziyasi — `QuestPDF.Settings.License = LicenseType.Community` `DependencyInjection`da
+         MAJBURIY o'rnatiladi, aks holda ishga tushganda istisno beradi (P27 MAXSUS DIQQAT #7). -->
+    <PackageReference Include="QuestPDF" Version="2026.8.0" />
     <!-- Superadmin JWT access tokenini yaratish uchun (`docs/08` 2-bo'lim) — tekshirish (validation)
          `Api`dagi `Microsoft.AspNetCore.Authentication.JwtBearer` orqali amalga oshadi. -->
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
@@ -56,6 +63,15 @@
        (P16 vazifa #3: "embedded resurs sifatida"). -->
   <ItemGroup>
     <EmbeddedResource Include="Ai\Resources\analysis-schema.v1.json" />
+  </ItemGroup>
+
+  <!-- `PdfExporter` (`prompts/27` MAXSUS DIQQAT #7): o'zbek lotin harflari to'g'ri chiqishi
+       uchun `DejaVu Sans` shrifti (Bitstream Vera litsenziyasi — erkin joylashtirish) embedded
+       resurs sifatida qo'shiladi — host OS/Docker konteynerida shrift o'rnatilmagan bo'lsa ham
+       ishlaydi. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Export\Resources\DejaVuSans.ttf" />
+    <EmbeddedResource Include="Export\Resources\DejaVuSans-Bold.ttf" />
   </ItemGroup>
 
 </Project>

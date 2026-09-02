@@ -10,6 +10,7 @@ namespace StudentRoadMap.Domain.Catalog;
 public sealed class TestDefinition : AggregateRoot
 {
     private readonly List<Question> _questions = [];
+    private readonly List<TestScale> _scales = [];
 
     public string Code { get; private set; } = null!;
 
@@ -55,6 +56,9 @@ public sealed class TestDefinition : AggregateRoot
     public DateTimeOffset UpdatedAt { get; private set; }
 
     public IReadOnlyCollection<Question> Questions => _questions.AsReadOnly();
+
+    /// <summary>Faqat `Custom` testlarda to'ldiriladi — tizim metodikasida bo'sh (`docs/07` §3.4).</summary>
+    public IReadOnlyCollection<TestScale> Scales => _scales.AsReadOnly();
 
     /// <summary>EF Core uchun parametrsiz konstruktor.</summary>
     private TestDefinition()
@@ -181,6 +185,58 @@ public sealed class TestDefinition : AggregateRoot
         UpdatedAt = now;
     }
 
+    /// <summary>Yangi shkala qo'shadi. Tizim metodikasida taqiqlangan (BR-8, `docs/07` §3.4: "Shkalalar — faqat Custom").</summary>
+    public void AddScale(TestScale scale, DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(scale);
+
+        if (IsSystem)
+        {
+            throw new DomainException("SYSTEM_TEST_LOCKED", "Tizim metodikasiga yangi shkala qo'shib bo'lmaydi.");
+        }
+
+        if (scale.TestDefinitionId != Id)
+        {
+            throw new ArgumentException("Shkala boshqa anketaga tegishli.", nameof(scale));
+        }
+
+        if (_scales.Any(s => s.Code == scale.Code))
+        {
+            throw new DomainException("SCALE_CODE_DUPLICATE", "Bu kod bilan shkala allaqachon mavjud.");
+        }
+
+        _scales.Add(scale);
+        BumpVersionIfPublished();
+        UpdatedAt = now;
+    }
+
+    /// <summary>
+    /// Shkalani olib tashlaydi. Tizim metodikasida taqiqlangan (BR-8); shkalada savollar bo'lsa
+    /// `SCALE_IN_USE` (`docs/07` §3.4: "DELETE .../scales/{scaleId} (savollari bo'lsa 409)").
+    /// </summary>
+    public void RemoveScale(Guid scaleId, DateTimeOffset now)
+    {
+        if (IsSystem)
+        {
+            throw new DomainException("SYSTEM_TEST_LOCKED", "Tizim metodikasidan shkala o'chirib bo'lmaydi.");
+        }
+
+        var scale = _scales.FirstOrDefault(s => s.Id == scaleId);
+        if (scale is null)
+        {
+            return;
+        }
+
+        if (_questions.Any(q => q.Scale == scale.Code))
+        {
+            throw new DomainException("SCALE_IN_USE", "Bu shkalada savollar bor — avval savollarni boshqa shkalaga o'tkazing yoki o'chiring.");
+        }
+
+        _scales.Remove(scale);
+        BumpVersionIfPublished();
+        UpdatedAt = now;
+    }
+
     /// <summary>`Draft ──▶ Published`: kamida bitta faol savol bo'lishi shart (`TEST_NOT_PUBLISHABLE`).</summary>
     public void Publish(DateTimeOffset now)
     {
@@ -196,6 +252,20 @@ public sealed class TestDefinition : AggregateRoot
 
         Status = TestDefinitionStatus.Published;
         PublishedAt = now;
+        UpdatedAt = now;
+    }
+
+    /// <summary>Yangi sessiyalarga kirish/kirmasligini boshqaradi (BR-10) — `docs/07` §3.4 "toggle-active".</summary>
+    public void Activate(DateTimeOffset now)
+    {
+        IsActive = true;
+        UpdatedAt = now;
+    }
+
+    /// <summary>BR-10: faqat YANGI sessiyalarga ta'sir qiladi, boshlangan sessiyalar oxirigacha davom etadi (Application/`AssessmentTest` darajasida — bu yerda faqat bayroq).</summary>
+    public void Deactivate(DateTimeOffset now)
+    {
+        IsActive = false;
         UpdatedAt = now;
     }
 
@@ -256,6 +326,18 @@ public sealed class TestDefinition : AggregateRoot
             }
 
             copy._questions.Add(questionCopy);
+        }
+
+        foreach (var scale in _scales)
+        {
+            copy._scales.Add(TestScale.Create(
+                Guid.NewGuid(),
+                newId,
+                scale.Code,
+                scale.NameUz,
+                scale.DisplayOrder,
+                scale.InterpretationBands,
+                scale.DescriptionUz));
         }
 
         return copy;

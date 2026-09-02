@@ -49,4 +49,26 @@ public sealed record AdminSchoolDetailDto(
     DateTimeOffset UpdatedAt,
     AdminSchoolStatsDto Stats);
 
-public sealed record AdminSchoolStatsDto(int StudentCount, int CompletedCount, DateTimeOffset? LastActivityAt);
+/// <summary>
+/// Maktab ichki sahifasidagi ishtirok statistikasi (`docs/07` 3.1-bo'lim).
+///
+/// - `StudentCount`     — shu maktabda ro'yxatdan o'tgan o'quvchilar (soft-delete qilinganlar
+///   HISOBGA OLINMAYDI — `Student` global query filtri `!IsDeleted`).
+/// - `CompletedCount`   — kamida bitta sessiyani TO'LIQ yakunlagan o'quvchilar
+///   (`Student.CompletedAssessmentCount > 0` snapshot ustuni — `Assessments`ga tegilmaydi).
+/// - `InProgressCount`  — hozir JARAYONDA bo'lgan sessiyalar: `Status == InProgress` (boshlangan,
+///   lekin yakunlanmagan). `Draft` (hali bironta test boshlanmagan) va `Abandoned` KIRMAYDI —
+///   `AdminDashboardFunnelDto.Started` ("`Status != Draft`") bilan bir xil ruhda.
+/// - `CompletionRate`   — **ULUSH (0..1), foiz EMAS** (`AdminDashboardMath.CompletionRate` bilan
+///   BIR XIL birlik va qoida: `StudentCount == 0` bo'lsa `null`, `0` emas — "hali hech kim
+///   ro'yxatdan o'tmagan" bilan "HAQIQIY 0%" chalkashtirilmasin, `docs/06` §8, 2026-09-02 qaror).
+///   Frontend ko'rsatishdan oldin `× 100` qiladi.
+/// - `LastActivityAt`   — o'quvchilar snapshotidagi eng so'nggi `LastAssessmentAt` (hech kim
+///   topshirmagan bo'lsa `null`).
+/// </summary>
+public sealed record AdminSchoolStatsDto(
+    int StudentCount,
+    int CompletedCount,
+    int InProgressCount,
+    double? CompletionRate,
+    DateTimeOffset? LastActivityAt);

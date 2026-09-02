@@ -1,4 +1,6 @@
+using StudentRoadMap.Application.Admin.Dashboard;
 using StudentRoadMap.Application.Common.Interfaces;
+using StudentRoadMap.Domain.Assessments;
 using StudentRoadMap.Domain.Schools;
 
 namespace StudentRoadMap.Application.Admin.Schools;
@@ -39,8 +41,19 @@ internal static class SchoolMapping
         $"{appSettings.PublicWebBaseUrl}/t/{school.Slug.Value}?k={school.AccessToken}";
 
     /// <summary>
-    /// `students` jadvalidan snapshot ustunlar orqali (`Assessments`/`TestResults`ga
-    /// murojaat qilinmaydi) — `ListSchoolsQueryHandler` izohidagi bilan bir xil sabab.
+    /// Ro'yxatdan o'tgan/yakunlagan/oxirgi faollik — `students` jadvalidan snapshot ustunlar
+    /// orqali (`TestResults`ga murojaat qilinmaydi) — `ListSchoolsQueryHandler` izohidagi bilan
+    /// bir xil sabab.
+    ///
+    /// **`InProgressCount` uchun BITTA qo'shimcha agregat so'rov** (`COUNT(*)` — qatorlar
+    /// o'qilmaydi, N+1 YO'Q: bitta maktab uchun jami 4 ta agregat/proyeksiya so'rovi, o'quvchi
+    /// yoki sessiya bo'yicha SIKL yo'q). "Jarayonda" ni `students` snapshotidan hisoblab
+    /// bo'lmaydi — snapshot faqat YAKUNLANGAN sessiyada yangilanadi (`Student.UpdateSnapshot`),
+    /// shu sabab yagona manba `assessments.status`.
+    ///
+    /// `IsDeleted` yozuvlar (o'quvchi ham, sessiya ham) EF Core global query filtri bilan
+    /// avtomatik chiqarib tashlanadi (`AppDbContext.OnModelCreating`) — bu yerda qo'lda shart
+    /// qo'shilmaydi (`IgnoreQueryFilters` ham chaqirilmaydi).
     /// </summary>
     public static async Task<AdminSchoolStatsDto> ComputeStatsAsync(
         IAppDbContext context,
@@ -55,11 +68,24 @@ internal static class SchoolMapping
             students.Where(s => s.CompletedAssessmentCount > 0),
             cancellationToken).ConfigureAwait(false);
 
+        // `GROUP BY ... MAX(last_assessment_at)` SQLite'da (sinov muhiti) `DateTimeOffset` uchun
+        // tarjima qilinmaydi — `ListSchoolsQueryHandler`dagi bilan BIR XIL ildiz sabab, shu sabab
+        // faqat SHU maktabning sanalari o'qilib, maksimum xotirada topiladi.
         var lastAssessmentDates = await executor.ToListAsync(
             students.Select(s => s.LastAssessmentAt),
             cancellationToken).ConfigureAwait(false);
         var lastActivityAt = lastAssessmentDates.Count == 0 ? null : lastAssessmentDates.Max();
 
-        return new AdminSchoolStatsDto(studentCount, completedCount, lastActivityAt);
+        var inProgressCount = await executor.CountAsync(
+            context.AsNoTracking(context.Assessments)
+                .Where(a => a.SchoolId == schoolId && a.Status == AssessmentStatus.InProgress),
+            cancellationToken).ConfigureAwait(false);
+
+        return new AdminSchoolStatsDto(
+            studentCount,
+            completedCount,
+            inProgressCount,
+            AdminDashboardMath.CompletionRate(completedCount, studentCount),
+            lastActivityAt);
     }
 }

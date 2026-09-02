@@ -40,6 +40,13 @@ internal sealed class AiAnalysisConfiguration : IEntityTypeConfiguration<AiAnaly
         builder.Property(a => a.ErrorMessage).HasMaxLength(2000);
         builder.Property(a => a.AttemptNumber).IsRequired().HasDefaultValue(1);
         builder.Property(a => a.IsCurrent).IsRequired().HasDefaultValue(false);
+
+        // P18 (`prompts/18`, `docs/09` 11-bo'lim): barcha provayder/urinishlar muvaffaqiyatsiz
+        // bo'lganda ko'rsatiladigan `TypeCatalog`/`CareerMap` shablon hisoboti — haqiqiy AI
+        // javobi EMASligini belgilaydi (`docs/04` 2.8-bo'limda hali yo'q — additive ustun,
+        // qulflangan qiymatlarga ta'sir qilmaydi).
+        builder.Property(a => a.IsFallbackReport).IsRequired().HasDefaultValue(false);
+
         builder.Property(a => a.CreatedAt).IsRequired().HasDefaultValueSql("now()");
 
         builder.HasOne<Assessment>()

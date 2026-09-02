@@ -2,7 +2,6 @@ using MediatR;
 using StudentRoadMap.Application.Admin.Common;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
-using StudentRoadMap.Domain.Assessments;
 using StudentRoadMap.Domain.Common;
 using StudentRoadMap.Domain.Students;
 
@@ -52,58 +51,21 @@ internal sealed class ListStudentsQueryHandler : IRequestHandler<ListStudentsQue
     {
         var (page, pageSize) = AdminPagingOptions.Normalize(request.Page, request.PageSize);
 
-        var query = _context.AsNoTracking(_context.Students);
-
-        if (request.SchoolId.HasValue)
-        {
-            query = query.Where(s => s.SchoolId == request.SchoolId.Value);
-        }
-
-        if (request.Grade.HasValue)
-        {
-            query = query.Where(s => s.Grade == request.Grade.Value);
-        }
-
-        if (request.NeedsAttention.HasValue)
-        {
-            query = query.Where(s => s.NeedsAttention == request.NeedsAttention.Value);
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.PersonalityType))
-        {
-            var personalityType = request.PersonalityType.Trim();
-            query = query.Where(s => s.LastPersonalityType == personalityType);
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.ActivityLevel) && Enum.TryParse<ActivityLevel>(request.ActivityLevel, ignoreCase: true, out var activityLevel))
-        {
-            query = query.Where(s => s.LastActivityLevel == activityLevel);
-        }
-
-        if (request.From.HasValue)
-        {
-            query = query.Where(s => s.LastAssessmentAt >= request.From.Value);
-        }
-
-        if (request.To.HasValue)
-        {
-            query = query.Where(s => s.LastAssessmentAt <= request.To.Value);
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.Search))
-        {
-            // `docs/05` 2-bo'lim `ix_students_name_trgm` — `ListSchoolsQueryHandler`dagi bilan bir xil sabab.
-            var term = request.Search.Trim();
-            query = query.Where(s => s.FullName.Contains(term));
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.Status) && Enum.TryParse<AssessmentStatus>(request.Status, ignoreCase: true, out var status))
-        {
-            // Sahifalash/saralashdan OLDIN qo'llanadi — filtr faol bo'lganda umumiy sonni ham
-            // to'g'ri hisoblash uchun (`ix_assessments_status_started(status, started_at desc)`
-            // indeksidan foydalanadigan `EXISTS`).
-            query = query.Where(s => _context.Assessments.Any(a => a.StudentId == s.Id && a.Status == status));
-        }
+        // Filtr qurilishi `AdminStudentFilterBuilder`ga chiqarilgan (`prompts/27` MAXSUS DIQQAT #1)
+        // — `ExportStudentsQueryHandler` (`Admin/Students/Export`) AYNAN shu metodni chaqiradi,
+        // shu bilan ro'yxat va eksport filtri hech qachon bir-biridan ajralib ketmaydi.
+        var query = AdminStudentFilterBuilder.Apply(
+            _context,
+            _context.AsNoTracking(_context.Students),
+            request.SchoolId,
+            request.Grade,
+            request.Status,
+            request.NeedsAttention,
+            request.PersonalityType,
+            request.ActivityLevel,
+            request.From,
+            request.To,
+            request.Search);
 
         var totalCount = await _executor.CountAsync(query, cancellationToken).ConfigureAwait(false);
 

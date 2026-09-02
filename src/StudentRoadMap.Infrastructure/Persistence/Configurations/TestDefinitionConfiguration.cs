@@ -56,6 +56,16 @@ internal sealed class TestDefinitionConfiguration : IEntityTypeConfiguration<Tes
             .HasForeignKey(q => q.TestDefinitionId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // `test_scales` — P37 (`prompts/37-katalog-crud-backend.md`), `Questions` bilan bir xil
+        // naqsh (bitta tomon egalik qiladi — `TestScaleConfiguration`da takrorlanmaydi).
+        builder.Metadata.FindNavigation(nameof(TestDefinition.Scales))!
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.HasMany(t => t.Scales)
+            .WithOne()
+            .HasForeignKey(s => s.TestDefinitionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasIndex(t => t.Code).IsUnique().HasDatabaseName("ux_test_definitions_code");
 
         builder.HasIndex(t => new { t.IsActive, t.DisplayOrder })

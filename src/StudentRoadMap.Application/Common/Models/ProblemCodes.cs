@@ -77,6 +77,22 @@ public static class ProblemCodes
     /// </summary>
     public const string SchoolHasStudents = "SCHOOL_HAS_STUDENTS";
 
+    // --- P37 (`prompts/37-katalog-crud-backend.md`) — test katalogi CRUD (`docs/07` §3.4).
+    // Quyidagi to'rttasi allaqachon `DefaultDomainErrorStatus` (409) ga tushardi — bu yerda
+    // faqat hujjatlashtirish uchun aniq ro'yxatga qo'shilgan, xatti-harakat o'zgarmadi. ---
+
+    /// <summary>Bir xil `Code` bilan ikkinchi shkala qo'shishga urinish (`TestDefinition.AddScale`).</summary>
+    public const string ScaleCodeDuplicate = "SCALE_CODE_DUPLICATE";
+
+    /// <summary>Shkalada savollar bo'lganda o'chirishga urinish (`docs/07` §3.4: "DELETE .../scales/{scaleId} — savollari bo'lsa 409").</summary>
+    public const string ScaleInUse = "SCALE_IN_USE";
+
+    /// <summary>Bitta anketa ichida bir xil `Code` bilan ikkinchi savol qo'shish/import (`TestDefinition.AddQuestion`).</summary>
+    public const string QuestionCodeDuplicate = "QUESTION_CODE_DUPLICATE";
+
+    /// <summary>Holat mashinasi noto'g'ri o'tish (masalan `Archived` dan `Published`ga) — `TestDefinition.Publish`/`Archive`.</summary>
+    public const string TestDefinitionInvalidTransition = "TEST_DEFINITION_INVALID_TRANSITION";
+
     /// <summary>`Error.Code` → HTTP status. Ro'yxatda yo'q kod uchun standart qiymat `409` (domen holat mashinasi konflikti).</summary>
     public static readonly IReadOnlyDictionary<string, int> HttpStatusByCode = new Dictionary<string, int>(StringComparer.Ordinal)
     {
@@ -104,6 +120,10 @@ public static class ProblemCodes
         [ConcurrencyConflict] = StatusCodes.Status409Conflict,
         [UniqueConstraintConflict] = StatusCodes.Status409Conflict,
         [SchoolHasStudents] = StatusCodes.Status409Conflict,
+        [ScaleCodeDuplicate] = StatusCodes.Status409Conflict,
+        [ScaleInUse] = StatusCodes.Status409Conflict,
+        [QuestionCodeDuplicate] = StatusCodes.Status409Conflict,
+        [TestDefinitionInvalidTransition] = StatusCodes.Status409Conflict,
     };
 
     /// <summary>Default (`docs/06` jadvaliga kirmagan domen kodlari uchun) — holat mashinasi konflikti.</summary>

@@ -44,9 +44,9 @@
 | P24 | Admin: o'quvchilar ro'yxati | frontend-react | ✅ | — | QA: PASS · 200 test |
 | P25 | Individual profil sahifasi | frontend-react | ✅ | — | **Asosiy ekran** · axe toza |
 | P26 | Diagramma widgetlari | frontend-react | ✅ | — | 7 widget · neytral palitra |
-| P27 | Excel va PDF eksport | backend-dotnet | ⬜ | — | P28, P29 bilan parallel |
-| P28 | AI sozlamalari UI | frontend-react | ⬜ | — | |
-| P29 | Katalog va audit UI | frontend-react | ⬜ | — | |
+| P27 | Excel va PDF eksport | backend-dotnet | ✅ | — | Filtr `AdminStudentFilterBuilder` bilan ro'yxat bilan birlashtirildi · 500 qatorli oqim |
+| P28 | AI sozlamalari UI | frontend-react | ✅ | — | DTO shakllari P18 bilan solishtirilishi kerak |
+| P29 | Katalog va audit UI | frontend-react | ✅ | — | frontend 313 test |
 | P30 | E2E testlar | qa-reviewer | ⬜ | — | |
 | P31 | Xavfsizlik va mustahkamlash | qa-reviewer | ⬜ | — | |
 | P32 | Docker, CI/CD, yakuniy hujjat | backend-dotnet | ✅ | — | CI 5 job · backup/restore sinaldi · CD ochiq (remote yo'q) |
@@ -54,7 +54,9 @@
 | P34 | Dastur modeli va biriktirish | backend-dotnet | ✅ | — | QA: FAIL→PASS · migratsiya backfill tuzatildi |
 | P35 | Admin: savollar, dasturlar, biriktirish | frontend-react | ✅ | — | Dasturlar ishlaydi; katalog P37 ni kutadi |
 | P36 | Ommaviy: dastur tanlash, so'rovnoma | frontend-react | ✅ | — | Bitta dasturda oqim o'zgarmadi (regressiya testi) |
-| P37 | Katalog CRUD (backend) | backend-dotnet | ⬜ | — | **Yangi** · P35 UI ulanadigan backend yo'qligi aniqlandi |
+| P37 | Katalog CRUD (backend) | backend-dotnet | ✅ | — | backend **752 test** · BR-8 uch darajada · talqin oraliqlari butun son qoidasi |
+| P39 | Login sessiyasi barqarorligi | frontend-react | ✅ | — | **Egasi topgan bloklovchi** · vaqtinchalik xato sessiyani o'chirmaydi |
+| P38 | Katalog: tizim testini tahrirlash UI | frontend-react | 🔄 | — | **Yangi (egasi so'radi)** · ko'rish+tahrirlash, o'chirish yo'q |
 
 ---
 
@@ -258,6 +260,69 @@
 
 ---
 
+### 2026-09-02
+
+- **Ishga tushirish va deploy.** Butun stek `docker compose up -d --build` bilan ko'tariladi
+  (`db → migrate → seed → api → app → tunnel`), host portlari ochiq emas — kirish faqat
+  Cloudflare tunnel orqali `16shaxsiyat.uz` da. Docker loyihasi nomi `16shaxsiyat`.
+  - **Egasi ko'rgan "Kirishda xatolik" ning sababi topildi:** `env.ts` bo'sh
+    `VITE_API_BASE_URL` ni `http://localhost:5000` ga qaytarardi, HTTPS sahifadan bu
+    *mixed content* sifatida bloklanardi. Standart qiymat same-origin qilindi.
+- **P35/P36 (dastur modeli UI) tugadi**, lekin P35 katalog bo'limi ulanadigan backend
+  yo'qligini aniqladi → **P37** yozildi va bajarildi.
+- **P37 (katalog CRUD backend) tugadi** — backend **752 test**.
+  - BR-8 uch darajada qulflangan (domen → handler → integratsiya testi).
+  - Kesh invalidatsiyasi taxmin emas, test bilan isbotlangan: kesh to'ldiriladi, `PUT`
+    dan keyin kalit yo'qligi tekshiriladi.
+  - **Uchinchi marta chiqqan EF Core tuzog'i:** allaqachon kuzatilayotgan ota-obyektning
+    kolleksiyasiga ID'si oldindan belgilangan yangi bola qo'shilsa, EF uni `Added` emas
+    `Modified` deb biladi va har savol/shkala yaratishda `409 CONCURRENCY_CONFLICT`
+    beradi. Yechim — aniq `_context.Add(...)`.
+  - **Talqin oraliqlari qoidasi qat'iylashtirildi** (PM qarori): chegaralar butun son,
+    `to` inklyuziv, `next.from == prev.to + 1`, 0 dan 100 gacha. Tolerantlik heuristikasi
+    olib tashlandi — `docs/03` §6.3 ga yozildi. Bu `SUM_INTERPRETATION_BAND_NOT_FOUND`
+    ni ishlash vaqtidan nashr vaqtiga ko'chiradi.
+- **P27 (eksport) tugadi.** Filtr mantiqi `AdminStudentFilterBuilder` ga ajratildi — ro'yxat
+  va eksport endi bir xil kodni ishlatadi va ajralib keta olmaydi. Audit'ga qidiruv **matni**
+  emas, `hasSearch` bayrog'i yoziladi (qidiruv so'zi ism bo'lishi mumkin — aks holda audit
+  jurnali o'zi shaxsiy ma'lumot omboriga aylanardi).
+- **P28/P29 (AI sozlamalari, katalog va audit UI) tugadi** — frontend **313 test**.
+- **Egasi so'ragan UI ishlari:** navigatsiya `sticky` qilindi (sahifa bilan siljimaydi),
+  "Tez orada" yorliqlari olib tashlandi, `Drawer` o'chirilib hamma oyna markazda ochiladigan
+  `Dialog` ga o'tkazildi (`dialog:modal { margin: auto }`), brend hamma joyda
+  **Shaxsiyat** ga, sarlavha va boshqaruv panelidagi chaqmoq belgisi olib tashlandi.
+- **Egasining yangi talabi (P38):** tizim metodikalari (shu jumladan shaxsiyat testi)
+  panelda **ko'rilishi va tahrirlanishi** kerak, faqat o'chirilmasin. Backend buni
+  allaqachon qo'llab-quvvatlaydi (`Question.UpdateText`/`UpdateOrder`/`UpdateRequired` va
+  `TestDefinition.UpdateMetadata` da `IsSystem` tekshiruvi yo'q); yetishmayotgani —
+  frontend. `CatalogTestDetailPage` tahrirlanadigan qilinmoqda.
+  - **Diqqat:** `UpdateTestQuestionCommandHandler` `scale`/`direction`/`weight` maydonlari
+    **berilgan bo'lsa** `SYSTEM_TEST_LOCKED` otadi. Demak tizim savolini saqlaganda ular
+    umuman yuborilmasligi kerak — aks holda tahrirlash 409 bilan ishlamaydi.
+- **Egasi topgan bloklovchi: "login qilsam yana login sahifasiga otib qolyapti".**
+  Sabab `ProtectedRoute` da edi — u `GET /api/auth/me` ning **har qanday** xatosida
+  `clear()` chaqirardi. API bir soniya javob bermasa (konteyner qayta ishga tushishi,
+  tunnel uzilishi, `502`) haqiqiy sessiyasi bor superadmin login sahifasiga uloqtirilardi;
+  sahifani yangilagach esa refresh cookie orqali yana kirardi — egasi tasvirlagan
+  "urlda login o'chirsam admin panelga o'tib ketyapti" aynan shu.
+  Endi sessiya **faqat serverning aniq `401`ida** tugatiladi; boshqa xatoda qayta urinish
+  ekrani ko'rsatiladi va sessiya saqlanadi. Ikkita regressiya testi eski kodda qizarishi
+  tasdiqlangan (`isSessionRejected` ni `true` ga qaytarib sinaldi).
+  - Yo'l-yo'lakay: `Button` da `disabled={disabled ?? isLoading}` → `||`. Audit jurnalida
+    176 ms farq bilan ikkita `Auth.LoginSucceeded` bor edi — yuklanayotgan tugma ochiq
+    qolgani uchun ikki marta bosish ikkita login yuborardi.
+  - Yo'l-yo'lakay: fon refresh'i endi `authStore` ni ham yangilaydi (ilgari faqat
+    `adminClient` ichidagi modul o'zgaruvchisi yangilanardi — ikki manba zid bo'lish xavfi).
+  - Operatsion: mashina uyquga ketganda Docker hamma konteynerni to'xtatadi va
+    `restart: unless-stopped` ularni qaytarmaydi (ular "stopped" deb belgilanadi) —
+    `docker compose up -d` qo'lda kerak.
+- **P18 (AI navbat, fallback zanjiri, AI config API) tugadi** — backend **816 test**, Skip 0.
+- **P38 (tizim testini tahrirlash UI) tugadi** — frontend **327 test**.
+- **Keyingi:** P18 (AI navbati) tugashini kutish → P33 (anketa konstruktori) →
+  P30 (E2E) → P31 (xavfsizlik). P30/P31 oxirida.
+
+---
+
 ## Ma'lum risklar va texnik qarzlar
 
 | Risk / qarz | Ta'sir | Reja |
@@ -269,7 +334,9 @@
 | `type-catalog.json` (16 tip tavsifi) va `career-map.json` (18 Holland juftligi, kasb nomlari) agent tavsiyasi | O'quvchi ko'radigan asosiy kontent — sifati tekshirilmagan | Kasb yo'riqchisi/egasi ko'rib chiqishi kerak (P25 individual profil sahifasidan oldin) |
 | `ReliabilityInput.Questions` tartibi shartnoma bilan himoyalangan, kod bilan emas | Noto'g'ri tartibda berilsa straight-lining signali **jimgina o'chadi**, hech narsa ushlamaydi | `prompts/12` ga **P12-R1** (aniq LINQ) va **P12-R2** (majburiy regressiya testi) yozildi. Yagona himoya — o'sha test |
 | `ReliabilityCalculator` da dublikat `QuestionId` tekshirilmaydi | Soxta straight-lining hosil qilish mumkin | Kichik; P10–P12 da kirish validatsiyasi bilan birga yopiladi |
-| `SUM` talqin oraliqlari 3+ kasrli belgilansa `pct` bo'shliqqa tushishi mumkin | Superadmin anketasida `SUM_INTERPRETATION_BAND_NOT_FOUND` | P33 nashr validatsiyasida oraliqlar 2 kasr bilan cheklansin |
+| ~~`SUM` talqin oraliqlari 3+ kasrli belgilansa `pct` bo'shliqqa tushishi mumkin~~ — **yopildi (P37, 2026-09-02)**: chegaralar butun son bo'lishi shart, nashr validatsiyasi `SCALE_BAND_NOT_INTEGER` bilan rad etadi (`docs/03` §6.3) | — | — |
+| `type-catalog` va `career-map` admin CRUD endpointlari (`docs/07` §3.4) yo'q | 16 tip tavsifi va kasb xaritasi faqat seed orqali o'zgaradi — egasi matnni panelda tahrirlay olmaydi | `TypeCatalogEntry` — o'zgarmas `ValueObject`, alohida domen ishi kerak. Alohida promptga qoldirildi; hozir hech kim so'ramagan |
+| Noto'g'ri (malformed) JSON so'rov tanasi ASP.NET Core'ning standart `ValidationProblemDetails` iga tushadi — `code` maydonisiz | `CLAUDE.md` 11-qoidasi buziladi; klient xatoni kod bo'yicha ajrata olmaydi | Butun kodbaza bo'ylab mavjud bo'shliq (`InvalidModelStateResponseFactory` hech qayerda sozlanmagan). **P31 qamrovida** |
 | `docs/17` va `CLAUDE.md` 6a — raqobatchi kontenti taqiqi kech kiritildi | `type-catalog.json` dagi 16 tip nomi allaqachon 16Personalities tarjimasi bo'lib yozilgan edi | **Bajarildi (2026-09-01):** hamma nom qayta yozildi. Kelgusida yangi kontent yozilganda 6a-qoida oldindan tekshiriladi |
 | `lastAssessmentStatus`/`reliabilityFlag` snapshot ustun emas — sahifa uchun alohida batch so'rov | Bitta qo'shimcha so'rov (N+1 emas), lekin ADR-11 ruhiga to'liq mos emas | P15 (dashboard) da o'lchov asosida snapshot ustunga ko'chirish qaroriga qaytamiz |
 | ~~3 ta test SQLite `DateTimeOffset` cheklovi sababli `Skip`~~ — **yopildi (P15)**: sinov muhitiga value converter qo'shildi, `Skip` soni **0** | Saralash faqat Postgres'da sinaladi | P30 (E2E) da Testcontainers/Postgres bilan yopiladi |

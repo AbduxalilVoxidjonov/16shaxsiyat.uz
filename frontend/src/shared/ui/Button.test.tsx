@@ -22,6 +22,25 @@ describe('Button', () => {
     expect(button).toHaveAttribute('aria-busy', 'true');
   });
 
+  // Regressiya: ilgari `disabled={disabled ?? isLoading}` edi — chaqiruvchi ANIQ `false`
+  // bergan joyda (`disabled={isLocked}`) yuklanayotgan tugma ochiq qolardi va ikki marta
+  // bosish ikkita so'rov yuborardi. Mavjud "isLoading bo'lsa disabled" testi buni
+  // ushlay olmasdi, chunki u `disabled` ni umuman bermaydi (`undefined ?? true` → true).
+  it("disabled={false} bilan ham isLoading tugmani bloklaydi", async () => {
+    const onClick = vi.fn();
+    render(
+      <Button onClick={onClick} disabled={false} isLoading>
+        Kirish
+      </Button>,
+    );
+
+    const button = screen.getByRole('button', { name: 'Kirish' });
+    expect(button).toBeDisabled();
+
+    await userEvent.click(button);
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
   it("disabled bo'lsa bosilganda onClick chaqirilmaydi", async () => {
     const onClick = vi.fn();
     render(

@@ -180,4 +180,53 @@ public sealed class AiProviderResolverTests
         chain.Select(p => p.Kind).Should().ContainInOrder(AiProvider.OpenAi, AiProvider.Anthropic);
         chain.Should().NotContain(p => p.Kind == AiProvider.Gemini);
     }
+
+    // --- P18 (`prompts/18`): `ResolveForTestAsync` — `ResolveAsync`dan farqli, `IsActive`ni TEKSHIRMAYDI ---
+
+    [Fact]
+    public async Task ResolveForTestAsync_InactiveButKeyed_ReturnsProvider()
+    {
+        using var connection = SqliteAppDbContextFactory.CreateOpenConnection();
+        await using var context = NewContext(connection);
+        await context.Database.EnsureCreatedAsync();
+
+        // `IsActive: false` — superadmin hali faollashtirmagan, lekin kalitni "Test" tugmasi bilan sinamoqchi.
+        SeedConfig(context, AiProvider.Anthropic, "claude-sonnet-5", isActive: false, isDefault: false, fallbackOrder: 10);
+        await context.SaveChangesAsync();
+
+        var resolver = CreateResolver(context);
+        var provider = await resolver.ResolveForTestAsync(AiProvider.Anthropic, CancellationToken.None);
+
+        provider.Kind.Should().Be(AiProvider.Anthropic);
+        provider.Should().BeOfType<AnthropicProvider>();
+    }
+
+    [Fact]
+    public async Task ResolveForTestAsync_NoApiKey_ThrowsInvalidOperationException()
+    {
+        using var connection = SqliteAppDbContextFactory.CreateOpenConnection();
+        await using var context = NewContext(connection);
+        await context.Database.EnsureCreatedAsync();
+
+        SeedConfig(context, AiProvider.Anthropic, "claude-sonnet-5", isActive: false, isDefault: false, fallbackOrder: 10, apiKey: null);
+        await context.SaveChangesAsync();
+
+        var resolver = CreateResolver(context);
+        var act = async () => await resolver.ResolveForTestAsync(AiProvider.Anthropic, CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task ResolveForTestAsync_NotConfiguredAtAll_ThrowsInvalidOperationException()
+    {
+        using var connection = SqliteAppDbContextFactory.CreateOpenConnection();
+        await using var context = NewContext(connection);
+        await context.Database.EnsureCreatedAsync();
+
+        var resolver = CreateResolver(context);
+        var act = async () => await resolver.ResolveForTestAsync(AiProvider.Gemini, CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
 }

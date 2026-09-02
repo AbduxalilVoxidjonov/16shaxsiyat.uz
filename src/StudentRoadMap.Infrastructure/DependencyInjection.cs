@@ -7,6 +7,7 @@ using StudentRoadMap.Infrastructure.Ai;
 using StudentRoadMap.Infrastructure.Ai.Providers;
 using StudentRoadMap.Infrastructure.Common;
 using StudentRoadMap.Infrastructure.Identity;
+using StudentRoadMap.Infrastructure.Jobs;
 using StudentRoadMap.Infrastructure.Persistence;
 using StudentRoadMap.Infrastructure.Persistence.Seeding;
 using StudentRoadMap.Infrastructure.Security;
@@ -51,8 +52,14 @@ public static class DependencyInjection
         services.AddSingleton<IAppSettings, AppSettingsProvider>();
         // `prompts/14`: maktab havolasi QR kodi — holatsiz (sof funksiya), `Singleton`.
         services.AddSingleton<IQrCodeGenerator, QrCodeGenerator>();
-        // `prompts/12`: AI navbati hozircha yo'q — `NoOpJobQueue` kontraktni bajaradi, P18 da almashadi.
-        services.AddSingleton<IBackgroundJobQueue, NoOpJobQueue>();
+        // P18 (`prompts/18`): haqiqiy fon navbati — `analysis_jobs` jadvali + `BackgroundService`
+        // (`docs/06` qarorlar jurnaliga qo'shilishi kerak bo'lgan qaror, PM'ga hisobotda qayd
+        // etilgan — Hangfire emas, chunki sinov muhiti SQLite `EnsureCreated()` bilan ishlaydi,
+        // Postgres-only Hangfire storage'i bunga mos kelmasdi). `NoOpJobQueue` endi ishlatilmaydi.
+        services.AddScoped<IBackgroundJobQueue, AnalysisJobQueue>();
+        services.AddScoped<IPostCommitActions, PostCommitActions>();
+        services.AddScoped<IAnalysisOrchestrator, AnalysisOrchestrator>();
+        services.AddHostedService<AnalysisWorkerBackgroundService>();
         services.AddScoped<DbSeeder>();
 
         // `prompts/16`: prompt qurish (`prompt_templates`ga bog'liq — Scoped) va AI javob
@@ -77,6 +84,12 @@ public static class DependencyInjection
         services.AddMemoryCache();
         services.AddSingleton<ICacheService, MemoryCacheService>();
         services.AddSingleton<IQuestionShuffler, RandomQuestionShuffler>();
+
+        // `prompts/27`: eksport (Excel/PDF) — ikkalasi ham holatsiz (sof funksiya), `Singleton`.
+        // `PdfExporter`ning statik konstruktorida `QuestPDF.Settings.License` va shrift
+        // registratsiyasi bir marta bajariladi (P27 MAXSUS DIQQAT #7).
+        services.AddSingleton<Application.Common.Interfaces.IExcelExporter, StudentRoadMap.Infrastructure.Export.ExcelExporter>();
+        services.AddSingleton<Application.Common.Interfaces.IPdfExporter, StudentRoadMap.Infrastructure.Export.PdfExporter>();
 
         // `/health/ready` DB ulanishini tekshiradi — `ready` tag bilan ajratilib,
         // Api/Program.cs da alohida endpoint sifatida ochiladi (`/health` esa DB'siz jonlik).

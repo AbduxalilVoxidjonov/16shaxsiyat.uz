@@ -319,10 +319,35 @@ scalePct = ( scaleRaw − scaleMin ) / ( scaleMax − scaleMin ) × 100
 - kamida 1 ta shkala;
 - **har shkalada kamida 4 savol** (kamroqda ball ishonchsiz);
 - har savolda `Scale` belgilangan va shkala shu testga tegishli;
-- shkala oraliqlari 0–100 ni bo'shliqsiz qoplaydi va ustma-ust tushmaydi;
+- shkala oraliqlari 0–100 ni bo'shliqsiz qoplaydi va ustma-ust tushmaydi (quyidagi qoida);
 - test nomi va kodi unikal.
 
 Shartlardan biri bajarilmasa nashr qilinmaydi va aniq xato ro'yxati qaytariladi.
+
+#### Talqin oraliqlari — butun son qoidasi (2026-09-02 da qat'iylashtirildi)
+
+`double` ustida "bo'shliqsiz" tushunchasi aniq emas: `33.5` bilan `33.6` orasida bo'shliq
+bormi? Tolerantlik bu savolni yashiradi, yo'qotmaydi. Shuning uchun chegaralar qat'iy:
+
+| Qoida | Buzilganda |
+|-------|-----------|
+| Har bir chegara — **butun son** | `SCALE_BAND_NOT_INTEGER` |
+| `to` **inklyuziv**; ketma-ket oraliqlarda `next.from == prev.to + 1` | farq > 1 → `SCALE_BAND_GAP`, farq < 1 → `SCALE_BAND_OVERLAP` |
+| Birinchi oraliq `from == 0`, oxirgisi `to == 100` | `SCALE_BAND_INCOMPLETE` |
+| Oraliq o'zi teskari (`from > to`) | `SCALE_BAND_INVALID` |
+| Shkalada oraliq umuman yo'q | `SCALE_BANDS_MISSING` |
+
+Chegara butun son bo'lmasa qolgan tekshiruvlar ma'nosiz, shuning uchun
+`SCALE_BAND_NOT_INTEGER` birinchi tekshiriladi va qolganini to'xtatadi.
+
+**Nima uchun shunday.** Superadmin oraliqni qo'lda kiritadi. Kasrli chegara ruxsat etilsa,
+u `0–33.3` / `33.4–66.6` yozadi va `scalePct = 33.35` bo'lgan o'quvchi **hech qaysi
+oraliqqa tushmaydi** — `SUM` strategiyasi ishlash vaqtida `SUM_INTERPRETATION_BAND_NOT_FOUND`
+beradi va tahlil yiqiladi. Butun son qoidasi bu xatoni nashrgacha, admin ekranida ushlaydi.
+
+To'g'ri: `0–33` / `34–66` / `67–100`.
+Xato: `0–33.3/33.4–66.6/66.7–100` (kasr), `0–33/35–100` (bo'shliq),
+`0–50/50–100` (ustma-ust, chunki `to` inklyuziv), `0–99` (to'liq emas).
 
 ### 6.4 Cheklovlar
 

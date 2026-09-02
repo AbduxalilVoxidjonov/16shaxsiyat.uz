@@ -3,6 +3,7 @@ using StudentRoadMap.Domain.Ai;
 using StudentRoadMap.Domain.Assessments;
 using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Identity;
+using StudentRoadMap.Domain.Jobs;
 using StudentRoadMap.Domain.Students;
 
 namespace StudentRoadMap.Domain.Tests;
@@ -96,5 +97,14 @@ public sealed class EnumValueTests
     [InlineData(AdminRole.SchoolAdmin, 2)]
     [InlineData(AdminRole.Psychologist, 3)]
     public void AdminRole_MatchesDatabaseSchema(AdminRole value, int expected) =>
+        ((int)value).Should().Be(expected);
+
+    /// <summary>`analysis_jobs.status` — P18 (`prompts/18`), `AnalysisJobConfiguration`.</summary>
+    [Theory]
+    [InlineData(AnalysisJobStatus.Pending, 0)]
+    [InlineData(AnalysisJobStatus.Running, 1)]
+    [InlineData(AnalysisJobStatus.Completed, 2)]
+    [InlineData(AnalysisJobStatus.Failed, 3)]
+    public void AnalysisJobStatus_MatchesDatabaseSchema(AnalysisJobStatus value, int expected) =>
         ((int)value).Should().Be(expected);
 }

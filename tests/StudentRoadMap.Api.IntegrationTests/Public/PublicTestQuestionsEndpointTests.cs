@@ -104,13 +104,24 @@ public sealed class PublicTestQuestionsEndpointTests : IClassFixture<PublicApiTe
         rawBody.Should().Contain("\"scaleLabels\"", "docs/07 1.5-bo'lim namunasidagi qonuniy maydon hali ham mavjud bo'lishi kerak");
 
         // Swagger faqat Development/Staging'da ochiladi (`docs/07` 4-bo'lim) — `WebApplicationFactory`
-        // sukut bo'yicha "Development" muhitida ishga tushadi.
+        // sukut bo'yicha "Development" muhitida ishga tushadi. Tekshiruv FAQAT ommaviy javob
+        // sxemasi (`PublicQuestionDto`) bilan CHEKLANGAN — butun hujjat EMAS: P37 (`prompts/37`)
+        // dan boshlab admin katalog sxemalari (`CatalogQuestionItemDto` va h.k.) `scale`/
+        // `scaleDirection`ni ATAYLAB o'z ichiga oladi (`docs/07` §3.4 — bu ADMIN CRUD uchun,
+        // `CLAUDE.md` 9-qoidasi faqat O'QUVCHI API'siga tegishli). Butun hujjatni tekshirish
+        // endi noto'g'ri musbat (false positive) berardi.
         var swaggerResponse = await client.GetAsync(new Uri("/swagger/v1/swagger.json", UriKind.Relative));
         swaggerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var swaggerJson = await swaggerResponse.Content.ReadAsStringAsync();
+        using var swaggerDocument = System.Text.Json.JsonDocument.Parse(await swaggerResponse.Content.ReadAsStreamAsync());
 
-        swaggerJson.Should().NotContain("\"scale\"", "Swagger sxemasida ham `scale` maydoni ko'rinmasligi kerak");
-        swaggerJson.Should().NotContain("\"scaleDirection\"", "Swagger sxemasida ham `scaleDirection` maydoni ko'rinmasligi kerak");
+        var publicQuestionSchema = swaggerDocument.RootElement
+            .GetProperty("components")
+            .GetProperty("schemas")
+            .GetProperty("PublicQuestionDto")
+            .GetRawText();
+
+        publicQuestionSchema.Should().NotContain("\"scale\"", "ommaviy savol sxemasida `scale` maydoni CLAUDE.md 9-qoidasi bo'yicha taqiqlangan");
+        publicQuestionSchema.Should().NotContain("\"scaleDirection\"", "ommaviy savol sxemasida `scaleDirection` maydoni CLAUDE.md 9-qoidasi bo'yicha taqiqlangan");
     }
 
     [Fact]

@@ -83,6 +83,12 @@ namespace StudentRoadMap.Infrastructure.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("is_current");
 
+                    b.Property<bool>("IsFallbackReport")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_fallback_report");
+
                     b.Property<string>("Model")
                         .IsRequired()
                         .HasMaxLength(80)
@@ -1089,6 +1095,55 @@ namespace StudentRoadMap.Infrastructure.Migrations
                     b.ToTable("test_definitions", (string)null);
                 });
 
+            modelBuilder.Entity("StudentRoadMap.Domain.Catalog.TestScale", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("code");
+
+                    b.Property<string>("DescriptionUz")
+                        .HasColumnType("text")
+                        .HasColumnName("description_uz");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("display_order");
+
+                    b.Property<string>("InterpretationBands")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("interpretation_bands_json")
+                        .HasDefaultValueSql("'[]'");
+
+                    b.Property<string>("NameUz")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("name_uz");
+
+                    b.Property<Guid>("TestDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("test_definition_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_test_scales");
+
+                    b.HasIndex("TestDefinitionId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("ux_test_scales");
+
+                    b.ToTable("test_scales", (string)null);
+                });
+
             modelBuilder.Entity("StudentRoadMap.Domain.Catalog.TypeCatalogEntry", b =>
                 {
                     b.Property<string>("Code")
@@ -1406,6 +1461,70 @@ namespace StudentRoadMap.Infrastructure.Migrations
                         .HasDatabaseName("ux_refresh_tokens_hash");
 
                     b.ToTable("refresh_tokens", (string)null);
+                });
+
+            modelBuilder.Entity("StudentRoadMap.Domain.Jobs.AnalysisJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid>("AssessmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assessment_id");
+
+                    b.Property<int>("AttemptCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("attempt_count");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("last_error");
+
+                    b.Property<string>("RequestedPromptVersion")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("requested_prompt_version");
+
+                    b.Property<short?>("RequestedProvider")
+                        .HasColumnType("smallint")
+                        .HasColumnName("requested_provider");
+
+                    b.Property<short>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("smallint")
+                        .HasDefaultValue((short)0)
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("Id")
+                        .HasName("pk_analysis_jobs");
+
+                    b.HasIndex("AssessmentId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_analysis_jobs_active_per_assessment")
+                        .HasFilter("status IN (0, 1)");
+
+                    b.HasIndex("Status", "CreatedAt")
+                        .HasDatabaseName("ix_analysis_jobs_status");
+
+                    b.ToTable("analysis_jobs", (string)null);
                 });
 
             modelBuilder.Entity("StudentRoadMap.Domain.Schools.RegistrationCounter", b =>
@@ -1872,6 +1991,16 @@ namespace StudentRoadMap.Infrastructure.Migrations
                         .HasConstraintName("fk_school_programs_schools_school_id");
                 });
 
+            modelBuilder.Entity("StudentRoadMap.Domain.Catalog.TestScale", b =>
+                {
+                    b.HasOne("StudentRoadMap.Domain.Catalog.TestDefinition", null)
+                        .WithMany("Scales")
+                        .HasForeignKey("TestDefinitionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_test_scales_test_definitions_test_definition_id");
+                });
+
             modelBuilder.Entity("StudentRoadMap.Domain.Identity.AdminTotpBackupCode", b =>
                 {
                     b.HasOne("StudentRoadMap.Domain.Identity.AdminUser", null)
@@ -1899,6 +2028,16 @@ namespace StudentRoadMap.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_refresh_tokens_admin_users_admin_user_id");
+                });
+
+            modelBuilder.Entity("StudentRoadMap.Domain.Jobs.AnalysisJob", b =>
+                {
+                    b.HasOne("StudentRoadMap.Domain.Assessments.Assessment", null)
+                        .WithMany()
+                        .HasForeignKey("AssessmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_analysis_jobs_assessments_assessment_id");
                 });
 
             modelBuilder.Entity("StudentRoadMap.Domain.Schools.RegistrationCounter", b =>
@@ -1954,6 +2093,8 @@ namespace StudentRoadMap.Infrastructure.Migrations
             modelBuilder.Entity("StudentRoadMap.Domain.Catalog.TestDefinition", b =>
                 {
                     b.Navigation("Questions");
+
+                    b.Navigation("Scales");
                 });
 #pragma warning restore 612, 618
         }

@@ -87,7 +87,7 @@ public sealed class AnthropicProvider : IAiAnalysisProvider
 
         return outcome.Success
             ? new AiHealthResult(true, $"Anthropic ulanishi muvaffaqiyatli ({stopwatch.ElapsedMilliseconds} ms).")
-            : new AiHealthResult(false, outcome.ErrorMessage);
+            : new AiHealthResult(false, outcome.ErrorMessage, outcome.ErrorKind);
     }
 
     private HttpRequestMessage BuildRequest(string systemText, string userText, JsonElement schema, int maxOutputTokens, double temperature)

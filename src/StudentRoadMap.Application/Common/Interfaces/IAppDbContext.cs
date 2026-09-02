@@ -2,6 +2,7 @@ using StudentRoadMap.Domain.Ai;
 using StudentRoadMap.Domain.Assessments;
 using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Identity;
+using StudentRoadMap.Domain.Jobs;
 using StudentRoadMap.Domain.Schools;
 using StudentRoadMap.Domain.Students;
 
@@ -30,6 +31,9 @@ public interface IAppDbContext
     IQueryable<TestDefinition> TestDefinitions { get; }
 
     IQueryable<Question> Questions { get; }
+
+    /// <summary>`Custom` anketalarning `SUM` shkalalari (`docs/07` §3.4, P37) — tizim metodikalarida bo'sh.</summary>
+    IQueryable<TestScale> TestScales { get; }
 
     IQueryable<AssessmentProgram> AssessmentPrograms { get; }
 
@@ -60,6 +64,9 @@ public interface IAppDbContext
     IQueryable<RegistrationCounter> RegistrationCounters { get; }
 
     IQueryable<SchoolLinkView> SchoolLinkViews { get; }
+
+    /// <summary>Fon navbatidagi AI tahlil vazifalari — P18 (`prompts/18`), `AnalysisJobQueue`/`AnalysisWorkerBackgroundService`.</summary>
+    IQueryable<AnalysisJob> AnalysisJobs { get; }
 
     /// <summary>
     /// So'rovni kuzatilmaydigan (no-tracking) rejimga o'tkazadi — Query handler'lar uchun

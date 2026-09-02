@@ -10,6 +10,7 @@ using StudentRoadMap.Domain.Assessments;
 using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Common;
 using StudentRoadMap.Domain.Identity;
+using StudentRoadMap.Domain.Jobs;
 using StudentRoadMap.Domain.Schools;
 using StudentRoadMap.Domain.Students;
 
@@ -47,6 +48,8 @@ public sealed class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<Question> Questions => Set<Question>();
 
+    public DbSet<TestScale> TestScales => Set<TestScale>();
+
     public DbSet<AssessmentProgram> AssessmentPrograms => Set<AssessmentProgram>();
 
     public DbSet<ProgramTest> ProgramTests => Set<ProgramTest>();
@@ -77,6 +80,8 @@ public sealed class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<SchoolLinkView> SchoolLinkViews => Set<SchoolLinkView>();
 
+    public DbSet<AnalysisJob> AnalysisJobs => Set<AnalysisJob>();
+
     // --- IAppDbContext: DbSet<T> emas, IQueryable<T> (PM qarori) ---------------------------
     IQueryable<School> IAppDbContext.Schools => Schools;
 
@@ -93,6 +98,8 @@ public sealed class AppDbContext : DbContext, IAppDbContext
     IQueryable<TestDefinition> IAppDbContext.TestDefinitions => TestDefinitions;
 
     IQueryable<Question> IAppDbContext.Questions => Questions;
+
+    IQueryable<TestScale> IAppDbContext.TestScales => TestScales;
 
     IQueryable<AssessmentProgram> IAppDbContext.AssessmentPrograms => AssessmentPrograms;
 
@@ -123,6 +130,8 @@ public sealed class AppDbContext : DbContext, IAppDbContext
     IQueryable<RegistrationCounter> IAppDbContext.RegistrationCounters => RegistrationCounters;
 
     IQueryable<SchoolLinkView> IAppDbContext.SchoolLinkViews => SchoolLinkViews;
+
+    IQueryable<AnalysisJob> IAppDbContext.AnalysisJobs => AnalysisJobs;
 
     IQueryable<TEntity> IAppDbContext.AsNoTracking<TEntity>(IQueryable<TEntity> query) => query.AsNoTracking();
 

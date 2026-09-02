@@ -103,4 +103,72 @@ public sealed class AiAnalysisTests
 
         analysis.IsCurrent.Should().BeFalse();
     }
+
+    // --- P18 (`prompts/18`): `OverrideErrorMessage`, `CreateFallbackReport`, `MarkCurrent` ---
+
+    [Fact]
+    public void OverrideErrorMessage_WhenFailed_ReplacesMessage()
+    {
+        var analysis = CreateAnalysis();
+        analysis.Start();
+        analysis.Fail("texnik xato", Now);
+
+        analysis.OverrideErrorMessage("So'rov shakli noto'g'ri.");
+
+        analysis.ErrorMessage.Should().Be("So'rov shakli noto'g'ri.");
+    }
+
+    [Fact]
+    public void OverrideErrorMessage_WhenNotFailed_ThrowsDomainException()
+    {
+        var analysis = CreateAnalysis();
+
+        var act = () => analysis.OverrideErrorMessage("x");
+
+        var ex = act.Should().Throw<DomainException>().Which;
+        ex.Code.Should().Be("AI_ANALYSIS_INVALID_TRANSITION");
+    }
+
+    [Fact]
+    public void OverrideErrorMessage_EmptyMessage_ThrowsArgumentException()
+    {
+        var analysis = CreateAnalysis();
+        analysis.Start();
+        analysis.Fail("texnik xato", Now);
+
+        var act = () => analysis.OverrideErrorMessage("   ");
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void CreateFallbackReport_SetsSucceededStatusAndFallbackFlag_WithoutRaisingSucceededEvent()
+    {
+        var report = AiAnalysis.CreateFallbackReport(
+            Guid.NewGuid(), Guid.NewGuid(), AiProvider.Gemini, "v1.0", attemptNumber: 3,
+            summary: "shablon xulosa", personalityPortrait: "shablon portret",
+            strengthsJson: "[]", growthAreasJson: "[]", careerSuggestionsJson: "[]",
+            teacherNotes: null, parentNotes: null, attentionFlagsJson: "[]", now: Now);
+
+        report.Status.Should().Be(AiAnalysisStatus.Succeeded);
+        report.IsFallbackReport.Should().BeTrue();
+        report.IsCurrent.Should().BeFalse("chaqiruvchi (orkestrator) `MarkCurrent()`ni shart bo'lgandagina alohida chaqiradi");
+        report.AttemptNumber.Should().Be(3);
+        // Haqiqiy AI muvaffaqiyati EMAS — `AiAnalysisSucceededEvent` ko'tarilmasligi shart
+        // (aks holda kelajakdagi tinglovchi `Assessment.Status`ni noto'g'ri `Analyzed` qilib qo'yardi).
+        report.DomainEvents.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void MarkCurrent_SetsIsCurrentTrue()
+    {
+        var report = AiAnalysis.CreateFallbackReport(
+            Guid.NewGuid(), Guid.NewGuid(), AiProvider.Gemini, "v1.0", attemptNumber: 1,
+            summary: "s", personalityPortrait: "p", strengthsJson: null, growthAreasJson: null,
+            careerSuggestionsJson: null, teacherNotes: null, parentNotes: null, attentionFlagsJson: null, now: Now);
+
+        report.MarkCurrent();
+
+        report.IsCurrent.Should().BeTrue();
+    }
 }
