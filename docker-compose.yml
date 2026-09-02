@@ -19,28 +19,51 @@ services:
       retries: 5
 
   # --- Ilova (P32) ------------------------------------------------------------------
-  api:
+  # Migratsiya ALOHIDA bir martalik konteyner (`docs/05` 4-bo'lim 5-band: ilova
+  # ichida avtomatik `Database.Migrate()` chaqirilmaydi). Bajarilib to'xtaydi;
+  # `api` uning muvaffaqiyatli tugashini kutadi.
+  migrate:
     build:
       context: .
       dockerfile: docker/Dockerfile.api
-    environment:
+    command: ["--migrate"]
+    environment: &api_env
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
-      # Konteyner ichida baza `db` xosti orqali ko'rinadi (host'dagi `localhost` emas).
       ConnectionStrings__Postgres: "Host=db;Port=5432;Database=studentroadmap;Username=srm;Password=${DB_PASSWORD:?DB_PASSWORD .env faylida berilishi shart}"
       Jwt__Key: ${Jwt__Key:?Jwt__Key .env faylida berilishi shart}
       Security__EncryptionKey: ${Security__EncryptionKey:?Security__EncryptionKey .env faylida berilishi shart}
       Security__IpHashSalt: ${Security__IpHashSalt:-}
-      # `app` konteyneri ishonchli proksi — usiz X-Forwarded-For e'tiborsiz qoladi va
-      # rate limiting hamda IP audit bitta manzilga yig'ilib qoladi (P10 QA topilmasi).
       App__KnownProxies: ${App__KnownProxies:-}
       App__FrontendUrl: ${App__FrontendUrl:-http://localhost:8080}
-      App__SeedOnStartup: ${App__SeedOnStartup:-false}
+      App__SeedOnStartup: "false"
       ADMIN_USERNAME: ${ADMIN_USERNAME:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
     depends_on:
       db:
         condition: service_healthy
+    restart: "no"
+
+  # Katalog seed'i (190 savol, 16 tip, kasb xaritasi, superadmin) — idempotent.
+  seed:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    command: ["--seed"]
+    environment: *api_env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    environment: *api_env
+    depends_on:
+      seed:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   # Frontend (qurilgan statik fayllar) + `/api` proksisi — bitta origin.
@@ -51,15 +74,18 @@ services:
       dockerfile: docker/Dockerfile.web
     depends_on:
       - api
-    ports:
-      - "${WEB_PORT:-8080}:8080"
+    # Host'ga port CHIQARILMAYDI — ilova faqat Cloudflare tunnel orqali, o'z domenida
+    # ochiladi. Shu sababli mashinada hech narsa tinglamaydi (ortiqcha hujum yuzasi yo'q).
+    # Lokal tekshiruv kerak bo'lsa vaqtincha:  docker compose port app 8080
+    # yoki quyidagini yoqing:
+    #   ports:
+    #     - "127.0.0.1:${WEB_PORT:-8080}:8080"
     restart: unless-stopped
 
-  # Cloudflare tunnel — faqat `--profile tunnel` bilan ko'tariladi.
+  # Cloudflare tunnel — `docker compose up -d --build` bilan birga ko'tariladi.
   # Token SIR: faqat `.env` da (`TUNNEL_TOKEN`), repoga tushmaydi (CLAUDE.md 4-qoida).
   tunnel:
     image: cloudflare/cloudflared:latest
-    profiles: [tunnel]
     command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN:?TUNNEL_TOKEN .env faylida berilishi shart}
     depends_on:
       - app
