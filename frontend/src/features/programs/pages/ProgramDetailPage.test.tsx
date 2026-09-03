@@ -107,4 +107,23 @@ describe('ProgramDetailPage', () => {
     ).toBeInTheDocument();
     expect(screen.queryByText("Test qo'shish")).not.toBeInTheDocument();
   });
+
+  // REGRESSIYA (egasining 2026-09-03 dagi xabari): tizim dasturida ("Shaxsiyat profili")
+  // hamma amal yashiringani uchun shaxsiyat testini ro'yxatda ko'rib turib OCHIB
+  // BO'LMASDI. Ko'rish tahrirlash emas — u har doim ochiq bo'lishi kerak.
+  it("tizim dasturida ham test nomi katalogdagi sahifasiga havola bo'ladi", async () => {
+    mockFetch(programDetail({ isSystem: true, kind: 'System', status: 'Published' }));
+    renderPage();
+
+    const link = await screen.findByRole('link', { name: '16 tip' });
+    expect(link).toHaveAttribute('href', '/admin/catalog/tests/t-1');
+  });
+
+  it("Custom dasturda ham test nomi havola bo'ladi", async () => {
+    mockFetch(programDetail());
+    renderPage();
+
+    const link = await screen.findByRole('link', { name: '16 tip' });
+    expect(link).toHaveAttribute('href', '/admin/catalog/tests/t-1');
+  });
 });

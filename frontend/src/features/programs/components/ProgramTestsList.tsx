@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowDown, ArrowUp, Lock, Trash2 } from 'lucide-react';
+import { ROUTES } from '@/shared/config/routes';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
@@ -24,8 +26,12 @@ export interface ProgramTestsListProps {
  * shu sabab yuqoriga/pastga tugmalari bilan teng huquqli, klaviatura bilan to'liq
  * ishlaydigan tartiblash qo'llanildi (docs/11 4-bo'lim, a11y talabi bilan ham mosroq).
  *
- * `isSystem` bo'lsa hamma amal (olib tashlash/tartiblash/qo'shish) o'chirilgan va qulf
- * tushuntirilgan — `prompts/35` 3-band + `CLAUDE.md` 9a-qoida.
+ * `isSystem` bo'lsa TAHRIRLASH amallari (olib tashlash/tartiblash/qo'shish) o'chirilgan va
+ * qulf tushuntirilgan — `prompts/35` 3-band + `CLAUDE.md` 9a-qoida. KO'RISH esa har doim
+ * ochiq: test nomi katalogdagi ichki sahifasiga havola (`/admin/catalog/tests/:id`), u yerda
+ * savollar ro'yxati va (ruxsat etilgan doirada) tahrirlash bor. Ilgari tizim dasturida
+ * hech qanday amal ko'rsatilmagani uchun shaxsiyat testini ro'yxatda ko'rib turib **ochib
+ * bo'lmasdi** (egasining 2026-09-03 dagi xabari).
  */
 export function ProgramTestsList({
   programId,
@@ -101,9 +107,15 @@ export function ProgramTestsList({
               key={test.testDefinitionId}
               className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 p-3"
             >
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm font-medium text-neutral-900">
-                  {index + 1}. {test.nameUz}
+                  {index + 1}.{' '}
+                  <Link
+                    to={ROUTES.admin.catalogTestDetail(test.testDefinitionId)}
+                    className="text-primary-700 hover:underline"
+                  >
+                    {test.nameUz}
+                  </Link>
                 </p>
                 <p className="text-xs text-neutral-500">
                   {test.code}
