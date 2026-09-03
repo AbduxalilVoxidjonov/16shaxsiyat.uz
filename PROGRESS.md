@@ -18,7 +18,7 @@
 
 | № | Vazifa | Agent | Holat | PR | Izoh |
 |---|--------|-------|-------|----|------|
-| P01 | Solution'ni Clean Architecture ga o'tkazish | backend-dotnet | 🔵 | branch `feat/P01-clean-architecture` | QA: PASS · build 0 ogohlantirish · 4 test yashil |
+| P01 | Solution'ni Clean Architecture ga o'tkazish | backend-dotnet | ✅ | — | QA: PASS · PR oqimi yo'q (egasi push qilmaslikni tanladi), ish `main` da |
 | P02 | Domain qatlami | backend-dotnet | ✅ | `84ebaed` | 43 fayl · 193 test · QA testlari alohida agentda |
 | P03 | EF Core, DbContext, migratsiya | backend-dotnet | ✅ | `9bb42d2` | QA: PASS (3 topilma tuzatildi) · jonli DB tekshiruvi qoldi |
 | P04 | Katalog va seed infratuzilmasi | backend-dotnet | ✅ | — | QA: FAIL→PASS · SQLite in-memory bilan 18 test |
