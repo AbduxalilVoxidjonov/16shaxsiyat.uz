@@ -8,6 +8,8 @@ import { EmptyState } from '@/shared/ui/EmptyState';
 import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { useToast } from '@/shared/ui/useToast';
 import { AppError } from '@/shared/api/AppError';
+import { useAiReadinessQuery } from '@/shared/api/useAiReadinessQuery';
+import { AI_RUNNABLE_STATUSES, hasAiReport } from '@/shared/lib/aiAnalysisState';
 import { ROUTES } from '@/shared/config/routes';
 import { useStudentProfileQuery } from '../api/useStudentProfileQuery';
 import { useDownloadReportPdfMutation } from '../api/useDownloadReportPdfMutation';
@@ -18,7 +20,7 @@ import { StudentSummaryCards } from '../components/StudentSummaryCards';
 import { StudentDiagramsSection } from '../components/StudentDiagramsSection';
 import { AiReportSection } from '../components/AiReportSection';
 import { AssessmentHistoryTable } from '../components/AssessmentHistoryTable';
-import { RawAnswersDialog } from '../components/RawAnswersDialog';
+import { AnswersSection } from '../components/AnswersSection';
 import { RerunAnalysisDialog } from '../components/RerunAnalysisDialog';
 import type { AiProvider } from '../model/profileTypes';
 
@@ -54,14 +56,21 @@ export default function StudentProfilePage() {
   const toast = useToast();
   usePageTitle(t('pages.studentProfile.title'));
 
-  const profileQuery = useStudentProfileQuery(id);
+  const { query: profileQuery, pollTimedOut } = useStudentProfileQuery(id);
   const downloadPdfMutation = useDownloadReportPdfMutation();
   const rerunMutation = useRerunAnalysisMutation();
   const deleteMutation = useDeleteStudentMutation();
 
-  const [rawAnswersOpen, setRawAnswersOpen] = useState(false);
   const [rerunOpen, setRerunOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  // Provayder sozlanmagani haqidagi ogohlantirish FAQAT tahlil tugmasi chiqadigan
+  // holatlarda kerak — boshqa holatda ortiqcha so'rov yuborilmaydi.
+  const latestStatus =
+    profileQuery.data?.assessments.find((assessment) => assessment.isLatest)?.status ?? null;
+  const { hasConfiguredProvider } = useAiReadinessQuery(
+    latestStatus !== null && AI_RUNNABLE_STATUSES.includes(latestStatus),
+  );
 
   if (profileQuery.isPending) {
     return <ProfileSkeleton />;
@@ -98,15 +107,40 @@ export default function StudentProfilePage() {
     }
   }
 
-  async function handleRerunAnalysis(provider: AiProvider) {
+  /**
+   * `POST /api/admin/assessments/{id}/rerun-analysis` — `docs/07` 3.3. Domen qo'riqchisi
+   * (`Assessment.MarkAnalyzing`) `Completed` dan ham ruxsat beradi, ya'ni BIRINCHI tahlil
+   * ham aynan shu endpoint orqali ishga tushadi.
+   *
+   * @param viaDialog Tasdiq oynasidan chaqirildimi — xato o'sha oynada ko'rsatiladi;
+   *   tasdiqsiz (birinchi) tahlilda esa xato toast bilan aytiladi, aks holda bosish
+   *   javobsiz qolardi.
+   */
+  async function runAnalysis(provider: AiProvider | null, viaDialog: boolean) {
     if (!id || !latestAssessment) return;
     try {
       await rerunMutation.mutateAsync({ studentId: id, assessmentId: latestAssessment.id, provider });
       toast.show({ variant: 'success', title: t('studentProfile.rerunDialog.success') });
       setRerunOpen(false);
     } catch {
-      // Xato `RerunAnalysisDialog`da `error` orqali ko'rsatiladi — dialog ochiq qoladi.
+      if (!viaDialog) {
+        toast.show({ variant: 'danger', title: t('studentProfile.rerunDialog.error') });
+      }
+      // Tasdiq oynasidagi xato `RerunAnalysisDialog`da `error` orqali ko'rsatiladi —
+      // dialog ochiq qoladi.
     }
+  }
+
+  /**
+   * Tasdiq FAQAT mavjud hisobot ustiga yozilganda so'raladi. Birinchi tahlilda
+   * yo'qotiladigan narsa yo'q — so'rov darhol ketadi, tugma yuklanish holatiga o'tadi.
+   */
+  function handleRunAnalysis({ requiresConfirmation }: { requiresConfirmation: boolean }) {
+    if (requiresConfirmation) {
+      setRerunOpen(true);
+      return;
+    }
+    void runAnalysis(null, false);
   }
 
   async function handleDelete() {
@@ -129,9 +163,10 @@ export default function StudentProfilePage() {
         reliabilityScore={latestSummary?.reliabilityScore ?? null}
         onDownloadPdf={() => void handleDownloadPdf()}
         isDownloadingPdf={downloadPdfMutation.isPending}
-        onRerunAnalysis={() => setRerunOpen(true)}
+        onRerunAnalysis={() =>
+          handleRunAnalysis({ requiresConfirmation: hasAiReport(latestAssessment?.aiAnalysis) })
+        }
         onDelete={() => setDeleteOpen(true)}
-        onViewRawAnswers={() => setRawAnswersOpen(true)}
         hasLatestAssessment={Boolean(latestAssessment)}
       />
 
@@ -163,7 +198,11 @@ export default function StudentProfilePage() {
         aiAnalysis={latestAssessment?.aiAnalysis}
         aiHistory={latestAssessment?.aiHistory}
         reliabilityFlag={latestSummary?.reliabilityFlag ?? null}
-        onRerunAnalysis={() => setRerunOpen(true)}
+        hasAssessment={Boolean(latestAssessment)}
+        onRunAnalysis={handleRunAnalysis}
+        isStartingAnalysis={rerunMutation.isPending && !rerunOpen}
+        pollTimedOut={pollTimedOut}
+        hasConfiguredProvider={hasConfiguredProvider}
         onOpenHistoryItem={() => {
           // Tarixdagi eski tahlilni ochish — hozircha faqat ro'yxatda ko'rsatiladi; to'liq
           // ko'rish (eski versiyani body sifatida yuklash) uchun alohida endpoint kerak,
@@ -171,18 +210,16 @@ export default function StudentProfilePage() {
         }}
       />
 
-      <AssessmentHistoryTable assessments={assessments} />
+      {/* Savolma-savol javoblar — OYNA emas, profilning o'z bo'limi (egasining talabi,
+          2026-09-03): dialog ichida turgani uchun bu ma'lumot umuman topilmagan edi. */}
+      <AnswersSection assessmentId={latestAssessment?.id ?? null} />
 
-      <RawAnswersDialog
-        open={rawAnswersOpen}
-        onClose={() => setRawAnswersOpen(false)}
-        assessmentId={latestAssessment?.id ?? null}
-      />
+      <AssessmentHistoryTable assessments={assessments} />
 
       <RerunAnalysisDialog
         open={rerunOpen}
         onClose={() => setRerunOpen(false)}
-        onConfirm={(provider) => void handleRerunAnalysis(provider)}
+        onConfirm={(provider) => void runAnalysis(provider, true)}
         isSubmitting={rerunMutation.isPending}
         error={rerunMutation.isError ? t('studentProfile.rerunDialog.error') : undefined}
       />

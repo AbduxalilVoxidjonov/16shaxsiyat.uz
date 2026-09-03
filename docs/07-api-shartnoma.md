@@ -42,7 +42,47 @@ Maktab havolasi to'g'riligini tekshirish va boshlanish ekranini to'ldirish.
 `programs[]` — maktab uchun mavjud dasturlar (`Visibility = Public` yoki biriktirilgan;
 bir nechta bo'lsa o'quvchi tanlaydi, `code` → `POST /sessions` `programCode`).
 
-**404** `NOT_FOUND` · **410** `SCHOOL_INACTIVE`
+> **2026-09-03 dan boshlab `programs[]` `200` javobda HECH QACHON bo'sh emas** — bo'sh bo'lsa
+> javob `409 NO_PROGRAM_AVAILABLE` (pastga qarang). Ilgari bu holat `200` + `"programs": []`
+> qaytarardi; mijoz bo'sh massivni "test yo'q" deb TALQIN QILISHI kerak edi, ya'ni xatolik
+> holati javob TANASIGA yashiringan edi.
+
+**Havola ochilishi hisoblagichi (`school_link_views`):** `200` va `409 NO_PROGRAM_AVAILABLE`
+holatlarida OSHADI (o'quvchi havolani chindan ochgan), `404`/`410` da OSHMAYDI.
+
+**404** `NOT_FOUND` · **409** `NO_PROGRAM_AVAILABLE` · **410** `SCHOOL_INACTIVE`
+
+#### `409 NO_PROGRAM_AVAILABLE` — "havola to'g'ri, lekin test tayyor emas" (2026-09-03)
+
+Havolasi to'g'ri, tokeni to'g'ri, maktabi faol — LEKIN bu maktab uchun bironta **mavjud
+dastur** yo'q. Bu holat `404 NOT_FOUND` dan **atayin ajratilgan**: ikkisi o'quvchidan
+BUTUNLAY boshqa harakat talab qiladi.
+
+| Holat | Kod | O'quvchiga xabar | O'quvchi nima qiladi |
+|-------|-----|------------------|----------------------|
+| Noma'lum `slug` yoki noto'g'ri `k` | `404 NOT_FOUND` | "Havola topilmadi" | maktabdan TO'G'RI havolani so'raydi |
+| `slug` bor, dastur yo'q | `409 NO_PROGRAM_AVAILABLE` | "Hozircha test mavjud emas — maktabingizga murojaat qiling." | kutadi; maktab admini dasturni yoqadi |
+
+```json
+{ "type": "…", "title": "…", "status": 409, "code": "NO_PROGRAM_AVAILABLE",
+  "detail": "Hozircha test mavjud emas — maktabingizga murojaat qiling." }
+```
+
+**Mavjud dastur mezoni** (`ProgramAvailability` — ommaviy va admin tomonda BITTA manba):
+
+> `Status = Published` **va** `IsActive = true` **va** (`Visibility = Public` **yoki**
+> `school_programs` orqali shu maktabga biriktirilgan)
+
+**Javobda maktab haqida qo'shimcha ma'lumot YO'Q** — faqat holat va umumiy xabar (nom,
+viloyat, testlar ro'yxati chiqarilmaydi).
+
+**Xavfsizlik mulohazasi.** Bu javob `slug` MAVJUDLIGINI tasdiqlaydi (noma'lum slug baribir
+`404` oladi), ya'ni `slug` bo'yicha sanash mumkin. Bu QABUL QILINADI: maktab havolasi
+(`/t/{slug}?k=…`) o'quvchilarga ommaviy tarqatiladi — QR kod, e'lon, guruh xabari —
+demak `slug` maxfiy emas. Haqiqiy sir — `accessToken` (`k`), u BU YERDA HAM tekshiriladi:
+noto'g'ri token `409` emas, `404` beradi. Ya'ni yangi kod **tokenni bilmagan** kishiga
+hech qanday yangi ma'lumot bermaydi.
+
 
 ---
 
@@ -188,13 +228,23 @@ Paketli, idempotent saqlash (autosave — har 5 s yoki sahifa almashganda).
 ---
 
 ### 1.8 `POST /api/public/sessions/complete`
-Barcha testlar tugagach yakuniy tasdiq. Ishonchlilik hisoblanadi, AI navbatga qo'yiladi.
+Barcha testlar tugagach yakuniy tasdiq. Ballar, ishonchlilik indeksi va o'quvchi
+snapshoti **har doim** shu yerda hisoblanadi.
 
-**200**
+**AI tahlili esa standart holatda navbatga QO'YILMAYDI** — u admin panelidagi
+"AI tahlil qilish" tugmasi bilan ishga tushiriladi (2026-09-03, egasining qarori:
+AI xarajati nazorati). Avtomatik navbat `Ai:AutoAnalyzeOnCompletion` bayrog'i bilan
+qaytariladi (`docs/09` §8.0, `docs/13` §6.1).
+
+**200** — standart konfiguratsiya (bayroq `false`):
 ```json
-{ "status": "Analyzing", "message": "Natijalaringiz qayta ishlanmoqda.",
+{ "status": "Completed", "message": "Javoblaringiz saqlandi. Rahmat!",
   "showResultToStudent": true, "resultAvailableAt": null }
 ```
+
+`Ai:AutoAnalyzeOnCompletion = true` bo'lsa `status` — `"Analyzing"`, `message` esa
+"Natijalaringiz qayta ishlanmoqda." Xabar holatga qarab o'zgaradi: tahlil navbatga
+qo'yilmagan bo'lsa "qayta ishlanmoqda" deyish o'quvchiga yolg'on bo'lardi.
 
 ---
 
@@ -258,8 +308,67 @@ ikkinchi himoya qatlami, birinchisi emas).
 | POST | `/api/admin/schools/{id}/regenerate-link` | Yangi `accessToken` → `{ publicUrl, qrCodeBase64 }` |
 | POST | `/api/admin/schools/{id}/toggle-active` | Faol/nofaol |
 | DELETE | `/api/admin/schools/{id}` | Soft delete (o'quvchisi bo'lsa 409) |
+| GET | `/api/admin/schools/link-health` | Tizim bo'yicha "nechta maktab havolasi ishlamaydi" (dashboard banneri) |
 
-`SchoolListItemDto`: `id, name, region, district, slug, publicUrl, isActive, studentCount, completedCount, lastActivityAt`
+`SchoolListItemDto`: `id, name, region, district, slug, publicUrl, isActive, studentCount, completedCount, lastActivityAt, linkHealth`
+
+#### `linkHealth` — "bu havola ishlaydimi" (2026-09-03)
+
+Ro'yxatda ham, `GET /api/admin/schools/{id}` javobida ham bor. Maqsad: admin dasturni
+o'chirganda maktab havolasi jimgina o'lib qolmasin — panel buni AYTSIN.
+
+```json
+{ "linkHealth": { "status": "NoProgramAssigned", "availableProgramCount": 0, "usableProgramCount": 0 } }
+```
+
+| `status` | Ma'nosi | Ommaviy javob |
+|----------|---------|---------------|
+| `Ok` | mavjud dastur bor va unda yaroqli test bor | `200` |
+| `NoProgramsAtAll` | tizimda umuman dastur yo'q | `409 NO_PROGRAM_AVAILABLE` |
+| `NoProgramAssigned` | dasturlar bor, lekin hech biri `Public` emas va bu maktabga biriktirilmagan | `409 NO_PROGRAM_AVAILABLE` |
+| `ProgramsDeactivated` | mos dastur bor, lekin o'chirilgan/arxivlangan | `409 NO_PROGRAM_AVAILABLE` |
+| `ProgramsWithoutTests` | mavjud dastur bor, lekin unda nashr qilingan/faol va savoli bor test yo'q | `200`, lekin sessiyada test bo'lmaydi |
+
+`availableProgramCount` — 1.1-bo'limdagi **aynan bir xil** mezon bo'yicha hisoblanadi.
+`availableProgramCount == 0` ⟺ ommaviy javob `409 NO_PROGRAM_AVAILABLE`. Ikkisi ajralib
+ketmasligi test bilan qulflangan (`SchoolLinkHealthCriterionTests`) — aks holda panel
+"hammasi joyida" deb yolg'on aytardi.
+
+**`GET /api/admin/schools/link-health` — 200**
+
+```json
+{
+  "activeSchoolCount": 42,
+  "brokenSchoolCount": 3,
+  "schools": [
+    { "id": "…", "name": "12-son maktab",
+      "linkHealth": { "status": "NoProgramAssigned", "availableProgramCount": 0, "usableProgramCount": 0 } }
+  ]
+}
+```
+
+FAQAT **faol** maktablar hisoblanadi (nofaol maktab havolasi `410 SCHOOL_INACTIVE` bilan
+ATAYIN ishlamaydi — u yolg'on ogohlantirish bermasligi kerak). `schools[]` — ko'pi bilan
+10 ta namuna; qolgani `brokenSchoolCount - schools.length`.
+
+#### `GET /api/admin/programs/{id}/impact?action=…` — amaldan OLDIN oqibat (2026-09-03)
+
+Dasturlar admin API'si (`/api/admin/programs`, P34/P35) bu hujjatda hali to'liq
+yozilmagan; quyidagi endpoint ayni shu hodisa uchun qo'shildi va shu yerda hujjatlashtiriladi.
+
+`action`: `deactivate` (`POST /toggle-active` bilan o'chirish) · `archive` · `makeAssigned`
+(`PUT` orqali `Visibility: Public → Assigned`). Boshqa qiymat — `400 VALIDATION_ERROR`.
+
+**200**
+```json
+{ "action": "deactivate", "affectedSchoolCount": 12,
+  "schools": [ { "id": "…", "name": "12-son maktab" } ] }
+```
+
+`affectedSchoolCount` — amaldan keyin **umuman dastursiz qoladigan faol maktablar** soni
+(hozir dasturi bor, keyin bo'lmaydi; ilgari ham dastursiz bo'lganlar HISOBGA OLINMAYDI).
+`schools[]` — ko'pi bilan 20 ta namuna. Endpoint **read-only** va amalni **taqiqlamaydi** —
+faqat tasdiq oynasi oqibatni ko'rsatishi uchun.
 
 **`GET /api/admin/schools/{id}` — 200** (`SchoolDetailDto`): `id, name, region, district,
 schoolNumber, contactPerson, contactPhone, slug, publicUrl, qrCodeBase64, accessCode,
@@ -294,7 +403,14 @@ dailyRegistrationLimit, isActive, notes, createdAt, updatedAt, stats`
 | GET | `/api/admin/students/export?…` | `.xlsx` (filtr saqlanadi) |
 
 `StudentListItemDto`: `id, fullName, schoolName, grade, classLetter, phone, lastAssessmentStatus,
-personalityType, maturityIndex, activityLevel, needsAttention, reliabilityFlag, lastAssessmentAt`
+personalityType, personalityTypeName, maturityIndex, activityLevel, needsAttention, reliabilityFlag,
+lastAssessmentAt`
+
+> **`personalityTypeName`** (2026-09-03) — `personalityType` KODIGA (`"INTJ"`) mos to'liq
+> o'zbekcha nom (`"Loyihachi"`), manba `type_catalog.name_uz` (seed: `type-catalog.json`,
+> mustaqil yozilgan — `CLAUDE.md` 6a-band). Katalogda yozuv topilmasa `null`: mijoz shunda
+> FAQAT kodni ko'rsatadi, soxta nom o'ylab topilmaydi. Sabab: ro'yxatda yolg'iz `INTJ`
+> tushunarsiz — nom asosiy, kod ikkinchi darajali (`ART`/`Artistik` naqshi bilan bir xil).
 
 **`GET /api/admin/students/{id}` — 200**
 ```json
@@ -424,7 +540,7 @@ O'girish backend'da bir joyda: `StudentProfileMapping.RiasecScaleToLetter`
 |-------|------|------|
 | GET | `/api/admin/assessments?schoolId=&status=&from=&to=&page=&pageSize=` | Ro'yxat |
 | GET | `/api/admin/assessments/{id}` | To'liq detal (`latestAssessment` yadrosi + sessiya sarlavhasi + `tests[]`) |
-| GET | `/api/admin/assessments/{id}/answers?testCode=` | Xom javoblar (audit uchun) |
+| GET | `/api/admin/assessments/{id}/answers?testCode=` | Savolma-savol javoblar va tahlili (audit uchun) |
 | POST | `/api/admin/assessments/{id}/rerun-analysis` | `{ "provider": "Anthropic", "promptVersion": "v1.1" }` → 202 |
 | POST | `/api/admin/assessments/{id}/recalculate-scores` | Scoring versiyasi o'zgargan bo'lsa |
 | GET | `/api/admin/assessments/{id}/report.pdf` | PDF hisobot |
@@ -488,6 +604,66 @@ O'girish backend'da bir joyda: `StudentProfileMapping.RiasecScaleToLetter`
 > farqini ko'rmaydi, 2026-09-03 qarori): `tests/StudentRoadMap.Api.IntegrationTests/Admin/
 > AdminAssessmentsGetByIdEndpointTests.cs` va `…/AdminAssessmentsListEndpointTests.cs`.
 
+**`GET /api/admin/assessments/{id}/answers?testCode=` — javob** (`AdminAssessmentAnswersDto`)
+```json
+{
+  "answers": [
+    { "questionId": "…", "questionCode": "BIG5-Q17", "testCode": "BIG5",
+      "questionText": "Rejalarimni oxirigacha yetkazaman",
+      "rawValue": 5, "selectedOptionText": null,
+      "durationMs": 820, "revisionCount": 0, "answeredAt": "2026-08-30T09:11:02Z",
+      "questionType": "Likert5",
+      "scale": "C", "scaleNameUz": "Vijdonlilik", "scaleDirection": -1, "weight": 1.0,
+      "effectiveValue": 1, "isFastAnswer": true, "straightLiningBlockIndex": null }
+  ],
+  "session": { "answeredCount": 190, "fastAnswerCount": 12, "straightLiningBlockCount": 1,
+               "allSameAnswer": false, "shortSession": false, "totalDurationSeconds": 1740,
+               "reliabilityScore": 62.0, "reliabilityFlag": "Questionable" },
+  "scales": [ { "scale": "C", "scaleNameUz": "Vijdonlilik",
+                "forwardCount": 6, "reverseCount": 4,
+                "forwardAvgPct": 72.5, "reverseAvgPct": 31.25, "mismatchPct": 41.25 } ],
+  "thresholds": { "fastAnswerDurationMs": 900, "straightLiningMinRunLength": 12,
+                  "shortSessionMinutes": 6.0 }
+}
+```
+
+> **Nega massiv emas, konvert** (2026-09-03, egasining talabi: "har bir savol uchun qanday
+> javob bergani va tahlili"). Jadvalning o'zi savolma-savol ma'noni beradi, lekin
+> `reliabilityScore` SESSIYA darajasida hisoblanadi (`docs/03` §7) — "nega 62" degan savolga
+> javob berish uchun sessiya signallari, shkala darajasidagi teskari savol ziddiyati va
+> `ScoringConstants` chegaralari ham kerak.
+
+> ⚠️ **`effectiveValue` — jadvaldagi eng muhim maydon.** Teskari savolga
+> (`scaleDirection = -1`) berilgan `5` shkalaga `1` bo'lib tushadi (`docs/03` §1:
+> `v' = (max + min) − v`). Xom `5` ni ko'rgan psixolog javobni BUTUNLAY teskari o'qirdi.
+> Qiymat `Domain/Scoring/ScoringMath.ApplyDirection` — strategiyalar ishlatadigan AYNAN o'sha
+> funksiya — orqali hisoblanadi, `Application`da formula qayta yozilmaydi.
+
+> ⚠️ **`scale`/`scaleNameUz`/`scaleDirection`/`effectiveValue` FAQAT ADMIN javobida.**
+> `CLAUDE.md` 9-bandi O'QUVCHI API'siga tegishli: u yerda bu maydonlar o'lchanayotgan
+> konstruktni va savolning teskari ekanini ochib berardi, ya'ni o'quvchi javobini
+> moslashtirib natijani buzishi mumkin edi. Ommaviy javobda va swagger sxemasida
+> yo'qligi `PublicTestQuestionsEndpointTests` da XOM JSON ustidan qulflangan.
+
+> **`session`/`scales` filtrdan qat'i nazar BUTUN sessiya bo'yicha.** `testCode` faqat
+> `answers` ro'yxatini toraytiradi. Sabab: `ReliabilityCalculator` ham sessiya darajasida
+> ishlaydi (straight-lining 4 blok bo'ylab uzluksiz sanaladi, `docs/03` §7.1 band 3) —
+> bitta blok ichida qayta hisoblansa BOSHQA, yolg'on qiymat chiqardi. `Survey`
+> (ballanmaydigan) bloklar signallarga kirmaydi — `recalculate-scores` ham ularni
+> `ReliabilityCalculator`ga bermaydi.
+
+> **`straightLiningBlockIndex`** — javob TO'LIQ `straightLiningMinRunLength` (12) talik
+> bir xil qiymat blokiga tushsa uning tartib raqami (1 dan), aks holda `null`. Barcha javob
+> bir xil bo'lsa (`allSameAnswer: true`) bloklar BELGILANMAYDI — `docs/03` §7.1 band 1
+> bo'yicha bu holatda faqat `AllSameAnswer` jarimasi qo'llanadi.
+
+> **`thresholds`** — `Domain/Scoring/ScoringConstants` dagi qiymatlar. Mijoz ularni QO'LDA
+> TAKRORLAMAYDI: konstanta o'zgarsa UI avtomatik ergashadi.
+
+> **`scales[]`** — `docs/03` §7.1 band 4 dagi `d_shkala`: faqat IKKALA yo'nalish ham
+> mavjud bo'lgan shkalalar; `mismatchPct = |forwardAvgPct − reverseAvgPct|`. Jarimaning
+> o'zi (`d × 25`) bu yerda ko'rsatilmaydi — u sessiya darajasidagi o'rtachadan chiqadi.
+
 ### 3.4 Test katalogi va anketa konstruktori
 
 **Testlar**
@@ -524,6 +700,71 @@ O'girish backend'da bir joyda: `StudentProfileMapping.RiasecScaleToLetter`
 | DELETE | `/api/admin/catalog/questions/{id}` | ❌ `409 SYSTEM_TEST_LOCKED` |
 | POST | `/api/admin/catalog/tests/{id}/questions/reorder` | ✅ (`[{id, displayOrder}]`) |
 | POST | `/api/admin/catalog/tests/{id}/questions/import` | `Custom` — to'liq; tizim — faqat matn yangilash |
+
+**Excel shablon, eksport va yuklash** (P39)
+
+| Metod | Yo'l | Izoh |
+|-------|------|------|
+| GET | `/api/admin/catalog/tests/{id}/export.xlsx` | Mavjud anketani Excel'ga chiqaradi. **Tizim metodikasi uchun ham ochiq** — bu o'qish amali, BR-8 faqat o'zgartirishni qulflaydi |
+| GET | `/api/admin/catalog/import-template.xlsx` | Bo'sh shablon: ko'rsatma varag'i + bitta namunaviy to'ldirilgan qator |
+| POST | `/api/admin/catalog/import/parse-excel` | `multipart/form-data`, maydon nomi `file`. `.xlsx` ni o'qib **JSON import sxemasidagi obyektni** + `issues[]` qaytaradi. **Hech narsa saqlanmaydi** |
+
+Uchala endpoint ham `SuperAdminPolicy` ostida.
+
+**Varaqlar tuzilishi** — eksport va shablon uchun BIR XIL, ya'ni eksport ↔ import aylanma:
+
+| Varaq | Ustunlar |
+|-------|----------|
+| `Anketa` | `Kod`, `Nomi`, `Tavsifi`, `Taxminiy daqiqa`, `Sahifa hajmi`, `Ballash rejimi` (`Scored`/`Survey`) — bitta qator |
+| `Shkalalar` | `Shkala kodi`, `Nomi`, `Tavsifi` |
+| `Oraliqlar` | `Shkala kodi`, `Dan`, `Gacha`, `Yorliq` |
+| `Savollar` | `Savol kodi`, `Tartib`, `Matn`, `Shkala`, `Yo'nalish` (`1`/`-1`), `Og'irlik`, `Majburiy` (`Ha`/`Yo'q`), `Javob turi` (ixtiyoriy: `Likert5`/`Likert7`) |
+| `Ko'rsatma` | Har ustun izohi, yo'nalish ma'nosi va **talqin oraliqlari qoidasi** (`docs/03` §6.3) |
+
+> `Javob turi` — egasining ustun ro'yxatida yo'q, shu sabab OXIRGI ustun va IXTIYORIY (bo'sh
+> bo'lsa `Likert5`). Usiz `Likert7` anketa aylanmada jimgina `Likert5`ga aylanib, ballash
+> formulasini buzardi. Ustunlar TARTIBI ahamiyatsiz — moslashtirish sarlavha NOMI bo'yicha.
+
+> `Ko'rsatma` varag'ida oraliq qoidasi ATAYLAB batafsil yozilgan: usiz superadmin faylni
+> muvaffaqiyatli import qilib bo'lgach NASHRDA to'siqqa uriladi (`SCALE_BAND_*`) va sababini
+> xato paydo bo'lgan joydan uzoqda qidiradi.
+
+**`POST /api/admin/catalog/import/parse-excel` — javob (200)**
+```json
+{ "data": { "code": "STRESS", "nameUz": "…", "descriptionUz": null,
+            "estimatedMinutes": 6, "pageSize": 10, "scoringMode": "Scored",
+            "scales": [ { "code": "STRESS", "nameUz": "Stressga munosabat",
+                          "descriptionUz": null,
+                          "interpretationBands": [ { "from": 0, "to": 33, "label": "Past" } ] } ],
+            "questions": [ { "code": "ST-Q01", "order": 1, "textUz": "…", "type": "Likert5",
+                             "scale": "STRESS", "direction": 1, "weight": 1.0, "isRequired": true } ] },
+  "issues": [ { "code": "QUESTION_DIRECTION_INVALID", "message": "5-qatorda yo'nalish faqat 1 yoki -1 bo'lishi mumkin.",
+                "sheet": "Savollar", "row": 5, "questionCode": "ST-Q04", "scale": null } ] }
+```
+
+`data` shakli ATAYLAB frontend'dagi MAVJUD JSON import sxemasi bilan bir xil
+(`features/catalog/model/importSchema.ts`) — u yerdagi oldindan ko'rish, validatsiya va
+yaratish yo'li O'ZGARISHSIZ ishlatiladi, ya'ni ikkita parallel import mantiqi yo'q va
+serverda vaqtinchalik holat saqlanmaydi. `issues[]` — qator darajasidagi muammolar; ular
+javobni yiqitmaydi (`200`), faqat superadminga nimani tuzatishni aytadi. Talqin oraliqlari
+QOIDASI bu yerda TAKRORLANMAYDI — u `CatalogPublishValidator` va uning frontend egizagi
+(`interpretationBands.ts`) da, yagona nusxada.
+
+**Fayl darajasidagi xatolar** (`data` qaytmaydi):
+
+| Holat | Javob |
+|-------|-------|
+| ZIP/Open XML emas, buzilgan, bo'sh | `400 IMPORT_FILE_INVALID` |
+| Eski `.xls` (ikkilik) | `400 IMPORT_FILE_INVALID` — alohida xabar: `.xlsx` sifatida saqlash kerak |
+| Makroli `.xlsm` (`xl/vbaProject.bin` yoki `macroEnabled` content-type) | `400 IMPORT_FILE_INVALID` |
+| Bitta varaqda 500 dan ortiq qator | `400 IMPORT_FILE_INVALID` |
+| Fayl 2 MB dan katta yoki ZIP yoyilganda 20 MB dan oshadi | `413 PAYLOAD_TOO_LARGE` |
+
+> `.xlsx` — ZIP arxiv, shu sabab tekshiruv KENGAYTMAGA emas, MAZMUNGA tayanadi: sehrli
+> baytlar, arxiv yozuvlari soni, yoyilgan umumiy hajm (zip bomba) va `xl/workbook.xml`
+> mavjudligi ClosedXML'ga berishdan OLDIN tekshiriladi. Formulalar HISOBLANMAYDI —
+> Excel saqlagan keshlangan qiymat o'qiladi. Xato matnlari o'zgarmas o'zbekcha satrlardan:
+> istisno xabari, kutubxona nomi yoki fayl yo'li javobga HECH QACHON tushmaydi (P31).
 
 **Katalog ma'lumotlari**
 
@@ -567,6 +808,41 @@ O'girish backend'da bir joyda: `StudentProfileMapping.RiasecScaleToLetter`
 > **Cheklov:** `isSystem = true` bo'lgan test va savollarda `scale`, `scaleDirection`, `weight`
 > o'zgartirilmaydi va savol qo'shilmaydi/o'chirilmaydi (BR-8) — API `409 SYSTEM_TEST_LOCKED` beradi.
 > `Custom` testlarda bularning hammasi ochiq.
+
+**`GET /api/admin/catalog/tests/{id}/questions` — savol qatori (`scaleNameUz`)**
+
+```json
+{ "id": "…", "code": "RS-Q03", "order": 3, "textUz": "Rasm chizishni yoqtiraman.",
+  "textRu": null, "textEn": null, "type": "Likert5",
+  "scale": "ART", "scaleNameUz": "Artistik", "scaleDescriptionUz": null,
+  "direction": 1, "weight": 1.0, "isRequired": true, "isActive": true, "isSystem": true }
+```
+
+`scaleNameUz` — shkalaning o'zbekcha nomi. Backend uni quyidagi tartibda aniqlaydi:
+
+1. `TestScale.NameUz` — anketaning O'Z shkalasi bo'lsa (amalda `Custom`);
+2. tizim shkalalari katalogi (`Domain/Catalog/SystemScaleCatalog.cs`) — tizim metodikasi bo'lsa,
+   kalit `TestDefinition.ScoringStrategyCode` (`MBTI16`/`BIG5`/`RIASEC`/`ACTIVITY`), nomlar
+   `docs/03` §2.1/§3.1/§4.1/§5.1 dan;
+3. `null` — noma'lum kod.
+
+`scaleDescriptionUz` — o'sha manbadan keladigan qisqa izoh (`docs/03` da bo'lsa yoki
+`TestScale.DescriptionUz`); ko'pincha `null`. Nom va tavsif HAR DOIM bitta manbadan olinadi.
+
+`null` **xato emas**, degradatsiya: noma'lum shkala jimgina noto'g'ri nom olmaydi, admin faqat
+kodni ko'radi. `scale` (xom kod) baribir qaytadi — import formati va savol tahrirlash kod
+bo'yicha ishlaydi.
+
+> **Nima uchun nom backend'dan keladi.** Aks holda bitta ustun ikki manbadan to'lardi:
+> `Custom` uchun bazadan, tizim uchun frontend i18n jadvalidan. Ikki manba vaqt o'tib
+> bir-biridan uziladi va farq jimgina yuzaga chiqadi. Katalog seed JSON'idagi shkala kodlarini
+> aynan qoplashi test bilan qulflangan (`SystemScaleCatalogDriftTests`).
+
+> ⚠️ `scaleNameUz`/`scaleDescriptionUz` **o'quvchi API'siga hech qachon chiqmaydi** (`CLAUDE.md` 9-qoida). U
+> `scale`dan ham xavfliroq: o'lchanayotgan konstruktni ochiq aytadi ("Artistik"), ya'ni o'quvchi
+> javobini moslashtirib natijani buzishi mumkin. Yo'qligi
+> `PublicTestQuestionsEndpointTests.GetTestQuestions_JavobVaSwaggerda_ScaleMaydoniYoq` da xom
+> JSON ustidan tekshiriladi.
 
 ### 3.5 AI sozlamalari
 | Metod | Yo'l | Izoh |

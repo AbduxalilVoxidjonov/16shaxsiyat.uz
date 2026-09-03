@@ -15,7 +15,8 @@ namespace StudentRoadMap.Api.IntegrationTests.Public;
 
 /// <summary>
 /// `GET /api/public/sessions/tests/{testCode}/questions` — `docs/07` 1.5-bo'lim, `prompts/11`.
-/// Eng muhim talab: `scale`/`scaleDirection` javobda HECH QACHON bo'lmasligi (`CLAUDE.md` 9-qoida).
+/// Eng muhim talab: `scale`/`scaleDirection` (va shkala NOMI — `scaleNameUz`) javobda HECH
+/// QACHON bo'lmasligi (`CLAUDE.md` 9-qoida).
 /// </summary>
 public sealed class PublicTestQuestionsEndpointTests : IClassFixture<PublicApiTestFactory>
 {
@@ -101,6 +102,17 @@ public sealed class PublicTestQuestionsEndpointTests : IClassFixture<PublicApiTe
 
         rawBody.Should().NotContain("\"scale\"", "o'quvchi API javobida `scale` maydoni CLAUDE.md 9-qoidasi bo'yicha taqiqlangan");
         rawBody.Should().NotContain("\"scaleDirection\"", "o'quvchi API javobida `scaleDirection` maydoni CLAUDE.md 9-qoidasi bo'yicha taqiqlangan");
+        // `scaleNameUz` (admin katalogidagi `CatalogQuestionItemDto` maydoni) `scale`dan ham
+        // XAVFLIROQ: u o'lchanayotgan konstruktni OCHIQ aytadi ("Artistik"), ya'ni o'quvchi
+        // javobini moslashtirib test natijasini buzishi mumkin. Ommaviy javobda bo'lmasligi
+        // shu yerda qulflanadi.
+        rawBody.Should().NotContain("\"scaleNameUz\"", "o'quvchi API javobida shkala NOMI ham taqiqlangan — u o'lchanayotgan konstruktni ochib beradi");
+        rawBody.Should().NotContain("\"scaleDescriptionUz\"", "shkala TAVSIFI ham konstruktni ochib beradi — ommaviy javobda taqiqlangan");
+        // `effectiveValue` (admin audit jadvalidagi TESKARI TUZATILGAN qiymat, 2026-09-03) —
+        // `scale`dan ham xavfliroq: u savolning TESKARI ekanini ochib beradi, ya'ni o'quvchi
+        // javobini moslashtirib natijani buzishi mumkin. Ommaviy javobda bo'lmasligi shu yerda
+        // qulflanadi (`AdminAssessmentAnswerDto` izohiga qarang).
+        rawBody.Should().NotContain("\"effectiveValue\"", "o'quvchi API javobida teskari tuzatilgan qiymat taqiqlangan — savolning teskari ekanini ochib beradi");
         rawBody.Should().Contain("\"scaleLabels\"", "docs/07 1.5-bo'lim namunasidagi qonuniy maydon hali ham mavjud bo'lishi kerak");
 
         // Swagger faqat Development/Staging'da ochiladi (`docs/07` 4-bo'lim) — `WebApplicationFactory`
@@ -122,6 +134,22 @@ public sealed class PublicTestQuestionsEndpointTests : IClassFixture<PublicApiTe
 
         publicQuestionSchema.Should().NotContain("\"scale\"", "ommaviy savol sxemasida `scale` maydoni CLAUDE.md 9-qoidasi bo'yicha taqiqlangan");
         publicQuestionSchema.Should().NotContain("\"scaleDirection\"", "ommaviy savol sxemasida `scaleDirection` maydoni CLAUDE.md 9-qoidasi bo'yicha taqiqlangan");
+        publicQuestionSchema.Should().NotContain("\"scaleNameUz\"", "ommaviy savol sxemasida shkala NOMI ham taqiqlangan");
+        publicQuestionSchema.Should().NotContain("\"scaleDescriptionUz\"", "ommaviy savol sxemasida shkala TAVSIFI ham taqiqlangan");
+        publicQuestionSchema.Should().NotContain("\"effectiveValue\"", "ommaviy savol sxemasida teskari tuzatilgan qiymat taqiqlangan");
+
+        // Butun ommaviy JAVOB sxemasi (`GetTestQuestionsResult`) ham tekshiriladi — maydon
+        // `PublicQuestionDto` dan tashqarida, konvert darajasida paydo bo'lib qolmasin.
+        var publicResultSchema = swaggerDocument.RootElement
+            .GetProperty("components")
+            .GetProperty("schemas")
+            .GetProperty("GetTestQuestionsResult")
+            .GetRawText();
+
+        publicResultSchema.Should().NotContain("\"scale\"", "ommaviy javob sxemasida `scale` taqiqlangan");
+        publicResultSchema.Should().NotContain("\"scaleDirection\"", "ommaviy javob sxemasida `scaleDirection` taqiqlangan");
+        publicResultSchema.Should().NotContain("\"scaleNameUz\"", "ommaviy javob sxemasida shkala NOMI taqiqlangan");
+        publicResultSchema.Should().NotContain("\"effectiveValue\"", "ommaviy javob sxemasida teskari tuzatilgan qiymat taqiqlangan");
     }
 
     [Fact]

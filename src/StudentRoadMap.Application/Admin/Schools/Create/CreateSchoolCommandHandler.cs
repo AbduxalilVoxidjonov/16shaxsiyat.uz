@@ -1,4 +1,5 @@
 using MediatR;
+using StudentRoadMap.Application.Admin.Schools.LinkHealth;
 using StudentRoadMap.Application.Admin.Common;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
@@ -98,7 +99,11 @@ internal sealed class CreateSchoolCommandHandler : IRequestHandler<CreateSchoolC
 
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        var dto = SchoolMapping.ToDetailDto(school, _appSettings, _qrCodeGenerator, new AdminSchoolStatsDto(0, 0, 0, null, null));
+        // Yangi maktabga hali dastur biriktirilmagan — havola sog'ligi `Public` dastur bor-yo'qligiga
+        // bog'liq, shu sabab shu yerda ham hisoblanadi (admin darhol "havola ishlamaydi" belgisini ko'rsin).
+        var linkHealth = await SchoolLinkHealthEvaluator.EvaluateOneAsync(_context, _executor, school.Id, cancellationToken).ConfigureAwait(false);
+
+        var dto = SchoolMapping.ToDetailDto(school, _appSettings, _qrCodeGenerator, new AdminSchoolStatsDto(0, 0, 0, null, null), linkHealth);
 
         return Result.Success(dto);
     }

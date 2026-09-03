@@ -120,7 +120,19 @@ export default function StudentsPage() {
     {
       id: 'personalityType',
       header: t('students.table.personalityType'),
-      cell: (row) => row.personalityType ?? '—',
+      // Nom asosiy, kod ikkinchi darajali (egasining talabi, 2026-09-03). `personalityTypeName`
+      // backend'dan keladi (`type_catalog.name_uz`) — bo'sh bo'lsa faqat kod, soxta nom yo'q.
+      cell: (row) =>
+        row.personalityType ? (
+          <span className="whitespace-nowrap">
+            <span className="block">{row.personalityTypeName ?? row.personalityType}</span>
+            {row.personalityTypeName && (
+              <span className="block text-xs text-neutral-500">{row.personalityType}</span>
+            )}
+          </span>
+        ) : (
+          '—'
+        ),
     },
     {
       id: 'maturityIndex',

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { adminRequest } from '@/shared/api/adminClient';
 import type { PagedResult } from '@/shared/api/types';
+import type { components } from '@/shared/api/schema';
 
 /**
  * Maktab tanlash (biriktirish paneli) uchun yengil DTO — xuddi
@@ -13,6 +14,13 @@ export interface SchoolOption {
   name: string;
   region: string;
   district: string;
+  /**
+   * `docs/07` 3.1 (2026-09-03) — havola sog'ligi AYNI shu endpointdan keladi. Ilgari bu panel
+   * "dastursiz" ni O'ZI (klient tomonda, `useProgramCoverageQuery` bilan) taxmin qilardi —
+   * bu IKKINCHI, ommaviy handlerdan FARQ QILADIGAN mezon edi (testlarni ham, o'chirilgan
+   * dasturlarni ham hisobga olmasdi). Endi yagona manba — backend.
+   */
+  linkHealth: components['schemas']['AdminSchoolLinkHealthDto'];
 }
 
 const SCHOOL_OPTIONS_PAGE_SIZE = 20;

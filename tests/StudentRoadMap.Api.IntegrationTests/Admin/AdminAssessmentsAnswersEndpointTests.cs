@@ -97,28 +97,35 @@ public sealed class AdminAssessmentsAnswersEndpointTests : IClassFixture<PublicA
 
         using var client = await AuthenticatedClientAsync("assessments-answers-admin");
 
-        var all = await client.GetFromJsonAsync<List<AdminAssessmentAnswerDto>>(
+        var all = await client.GetFromJsonAsync<AdminAssessmentAnswersDto>(
             $"/api/admin/assessments/{assessment.Id}/answers", TestJson.Options);
-        all.Should().HaveCount(3);
-        all!.Select(a => a.TestCode).Should().Contain(["ANS-A", "ANS-B"]);
+        all!.Answers.Should().HaveCount(3);
+        all.Answers.Select(a => a.TestCode).Should().Contain(["ANS-A", "ANS-B"]);
 
-        var revisedAnswer = all.Single(a => a.QuestionId == questionsA[1].Id);
+        var revisedAnswer = all.Answers.Single(a => a.QuestionId == questionsA[1].Id);
         revisedAnswer.RawValue.Should().Be(4);
         revisedAnswer.RevisionCount.Should().Be(1);
         revisedAnswer.DurationMs.Should().Be(1500);
         revisedAnswer.QuestionText.Should().NotBeNullOrWhiteSpace();
 
-        var onlyB = await client.GetFromJsonAsync<List<AdminAssessmentAnswerDto>>(
+        var onlyB = await client.GetFromJsonAsync<AdminAssessmentAnswersDto>(
             $"/api/admin/assessments/{assessment.Id}/answers?testCode=ANS-B", TestJson.Options);
-        onlyB.Should().ContainSingle(a => a.QuestionId == questionB.Id);
+        onlyB!.Answers.Should().ContainSingle(a => a.QuestionId == questionB.Id);
 
-        var notAssigned = await client.GetFromJsonAsync<List<AdminAssessmentAnswerDto>>(
+        // Signallar filtrga QARAMAY butun sessiya bo'yicha (`AdminAssessmentAnswersDto` izohi):
+        // `ReliabilityCalculator` ham sessiya darajasida ishlaydi.
+        onlyB.Session.AnsweredCount.Should().Be(3, "signallar `testCode` filtridan qat'i nazar BUTUN sessiya bo'yicha");
+
+        var notAssigned = await client.GetFromJsonAsync<AdminAssessmentAnswersDto>(
             $"/api/admin/assessments/{assessment.Id}/answers?testCode=NOPE", TestJson.Options);
-        notAssigned.Should().BeEmpty();
+        notAssigned!.Answers.Should().BeEmpty();
 
-        // `CLAUDE.md` 9-band ruhi: `scale`/`scaleDirection` javob ro'yxatida HAM bo'lmaydi.
+        // ⚠️ 2026-09-03 dan buyon `scale`/`scaleDirection`/`scaleNameUz`/`effectiveValue`
+        // ADMIN javobida ATAYLAB BOR (egasining talabi: javobning ma'nosi ko'rinsin) —
+        // `CLAUDE.md` 9-bandi faqat O'QUVCHI API'siga tegishli va u
+        // `PublicTestQuestionsEndpointTests` da xom JSON + swagger sxemasi ustidan qulflangan.
         var raw = await client.GetStringAsync(new Uri($"/api/admin/assessments/{assessment.Id}/answers", UriKind.Relative));
-        raw.Should().NotContain("scaleDirection");
-        raw.Should().NotContain("\"scale\"");
+        raw.Should().Contain("\"scaleDirection\"");
+        raw.Should().Contain("\"effectiveValue\"");
     }
 }

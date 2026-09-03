@@ -24,6 +24,10 @@ AiResponseValidator   (schema + taqiqlangan atamalar + uzunlik)
 AiAnalysis (Succeeded) → AssessmentStatus = Analyzed → StudentSnapshot yangilanadi
 ```
 
+⚠️ Bu zanjir **avtomatik emas**: tahlil superadmin admin panelidagi "AI tahlil qilish"
+tugmasini bosganda boshlanadi (8.0-bo'lim). Sessiya yakunlanishi bilan avtomatik navbatga
+qo'yish `Ai:AutoAnalyzeOnCompletion` bayrog'i ostida va standart holda **o'chiq**.
+
 ---
 
 ## 2. Abstraksiya
@@ -303,7 +307,33 @@ qaysi provider nima xato berganini keyin ko'rish mumkin.
 
 ## 8. Fon jarayoni
 
-- `AssessmentCompletedEvent` → `IBackgroundJobQueue.Enqueue(new AnalyzeAssessmentJob(assessmentId))`.
+### 8.0 Tahlil QANDAY boshlanadi (2026-09-03 dan)
+
+⚠️ **Tahlil QO'LDA ishga tushiriladi.** Sessiya yakunlanishi tahlilni AVTOMATIK boshlamaydi:
+
+| Boshlanish yo'li | Holat |
+|------------------|-------|
+| Admin panel → "AI tahlil qilish" tugmasi (`POST /api/admin/assessments/{id}/rerun-analysis`) | **Asosiy yo'l.** Har doim ishlaydi, sozlamadan MUSTAQIL |
+| O'quvchi sessiyani yakunlashi (`POST /api/public/sessions/complete`) | Faqat `Ai:AutoAnalyzeOnCompletion=true` bo'lsa. Standart — **`false`**, ya'ni O'CHIQ |
+
+Sabab (`docs/06` 8-bo'lim, 2026-09-03 loyiha EGASI qarori): har bir tahlil AI provayderiga
+to'lanadigan xarajat, shuning uchun qaysi o'quvchi tahlil qilinishini egasi o'zi tanlaydi.
+
+Bayroq **o'chiq** bo'lganda `CompleteSessionCommandHandler` avvalgidek ishlaydi — ballar,
+`TestResult`, `MaturityIndex`, ishonchlilik va `StudentSnapshot` YAKUNLASH paytida
+hisoblanadi — faqat `MarkAnalyzing` chaqirilmaydi va navbatga hech narsa qo'yilmaydi:
+sessiya `Completed` holatida qoladi. Tugma bosilganda `Completed` → `Analyzing` o'tishi
+`RerunAnalysisCommandHandler` orqali bo'ladi (holat mashinasi `Completed`dan
+`MarkAnalyzing`ga ruxsat beradi, `docs/04` 2.3).
+
+Bayroq **yoqilganda** navbatga qo'yish baribir `IPostCommitActions` orqali — tranzaksiya
+COMMIT bo'lgandan keyin (P18-R1), rollback bo'lsa hech qachon (P18-R2).
+
+Sozlama: `Ai:AutoAnalyzeOnCompletion` (env: `Ai__AutoAnalyzeOnCompletion`), `docs/13` 6-bo'lim.
+
+### 8.1 Navbat
+
+- Navbatga qo'yish (yuqoridagi ikki yo'ldan biri) → `IBackgroundJobQueue.EnqueueAiAnalysisAsync(assessmentId)`.
 - Ishlov: Hangfire (Postgres storage) yoki `BackgroundService` + `analysis_jobs` jadvali.
 - Parallellik: bir vaqtda 4 ta job (provider rate limitlarini urmaslik uchun).
 - Idempotentlik: job boshlanishida `Assessment.Status` tekshiriladi; allaqachon `Analyzed` bo'lsa chiqib ketadi.

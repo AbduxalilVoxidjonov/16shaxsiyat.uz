@@ -102,6 +102,25 @@ internal sealed class ListStudentsQueryHandler : IRequestHandler<ListStudentsQue
             .GroupBy(a => a.StudentId)
             .ToDictionary(g => g.Key, g => g.OrderByDescending(a => a.StartedAt).First());
 
+        // Tip KODI (`INTJ`) yonida to'liq NOM (`Loyihachi`) — egasining talabi (2026-09-03).
+        // Sahifa hajmida (≤100 o'quvchi) BITTA batch so'rov; kod bo'yicha `TypeCatalog` PK
+        // indeksi ishlaydi. Nom katalogdan keladi (`type-catalog.json`, `CLAUDE.md` 6a-band) —
+        // topilmasa `null`, ya'ni UI faqat kodni ko'rsatadi.
+        var personalityTypeCodes = pageStudents
+            .Select(s => s.LastPersonalityType)
+            .Where(code => !string.IsNullOrEmpty(code))
+            .Distinct()
+            .ToList();
+
+        var typeNameByCode = personalityTypeCodes.Count == 0
+            ? []
+            : (await _executor.ToListAsync(
+                _context.AsNoTracking(_context.TypeCatalog)
+                    .Where(t => personalityTypeCodes.Contains(t.Code))
+                    .Select(t => new { t.Code, t.NameUz }),
+                cancellationToken).ConfigureAwait(false))
+                .ToDictionary(t => t.Code, t => t.NameUz, StringComparer.Ordinal);
+
         var items = pageStudents
             .Select(s =>
             {
@@ -115,6 +134,7 @@ internal sealed class ListStudentsQueryHandler : IRequestHandler<ListStudentsQue
                     s.Phone.Value,
                     latestAssessment?.Status.ToString(),
                     s.LastPersonalityType,
+                    s.LastPersonalityType is null ? null : typeNameByCode.GetValueOrDefault(s.LastPersonalityType),
                     s.LastMaturityIndex,
                     s.LastActivityLevel?.ToString(),
                     s.NeedsAttention,

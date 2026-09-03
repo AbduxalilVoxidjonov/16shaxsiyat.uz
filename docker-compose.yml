@@ -44,6 +44,11 @@ services:
       App__KnownProxies: ${App__KnownProxies:-}
       App__FrontendUrl: ${App__FrontendUrl:-http://localhost:8080}
       App__SeedOnStartup: "false"
+      # AI tahlilini o'quvchi sessiyani yakunlashi bilan AVTOMATIK navbatga qo'yish.
+      # Standart `false` (2026-09-03 egasi qarori, `docs/06` 8-bo'lim): har tahlil AI
+      # xarajati, shu sabab tahlil admin panelidagi "AI tahlil qilish" tugmasi bilan
+      # QO'LDA ishga tushiriladi. Yoqish uchun `.env` da `Ai__AutoAnalyzeOnCompletion=true`.
+      Ai__AutoAnalyzeOnCompletion: ${Ai__AutoAnalyzeOnCompletion:-false}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}

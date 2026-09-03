@@ -12,6 +12,7 @@ using StudentRoadMap.Application.Admin.Programs.Archive;
 using StudentRoadMap.Application.Admin.Programs.AssignSchool;
 using StudentRoadMap.Application.Admin.Programs.Create;
 using StudentRoadMap.Application.Admin.Programs.GetById;
+using StudentRoadMap.Application.Admin.Programs.Impact;
 using StudentRoadMap.Application.Admin.Programs.List;
 using StudentRoadMap.Application.Admin.Programs.Publish;
 using StudentRoadMap.Application.Admin.Programs.RemoveTest;
@@ -69,6 +70,22 @@ public sealed class AssessmentProgramsController : ControllerBase
     public async Task<ActionResult<AdminProgramDetailDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetProgramByIdQuery(id), cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>
+    /// `GET /api/admin/programs/{id}/impact?action=deactivate|archive|makeAssigned` —
+    /// amal NECHTA maktabni havolasiz qoldirishini OLDINDAN aytadi (`docs/07` 3.5, 2026-09-03).
+    /// Read-only: amalni taqiqlamaydi, faqat oqibatni ko'rsatadi.
+    /// </summary>
+    [HttpGet("{id:guid}/impact")]
+    [ProducesResponseType(typeof(AdminProgramImpactDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    public async Task<ActionResult<AdminProgramImpactDto>> Impact(Guid id, [FromQuery] string action, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new GetProgramImpactQuery(id, action ?? string.Empty), cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
     }

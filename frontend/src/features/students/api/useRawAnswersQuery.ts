@@ -1,24 +1,26 @@
 import { useQuery } from '@tanstack/react-query';
 import { adminRequest } from '@/shared/api/adminClient';
-import type { RawAnswerDto } from '../model/profileTypes';
+import type { AssessmentAnswersDto } from '../model/profileTypes';
 import { STUDENTS_QUERY_KEYS } from './studentsKeys';
 
 /**
- * `GET /api/admin/assessments/{id}/answers?testCode=` — docs/07, 3.3-bo'lim, "Xom javoblar"
- * dialogi (P25, 7-band). Faqat dialog ochilganda so'raladi (`enabled`) — audit ma'lumoti
- * og'ir bo'lishi mumkin, profil yuklanishida darhol kerak emas.
+ * `GET /api/admin/assessments/{id}/answers` — docs/07, 3.3-bo'lim, "Savolma-savol javoblar
+ * va tahlili". Faqat bo'lim OCHILGANDA so'raladi (`enabled`) — ~190 qatorlik audit
+ * ma'lumoti profil yuklanishida darhol kerak emas.
+ *
+ * `testCode` filtri BERILMAYDI: butun sessiya bir marta olinadi va bloklar mijozda
+ * guruhlanadi. Sabab — backend `session`/`scales` signallarini baribir butun sessiya
+ * bo'yicha hisoblaydi (`ReliabilityCalculator` sessiya darajasida ishlaydi), shu sabab
+ * blok bo'yicha alohida so'rov faqat takroriy trafik berardi.
  */
-export function useRawAnswersQuery(
-  assessmentId: string | undefined,
-  testCode: string | undefined,
-) {
+export function useRawAnswersQuery(assessmentId: string | undefined, enabled: boolean) {
   return useQuery({
-    queryKey: STUDENTS_QUERY_KEYS.rawAnswers(assessmentId ?? '', testCode ?? ''),
+    queryKey: STUDENTS_QUERY_KEYS.rawAnswers(assessmentId ?? ''),
     queryFn: ({ signal }) =>
-      adminRequest<RawAnswerDto[]>(
-        `/api/admin/assessments/${assessmentId ?? ''}/answers?testCode=${testCode ?? ''}`,
+      adminRequest<AssessmentAnswersDto>(
+        `/api/admin/assessments/${assessmentId ?? ''}/answers`,
         { signal },
       ),
-    enabled: Boolean(assessmentId) && Boolean(testCode),
+    enabled: Boolean(assessmentId) && enabled,
   });
 }

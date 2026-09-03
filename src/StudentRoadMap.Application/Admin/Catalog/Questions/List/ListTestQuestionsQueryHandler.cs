@@ -18,14 +18,18 @@ internal sealed class ListTestQuestionsQueryHandler : IRequestHandler<ListTestQu
 
     public async Task<Result<IReadOnlyList<CatalogQuestionItemDto>>> Handle(ListTestQuestionsQuery request, CancellationToken cancellationToken)
     {
-        var testExists = await _executor.AnyAsync(
+        // Anketaning O'ZI kerak (`AnyAsync` emas): `ScaleNameUz`ni aniqlash uchun
+        // `ScoringStrategyCode` lozim (`SystemScaleCatalog` kaliti).
+        var test = await _executor.FirstOrDefaultAsync(
             _context.AsNoTracking(_context.TestDefinitions).Where(t => t.Id == request.TestDefinitionId),
             cancellationToken).ConfigureAwait(false);
 
-        if (!testExists)
+        if (test is null)
         {
             return Result.Failure<IReadOnlyList<CatalogQuestionItemDto>>(new Error(ProblemCodes.NotFound, "Anketa topilmadi."));
         }
+
+        var scaleNames = await CatalogMapping.LoadScaleNamesAsync(_context, _executor, test, cancellationToken).ConfigureAwait(false);
 
         var questions = await _executor.ToListAsync(
             _context.AsNoTracking(_context.Questions)
@@ -33,7 +37,7 @@ internal sealed class ListTestQuestionsQueryHandler : IRequestHandler<ListTestQu
                 .OrderBy(q => q.DisplayOrder),
             cancellationToken).ConfigureAwait(false);
 
-        var items = questions.Select(CatalogMapping.ToQuestionDto).ToList();
+        var items = questions.Select(q => CatalogMapping.ToQuestionDto(q, scaleNames)).ToList();
 
         return Result.Success<IReadOnlyList<CatalogQuestionItemDto>>(items);
     }

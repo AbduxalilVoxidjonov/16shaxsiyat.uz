@@ -19,7 +19,6 @@ export interface StudentProfileHeaderProps {
   isDownloadingPdf: boolean;
   onRerunAnalysis: () => void;
   onDelete: () => void;
-  onViewRawAnswers: () => void;
   hasLatestAssessment: boolean;
 }
 
@@ -44,7 +43,6 @@ export function StudentProfileHeader({
   isDownloadingPdf,
   onRerunAnalysis,
   onDelete,
-  onViewRawAnswers,
   hasLatestAssessment,
 }: StudentProfileHeaderProps) {
   const { t } = useTranslation();
@@ -118,17 +116,6 @@ export function StudentProfileHeader({
               <MoreVertical size={16} aria-hidden="true" />
             </summary>
             <div className="absolute right-0 z-10 mt-2 flex w-48 flex-col gap-1 rounded-lg border border-neutral-200 bg-white p-1 shadow-lg">
-              <button
-                type="button"
-                disabled={!hasLatestAssessment}
-                onClick={() => {
-                  closeMore();
-                  onViewRawAnswers();
-                }}
-                className="rounded-md px-3 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {t('studentProfile.header.rawAnswersCta')}
-              </button>
               <button
                 type="button"
                 onClick={() => {

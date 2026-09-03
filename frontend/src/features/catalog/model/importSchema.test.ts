@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { validateTestImportFile, type TestImportFile } from './importSchema';
+import type { components } from '@/shared/api/schema';
+import {
+  toImportIssues,
+  validateTestImportFile,
+  validateTestImportObject,
+  type TestImportFile,
+} from './importSchema';
 
 /** Fayl ichidagi bitta savol — `testImportFileSchema.questions` elementi. */
 type ImportQuestion = TestImportFile['questions'][number];
@@ -45,7 +51,7 @@ describe('validateTestImportFile', () => {
       code: 'STRESS',
       nameUz: 'Stressga chidamlilik anketasi',
       questionCount: 4,
-      scales: [{ scale: 'STRESS', questionCount: 4 }],
+      scales: [{ scale: 'STRESS', questionCount: 4, bandCount: 0 }],
       estimatedMinutes: 6,
     });
   });
@@ -118,8 +124,8 @@ describe('validateTestImportFile', () => {
     const result = validateTestImportFile(JSON.stringify(file));
     expect(result.canImport).toBe(true);
     expect(result.preview?.scales).toEqual([
-      { scale: 'A', questionCount: 4 },
-      { scale: 'B', questionCount: 4 },
+      { scale: 'A', questionCount: 4, bandCount: 0 },
+      { scale: 'B', questionCount: 4, bandCount: 0 },
     ]);
   });
 
@@ -130,3 +136,115 @@ describe('validateTestImportFile', () => {
     expect(result.issues.some((issue) => issue.code === 'SCHEMA_INVALID')).toBe(true);
   });
 });
+
+/**
+ * Excel yo'li (P39) — `POST /api/admin/catalog/import/parse-excel` javobi MAVJUD JSON import
+ * sxemasiga tushishi shart, aks holda "ikkita import mantiqi yo'q" qarori buziladi.
+ *
+ * Fikstura AYNAN backend DTO'si bilan tiplangan (`schema.d.ts`) — server shakli o'zgarsa
+ * `npm run typecheck` qizaradi; sxema mos kelmay qolsa esa quyidagi tekshiruv qizaradi. Ya'ni
+ * drift ikkala tomondan ham ushlanadi.
+ */
+describe('Excel parse natijasi ↔ JSON import sxemasi', () => {
+  const parsed: components['schemas']['CatalogExcelTestDto'] = {
+    code: 'STRESS',
+    nameUz: 'Stressga chidamlilik anketasi',
+    descriptionUz: null,
+    estimatedMinutes: 6,
+    pageSize: 10,
+    scoringMode: 'Scored',
+    scales: [
+      {
+        code: 'STRESS',
+        nameUz: 'Stressga munosabat',
+        descriptionUz: null,
+        interpretationBands: [
+          { from: 0, to: 33, label: 'Past' },
+          { from: 34, to: 66, label: "O'rtacha" },
+          { from: 67, to: 100, label: 'Yuqori' },
+        ],
+      },
+    ],
+    questions: Array.from({ length: 4 }, (_, index) => ({
+      code: `ST-Q0${String(index + 1)}`,
+      order: index + 1,
+      textUz: 'Savol matni',
+      type: 'Likert5',
+      scale: 'STRESS',
+      direction: 1,
+      weight: 1,
+      isRequired: true,
+    })),
+  };
+
+  it('serverdan kelgan obyektni o‘zgarishsiz qabul qiladi', () => {
+    const result = validateTestImportObject(parsed);
+
+    expect(result.issues).toEqual([]);
+    expect(result.canImport).toBe(true);
+    expect(result.preview?.scales).toEqual([
+      { scale: 'STRESS', questionCount: 4, bandCount: 3 },
+    ]);
+  });
+
+  it("oraliqlar qoidasi buzilsa yuklashga ruxsat bermaydi (nashrgacha ushlanadi)", () => {
+    // `0–33` / `35–100` — 34 hech qaysi oraliqqa tushmaydi. Bu xato ilgari faqat NASHR
+    // bosqichida ko'rinardi, ya'ni import tugagach, xato joyidan uzoqda.
+    const result = validateTestImportObject({
+      ...parsed,
+      scales: [
+        {
+          ...parsed.scales[0]!,
+          interpretationBands: [
+            { from: 0, to: 33, label: 'Past' },
+            { from: 35, to: 100, label: 'Yuqori' },
+          ],
+        },
+      ],
+    });
+
+    expect(result.canImport).toBe(false);
+    expect(result.issues.map((issue) => issue.code)).toContain('SCALE_BAND_GAP');
+  });
+
+  it('kasrli chegara aniq xato beradi', () => {
+    const result = validateTestImportObject({
+      ...parsed,
+      scales: [
+        {
+          ...parsed.scales[0]!,
+          interpretationBands: [
+            { from: 0, to: 33.3, label: 'Past' },
+            { from: 33.4, to: 100, label: 'Yuqori' },
+          ],
+        },
+      ],
+    });
+
+    expect(result.issues.map((issue) => issue.code)).toContain('SCALE_BAND_NOT_INTEGER');
+  });
+
+  it('server xatolari varaq nomi bilan birga ko‘rsatiladi va yuklashni to‘xtatadi', () => {
+    const serverIssues = toImportIssues({
+      data: parsed,
+      issues: [
+        {
+          code: 'QUESTION_DIRECTION_INVALID',
+          message: "5-qatorda yo'nalish faqat 1 yoki -1 bo'lishi mumkin.",
+          sheet: 'Savollar',
+          row: 5,
+          questionCode: 'ST-Q05',
+          scale: null,
+        },
+      ],
+    } satisfies components['schemas']['ParseCatalogExcelResultDto']);
+
+    expect(serverIssues[0]?.message).toContain('"Savollar" varag\'i');
+
+    const result = validateTestImportObject(parsed, serverIssues);
+    expect(result.canImport).toBe(false);
+    // Oldindan ko'rish BARIBIR chiqadi — admin nechta savol/shkala borligini ko'rishi kerak.
+    expect(result.preview).not.toBeNull();
+  });
+});
+

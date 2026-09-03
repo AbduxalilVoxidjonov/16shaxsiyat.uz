@@ -66,10 +66,20 @@ export function StudentSummaryCards({
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {/* Egasining talabi (2026-09-03): tipning TO'LIQ NOMI asosiy, 4 harfli kod ikkinchi
+          darajali (`ART`/`Artistik` bilan bir xil naqsh) — yolg'iz `INTJ` tushunarsiz.
+          `typeName` bo'sh bo'lsa (`TypeCatalog`da yozuv yo'q) faqat kod ko'rsatiladi:
+          soxta nom O'YLAB TOPILMAYDI, `docs/03` ning o'zi ham shunday qilishni talab qiladi. */}
       <SummaryCard
         label={t('studentProfile.cards.personalityType')}
-        value={mbti16?.resultCode ?? '—'}
-        hint={mbti16?.typeName ?? t('studentProfile.cards.noData')}
+        value={mbti16?.typeName || mbti16?.resultCode || '—'}
+        hint={
+          mbti16?.resultCode
+            ? mbti16.typeName
+              ? mbti16.resultCode
+              : null
+            : t('studentProfile.cards.noData')
+        }
       />
       <SummaryCard
         label={t('studentProfile.cards.maturityIndex')}

@@ -32,13 +32,23 @@ const BASE_DETAIL: SchoolDetailDto = {
     completionRate: 0.667,
     lastActivityAt: '2026-08-30T10:00:00Z',
   },
+  // `docs/07` 3.1 (2026-09-03) — asosiy fikstura "sog'lom" havola; buzuq holat alohida testda.
+  linkHealth: { status: 'Ok', availableProgramCount: 1, usableProgramCount: 1 },
 };
 
 /**
  * `jsonResponse<'AdminSchoolDetailDto'>` — mock tanasi sxemadan tekshiriladi (`docs/10` §6.4).
  */
-function mockFetch(stats?: Partial<SchoolStatsDto>, status = 200) {
-  const detail: SchoolDetailDto = { ...BASE_DETAIL, stats: { ...BASE_DETAIL.stats, ...stats } };
+function mockFetch(
+  stats?: Partial<SchoolStatsDto>,
+  status = 200,
+  linkHealth?: SchoolDetailDto['linkHealth'],
+) {
+  const detail: SchoolDetailDto = {
+    ...BASE_DETAIL,
+    stats: { ...BASE_DETAIL.stats, ...stats },
+    linkHealth: linkHealth ?? BASE_DETAIL.linkHealth,
+  };
   const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
     const url = String(input);
     if (url.includes('/api/admin/schools/school-1')) {
@@ -132,6 +142,31 @@ describe('SchoolDetailPage', () => {
 
     const link = await screen.findByRole('link', { name: "Shu maktab o'quvchilarini ko'rish" });
     expect(link).toHaveAttribute('href', '/admin/students?schoolId=school-1');
+  });
+
+  /** 2026-09-03: ichki sahifada ham belgi VA sabab bo'lishi kerak — ro'yxatdagidek. */
+  it("dastursiz maktabda belgi va SABAB ichki sahifada ham ko'rsatiladi", async () => {
+    mockFetch(undefined, 200, {
+      status: 'ProgramsDeactivated',
+      availableProgramCount: 0,
+      usableProgramCount: 0,
+    });
+    renderDetailPage();
+
+    expect(await screen.findByText('Havola ishlamaydi')).toBeInTheDocument();
+    expect(screen.getByText(/Mos dastur o'chirilgan yoki arxivlangan/)).toBeInTheDocument();
+    // Havolani nusxalash/QR yonidagi ogohlantirish.
+    expect(screen.getByText(/Bu havolani hozir tarqatish foydasiz/)).toBeInTheDocument();
+  });
+
+  it("dasturi bor maktabda ichki sahifada ogohlantirish CHIQMAYDI", async () => {
+    mockFetch();
+    renderDetailPage();
+
+    // Sog'lom havola — "Ishlaydi" belgisi, ogohlantirish YO'Q (yolg'on signal bermaslik).
+    expect(await screen.findByText('Ishlaydi')).toBeInTheDocument();
+    expect(screen.queryByText('Havola ishlamaydi')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Bu havolani hozir tarqatish foydasiz/)).not.toBeInTheDocument();
   });
 
   it('maktab topilmasa xato holati va qayta urinish tugmasi ko\'rsatiladi', async () => {

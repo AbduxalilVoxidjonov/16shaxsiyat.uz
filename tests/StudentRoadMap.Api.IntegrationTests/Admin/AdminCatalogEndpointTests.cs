@@ -253,4 +253,81 @@ public sealed class AdminCatalogEndpointTests : IClassFixture<PublicApiTestFacto
                 .Should().BeFalse("PUT /tests/{id} pageSize'ni o'zgartirgani uchun ommaviy kesh bekor qilinishi shart");
         }
     }
+
+    /// <summary>
+    /// Tizim metodikasida shkala NOMI `SystemScaleCatalog` dan keladi — bazada `TestScale`
+    /// yozuvi umuman yo'q (`docs/07` §3.4: "Shkalalar — faqat Custom"). Noma'lum kod esa
+    /// `null` bo'ladi: bu XATO EMAS, degradatsiya — frontend shunda faqat kodni ko'rsatadi.
+    /// </summary>
+    [Fact]
+    public async Task ListQuestions_TizimMetodikasi_ScaleNameUzKatalogdanKeladiNomaLumKodNull()
+    {
+        using var client = await AuthenticatedClientAsync("catalog-scalename-system-admin");
+        Guid testId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var now = DateTimeOffset.UtcNow;
+            testId = Guid.NewGuid();
+            var known = Question.Create(Guid.NewGuid(), testId, "RS-Q01", 1, "Rasm chizishni yoqtiraman.", QuestionType.Likert5, "ART", 1, 1.0m, isSystem: true);
+            var unknown = Question.Create(Guid.NewGuid(), testId, "RS-Q99", 2, "Katalogda yo'q shkala.", QuestionType.Likert5, "XYZ", 1, 1.0m, isSystem: true);
+
+            var test = TestDefinition.CreateSystemPublished(
+                testId, "SCALENAME-RIASEC", "Kasb qiziqishlari", null, displayOrder: 1, estimatedMinutes: 7,
+                shuffleQuestions: false, pageSize: 10, scoringStrategyCode: "RIASEC", questions: [known, unknown], now: now);
+
+            db.TestDefinitions.Add(test);
+            await db.SaveChangesAsync();
+        }
+
+        var response = await client.GetAsync(new Uri($"/api/admin/catalog/tests/{testId}/questions", UriKind.Relative));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<List<CatalogQuestionItemDto>>(TestJson.Options);
+        items.Should().HaveCount(2);
+
+        var artQuestion = items!.Single(q => q.Code == "RS-Q01");
+        artQuestion.Scale.Should().Be("ART", "xom kod baribir qaytadi — import formati va tahrirlash unga tayanadi");
+        artQuestion.ScaleNameUz.Should().Be("Artistik", "docs/03 §4.1");
+        artQuestion.ScaleDescriptionUz.Should().BeNull("docs/03 §4.1 da `ART` uchun izoh yo'q");
+
+        var unknownQuestion = items!.Single(q => q.Code == "RS-Q99");
+        unknownQuestion.ScaleNameUz.Should().BeNull("noma'lum kod jimgina noto'g'ri nom olmaydi");
+        unknownQuestion.ScaleDescriptionUz.Should().BeNull();
+    }
+
+    /// <summary>`Custom` anketada nom bazadagi `TestScale.NameUz` dan keladi (katalogdan emas).</summary>
+    [Fact]
+    public async Task ListQuestions_CustomAnketa_ScaleNameUzTestScaledanKeladi()
+    {
+        using var client = await AuthenticatedClientAsync("catalog-scalename-custom-admin");
+        var created = await client.PostAsJsonAsync(
+            "/api/admin/catalog/tests",
+            new { code = "SCALENAME-CUSTOM", nameUz = "Stressga chidamlilik", estimatedMinutes = 5 },
+            TestJson.Options);
+        created.StatusCode.Should().Be(HttpStatusCode.Created);
+        var test = await created.Content.ReadFromJsonAsync<CatalogTestDetailDto>(TestJson.Options);
+
+        var scaleResponse = await client.PostAsJsonAsync(
+            $"/api/admin/catalog/tests/{test!.Id}/scales",
+            new { code = "STRESS", nameUz = "Stressga munosabat", descriptionUz = (string?)null, displayOrder = 1, interpretationBands = Array.Empty<object>() },
+            TestJson.Options);
+        scaleResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var questionResponse = await client.PostAsJsonAsync(
+            $"/api/admin/catalog/tests/{test.Id}/questions",
+            new { code = "ST-Q01", order = 1, textUz = "Imtihon oldidan xotirjam bo'laman.", type = "Likert5", scale = "STRESS", direction = 1, weight = 1.0m, isRequired = (bool?)null },
+            TestJson.Options);
+        questionResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        // POST javobining o'zi ham nomni beradi — ro'yxat bilan bir xil manbadan.
+        var createdQuestion = await questionResponse.Content.ReadFromJsonAsync<CatalogQuestionItemDto>(TestJson.Options);
+        createdQuestion!.ScaleNameUz.Should().Be("Stressga munosabat");
+
+        var listResponse = await client.GetAsync(new Uri($"/api/admin/catalog/tests/{test.Id}/questions", UriKind.Relative));
+        listResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = await listResponse.Content.ReadFromJsonAsync<List<CatalogQuestionItemDto>>(TestJson.Options);
+
+        items!.Single().ScaleNameUz.Should().Be("Stressga munosabat");
+    }
 }

@@ -209,7 +209,11 @@ describe('AssessmentDetailPage', () => {
     expect(screen.getByText(/Past ball natija yomon degani EMAS/)).toBeInTheDocument();
 
     // Testlar jadvali.
-    expect(screen.getByText('INTJ · Loyihachi')).toBeInTheDocument();
+    // 2026-09-03 dan tip NOMI asosiy, kod ikkinchi darajali (egasining talabi:
+    // "qisqartirib yozilgan 16 ta shaxsiyatni to'liq nomi bilan chiqar"). Ilgari
+    // ikkalasi bitta matnda birlashtirilgan edi: `"INTJ · Loyihachi"`.
+    expect(screen.getByText('Loyihachi')).toBeInTheDocument();
+    expect(screen.getByText('INTJ')).toBeInTheDocument();
     expect(screen.getByText('Yetuklik indeksi: 68.4')).toBeInTheDocument();
 
     // AI tahlili.
@@ -313,14 +317,17 @@ describe('AssessmentDetailPage', () => {
     ).toBeInTheDocument();
   });
 
-  it("yakunlanmagan sessiyada qayta tahlil tugmasi o'chirilgan", async () => {
+  it("yakunlanmagan sessiyada tahlil tugmasi KO'RSATILMAYDI, o'rniga sabab aytiladi", async () => {
     renderPage([EMPTY_DETAIL], {
       state: { assessment: { ...LIST_ROW, status: 'InProgress', completedAt: null } },
     });
 
-    const button = await screen.findByRole('button', { name: /Tahlilni qayta ishga tushirish/ });
-    expect(button).toBeDisabled();
-    expect(screen.getByText(/faqat yakunlangan sessiyada ishlaydi/)).toBeInTheDocument();
+    // Tugmani ko'rsatib turib `409` ga urib yuborish yomon UX — tugma umuman chiqmaydi.
+    expect(await screen.findByText(/faqat yakunlangan sessiyada ishlaydi/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Tahlilni qayta ishga tushirish/ }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /AI tahlil qilish/ })).not.toBeInTheDocument();
     expect(screen.getByText('Yakunlanmagan')).toBeInTheDocument();
   });
 

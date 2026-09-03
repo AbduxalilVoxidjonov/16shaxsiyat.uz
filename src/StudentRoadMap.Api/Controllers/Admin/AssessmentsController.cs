@@ -75,11 +75,15 @@ public sealed class AssessmentsController : ControllerBase
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
     }
 
-    /// <summary>`GET /api/admin/assessments/{id}/answers?testCode=` — xom javoblar (audit uchun).</summary>
+    /// <summary>
+    /// `GET /api/admin/assessments/{id}/answers?testCode=` — savolma-savol javoblar va ularning
+    /// tahlili (audit uchun). Javob konvert (`AdminAssessmentAnswersDto`): qatorlar + sessiya
+    /// signallari + shkala signallari + `ScoringConstants` chegaralari.
+    /// </summary>
     [HttpGet("{id:guid}/answers")]
-    [ProducesResponseType(typeof(IReadOnlyList<AdminAssessmentAnswerDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AdminAssessmentAnswersDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
-    public async Task<ActionResult<IReadOnlyList<AdminAssessmentAnswerDto>>> GetAnswers(
+    public async Task<ActionResult<AdminAssessmentAnswersDto>> GetAnswers(
         Guid id,
         [FromQuery] string? testCode,
         CancellationToken cancellationToken)

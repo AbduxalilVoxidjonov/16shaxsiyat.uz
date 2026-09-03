@@ -82,6 +82,7 @@ internal sealed class CreateTestQuestionCommandHandler : IRequestHandler<CreateT
 
         _catalogCache.InvalidateTestDefinition(test.Id, test.Code);
 
-        return Result.Success(CatalogMapping.ToQuestionDto(question));
+        // `LoadTrackedAsync` shkalalarni ham yuklaydi — resolver agregatning o'zidan quriladi.
+        return Result.Success(CatalogMapping.ToQuestionDto(question, CatalogScaleNameResolver.ForTest(test)));
     }
 }

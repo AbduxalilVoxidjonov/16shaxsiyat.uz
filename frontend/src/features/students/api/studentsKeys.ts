@@ -11,6 +11,5 @@ export const STUDENTS_QUERY_KEYS = {
   schoolName: (schoolId: string) => ['students', 'schoolName', schoolId] as const,
   /** Individual profil (P25) — docs/10, 5.2-bo'lim: "profil 0" (`staleTime`, har doim yangi). */
   profile: (studentId: string) => ['students', 'profile', studentId] as const,
-  rawAnswers: (assessmentId: string, testCode: string) =>
-    ['students', 'rawAnswers', assessmentId, testCode] as const,
+  rawAnswers: (assessmentId: string) => ['students', 'rawAnswers', assessmentId] as const,
 };

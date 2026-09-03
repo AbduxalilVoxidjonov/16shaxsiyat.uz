@@ -1384,6 +1384,145 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/catalog/tests/{id}/export.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/catalog/import-template.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/catalog/import/parse-excel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "multipart/form-data": {
+                        /** Format: binary */
+                        file?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ParseCatalogExcelResultDto"];
+                        "application/json": components["schemas"]["ParseCatalogExcelResultDto"];
+                        "text/json": components["schemas"]["ParseCatalogExcelResultDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Content Too Large */
+                413: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/programs": {
         parameters: {
             query?: never;
@@ -1579,6 +1718,65 @@ export interface paths {
                 };
             };
         };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/programs/{id}/impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    action?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminProgramImpactDto"];
+                        "application/json": components["schemas"]["AdminProgramImpactDto"];
+                        "text/json": components["schemas"]["AdminProgramImpactDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -2197,9 +2395,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["AdminAssessmentAnswerDto"][];
-                        "application/json": components["schemas"]["AdminAssessmentAnswerDto"][];
-                        "text/json": components["schemas"]["AdminAssessmentAnswerDto"][];
+                        "text/plain": components["schemas"]["AdminAssessmentAnswersDto"];
+                        "application/json": components["schemas"]["AdminAssessmentAnswersDto"];
+                        "text/json": components["schemas"]["AdminAssessmentAnswersDto"];
                     };
                 };
                 /** @description Not Found */
@@ -2945,6 +3143,15 @@ export interface paths {
                 };
                 /** @description Not Found */
                 404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -3736,6 +3943,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/schools/link-health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminSchoolsLinkHealthDto"];
+                        "application/json": components["schemas"]["AdminSchoolsLinkHealthDto"];
+                        "text/json": components["schemas"]["AdminSchoolsLinkHealthDto"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/schools/{id}": {
         parameters: {
             query?: never;
@@ -4217,6 +4479,43 @@ export interface components {
             estimatedCostUsd?: number | null;
             byProvider: components["schemas"]["AdminAiUsageByProviderDto"][];
         };
+        AdminAnswerScaleSignalDto: {
+            scale: string;
+            scaleNameUz?: string | null;
+            /** Format: int32 */
+            forwardCount: number;
+            /** Format: int32 */
+            reverseCount: number;
+            /** Format: double */
+            forwardAvgPct: number;
+            /** Format: double */
+            reverseAvgPct: number;
+            /** Format: double */
+            mismatchPct: number;
+        };
+        AdminAnswerSessionSignalsDto: {
+            /** Format: int32 */
+            answeredCount: number;
+            /** Format: int32 */
+            fastAnswerCount: number;
+            /** Format: int32 */
+            straightLiningBlockCount: number;
+            allSameAnswer: boolean;
+            shortSession: boolean;
+            /** Format: int32 */
+            totalDurationSeconds?: number | null;
+            /** Format: double */
+            reliabilityScore?: number | null;
+            reliabilityFlag?: string | null;
+        };
+        AdminAnswerThresholdsDto: {
+            /** Format: int32 */
+            fastAnswerDurationMs: number;
+            /** Format: int32 */
+            straightLiningMinRunLength: number;
+            /** Format: double */
+            shortSessionMinutes: number;
+        };
         AdminAssessmentAnswerDto: {
             /** Format: uuid */
             questionId: string;
@@ -4232,6 +4531,24 @@ export interface components {
             revisionCount: number;
             /** Format: date-time */
             answeredAt: string;
+            questionType: string;
+            scale: string;
+            scaleNameUz?: string | null;
+            /** Format: int32 */
+            scaleDirection: number;
+            /** Format: double */
+            weight: number;
+            /** Format: int32 */
+            effectiveValue: number;
+            isFastAnswer: boolean;
+            /** Format: int32 */
+            straightLiningBlockIndex?: number | null;
+        };
+        AdminAssessmentAnswersDto: {
+            answers: components["schemas"]["AdminAssessmentAnswerDto"][];
+            session: components["schemas"]["AdminAnswerSessionSignalsDto"];
+            scales: components["schemas"]["AdminAnswerScaleSignalDto"][];
+            thresholds: components["schemas"]["AdminAnswerThresholdsDto"];
         };
         AdminAssessmentDetailDto: {
             /** Format: uuid */
@@ -4377,6 +4694,12 @@ export interface components {
             maturityIndex?: number | null;
             maturityLevel?: string | null;
         };
+        AdminBrokenSchoolLinkDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            linkHealth: components["schemas"]["AdminSchoolLinkHealthDto"];
+        };
         AdminCareerFieldDto: {
             name: string;
             professions: string[];
@@ -4482,6 +4805,11 @@ export interface components {
             pct: number;
             level: string;
         };
+        AdminImpactedSchoolDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
         AdminLatestAssessmentDto: {
             /** Format: uuid */
             id: string;
@@ -4516,6 +4844,12 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+        };
+        AdminProgramImpactDto: {
+            action: string;
+            /** Format: int32 */
+            affectedSchoolCount: number;
+            schools: components["schemas"]["AdminImpactedSchoolDto"][];
         };
         AdminProgramListItemDto: {
             /** Format: uuid */
@@ -4606,6 +4940,14 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             stats: components["schemas"]["AdminSchoolStatsDto"];
+            linkHealth: components["schemas"]["AdminSchoolLinkHealthDto"];
+        };
+        AdminSchoolLinkHealthDto: {
+            status: string;
+            /** Format: int32 */
+            availableProgramCount: number;
+            /** Format: int32 */
+            usableProgramCount: number;
         };
         AdminSchoolListItemDto: {
             /** Format: uuid */
@@ -4622,6 +4964,7 @@ export interface components {
             completedCount: number;
             /** Format: date-time */
             lastActivityAt?: string | null;
+            linkHealth: components["schemas"]["AdminSchoolLinkHealthDto"];
         };
         AdminSchoolListItemDtoPagedResult: {
             items: components["schemas"]["AdminSchoolListItemDto"][];
@@ -4647,6 +4990,13 @@ export interface components {
             completionRate?: number | null;
             /** Format: date-time */
             lastActivityAt?: string | null;
+        };
+        AdminSchoolsLinkHealthDto: {
+            /** Format: int32 */
+            activeSchoolCount: number;
+            /** Format: int32 */
+            brokenSchoolCount: number;
+            schools: components["schemas"]["AdminBrokenSchoolLinkDto"][];
         };
         AdminStudentDetailDto: {
             /** Format: uuid */
@@ -4680,6 +5030,7 @@ export interface components {
             phone: string;
             lastAssessmentStatus?: string | null;
             personalityType?: string | null;
+            personalityTypeName?: string | null;
             /** Format: double */
             maturityIndex?: number | null;
             activityLevel?: string | null;
@@ -4728,6 +5079,46 @@ export interface components {
         };
         /** @enum {string} */
         AiProvider: "Gemini" | "OpenAi" | "Anthropic";
+        CatalogExcelIssueDto: {
+            code: string;
+            message: string;
+            sheet?: string | null;
+            /** Format: int32 */
+            row?: number | null;
+            questionCode?: string | null;
+            scale?: string | null;
+        };
+        CatalogExcelQuestionDto: {
+            code: string;
+            /** Format: int32 */
+            order: number;
+            textUz: string;
+            type: string;
+            scale: string;
+            /** Format: int32 */
+            direction: number;
+            /** Format: double */
+            weight: number;
+            isRequired: boolean;
+        };
+        CatalogExcelScaleDto: {
+            code: string;
+            nameUz: string;
+            descriptionUz?: string | null;
+            interpretationBands: components["schemas"]["InterpretationBandDto"][];
+        };
+        CatalogExcelTestDto: {
+            code: string;
+            nameUz: string;
+            descriptionUz?: string | null;
+            /** Format: int32 */
+            estimatedMinutes: number;
+            /** Format: int32 */
+            pageSize: number;
+            scoringMode: string;
+            scales: components["schemas"]["CatalogExcelScaleDto"][];
+            questions: components["schemas"]["CatalogExcelQuestionDto"][];
+        };
         CatalogPreviewOptionDto: {
             /** Format: uuid */
             id: string;
@@ -4765,6 +5156,8 @@ export interface components {
             isRequired: boolean;
             isActive: boolean;
             isSystem: boolean;
+            scaleNameUz?: string | null;
+            scaleDescriptionUz?: string | null;
         };
         CatalogScaleItemDto: {
             /** Format: uuid */
@@ -5015,6 +5408,10 @@ export interface components {
             /** Format: int32 */
             expiresIn: number;
             user: components["schemas"]["AdminUserDto"];
+        };
+        ParseCatalogExcelResultDto: {
+            data?: components["schemas"]["CatalogExcelTestDto"];
+            issues: components["schemas"]["CatalogExcelIssueDto"][];
         };
         ProblemDetails: {
             type?: string | null;

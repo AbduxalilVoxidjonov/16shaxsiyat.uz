@@ -23,7 +23,12 @@ namespace StudentRoadMap.Application.Public.CompleteSession;
 /// 3. ⚠️ P12-R1: `ReliabilityInputBuilder.Build` orqali **xronologik** tartibda tuzilgan
 ///    `ReliabilityInput` bilan `ReliabilityCalculator.Calculate` — natija `Assessment.ReliabilityScore`/
 ///    `ReliabilityFlag`ga yoziladi.
-/// 4. `Assessment.MarkAnalyzing` — AI navbatga qo'yiladi (`IBackgroundJobQueue`, hozircha `NoOpJobQueue`).
+/// 4. FAQAT `Ai:AutoAnalyzeOnCompletion` bayrog'i YOQILGAN bo'lsa: `Assessment.MarkAnalyzing`
+///    va AI navbatiga qo'yish (`IBackgroundJobQueue`, `IPostCommitActions` orqali). Standart
+///    qiymat `false` — tahlilni superadmin admin panelidagi "AI tahlil qilish" tugmasi
+///    (`POST /api/admin/assessments/{id}/rerun-analysis`) bilan QO'LDA ishga tushiradi
+///    (`docs/06` 8-bo'lim, 2026-09-03 egasi qarori: AI xarajati nazorati). Bayroq o'chiq
+///    bo'lganda sessiya `Completed` holatida qoladi.
 /// 5. `Student.UpdateSnapshot` — tip/indekslar/`NeedsAttention` yangilanadi.
 ///
 /// **Idempotentlik** (`prompts/12` cheklovi): sessiya allaqachon `Completed`/`Analyzing`/
@@ -32,7 +37,18 @@ namespace StudentRoadMap.Application.Public.CompleteSession;
 /// </summary>
 internal sealed class CompleteSessionCommandHandler : IRequestHandler<CompleteSessionCommand, Result<CompleteSessionResult>>
 {
-    private const string MessageUz = "Natijalaringiz qayta ishlanmoqda.";
+    /// <summary>
+    /// AI tahlili navbatga qo'yilganda — o'quvchi haqiqatan kutadi.
+    /// </summary>
+    private const string MessageAnalyzingUz = "Natijalaringiz qayta ishlanmoqda.";
+
+    /// <summary>
+    /// `Ai:AutoAnalyzeOnCompletion` o'chiq bo'lsa (2026-09-03 dan standart) hech narsa
+    /// qayta ishlanmaydi — tahlil admin panelidagi tugma bilan boshlanadi. Bunday holatda
+    /// "qayta ishlanmoqda" deyish o'quvchiga YOLG'ON: u natija o'zi paydo bo'lishini kutib
+    /// turadi, aslida esa hech qanday jarayon yo'q.
+    /// </summary>
+    private const string MessageCompletedUz = "Javoblaringiz saqlandi. Rahmat!";
 
     private readonly IAppDbContext _context;
     private readonly IAsyncQueryExecutor _executor;
@@ -134,26 +150,43 @@ internal sealed class CompleteSessionCommandHandler : IRequestHandler<CompleteSe
 
         assessment.SetReliability(reliabilityResult.Score, reliabilityResult.Flag, now);
 
-        // AI navbati P18 da ulandi (`AnalysisJobQueue`, `Infrastructure/Jobs`).
-        assessment.MarkAnalyzing(now);
+        // AI navbati P18 da ulandi (`AnalysisJobQueue`, `Infrastructure/Jobs`), lekin
+        // 2026-09-03 dan boshlab AVTOMATIK oqim `Ai:AutoAnalyzeOnCompletion` bayrog'i ostida
+        // (standart `false`, `docs/06` 8-bo'lim: har tahlil AI xarajati — egasi kimni tahlil
+        // qilishni admin panelidagi tugma orqali O'ZI tanlaydi). Bayroq o'chiq bo'lsa sessiya
+        // `Completed` holatida QOLADI (`Analyzing` EMAS) — ballar, `TestResult`, ishonchlilik
+        // va `StudentSnapshot` esa yuqoridagidek YAKUNLASH paytida hisoblanadi.
+        var autoAnalyze = _appSettings.AutoAnalyzeOnCompletion;
+        if (autoAnalyze)
+        {
+            assessment.MarkAnalyzing(now);
+        }
 
         await UpdateStudentSnapshotAsync(assessment, testResults, rolesByAssessmentTestId, now, cancellationToken).ConfigureAwait(false);
 
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        // ⚠️ P18-R1 (MAJBURIY): navbatga qo'yish DARHOL emas — `TransactionBehavior`
-        // tranzaksiyasi muvaffaqiyatli commit bo'lgandan KEYIN (`IPostCommitActions`). Aks
-        // holda fon ishchisi hali commit qilinmagan `Assessment`ni o'qishga urinardi, yoki
-        // tranzaksiya rollback bo'lganda mavjud bo'lmagan sessiya uchun vazifa navbatda
-        // qolib ketardi (`IPostCommitActions` izohiga qarang).
-        var assessmentId = assessment.Id;
-        _postCommitActions.Enqueue(ct => _backgroundJobQueue.EnqueueAiAnalysisAsync(assessmentId, cancellationToken: ct));
+        if (autoAnalyze)
+        {
+            // ⚠️ P18-R1 (MAJBURIY, bayroq YOQILGAN oqim uchun o'zgarishsiz): navbatga
+            // qo'yish DARHOL emas — `TransactionBehavior` tranzaksiyasi muvaffaqiyatli commit
+            // bo'lgandan KEYIN (`IPostCommitActions`). Aks holda fon ishchisi hali commit
+            // qilinmagan `Assessment`ni o'qishga urinardi, yoki tranzaksiya rollback bo'lganda
+            // mavjud bo'lmagan sessiya uchun vazifa navbatda qolib ketardi (P18-R2,
+            // `IPostCommitActions` izohiga qarang).
+            var assessmentId = assessment.Id;
+            _postCommitActions.Enqueue(ct => _backgroundJobQueue.EnqueueAiAnalysisAsync(assessmentId, cancellationToken: ct));
+        }
 
         return Result.Success(BuildResult(assessment));
     }
 
     private CompleteSessionResult BuildResult(Assessment assessment) =>
-        new(assessment.Status.ToString(), MessageUz, _appSettings.ShowResultToStudent, ResultAvailableAt: null);
+        new(
+            assessment.Status.ToString(),
+            assessment.Status == AssessmentStatus.Analyzing ? MessageAnalyzingUz : MessageCompletedUz,
+            _appSettings.ShowResultToStudent,
+            ResultAvailableAt: null);
 
     /// <summary>
     /// `CompositeScorer.ApplyMaturityIndex` (`Domain/Scoring`, o'zgartirilmaydi) chaqiradi —

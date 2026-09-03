@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { Lock, Upload } from 'lucide-react';
+import { Lock, Plus, Upload } from 'lucide-react';
 import { usePageTitle } from '@/shared/hooks/usePageTitle';
 import { Badge } from '@/shared/ui/Badge';
 import { Button } from '@/shared/ui/Button';
@@ -12,6 +12,7 @@ import { EmptyState } from '@/shared/ui/EmptyState';
 import { ROUTES } from '@/shared/config/routes';
 import { useCatalogTestsQuery } from '../api/useCatalogTestsQuery';
 import { TestImportDialog } from '../components/TestImportDialog';
+import { CreateTestDialog } from '../components/CreateTestDialog';
 import { TEST_STATUS_BADGE_VARIANT, type CatalogTestListItem } from '../model/types';
 
 function TestCard({ test, onOpen }: { test: CatalogTestListItem; onOpen: () => void }) {
@@ -62,6 +63,7 @@ export default function CatalogPage() {
   const navigate = useNavigate();
   const testsQuery = useCatalogTestsQuery();
   const [importOpen, setImportOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const systemTests = (testsQuery.data ?? []).filter((test) => test.isSystem);
   const customTests = (testsQuery.data ?? []).filter((test) => !test.isSystem);
@@ -70,10 +72,16 @@ export default function CatalogPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-semibold text-neutral-900">{t('pages.catalog.title')}</h1>
-        <Button onClick={() => setImportOpen(true)}>
-          <Upload size={16} aria-hidden="true" />
-          {t('catalog.actions.import')}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <Upload size={16} aria-hidden="true" />
+            {t('catalog.actions.import')}
+          </Button>
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus size={16} aria-hidden="true" />
+            {t('catalog.actions.create')}
+          </Button>
+        </div>
       </div>
 
       {testsQuery.isPending && (
@@ -134,7 +142,20 @@ export default function CatalogPage() {
         </>
       )}
 
-      <TestImportDialog open={importOpen} onClose={() => setImportOpen(false)} />
+      <TestImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        tests={testsQuery.data ?? []}
+      />
+
+      <CreateTestDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={(id) => {
+          setCreateOpen(false);
+          navigate(ROUTES.admin.catalogTestDetail(id));
+        }}
+      />
     </div>
   );
 }

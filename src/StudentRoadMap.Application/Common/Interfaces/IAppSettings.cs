@@ -27,6 +27,21 @@ public interface IAppSettings
     int RefreshTokenDays { get; }
 
     /// <summary>
+    /// O'quvchi sessiyani yakunlaganda AI tahlili AVTOMATIK navbatga qo'yiladimi
+    /// (`Ai:AutoAnalyzeOnCompletion`, env: `Ai__AutoAnalyzeOnCompletion`). Standart qiymat —
+    /// **`false`** (`docs/06` 8-bo'lim, 2026-09-03 loyiha EGASI qarori): har tahlil AI xarajati,
+    /// shu sabab egasi qaysi o'quvchi tahlil qilinishini admin panelidagi "AI tahlil qilish"
+    /// tugmasi (`POST /api/admin/assessments/{id}/rerun-analysis`) orqali O'ZI tanlaydi.
+    /// <para>
+    /// ⚠️ Bayroq FAQAT avtomatik oqimga (`CompleteSessionCommandHandler`) tegishli — qo'lda
+    /// ishga tushirish (`RerunAnalysisCommandHandler`) undan MUSTAQIL, har doim ishlaydi.
+    /// Bayroq YOQILGANDA navbatga qo'yish baribir `IPostCommitActions` orqali, tranzaksiya
+    /// commit bo'lgandan KEYIN bajariladi (P18-R1/P18-R2 o'zgarishsiz).
+    /// </para>
+    /// </summary>
+    bool AutoAnalyzeOnCompletion { get; }
+
+    /// <summary>
     /// Ommaviy frontend bazaviy manzili — maktab havolasi shu asosda quriladi:
     /// `{PublicWebBaseUrl}/t/{slug}?k={accessToken}` (`docs/08-auth-va-xavfsizlik.md` 3-bo'lim,
     /// `P14`). `App:FrontendUrl` konfiguratsiyasi bilan bir xil manba (`Program.cs`da CORS uchun

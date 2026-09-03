@@ -22,15 +22,20 @@ function ResultCell({ row }: { row: TestSummaryRow }) {
     return <span className="text-neutral-400">{t('assessmentDetail.tests.noData')}</span>;
   }
 
-  const parts: string[] = [];
-  if (row.resultCode) parts.push(row.resultCode);
-  if (row.resultName) parts.push(row.resultName);
+  // Nom asosiy, kod ikkinchi darajali (egasining 2026-09-03 talabi: "qisqartirib yozilgan
+  // 16 ta shaxsiyatni to'liq nomi bilan chiqar"). Ilgari `"INTJ · Loyihachi"` bo'lib, kod
+  // birinchi va ikkalasi bir xil vaznda edi — 4 harfli kod o'zi hech narsa anglatmaydi.
+  // Kod baribir qoldiriladi: u eksport, filtr va tip katalogida ishlatiladi.
+  // `ART`/`Artistik` uchun katalogda qo'llangan naqshning aynan o'zi.
+  const primaryLabel = row.resultName ?? row.resultCode;
+  const secondaryCode = row.resultName !== null ? row.resultCode : null;
 
   return (
     <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-      {parts.length > 0 && (
-        <span className="font-medium text-neutral-900">{parts.join(' · ')}</span>
+      {primaryLabel !== null && (
+        <span className="font-medium text-neutral-900">{primaryLabel}</span>
       )}
+      {secondaryCode !== null && <span className="text-xs text-neutral-400">{secondaryCode}</span>}
       {row.indexKind !== null &&
         (row.index !== null ? (
           <span className="text-neutral-700">
@@ -41,7 +46,7 @@ function ResultCell({ row }: { row: TestSummaryRow }) {
           // `MaturityIndex` faqat ikkalasi birga bo'lganda ma'noga ega).
           <span className="text-neutral-400">{t('assessmentDetail.tests.indexUnknown')}</span>
         ))}
-      {parts.length === 0 && row.indexKind === null && (
+      {primaryLabel === null && row.indexKind === null && (
         <span className="text-neutral-400">{t('assessmentDetail.tests.noData')}</span>
       )}
     </span>

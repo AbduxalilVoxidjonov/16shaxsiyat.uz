@@ -31,6 +31,51 @@ export type SchoolStatsDto = components['schemas']['AdminSchoolStatsDto'];
  */
 export type SchoolDetailDto = components['schemas']['AdminSchoolDetailDto'];
 
+/**
+ * Maktab havolasi ISHLAYDIMI — `docs/07` 3.1 (2026-09-03). Ro'yxatda ham, detalda ham bor.
+ *
+ * `status` — backend `SchoolLinkHealthStatus` nomi (string): `Ok` | `NoProgramsAtAll` |
+ * `NoProgramAssigned` | `ProgramsDeactivated` | `ProgramsWithoutTests`. Sxemada oddiy `string`
+ * (backend enum'ni `ToString()` bilan qaytaradi) — shu sabab union `SCHOOL_LINK_HEALTH_STATUSES`
+ * da qo'lda saqlanadi (`programs/model/types.ts` dagi naqsh bilan bir xil).
+ *
+ * `availableProgramCount === 0` ⟺ o'quvchi havolani ochsa `409 NO_PROGRAM_AVAILABLE` oladi.
+ */
+export type SchoolLinkHealthDto = components['schemas']['AdminSchoolLinkHealthDto'];
+
+/** `GET /api/admin/schools/link-health` javobi — dashboard banneri uchun. */
+export type SchoolsLinkHealthDto = components['schemas']['AdminSchoolsLinkHealthDto'];
+
+/** Havolasi ishlamaydigan bitta maktab (sabab bilan). */
+export type BrokenSchoolLinkDto = components['schemas']['AdminBrokenSchoolLinkDto'];
+
+/**
+ * Sabab matni uchun kalitlar. Backenddagi `SchoolLinkHealthStatus` bilan qo'lda sinxron —
+ * yangi qiymat kelsa `linkHealthReasonKey` uni `unknown` ga tushiradi (jimgina bo'sh matn
+ * EMAS: "ma'lumot yo'q ≠ nol", `docs/06` qarorlar jurnali).
+ */
+export const SCHOOL_LINK_HEALTH_STATUSES = [
+  'Ok',
+  'NoProgramsAtAll',
+  'NoProgramAssigned',
+  'ProgramsDeactivated',
+  'ProgramsWithoutTests',
+] as const;
+
+export type SchoolLinkHealthStatus = (typeof SCHOOL_LINK_HEALTH_STATUSES)[number];
+
+/** Havola BUTUNLAY ishlamaydimi (o'quvchi testga umuman kira olmaydi). */
+export function isSchoolLinkBroken(linkHealth: SchoolLinkHealthDto | undefined): boolean {
+  return linkHealth !== undefined && linkHealth.status !== 'Ok';
+}
+
+/** i18n kaliti — noma'lum status uchun `unknown` (jimgina bo'sh matn qaytarilmaydi). */
+export function linkHealthReasonKey(status: string): string {
+  return (SCHOOL_LINK_HEALTH_STATUSES as readonly string[]).includes(status)
+    ? `schools.linkHealth.reason.${status}`
+    : 'schools.linkHealth.reason.unknown';
+}
+
 /** `GET /api/admin/schools` so'rov parametrlari — `docs/07` 3.1 (DTO emas, query shakli). */
 export interface SchoolsListQuery {
   search?: string;

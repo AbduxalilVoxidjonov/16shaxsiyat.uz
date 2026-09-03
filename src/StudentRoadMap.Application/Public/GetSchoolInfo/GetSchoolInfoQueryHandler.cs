@@ -28,6 +28,14 @@ namespace StudentRoadMap.Application.Public.GetSchoolInfo;
 /// endpoint qilish yomonroq bo'lardi (qo'shimcha so'rov, mijoz o'tkazib yuborishi mumkin,
 /// poyga holati).
 ///
+/// **`409 NO_PROGRAM_AVAILABLE` holatida hisoblagich OSHIRILADI** (2026-09-03 qarori). Bu —
+/// ataylab: o'quvchi havolani CHINDAN ochgan, faqat test tayyor emas. Agar bu holatda
+/// hisoblagich oshmasa, dastursiz davrdagi barcha ochilishlar YO'QOLARDI va dashboard
+/// voronkasining eng yuqori bo'g'ini (`school_link_views`) jimgina noto'g'ri bo'lardi —
+/// aynan admin "nega hech kim kirmayapti?" deb so'ragan paytda. Shu sabab chaqiruv dastur
+/// tekshiruvidan OLDIN turadi (pastga qarang). `404`/`410` da esa oshirilmaydi: u yerda
+/// havolaning O'ZI noto'g'ri yoki maktab ataylab o'chirilgan.
+///
 /// **FAIL-OPEN shart (PM qarori, 2026-09-02):** hisoblagich yozuvi MUVAFFAQIYATSIZ bo'lsa
 /// (DB band, deadlock, cheklov buzilishi) landing sahifasi (`GET .../schools/{slug}`) YIQILMASLIGI
 /// kerak — telemetriya nosozligi mahsulotdan MUHIMROQ bo'lib qolmasligi kerak. Shu sabab
@@ -115,6 +123,27 @@ internal sealed class GetSchoolInfoQueryHandler : IRequestHandler<GetSchoolInfoQ
         }
 
         var programs = await BuildProgramsAsync(school.Id, cancellationToken).ConfigureAwait(false);
+
+        // `docs/07` 1.1 (2026-09-03, jonli hodisadan keyin): havola VA token to'g'ri, maktab
+        // faol — lekin bironta mavjud dastur yo'q. Ilgari bu holat `200` + bo'sh `programs[]`
+        // qaytarardi; mijoz uchun "havola noto'g'ri" (o'quvchi maktabga havolani qayta so'raydi)
+        // va "test hali tayyorlanmagan" (maktab admini dasturni yoqishi kerak) BUTUNLAY boshqa
+        // harakat talab qiladi, shu sabab alohida kod ajratildi.
+        //
+        // XAVFSIZLIK: bu javob slug MAVJUDLIGINI tasdiqlaydi (noma'lum slug `NOT_FOUND` oladi).
+        // Maktab havolasi o'quvchilarga ochiq tarqatiladi — slug maxfiy emas, shu sabab qabul
+        // qilinadi. Javobda maktab haqida HECH QANDAY qo'shimcha ma'lumot yo'q (nom, viloyat,
+        // testlar) — faqat holat va umumiy xabar.
+        if (programs.Count == 0)
+        {
+            // DIQQAT: havola ochilishi hisoblagichi YUQORIDA allaqachon oshirilgan — bu ATAYIN
+            // (sinf izohiga qarang). O'quvchi havolani chindan ochgan; voronkaning yuqori
+            // bo'g'ini yo'qolmasligi kerak.
+
+            return Result.Failure<GetSchoolInfoResult>(new Error(
+                ProblemCodes.NoProgramAvailable,
+                "Hozircha test mavjud emas — maktabingizga murojaat qiling."));
+        }
 
         var result = new GetSchoolInfoResult(
             school.Id,

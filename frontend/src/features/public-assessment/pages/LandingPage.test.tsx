@@ -136,6 +136,22 @@ describe('LandingPage', () => {
     expect(screen.getByText('Bu maktab uchun test vaqtincha yopilgan.')).toBeInTheDocument();
   });
 
+  // 2026-09-03: maktab va havola TO'G'RI, faqat hozircha mavjud dastur yo'q. Ilgari bu
+  // umumiy "Nimadir noto'g'ri ketdi" + "Qayta urinish" ekraniga tushardi — o'quvchi
+  // havolani buzuq deb o'ylab maktabga behuda murojaat qilardi, qayta urinish esa hech
+  // narsani o'zgartirmasdi.
+  it("409 (dastur mavjud emas) bo'lsa tushunarli holat chiqadi, 'Qayta urinish' emas", async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(problemResponse('NO_PROGRAM_AVAILABLE', 409)),
+    );
+
+    renderLanding();
+
+    expect(await screen.findByText('Test hali tayyor emas')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Qayta urinish' })).not.toBeInTheDocument();
+  });
+
   it("kutilmagan (masalan 500) xatoda umumiy xato holati va qayta urinish tugmasi chiqadi", async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(problemResponse('INTERNAL_ERROR', 500)));
 

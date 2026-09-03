@@ -30,6 +30,7 @@ const SCHOOL_DETAIL = {
     completionRate: 0.667,
     lastActivityAt: '2026-08-30T10:00:00Z',
   },
+  linkHealth: { status: 'Ok', availableProgramCount: 1, usableProgramCount: 1 },
 } satisfies Schemas['AdminSchoolDetailDto'];
 
 /**

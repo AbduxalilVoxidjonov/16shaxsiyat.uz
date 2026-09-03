@@ -185,6 +185,44 @@ public sealed class RerunAnalysisCommandHandlerTests
         jobQueue.LastPromptVersion.Should().Be("v1.1");
     }
 
+    /// <summary>
+    /// ⚠️ Qo'lda ishga tushirish `Ai:AutoAnalyzeOnCompletion` bayrog'idan MUSTAQIL (`docs/06`
+    /// 8-bo'lim, 2026-09-03 egasi qarori): bayroq FAQAT avtomatik oqimga
+    /// (`CompleteSessionCommandHandler`) tegishli. Buni ikki tomondan qulflaymiz — handler
+    /// `IAppSettings`ga UMUMAN bog'lanmaydi (struktura) va har doim navbatga qo'yadi (xatti-harakat).
+    /// </summary>
+    [Fact]
+    public async Task Handle_AutoAnalyzeBayrogidanQatiyNazar_HarDoimNavbatgaQoyadi()
+    {
+        var constructorParameterTypes = typeof(RerunAnalysisCommandHandler)
+            .GetConstructors()
+            .Single()
+            .GetParameters()
+            .Select(p => p.ParameterType);
+
+        constructorParameterTypes.Should().NotContain(
+            typeof(IAppSettings),
+            "qo'lda ishga tushirish sozlama bayrog'iga bog'lanmasligi kerak — tugma har doim ishlaydi");
+
+        var context = new FakeContext();
+        var assessment = CreateAssessmentInStatus(AssessmentStatus.Completed);
+        context.AssessmentList.Add(assessment);
+
+        var jobQueue = new SpyBackgroundJobQueue();
+        var postCommitActions = new SpyPostCommitActions();
+        var handler = new RerunAnalysisCommandHandler(context, new InlineAsyncQueryExecutor(), new FakeDateTime(Now), new FakeIpHasher(), jobQueue, postCommitActions);
+
+        var result = await handler.Handle(new RerunAnalysisCommand(assessment.Id, null, null, Guid.NewGuid()), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        assessment.Status.Should().Be(AssessmentStatus.Analyzing);
+        postCommitActions.EnqueuedActions.Should().ContainSingle();
+
+        await postCommitActions.EnqueuedActions[0](CancellationToken.None);
+        jobQueue.EnqueueCallCount.Should().Be(1);
+        jobQueue.LastAssessmentId.Should().Be(assessment.Id);
+    }
+
     [Fact]
     public async Task Handle_DraftAssessment_ThrowsDomainException()
     {

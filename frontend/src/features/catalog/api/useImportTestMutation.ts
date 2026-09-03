@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminRequest } from '@/shared/api/adminClient';
 import type { TestImportFile } from '../model/importSchema';
-import type { CatalogTestDetail } from '../model/types';
+import type { CatalogScaleItem, CatalogTestDetail } from '../model/types';
 import { CATALOG_QUERY_KEYS } from './catalogKeys';
 
 interface CreateCatalogTestRequestBody {
@@ -12,6 +12,7 @@ interface CreateCatalogTestRequestBody {
   pageSize?: number;
   shuffleQuestions?: boolean;
   displayOrder?: number;
+  scoringMode?: string;
 }
 
 interface ImportQuestionsRequestBody {
@@ -19,18 +20,20 @@ interface ImportQuestionsRequestBody {
 }
 
 /**
- * "Test yuklash" (JSON import) — `prompts/35` B3–B5-band. Ikki bosqichli chaqiruv:
+ * "Anketa yuklash" — `prompts/35` B3–B5-band. Uch bosqichli chaqiruv:
  * 1) `POST /api/admin/catalog/tests` — metadata bilan `Draft` test yaratadi;
- * 2) `POST /api/admin/catalog/tests/{id}/questions/import` — savollarni yuklaydi
- *    (`docs/07` 3.4-bo'lim: "`Custom` — to'liq").
+ * 2) `POST /api/admin/catalog/tests/{id}/scales` — faylda shkala bo'lsa, har biri
+ *    talqin oraliqlari bilan (`docs/07` §3.4);
+ * 3) `POST /api/admin/catalog/tests/{id}/questions/import` — savollarni yuklaydi.
  *
- * Muvaffaqiyat — test doim `Draft` holatida qoladi (`prompts/35` B5-band: "hech qachon
- * to'g'ridan-to'g'ri o'quvchiga chiqmaydi"), chunki `POST /tests` shu holatda yaratadi va
- * bu mutatsiya `publish` chaqirmaydi. Dublikat `code` bo'lsa backend `409` beradi
- * (`prompts/35` B6-band) — chaqiruvchi (`TestImportDialog`) buni alohida ushlaydi.
+ * Shkalalar savollardan OLDIN yaratiladi: savol shkalaga KOD orqali bog'lanadi va nashr
+ * validatsiyasi (`docs/03` §6.3) shkala shu testga tegishli ekanini talab qiladi — shkalasiz
+ * import qilingan anketani nashr qilib bo'lmasdi. JSON fayllarda (seed sxemasi) shkala yo'q,
+ * shu sabab bu bosqich shunchaki o'tkazib yuboriladi.
  *
- * Backend endpoint hali yo'q (`model/types.ts` boshidagi izohga qarang) — bu mutatsiya
- * real so'rov yuboradi, hozircha xato (404) kutiladi.
+ * Muvaffaqiyat — test doim `Draft` holatida qoladi (`prompts/35` B5-band), chunki
+ * `POST /tests` shu holatda yaratadi va bu mutatsiya `publish` chaqirmaydi. Dublikat `code`
+ * bo'lsa backend `409` beradi — chaqiruvchi (`TestImportDialog`) buni alohida ushlaydi.
  */
 export function useImportTestMutation() {
   const queryClient = useQueryClient();
@@ -41,13 +44,30 @@ export function useImportTestMutation() {
         body: {
           code: file.code,
           nameUz: file.nameUz,
-          descriptionUz: file.descriptionUz,
+          descriptionUz: file.descriptionUz ?? undefined,
           estimatedMinutes: file.estimatedMinutes,
           pageSize: file.pageSize,
           shuffleQuestions: file.shuffleQuestions,
           displayOrder: file.displayOrder,
+          scoringMode: file.scoringMode,
         } satisfies CreateCatalogTestRequestBody,
       });
+
+      for (const [index, scale] of (file.scales ?? []).entries()) {
+        await adminRequest<CatalogScaleItem>(
+          `/api/admin/catalog/tests/${created.id}/scales`,
+          {
+            method: 'POST',
+            body: {
+              code: scale.code,
+              nameUz: scale.nameUz,
+              descriptionUz: scale.descriptionUz ?? null,
+              displayOrder: index,
+              interpretationBands: scale.interpretationBands,
+            },
+          },
+        );
+      }
 
       await adminRequest<CatalogTestDetail>(
         `/api/admin/catalog/tests/${created.id}/questions/import`,

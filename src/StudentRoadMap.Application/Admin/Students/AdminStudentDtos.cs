@@ -12,6 +12,15 @@ namespace StudentRoadMap.Application.Admin.Students;
 /// `ListStudentsQueryHandler` bularni SAHIFA hajmida (≤100 o'quvchi) alohida, qimmat bo'lmagan
 /// batch so'rov bilan `assessments`dan to'ldiradi — PM'ga savol: kelajakda bular ham
 /// `students` snapshot ustunlariga ko'chirilsinmi (`docs/04`/`docs/05`ni yangilab)?
+///
+/// <para>
+/// **`PersonalityTypeName`** (2026-09-03, egasining talabi: "qisqartirib yozilgan 16 ta
+/// shaxsiyatni to'liq nomi bilan chiqar"): `TypeCatalog.NameUz` — `PersonalityType` KODIGA
+/// (`INTJ`) mos to'liq nom. Nomlar `type-catalog.json` dan keladi (mustaqil yozilgan,
+/// `CLAUDE.md` 6a-bandi). Katalogda yozuv topilmasa `null` — UI shunda faqat kodni
+/// ko'rsatadi, soxta nom O'YLAB TOPILMAYDI. Sahifa hajmida bitta batch so'rov
+/// (`ExportStudentsQueryHandler` dagi `typeNameCache` bilan bir xil naqsh).
+/// </para>
 /// </summary>
 public sealed record AdminStudentListItemDto(
     Guid Id,
@@ -22,6 +31,7 @@ public sealed record AdminStudentListItemDto(
     string Phone,
     string? LastAssessmentStatus,
     string? PersonalityType,
+    string? PersonalityTypeName,
     double? MaturityIndex,
     string? ActivityLevel,
     bool NeedsAttention,

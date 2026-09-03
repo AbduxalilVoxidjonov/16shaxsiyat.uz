@@ -34,6 +34,10 @@ public sealed class PublicSchoolLinkViewEndpointTests : IClassFixture<PublicApiT
         var token = TestDataFactory.NewAccessToken("linkview-ok");
         var school = await TestDataFactory.CreateSchoolAsync(db, now, "maktab-linkview-ok", token);
 
+        // Bu test HISOBLAGICH haqida, dastur haqida emas — `200` yo'lini saqlab qolish uchun
+        // maktabga mavjud dastur beriladi (2026-09-03: dastursiz maktab `409` qaytaradi).
+        await TestDataFactory.CreatePublishedTestAsync(db, now, "LINKVIEW_TEST", displayOrder: 1);
+
         using var client = _factory.CreateClient();
 
         // Nol — hali hech kim ochmagan.
@@ -82,4 +86,5 @@ public sealed class PublicSchoolLinkViewEndpointTests : IClassFixture<PublicApiT
         response.StatusCode.Should().Be(HttpStatusCode.Gone);
         (await LinkViewCountAsync(db, school.Id)).Should().Be(0, "nofaol maktabda hisoblagich OSHMASLIGI kerak");
     }
+
 }

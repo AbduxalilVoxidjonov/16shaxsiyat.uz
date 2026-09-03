@@ -24,6 +24,8 @@ const SCHOOL_1 = {
   studentCount: 120,
   completedCount: 80,
   lastActivityAt: '2026-08-30T10:00:00Z',
+  // `docs/07` 3.1 (2026-09-03): havola sog'ligi — bu fikstura "sog'lom" maktab.
+  linkHealth: { status: 'Ok', availableProgramCount: 1, usableProgramCount: 1 },
 } satisfies Schemas['AdminSchoolListItemDto'];
 
 /**
@@ -58,10 +60,13 @@ const SCHOOL_DETAIL = {
     completionRate: 0.667,
     lastActivityAt: SCHOOL_1.lastActivityAt,
   },
+  linkHealth: SCHOOL_1.linkHealth,
 } satisfies Schemas['AdminSchoolDetailDto'];
 
 interface FetchMockOptions {
   deleteResponse?: () => Response | Promise<Response>;
+  /** Ro'yxat javobidagi maktab qatorini almashtiradi (havola sog'ligi testlari uchun). */
+  listItem?: Schemas['AdminSchoolListItemDto'];
 }
 
 /**
@@ -106,7 +111,9 @@ function mockFetch(options: FetchMockOptions = {}) {
       );
     }
     if (url.includes('/api/admin/schools') && method === 'GET') {
-      return Promise.resolve(pagedResponse<'AdminSchoolListItemDto'>([SCHOOL_1]));
+      return Promise.resolve(
+        pagedResponse<'AdminSchoolListItemDto'>([options.listItem ?? SCHOOL_1]),
+      );
     }
     return Promise.reject(new Error(`unexpected fetch: ${method} ${url}`));
   });
@@ -281,6 +288,64 @@ describe('SchoolsPage', () => {
         "Bu maktabda o'quvchilar bor. Avval ularni ko'chiring yoki maktabni nofaol qiling.",
       ),
     ).toBeInTheDocument();
+  });
+
+  /**
+   * 2026-09-03 jonli hodisasi: yagona dastur o'chirilgan edi, barcha maktab havolasi jimgina
+   * o'lik bo'lib qoldi, panelda esa HECH QANDAY belgi yo'q edi.
+   */
+  it("dastursiz maktabda \"havola ishlamaydi\" belgisi va SABAB ko'rsatiladi", async () => {
+    mockFetch({
+      listItem: {
+        ...SCHOOL_1,
+        linkHealth: { status: 'NoProgramAssigned', availableProgramCount: 0, usableProgramCount: 0 },
+      },
+    });
+    renderSchoolsPage();
+
+    await screen.findByText('12-son maktab');
+
+    expect(await screen.findByText('Havola ishlamaydi')).toBeInTheDocument();
+
+    // Umumiy "xato" yetarli emas — admin NIMA QILISHNI bilishi kerak.
+    expect(
+      screen.getByText(/Maktabga dastur biriktirilmagan/),
+    ).toBeInTheDocument();
+
+    // Havolani nusxalash/QR yonida ham ogohlantirish bo'lishi kerak.
+    expect(
+      screen.getByText(/Bu havolani hozir tarqatish foydasiz/),
+    ).toBeInTheDocument();
+  });
+
+  it("dasturi bor maktabda ogohlantirish CHIQMAYDI (yolg'on signal bermaslik)", async () => {
+    mockFetch();
+    renderSchoolsPage();
+
+    await screen.findByText('12-son maktab');
+
+    expect(screen.queryByText('Havola ishlamaydi')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Bu havolani hozir tarqatish foydasiz/)).not.toBeInTheDocument();
+    expect(screen.getByText('Ishlaydi')).toBeInTheDocument();
+  });
+
+  it("dasturda test bo'lmasa alohida (sariq) sabab ko'rsatiladi", async () => {
+    mockFetch({
+      listItem: {
+        ...SCHOOL_1,
+        linkHealth: {
+          status: 'ProgramsWithoutTests',
+          availableProgramCount: 1,
+          usableProgramCount: 0,
+        },
+      },
+    });
+    renderSchoolsPage();
+
+    await screen.findByText('12-son maktab');
+
+    expect(await screen.findByText('Test yo\'q')).toBeInTheDocument();
+    expect(screen.getByText(/Dasturda faol test yo'q/)).toBeInTheDocument();
   });
 
   it('QR modal havola va maktab nomi bilan ochiladi', async () => {

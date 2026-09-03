@@ -17,6 +17,7 @@ import { useCatalogTestOptionsQuery } from '../api/useCatalogTestOptionsQuery';
 import { ProgramFormDialog } from '../components/ProgramFormDialog';
 import { PublishProgramDialog } from '../components/PublishProgramDialog';
 import { ArchiveProgramDialog } from '../components/ArchiveProgramDialog';
+import { DeactivateProgramDialog } from '../components/DeactivateProgramDialog';
 import { AddTestDialog } from '../components/AddTestDialog';
 import { ProgramTestsList } from '../components/ProgramTestsList';
 import { SchoolAssignmentPanel } from '../components/SchoolAssignmentPanel';
@@ -43,6 +44,9 @@ export default function ProgramDetailPage() {
   const [publishOpen, setPublishOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [addTestOpen, setAddTestOpen] = useState(false);
+  // 2026-09-03: O'CHIRISH endi tasdiq oynasidan o'tadi (nechta maktab havolasiz qolishi
+  // ko'rsatiladi). QAYTA YOQISH zararsiz — u avvalgidek bir bosishda bajariladi.
+  const [deactivateOpen, setDeactivateOpen] = useState(false);
 
   async function handleToggleActive() {
     if (!id) return;
@@ -145,7 +149,9 @@ export default function ProgramDetailPage() {
               variant="outline"
               size="sm"
               isLoading={toggleActive.isPending}
-              onClick={() => void handleToggleActive()}
+              onClick={() =>
+                program.isActive ? setDeactivateOpen(true) : void handleToggleActive()
+              }
             >
               <Power size={14} aria-hidden="true" />
               {program.isActive ? t('programs.actions.deactivate') : t('programs.actions.activate')}
@@ -216,6 +222,15 @@ export default function ProgramDetailPage() {
           tests={program.tests}
           catalogOptions={catalogOptionsQuery.data}
           onClose={() => setPublishOpen(false)}
+        />
+      )}
+
+      {deactivateOpen && (
+        <DeactivateProgramDialog
+          open
+          programId={program.id}
+          programName={program.nameUz}
+          onClose={() => setDeactivateOpen(false)}
         />
       )}
 

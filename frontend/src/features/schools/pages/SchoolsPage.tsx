@@ -15,6 +15,7 @@ import { useToggleSchoolActive } from '../api/useToggleSchoolActive';
 import { SchoolFiltersBar } from '../components/SchoolFiltersBar';
 import { readSchoolsFilters } from '../model/schoolsFilters';
 import { SchoolLinkCell } from '../components/SchoolLinkCell';
+import { SchoolLinkHealthBadge } from '../components/SchoolLinkHealthBadge';
 import { SchoolFormDialog } from '../components/SchoolFormDialog';
 import { RegenerateLinkDialog } from '../components/RegenerateLinkDialog';
 import { DeleteSchoolDialog } from '../components/DeleteSchoolDialog';
@@ -167,11 +168,19 @@ export default function SchoolsPage() {
       cell: (row) => (
         <SchoolLinkCell
           publicUrl={row.publicUrl}
+          linkHealth={row.linkHealth}
           onShowQr={() =>
             setQrState({ kind: 'byId', schoolId: row.id, schoolName: row.name, slug: row.slug })
           }
         />
       ),
+    },
+    {
+      // "Havola ishlaydimi" ustuni — 2026-09-03 hodisasi: dastur o'chirilganda maktab havolasi
+      // jimgina o'lik bo'lib qolgan edi, panelda esa hech qanday belgi yo'q edi.
+      id: 'linkHealth',
+      header: t('schools.linkHealth.columnHeader'),
+      cell: (row) => <SchoolLinkHealthBadge linkHealth={row.linkHealth} />,
     },
     { id: 'studentCount', header: t('schools.table.students'), cell: (row) => row.studentCount },
     { id: 'completedCount', header: t('schools.table.completed'), cell: (row) => row.completedCount },

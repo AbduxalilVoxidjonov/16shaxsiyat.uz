@@ -1,4 +1,5 @@
 using MediatR;
+using StudentRoadMap.Application.Admin.Schools.LinkHealth;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
 using StudentRoadMap.Domain.Common;
@@ -34,6 +35,9 @@ internal sealed class GetSchoolByIdQueryHandler : IRequestHandler<GetSchoolByIdQ
 
         var stats = await SchoolMapping.ComputeStatsAsync(_context, _executor, school.Id, cancellationToken).ConfigureAwait(false);
 
-        return Result.Success(SchoolMapping.ToDetailDto(school, _appSettings, _qrCodeGenerator, stats));
+        var linkHealth = await SchoolLinkHealthEvaluator.EvaluateOneAsync(_context, _executor, school.Id, cancellationToken).ConfigureAwait(false);
+
+
+        return Result.Success(SchoolMapping.ToDetailDto(school, _appSettings, _qrCodeGenerator, stats, linkHealth));
     }
 }

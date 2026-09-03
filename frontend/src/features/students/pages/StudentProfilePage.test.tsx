@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import axe from 'axe-core';
 import { ToastProvider } from '@/shared/ui/Toast';
-import { problemResponse, typedResponse } from '@/test/apiMock';
+import { jsonResponse, problemResponse, typedResponse } from '@/test/apiMock';
 import StudentProfilePage from './StudentProfilePage';
 import type {
   ActivityResult,
@@ -187,8 +187,20 @@ function renderPage(
 ) {
   const responses = [...profileResponses];
   let lastResponse: ProfileFetchResult | undefined = responses[0];
-  const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+  const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
+    // `POST /api/admin/assessments/{id}/rerun-analysis` → `202` (navbatga qo'yildi).
+    // Domen qo'riqchisi `Completed` dan ham ruxsat beradi, ya'ni BIRINCHI tahlil ham
+    // shu endpoint orqali ishga tushadi (`Assessment.MarkAnalyzing`).
+    if (url.includes('/rerun-analysis')) {
+      expect(init?.method).toBe('POST');
+      return Promise.resolve(
+        jsonResponse<'RerunAnalysisResultDto'>(
+          { assessmentId: 'assessment-1', status: 'Analyzing' },
+          202,
+        ),
+      );
+    }
     if (url.includes('/api/admin/students/student-1')) {
       const next = responses.length > 0 ? responses.shift() : lastResponse;
       lastResponse = next;
@@ -354,6 +366,130 @@ describe('StudentProfilePage', () => {
     expect(
       screen.getByText(/Javoblar juda tez berilgan, natija ishonchsiz bo'lishi mumkin/),
     ).toBeInTheDocument();
+  });
+
+  /** Faqat `rerun-analysis` so'rovlari — profil `GET`lari hisobga olinmaydi. */
+  function rerunCalls(fetchMock: { mock: { calls: unknown[][] } }) {
+    return fetchMock.mock.calls.filter((call) => String(call[0]).includes('rerun-analysis'));
+  }
+
+  const NEVER_ANALYZED = {
+    id: 'assessment-1',
+    results: {},
+    aiAnalysis: null,
+    aiHistory: [],
+  } satisfies LatestAssessmentDto;
+
+  it("yakunlangan, hali tahlil qilinmagan sessiyada \"AI tahlil qilish\" tugmasi chiqadi va bosilganda so'rov ketadi", async () => {
+    const fetchMock = renderPage([
+      buildProfileResponse({
+        assessments: [
+          { ...ASSESSMENT_SUMMARY, status: 'Completed', reliabilityFlag: null, reliabilityScore: null },
+        ],
+        latestAssessment: NEVER_ANALYZED,
+      }),
+    ]);
+
+    const button = await screen.findByRole('button', { name: /AI tahlil qilish/ });
+    fireEvent.click(button);
+
+    // Birinchi tahlil — tasdiq oynasi so'ralmaydi, so'rov DARHOL ketadi.
+    await waitFor(() => {
+      expect(rerunCalls(fetchMock)).toHaveLength(1);
+    });
+    expect(String(rerunCalls(fetchMock)[0]?.[0])).toContain(
+      '/api/admin/assessments/assessment-1/rerun-analysis',
+    );
+  });
+
+  it("mavjud tahlil ustiga yozishda avval tasdiq so'raladi", async () => {
+    const fetchMock = renderPage([buildProfileResponse()]);
+
+    const button = await screen.findByRole('button', { name: /Qayta tahlil qilish/ });
+    fireEvent.click(button);
+
+    // jsdom `showModal()`ni bajarmaydi, shu sabab oynaning OCHIQligi emas, MA'NOSI
+    // tekshiriladi: tasdiqlashdan oldin bironta so'rov ketmaydi.
+    expect(rerunCalls(fetchMock)).toHaveLength(0);
+
+    // Oyna `<dialog>` ichida — jsdom uni "yashirin" deb hisoblaydi, shu sabab `getByRole`
+    // emas, `getByText` (`Dialog.tsx` izohi).
+    fireEvent.click(screen.getByText('Boshlash'));
+
+    await waitFor(() => {
+      expect(rerunCalls(fetchMock)).toHaveLength(1);
+    });
+  });
+
+  it('hech qachon tahlil qilinmagan sessiyada Analyzing SKELET ko\'rsatadi', async () => {
+    const fetchMock = renderPage([
+      buildProfileResponse({
+        assessments: [
+          { ...ASSESSMENT_SUMMARY, status: 'Analyzing', reliabilityFlag: null, reliabilityScore: null },
+        ],
+        latestAssessment: NEVER_ANALYZED,
+      }),
+    ]);
+
+    expect(await screen.findByText('Tahlil tayyorlanmoqda')).toBeInTheDocument();
+    expect(screen.queryByText('Yangi tahlil tayyorlanmoqda')).not.toBeInTheDocument();
+    expect(fetchMock.container.querySelectorAll('.animate-pulse').length).toBeGreaterThan(0);
+  });
+
+  it("yakunlanmagan sessiyada tahlil tugmasi YO'Q, o'rniga sabab ko'rsatiladi", async () => {
+    renderPage([
+      buildProfileResponse({
+        assessments: [
+          { ...ASSESSMENT_SUMMARY, status: 'InProgress', reliabilityFlag: null, reliabilityScore: null },
+        ],
+        latestAssessment: NEVER_ANALYZED,
+      }),
+    ]);
+
+    expect(
+      await screen.findByText(/Sessiya yakunlanmagani uchun tahlil qilib bo'lmaydi/),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /AI tahlil qilish/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Qayta tahlil qilish/ })).not.toBeInTheDocument();
+  });
+
+  it("natijani kutish cheklovga yetganda polling to'xtaydi va sabab aytiladi", async () => {
+    const fetchMock = renderPage([
+      buildProfileResponse({
+        assessments: [
+          { ...ASSESSMENT_SUMMARY, status: 'Analyzing', reliabilityFlag: null, reliabilityScore: null },
+        ],
+        latestAssessment: NEVER_ANALYZED,
+      }),
+    ]);
+
+    expect(await screen.findByText('Tahlil tayyorlanmoqda')).toBeInTheDocument();
+
+    // 3 daqiqadan keyin so'rash to'xtaydi — cheksiz polling batareyani va serverni yeydi.
+    await vi.advanceTimersByTimeAsync(185_000);
+
+    expect(
+      await screen.findByText(/Tahlil kutilganidan uzoq davom etmoqda/),
+    ).toBeInTheDocument();
+
+    const callsAfterLimit = fetchMock.mock.calls.length;
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(fetchMock.mock.calls.length).toBe(callsAfterLimit);
+  });
+
+  it("Analyzing holatida MAVJUD tahlil ekranda QOLADI (skelet emas) va banner ko'rinadi", async () => {
+    renderPage([
+      buildProfileResponse({
+        assessments: [
+          { ...ASSESSMENT_SUMMARY, status: 'Analyzing', reliabilityFlag: null, reliabilityScore: null },
+        ],
+      }),
+    ]);
+
+    expect(await screen.findByText('Aliyev Sardor Bekzodovich')).toBeInTheDocument();
+    // Egasining asosiy talabi: yangi tahlil tayyorlanayotganda eski tahlil YO'QOLMAYDI.
+    expect(screen.getByText("Bu — o'quvchining namunaviy portreti.")).toBeInTheDocument();
+    expect(screen.getByText('Yangi tahlil tayyorlanmoqda')).toBeInTheDocument();
   });
 
   it("Analyzing holatida refetchInterval yoqiladi va Analyzed'ga o'tgach o'chadi", async () => {

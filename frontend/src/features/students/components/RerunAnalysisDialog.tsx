@@ -8,7 +8,7 @@ import type { AiProvider } from '../model/profileTypes';
 export interface RerunAnalysisDialogProps {
   open: boolean;
   onClose: () => void;
-  onConfirm: (provider: AiProvider) => void;
+  onConfirm: (provider: AiProvider | null) => void;
   isSubmitting: boolean;
   error?: string;
 }
@@ -26,6 +26,9 @@ export interface RerunAnalysisDialogProps {
  */
 const PROVIDER_OPTIONS: AiProvider[] = ['Gemini', 'OpenAi', 'Anthropic'];
 
+/** Bo'sh tanlov — so'rovda `provider` yuborilmaydi, backend o'z zanjirini ishlatadi. */
+const AUTO_PROVIDER = '';
+
 export function RerunAnalysisDialog({
   open,
   onClose,
@@ -34,7 +37,7 @@ export function RerunAnalysisDialog({
   error,
 }: RerunAnalysisDialogProps) {
   const { t } = useTranslation();
-  const [provider, setProvider] = useState<AiProvider>('Gemini');
+  const [provider, setProvider] = useState<string>(AUTO_PROVIDER);
 
   return (
     <Dialog
@@ -51,7 +54,7 @@ export function RerunAnalysisDialog({
             variant="primary"
             isLoading={isSubmitting}
             onClick={() => {
-              onConfirm(provider);
+              onConfirm(provider === AUTO_PROVIDER ? null : (provider as AiProvider));
             }}
           >
             {t('studentProfile.rerunDialog.submitCta')}
@@ -60,11 +63,18 @@ export function RerunAnalysisDialog({
       }
     >
       <div className="flex flex-col gap-3">
+        {/* Eng ko'p so'raladigan savol: "eskisi o'chib ketadimi?" — javob dialogda turadi. */}
+        <p className="rounded-lg bg-primary-50 p-3 text-sm text-primary-800">
+          {t('studentProfile.rerunDialog.keepsHistoryNotice')}
+        </p>
         <Select
           label={t('studentProfile.rerunDialog.providerLabel')}
           value={provider}
-          onChange={(event) => setProvider(event.target.value as AiProvider)}
-          options={PROVIDER_OPTIONS.map((option) => ({ value: option, label: option }))}
+          onChange={(event) => setProvider(event.target.value)}
+          options={[
+            { value: AUTO_PROVIDER, label: t('studentProfile.rerunDialog.providerAuto') },
+            ...PROVIDER_OPTIONS.map((option) => ({ value: option, label: option })),
+          ]}
         />
         {error && (
           <p role="alert" className="text-sm text-danger-600">

@@ -1,9 +1,29 @@
 namespace StudentRoadMap.Application.Admin.Schools;
 
 /// <summary>
+/// Maktab havolasi ISHLAYDIMI — `docs/07` 3.1 (2026-09-03 kengaytmasi, jonli hodisadan keyin).
+///
+/// `Status` — `SchoolLinkHealthStatus` nomi (string): `Ok`, `NoProgramsAtAll`,
+/// `NoProgramAssigned`, `ProgramsDeactivated`, `ProgramsWithoutTests`. Enum'lar JSON'da string
+/// (`docs/07` 4-bo'lim) — shu sabab bu yerda ham `string`.
+///
+/// `AvailableProgramCount` — ommaviy handler mezoniga (`ProgramAvailability`) ko'ra shu maktab
+/// uchun mavjud dasturlar soni. **`0` bo'lishi `GET /api/public/schools/{slug}` ning
+/// `409 NO_PROGRAM_AVAILABLE` qaytarishi bilan AYNAN bir xil shart** — ikkisi ajralib ketmasligi
+/// `PublicSchoolInfoNoProgramEndpointTests` da qulflangan.
+///
+/// `UsableProgramCount` — shulardan tarkibida kamida bitta yaroqli test bori. `0` bo'lsa
+/// havola ochiladi, lekin o'quvchi bo'sh sessiyaga tushadi.
+/// </summary>
+public sealed record AdminSchoolLinkHealthDto(
+    string Status,
+    int AvailableProgramCount,
+    int UsableProgramCount);
+
+/// <summary>
 /// `GET /api/admin/schools` ro'yxat elementi — `docs/07-api-shartnoma.md` 3.1-bo'lim:
 /// `id, name, region, district, slug, publicUrl, isActive, studentCount, completedCount,
-/// lastActivityAt`.
+/// lastActivityAt`. `linkHealth` — 2026-09-03 kengaytmasi (yuqoriga qarang).
 /// </summary>
 public sealed record AdminSchoolListItemDto(
     Guid Id,
@@ -15,7 +35,8 @@ public sealed record AdminSchoolListItemDto(
     bool IsActive,
     int StudentCount,
     int CompletedCount,
-    DateTimeOffset? LastActivityAt);
+    DateTimeOffset? LastActivityAt,
+    AdminSchoolLinkHealthDto LinkHealth);
 
 /// <summary>
 /// `GET /api/admin/schools/{id}` — batafsil + statistika (`docs/07` 3.1-bo'lim: "o'quvchi soni,
@@ -47,7 +68,8 @@ public sealed record AdminSchoolDetailDto(
     string? Notes,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
-    AdminSchoolStatsDto Stats);
+    AdminSchoolStatsDto Stats,
+    AdminSchoolLinkHealthDto LinkHealth);
 
 /// <summary>
 /// Maktab ichki sahifasidagi ishtirok statistikasi (`docs/07` 3.1-bo'lim).

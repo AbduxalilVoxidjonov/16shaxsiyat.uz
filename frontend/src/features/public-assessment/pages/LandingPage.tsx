@@ -118,6 +118,18 @@ export default function LandingPage() {
         />
       );
     }
+    // `409 NO_PROGRAM_AVAILABLE` (2026-09-03): maktab va havola TO'G'RI, faqat hozircha
+    // mavjud dastur yo'q. Umumiy xato ekrani ("Nimadir noto'g'ri ketdi" + "Qayta urinish")
+    // bu yerda chalg'ituvchi: o'quvchi havolani buzuq deb o'ylab maktabga behuda murojaat
+    // qiladi va qayta urinish hech narsani o'zgartirmaydi.
+    if (error instanceof AppError && error.status === 409) {
+      return (
+        <EmptyState
+          title={t('publicAssessment.noPrograms.title')}
+          description={t('publicAssessment.noPrograms.description')}
+        />
+      );
+    }
     return <ErrorState onRetry={() => void schoolInfoQuery.refetch()} />;
   }
 

@@ -287,6 +287,21 @@
     }
   },
   "schools": {
+    "linkHealth": {
+      "columnHeader": "Havola holati",
+      "okBadge": "Ishlaydi",
+      "brokenBadge": "Havola ishlamaydi",
+      "warningBadge": "Test yo'q",
+      "reason": {
+        "NoProgramsAtAll": "Tizimda dastur yo'q — avval dastur yarating va nashr qiling.",
+        "NoProgramAssigned": "Maktabga dastur biriktirilmagan — dasturni bu maktabga biriktiring yoki uni \"Ommaviy\" qiling.",
+        "ProgramsDeactivated": "Mos dastur o'chirilgan yoki arxivlangan — dasturni qayta yoqing.",
+        "ProgramsWithoutTests": "Dasturda faol test yo'q — dastur tarkibiga nashr qilingan test qo'shing.",
+        "unknown": "Havola ishlamaydi — dastur sozlamalarini tekshiring."
+      },
+      "shareWarning": "Bu havolani hozir tarqatish foydasiz — o'quvchi testga kira olmaydi.",
+      "detailHeading": "Havola holati"
+    },
     "loadError": "Maktablar ro'yxatini yuklab bo'lmadi",
     "detail": {
       "backToList": "Maktablar ro'yxatiga qaytish",
@@ -630,7 +645,6 @@
       "downloadPdfCta": "PDF yuklab olish",
       "rerunAnalysisCta": "Qayta tahlil",
       "moreActionsCta": "Boshqa amallar",
-      "rawAnswersCta": "Xom javoblar",
       "deleteCta": "O'chirish"
     },
     "summarySectionHeading": "Yig'ma ko'rsatkichlar",
@@ -657,6 +671,16 @@
       "failedTitle": "Tahlil muvaffaqiyatsiz",
       "failedDescription": "AI tahlil yakunlanmadi. Boshqa provider bilan qayta urinib ko'ring.",
       "retryCta": "Qayta urinish",
+      "runCta": "AI tahlil qilish",
+      "runHint": "Sessiya yakunlangan — AI tahlilni shu yerdan ishga tushiring. Odatda 1 daqiqa vaqt ketadi.",
+      "rerunCta": "Qayta tahlil qilish",
+      "rerunHint": "Yangi hisobot yoziladi, joriy hisobot esa tarixda saqlanadi.",
+      "analyzingWithReportTitle": "Yangi tahlil tayyorlanmoqda",
+      "analyzingWithReportDescription": "Quyida hozircha oldingi tahlil turibdi — u yangisi tayyor bo'lgunga qadar joyida qoladi.",
+      "pollTimeout": "Tahlil kutilganidan uzoq davom etmoqda. Avtomatik yangilanish to'xtatildi — sahifani yangilang yoki keyinroq qayta kiring.",
+      "blockedNotCompleted": "Sessiya yakunlanmagani uchun tahlil qilib bo'lmaydi (holat: {{status}}). AI tahlil faqat yakunlangan sessiyada ishga tushadi.",
+      "noAssessment": "Bu o'quvchida hali sessiya yo'q — tahlil qilinadigan natija ham yo'q.",
+      "providerMissingWarning": "Birorta AI provayder sozlanmagan — tahlil o'rniga avtomatik shablon hisobot chiqadi. Avval \"AI sozlamalari\" bo'limida kalit kiriting.",
       "fallbackBadge": "Avtomatik shablon hisobot",
       "fallbackNotice": "Bu matnni AI yozmagan: barcha AI provayderlari javob bermagani uchun tizim avtomatik shablon hisobot tayyorladi. Uni shaxsiy tahlil sifatida o'qimang — AI sozlamalarini tekshirib, tahlilni qayta ishga tushiring.",
       "moderatedBadge": "Moderatsiya qilingan hisobot",
@@ -689,28 +713,60 @@
         "Failed": "Muvaffaqiyatsiz"
       }
     },
-    "rawAnswers": {
-      "title": "Xom javoblar",
-      "description": "Savol, javob va vaqt bo'yicha audit ma'lumoti.",
+    "answers": {
+      "title": "Savolma-savol javoblar",
+      "description": "Har bir savolga berilgan javob, uning shkalasi va natijaga qanday tushgani.",
       "testLabel": "Test bloki",
-      "testNames": {
-        "MBTI16": "16 tipli shaxsiyat modeli",
-        "BIG5": "Shaxsiyatning 5 omili",
-        "RIASEC": "Kasb qiziqishlari",
-        "ACTIVITY": "Aktivlik va motivatsiya"
-      },
+      "scaleLabel": "Shkala",
+      "allTests": "Barcha bloklar",
+      "allScales": "Barcha shkalalar",
+      "onlyFlagged": "Faqat belgilanganlar",
+      "groupCount": "({{count}} ta javob)",
       "questionColumn": "Savol",
-      "valueColumn": "Javob",
+      "answerColumn": "Javob",
+      "scaleColumn": "Shkala",
+      "directionColumn": "Yo'nalish",
+      "effectiveColumn": "Shkalaga tushgan qiymat",
       "durationColumn": "Vaqt",
       "revisionColumn": "Tahrirlar",
       "durationMs": "{{count}} ms",
-      "empty": "Bu blok uchun javob topilmadi",
-      "loadError": "Xom javoblarni yuklab bo'lmadi"
+      "effectiveHint": "xom javob {{raw}} → teskari tuzatildi",
+      "fastMarker": "{{ms}} ms dan tez",
+      "straightLiningMarker": "{{index}}-bir xil javob bloki",
+      "likert5": {
+        "1": "Umuman qo'shilmayman",
+        "2": "Qo'shilmayman",
+        "3": "Bilmadim / o'rtacha",
+        "4": "Qo'shilaman",
+        "5": "To'liq qo'shilaman"
+      },
+      "direction": {
+        "forward": "To'g'ri",
+        "reverse": "Teskari"
+      },
+      "signals": {
+        "heading": "Ishonchlilik: {{score}}. Bu ball quyidagi signallardan chiqadi:",
+        "answered": "{{count}} ta javob",
+        "fast": "{{count}} ta tez javob ({{ms}} ms dan qisqa)",
+        "straightLining": "{{count}} ta bir xil javob bloki ({{run}} ta ketma-ket)",
+        "allSame": "Barcha javob bir xil",
+        "shortSession": "Sessiya {{minutes}} daqiqadan qisqa"
+      },
+      "reverseConflict": {
+        "heading": "Teskari savollar mosligi (shkala bo'yicha)",
+        "row": "to'g'ri savollar {{forward}}%, teskari savollar {{reverse}}% — farq {{mismatch}}%",
+        "marker": "· teskari savol farqi"
+      },
+      "empty": "Bu sessiya uchun javob topilmadi",
+      "noMatches": "Tanlangan filtrga mos javob yo'q",
+      "loadError": "Javoblarni yuklab bo'lmadi"
     },
     "rerunDialog": {
       "title": "Qayta tahlil",
       "description": "Tanlangan AI provider bilan yangi tahlil boshlanadi. Joriy hisobot tahlil yakunlanguncha ko'rinishda qoladi.",
+      "keepsHistoryNotice": "Eski tahlil yo'qolmaydi — u tarixda saqlanadi va yangisi muvaffaqiyatli tayyor bo'lgunga qadar ekranda qolaveradi.",
       "providerLabel": "Provider",
+      "providerAuto": "Avtomatik (standart zanjir)",
       "noProviders": "Faol AI provider topilmadi. Avval AI sozlamalarida provider ulang.",
       "submitCta": "Boshlash",
       "success": "Qayta tahlil boshlandi",
@@ -729,6 +785,13 @@
     "loadError": "O'quvchi profilini yuklab bo'lmadi"
   },
   "dashboard": {
+    "linkHealth": {
+      "title_one": "{{count}} ta maktab havolasi ishlamaydi",
+      "title_other": "{{count}} ta maktab havolasi ishlamaydi",
+      "description": "Bu maktablarga hech qanday dastur to'g'ri kelmayapti — o'quvchi havolani ochsa test ko'rmaydi.",
+      "more": "va yana {{count}} ta",
+      "cta": "Maktablarni ko'rish"
+    },
     "dateRange": {
       "fromLabel": "Sanadan",
       "toLabel": "Sanagacha",
@@ -871,6 +934,20 @@
     }
   },
   "programs": {
+    "impact": {
+      "checking": "Ta'sir hisoblanmoqda…",
+      "none": "Bu amal hech qaysi maktabni dastursiz qoldirmaydi.",
+      "warning_one": "Diqqat: bu amaldan keyin {{count}} ta maktab umuman dastursiz qoladi — ularning havolasi ishlamay qoladi.",
+      "warning_other": "Diqqat: bu amaldan keyin {{count}} ta maktab umuman dastursiz qoladi — ularning havolasi ishlamay qoladi.",
+      "more": "va yana {{count}} ta maktab",
+      "loadError": "Ta'sirni hisoblab bo'lmadi — davom etishdan oldin dasturlar qamrovini tekshiring."
+    },
+    "deactivateDialog": {
+      "title": "Dasturni o'chirish",
+      "description": "O'chirilgan dastur o'quvchilarga ko'rinmaydi.",
+      "confirmCta": "O'chirish",
+      "genericError": "Dasturni o'chirib bo'lmadi."
+    },
     "filters": {
       "searchLabel": "Qidiruv",
       "searchPlaceholder": "Nomi yoki kodi bo'yicha",
@@ -1004,12 +1081,17 @@
     },
     "errors": {
       "systemProgramLocked": "Tizim dasturining tarkibini o'zgartirib bo'lmaydi"
+    },
+    "visibilityChange": {
+      "title": "Dastur ommaviy bo'lmay qoladi",
+      "description": "Bu dastur endi faqat unga aniq biriktirilgan maktablarda ko'rinadi. Biriktirilmagan maktablarning havolasi ishlamay qolishi mumkin — quyida ta'sir ko'rsatilgan.",
+      "confirmCta": "Ha, o'zgartirilsin"
     }
   },
   "catalog": {
     "title": "Testlar katalogi",
     "actions": {
-      "import": "Test yuklash",
+      "import": "Anketa yuklash",
       "edit": "Tahrirlash",
       "duplicate": "Nusxa olish",
       "publish": "Nashr qilish",
@@ -1026,14 +1108,15 @@
       "addScale": "Shkala qo'shish",
       "editScaleAria": "{{code}} shkalasini tahrirlash",
       "deleteScale": "Shkalani o'chirish",
-      "deleteScaleAria": "{{code}} shkalasini o'chirish"
+      "deleteScaleAria": "{{code}} shkalasini o'chirish",
+      "create": "Yangi anketa"
     },
     "systemHeading": "Tizim metodikalari",
     "customHeading": "Mening testlarim",
     "systemEmptyTitle": "Tizim metodikalari topilmadi",
     "systemEmptyDescription": "Katalog xizmati hali ulanmagan bo'lishi mumkin.",
     "customEmptyTitle": "Hali test yuklanmagan",
-    "customEmptyDescription": "\"Test yuklash\" tugmasi bilan JSON fayldan yangi test qo'shing.",
+    "customEmptyDescription": "\"Yangi anketa\" bilan noldan boshlang yoki \"Anketa yuklash\" bilan Excel fayldan qo'shing.",
     "errorTitle": "Katalogni yuklab bo'lmadi",
     "errorDescription": "Testlar katalogi xizmati hozircha mavjud emas. Birozdan keyin qayta urinib ko'ring.",
     "status": {
@@ -1054,17 +1137,26 @@
       "summary": "{{questions}} ta savol · ~{{minutes}} daqiqa"
     },
     "importDialog": {
-      "title": "Test yuklash",
-      "description": "JSON fayl yuklang — seed sxemasi bilan bir xil (code, nameUz, questions[]).",
+      "title": "Anketa yuklash",
+      "description": "Excel (.xlsx) fayl yuklang. JSON (seed sxemasi) ham qabul qilinadi.",
       "chooseFile": "Faylni tanlang yoki shu yerga tashlang",
-      "fileHint": "Faqat .json fayl",
+      "fileHint": ".xlsx yoki .json fayl (ko'pi bilan 2 MB)",
       "previewSummary": "{{questions}} ta savol · ~{{minutes}} daqiqa",
       "validOk": "Fayl to'g'ri — yuklashga tayyor",
       "issuesTitle": "Topilgan xatolar ({{count}})",
       "submitCta": "Yuklash",
-      "successTitle": "Test Qoralama holatida yaratildi",
+      "successTitle": "Anketa Qoralama holatida yaratildi",
       "duplicateCodeError": "Bu kod bilan test allaqachon bor.",
-      "genericError": "Yuklashda xatolik yuz berdi"
+      "genericError": "Yuklashda xatolik yuz berdi",
+      "formatTitle": "Qanday fayl kerak?",
+      "formatSheets": "Excel faylda beshta varaq bo'ladi: \"Anketa\" (kod, nom, tavsif, daqiqa, sahifa hajmi, ballash rejimi), \"Shkalalar\", \"Oraliqlar\", \"Savollar\" va \"Ko'rsatma\".",
+      "formatBands": "Talqin oraliqlari butun son bo'lsin, 0 dan 100 gacha bo'shliqsiz va ustma-ust tushmasdan qoplasin (0–33 / 34–66 / 67–100). Aks holda anketani nashr qilib bo'lmaydi.",
+      "formatJson": "JSON fayl ham ishlaydi — u seed fayllari (big5.json va h.k.) bilan bir xil sxemada.",
+      "downloadTemplate": "Bo'sh shablonni yuklab olish",
+      "downloadSample": "Namunani yuklab olish",
+      "sampleLabel": "Mavjud anketadan namuna",
+      "sampleHint": "To'ldirilgan haqiqiy fayl — nusxalab o'zingiznikini yozing.",
+      "parsing": "Fayl o'qilmoqda…"
     },
     "detail": {
       "notFoundTitle": "Test topilmadi",
@@ -1077,10 +1169,13 @@
       "questionsEmptySystemDescription": "Bu metodikada hali savollar yuklanmagan.",
       "scalesHeading": "Shkalalar",
       "scalesEmptyTitle": "Shkala qo'shilmagan",
-      "scalesEmptyDescription": "Savollar shkala kodi bo'yicha guruhlanadi — avval shkala qo'shing, keyin savollarni unga bog'lang."
+      "scalesEmptyDescription": "Savollar shkala kodi bo'yicha guruhlanadi — avval shkala qo'shing, keyin savollarni unga bog'lang.",
+      "systemScalesHeading": "Shkalalar (faqat ko'rish uchun)",
+      "systemScalesNotice": "Tizim metodikasining shkalalari ballash formulalariga bog'liq — shu sabab bu yerda qo'shib, o'zgartirib yoki o'chirib bo'lmaydi. Ro'yxat savollardan avtomatik yig'iladi. Shkalalarni erkin boshqarish uchun \"Nusxa olish\" bilan nusxa yarating."
     },
     "questionsTable": {
       "text": "Matni",
+      "type": "Savol turi",
       "scale": "Shkala",
       "direction": "Yo'nalish",
       "directionForward": "To'g'ri",
@@ -1210,7 +1305,10 @@
       "rateLimited": "So'rovlar juda tez-tez yuborildi. Bir oz kutib, qayta urinib ko'ring.",
       "concurrencyConflict": "Yozuv bir vaqtda boshqa joyda o'zgartirildi. Sahifani yangilab, qayta urining.",
       "network": "Server bilan bog'lanib bo'lmadi. Internet aloqasini tekshirib, qayta urining.",
-      "generic": "Amalni bajarib bo'lmadi. Birozdan keyin qayta urinib ko'ring."
+      "generic": "Amalni bajarib bo'lmadi. Birozdan keyin qayta urinib ko'ring.",
+      "importFileInvalid": "Faylni o'qib bo'lmadi. Faqat .xlsx (Excel Workbook) qabul qilinadi.",
+      "payloadTooLarge": "Fayl juda katta — ko'pi bilan 2 MB.",
+      "uniqueConstraintConflict": "Bu kod bilan anketa allaqachon bor."
     },
     "bands": {
       "heading": "Talqin oraliqlari",
@@ -1240,6 +1338,21 @@
         "SCALE_BAND_OVERLAP": "Oraliqlar ustma-ust tushadi: \"gacha\" qiymati ham oraliqqa kiradi, shuning uchun keyingisi undan 1 ga katta sondan boshlansin.",
         "LABEL_REQUIRED": "Har bir oraliqqa daraja nomini kiriting (masalan: Past, O'rtacha, Yuqori)."
       }
+    },
+    "createDialog": {
+      "title": "Yangi anketa",
+      "description": "Fayl yuklamasdan, shu yerda bo'sh anketa yarating. Yaratilgach tahrirlash sahifasi ochiladi — savol va shkalalarni o'sha yerda qo'shasiz.",
+      "codeLabel": "Anketa kodi",
+      "codeHint": "Faqat lotin KATTA harflari, raqam, '_' va '-'. Masalan: STRESS-1",
+      "nameLabel": "Anketa nomi",
+      "descriptionLabel": "Tavsifi",
+      "scoringModeLabel": "Ballash rejimi",
+      "scoringModeHint": "\"Ballanadi\" — shkala ballari va darajalari hisoblanadi. \"So'rovnoma\" — faqat javoblar yig'iladi.",
+      "minutesLabel": "Taxminiy vaqt (daqiqa)",
+      "pageSizeLabel": "Sahifadagi savollar soni",
+      "pageSizeHint": "Bitta ekranda nechta savol ko'rsatilsin.",
+      "submitCta": "Yaratish",
+      "successTitle": "Anketa Qoralama holatida yaratildi"
     }
   },
   "aiSettings": {
@@ -1475,6 +1588,12 @@
       "rerunCta": "Tahlilni qayta ishga tushirish",
       "rerunHint": "Qayta tahlil AI hisobotini yangidan yozdiradi — ballar va o'quvchi javoblari o'zgarmaydi. Hisobot chala, xato yoki avtomatik shablon bo'lsa, shuningdek AI provayderi yoki prompt versiyasi o'zgargan bo'lsa ishga tushiring.",
       "rerunDisabledHint": "Qayta tahlil faqat yakunlangan sessiyada ishlaydi — bu sessiya hali tugallanmagan yoki tashlab ketilgan.",
+      "runCta": "AI tahlil qilish",
+      "runHint": "Sessiya yakunlangan — AI tahlilni shu yerdan ishga tushiring. Odatda 1 daqiqa vaqt ketadi.",
+      "analyzingWithReportTitle": "Yangi tahlil tayyorlanmoqda",
+      "analyzingWithReportDescription": "Quyida hozircha oldingi tahlil turibdi — u yangisi tayyor bo'lgunga qadar joyida qoladi.",
+      "pollTimeout": "Tahlil kutilganidan uzoq davom etmoqda. Avtomatik yangilanish to'xtatildi — sahifani yangilang yoki keyinroq qayta kiring.",
+      "providerMissingWarning": "Birorta AI provayder sozlanmagan — tahlil o'rniga avtomatik shablon hisobot chiqadi. Avval \"AI sozlamalari\" bo'limida kalit kiriting.",
       "queuedNotice": "Tahlil navbatga qo'yildi. Odatda bir necha daqiqa vaqt ketadi — tayyor bo'lgach shu sahifada yangi hisobot ko'rinadi.",
       "analyzingTitle": "Tahlil tayyorlanmoqda",
       "analyzingDescription": "Odatda 1 daqiqa vaqt ketadi. Sahifa avtomatik yangilanadi.",

@@ -9,6 +9,7 @@ import { ROUTES } from '@/shared/config/routes';
 import { useDashboardStatsQuery } from '../api/useDashboardStatsQuery';
 import { readDashboardDateRange } from '../model/dateRangeFilters';
 import { DateRangeFilter } from '../components/DateRangeFilter';
+import { BrokenSchoolLinksBanner } from '../components/BrokenSchoolLinksBanner';
 import { KpiCards } from '../components/KpiCards';
 import { Last30DaysSection } from '../components/Last30DaysSection';
 import { FunnelSection } from '../components/FunnelSection';
@@ -64,6 +65,13 @@ export default function DashboardPage() {
       </div>
 
       <DateRangeFilter />
+
+      {/*
+        "Havola ishlamaydi" signali — sana filtridan MUSTAQIL (bu joriy holat, davr statistikasi
+        emas) va sahifaning ENG YUQORISIDA: 2026-09-03 hodisasida admin dasturni o'chirgach
+        hech qanday belgi ko'rmagan edi.
+      */}
+      <BrokenSchoolLinksBanner />
 
       {statsQuery.isError && (
         <ErrorState

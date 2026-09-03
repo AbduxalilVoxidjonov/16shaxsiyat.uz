@@ -12,10 +12,10 @@ import { useDebounce } from '@/shared/hooks/useDebounce';
 import {
   SCHOOL_SEARCH_DEBOUNCE_MS,
   useSchoolOptionsQuery,
+  type SchoolOption,
   useSchoolsByIdsQuery,
 } from '../api/useSchoolOptionsQuery';
 import { useAssignProgramSchool, useUnassignProgramSchool } from '../api/useProgramSchoolMutations';
-import { useProgramCoverageQuery } from '../api/useProgramCoverageQuery';
 
 export interface SchoolAssignmentPanelProps {
   programId: string;
@@ -27,9 +27,13 @@ export interface SchoolAssignmentPanelProps {
  * C9-band: "qidiruvli ko'p tanlovli ro'yxat, biriktirilgan maktablar chipi bilan".
  *
  * Har bir qidiruv natijasidagi maktab yonida "Dastursiz" belgisi ko'rsatiladi agar shu
- * maktabda **hech qanday** faol dastur bo'lmasa (`useProgramCoverageQuery`) — bu shu
- * maktabni HALI biriktirmagan bo'lsa ham to'g'ri: admin qaysi maktabga ustuvorlik berish
+ * maktabda **hech qanday** mavjud dastur bo'lmasa — admin qaysi maktabga ustuvorlik berish
  * kerakligini shu yerda ko'radi (`prompts/35` 13-band, "eng qimmatli qism").
+ *
+ * **2026-09-03:** belgi endi BACKENDDAN keladi (`SchoolOption.linkHealth`, `docs/07` 3.1) —
+ * ilgari u klient tomonda alohida hisoblanardi va ommaviy handler mezonidan farq qilardi
+ * (o'chirilgan dasturni ham, testsiz dasturni ham "joyida" deb ko'rsatardi). Ikkinchi mezon
+ * OLIB TASHLANDI: panel yolg'on aytmasligi uchun mezon bitta bo'lishi shart.
  */
 export function SchoolAssignmentPanel({
   programId,
@@ -42,17 +46,18 @@ export function SchoolAssignmentPanel({
 
   const optionsQuery = useSchoolOptionsQuery(debouncedSearch, true);
   const assignedQuery = useSchoolsByIdsQuery([...assignedSchoolIds]);
-  const coverageQuery = useProgramCoverageQuery();
   const assignSchool = useAssignProgramSchool();
   const unassignSchool = useUnassignProgramSchool();
 
   const assignedIdSet = new Set(assignedSchoolIds);
 
-  function isWithoutAnyProgram(schoolId: string): boolean {
-    if (!coverageQuery.data || coverageQuery.data.hasActivePublicProgram) return false;
-    return (
-      !coverageQuery.data.schoolIdsWithAssignedProgram.has(schoolId) && !assignedIdSet.has(schoolId)
-    );
+  /**
+   * Maktabda bironta MAVJUD dastur bormi — ommaviy `GET /api/public/schools/{slug}` mezoni
+   * bilan bitta manbadan (`linkHealth.availableProgramCount`). Shu dasturga biriktirilgan
+   * maktablarda bu son allaqachon biriktirmani hisobga oladi — qo'shimcha shart kerak emas.
+   */
+  function isWithoutAnyProgram(school: SchoolOption): boolean {
+    return school.linkHealth.availableProgramCount === 0;
   }
 
   async function handleAssign(schoolId: string) {
@@ -152,7 +157,7 @@ export function SchoolAssignmentPanel({
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {isWithoutAnyProgram(school.id) && (
+                    {isWithoutAnyProgram(school) && (
                       <Badge variant="warning">
                         <AlertTriangle size={12} aria-hidden="true" className="mr-1 inline" />
                         {t('programs.schoolPanel.noProgramBadge')}

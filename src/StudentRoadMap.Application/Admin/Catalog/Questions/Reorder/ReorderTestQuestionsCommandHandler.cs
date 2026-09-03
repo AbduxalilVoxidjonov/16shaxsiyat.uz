@@ -63,7 +63,9 @@ internal sealed class ReorderTestQuestionsCommandHandler : IRequestHandler<Reord
 
         _catalogCache.InvalidateTestDefinition(test.Id, test.Code);
 
-        var items = test.Questions.OrderBy(q => q.DisplayOrder).Select(CatalogMapping.ToQuestionDto).ToList();
+        // `LoadTrackedAsync` shkalalarni ham yuklaydi — resolver agregatning o'zidan quriladi.
+        var scaleNames = CatalogScaleNameResolver.ForTest(test);
+        var items = test.Questions.OrderBy(q => q.DisplayOrder).Select(q => CatalogMapping.ToQuestionDto(q, scaleNames)).ToList();
 
         return Result.Success<IReadOnlyList<CatalogQuestionItemDto>>(items);
     }

@@ -72,11 +72,20 @@ const FULL_STATS = {
 interface FetchMockOptions {
   stats?: Schemas['AdminDashboardStatsDto'];
   statsErrorStatus?: number;
+  /** `GET /api/admin/schools/link-health` javobi — "havola ishlamaydi" banneri (2026-09-03). */
+  linkHealth?: Schemas['AdminSchoolsLinkHealthDto'];
 }
 
 function mockFetch(options: FetchMockOptions = {}) {
   const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
     const url = String(input);
+    if (url.includes('/api/admin/schools/link-health')) {
+      return Promise.resolve(
+        jsonResponse<'AdminSchoolsLinkHealthDto'>(
+          options.linkHealth ?? { activeSchoolCount: 3, brokenSchoolCount: 0, schools: [] },
+        ),
+      );
+    }
     if (url.includes('/api/admin/dashboard/stats')) {
       if (options.statsErrorStatus) {
         return Promise.resolve(problemResponse('INTERNAL_ERROR', options.statsErrorStatus));
@@ -336,6 +345,49 @@ describe('DashboardPage', () => {
           );
         }),
       ).toBe(true);
+    });
+  });
+
+  /**
+   * 2026-09-03: admin dasturni o'chirgach hech qanday belgi ko'rmagan edi. Boshqaruv paneli —
+   * u har kuni ochadigan sahifa, shu sabab signal shu yerda.
+   */
+  it("dastursiz maktab bo'lsa banner soni, nomi va sababi bilan chiqadi", async () => {
+    mockFetch({
+      linkHealth: {
+        activeSchoolCount: 3,
+        brokenSchoolCount: 2,
+        schools: [
+          {
+            id: 'school-1',
+            name: '12-son maktab',
+            linkHealth: {
+              status: 'NoProgramAssigned',
+              availableProgramCount: 0,
+              usableProgramCount: 0,
+            },
+          },
+        ],
+      },
+    });
+    renderDashboardPage();
+
+    // Banner ichida qidiramiz — maktab nomi sahifaning boshqa bo'limlarida ham uchraydi.
+    const banner = await screen.findByRole('alert');
+    expect(within(banner).getByText('2 ta maktab havolasi ishlamaydi')).toBeInTheDocument();
+    expect(within(banner).getByText(/12-son maktab/)).toBeInTheDocument();
+    expect(within(banner).getByText(/Maktabga dastur biriktirilmagan/)).toBeInTheDocument();
+    expect(within(banner).getByText('va yana 1 ta')).toBeInTheDocument();
+  });
+
+  it("hamma maktab joyida bo'lsa banner CHIQMAYDI", async () => {
+    mockFetch();
+    renderDashboardPage();
+
+    await screen.findByText('Boshqaruv paneli');
+
+    await waitFor(() => {
+      expect(screen.queryByText(/maktab havolasi ishlamaydi/)).not.toBeInTheDocument();
     });
   });
 

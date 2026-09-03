@@ -91,6 +91,10 @@ public static class DependencyInjection
         services.AddSingleton<Application.Common.Interfaces.IExcelExporter, StudentRoadMap.Infrastructure.Export.ExcelExporter>();
         services.AddSingleton<Application.Common.Interfaces.IPdfExporter, StudentRoadMap.Infrastructure.Export.PdfExporter>();
 
+        // P39: anketa Excel shabloni/eksporti va yuklangan `.xlsx` ni o'qish — holatsiz,
+        // `ExcelExporter` bilan bir xil paket (`ClosedXML`), yangi bog'liqlik yo'q.
+        services.AddSingleton<Application.Admin.Catalog.Excel.ICatalogExcelWorkbook, StudentRoadMap.Infrastructure.Excel.CatalogExcelWorkbook>();
+
         // `/health/ready` DB ulanishini tekshiradi — `ready` tag bilan ajratilib,
         // Api/Program.cs da alohida endpoint sifatida ochiladi (`/health` esa DB'siz jonlik).
         services.AddHealthChecks()

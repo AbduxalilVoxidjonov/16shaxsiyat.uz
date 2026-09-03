@@ -46,6 +46,9 @@ public sealed class PublicSessionController : ControllerBase
     [EnableRateLimiting(RateLimitSetup.PublicSchoolInfo)]
     [ProducesResponseType(typeof(GetSchoolInfoResult), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    // `409 NO_PROGRAM_AVAILABLE` — havola to'g'ri, maktab faol, LEKIN mavjud dastur yo'q
+    // (`docs/07` 1.1, 2026-09-03). `404` (noma'lum havola) dan ATAYIN ajratilgan.
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status410Gone, "application/problem+json")]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests, "application/problem+json")]
     public async Task<ActionResult<GetSchoolInfoResult>> GetSchoolInfo(string slug, [FromQuery(Name = "k")] string? k, CancellationToken cancellationToken)

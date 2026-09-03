@@ -13,7 +13,11 @@ namespace StudentRoadMap.Application.Admin.Schools;
 internal static class SchoolMapping
 {
     public static AdminSchoolDetailDto ToDetailDto(
-        School school, IAppSettings appSettings, IQrCodeGenerator qrCodeGenerator, AdminSchoolStatsDto stats)
+        School school,
+        IAppSettings appSettings,
+        IQrCodeGenerator qrCodeGenerator,
+        AdminSchoolStatsDto stats,
+        AdminSchoolLinkHealthDto linkHealth)
     {
         var publicUrl = BuildPublicUrl(school, appSettings);
 
@@ -34,7 +38,8 @@ internal static class SchoolMapping
             school.Notes,
             school.CreatedAt,
             school.UpdatedAt,
-            stats);
+            stats,
+            linkHealth);
     }
 
     public static string BuildPublicUrl(School school, IAppSettings appSettings) =>

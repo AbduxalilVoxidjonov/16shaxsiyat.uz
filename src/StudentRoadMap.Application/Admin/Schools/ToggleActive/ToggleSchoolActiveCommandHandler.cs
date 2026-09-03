@@ -1,4 +1,5 @@
 using MediatR;
+using StudentRoadMap.Application.Admin.Schools.LinkHealth;
 using StudentRoadMap.Application.Admin.Common;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
@@ -72,6 +73,9 @@ internal sealed class ToggleSchoolActiveCommandHandler : IRequestHandler<ToggleS
 
         var stats = await SchoolMapping.ComputeStatsAsync(_context, _executor, school.Id, cancellationToken).ConfigureAwait(false);
 
-        return Result.Success(SchoolMapping.ToDetailDto(school, _appSettings, _qrCodeGenerator, stats));
+        var linkHealth = await SchoolLinkHealthEvaluator.EvaluateOneAsync(_context, _executor, school.Id, cancellationToken).ConfigureAwait(false);
+
+
+        return Result.Success(SchoolMapping.ToDetailDto(school, _appSettings, _qrCodeGenerator, stats, linkHealth));
     }
 }

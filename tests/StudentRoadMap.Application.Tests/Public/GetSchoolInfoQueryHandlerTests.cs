@@ -31,7 +31,13 @@ public sealed class GetSchoolInfoQueryHandlerTests
         var slug = SchoolSlug.Create("maktab-linkview-fail-open").Value;
         var school = School.Create(Guid.NewGuid(), "Maktab LinkView Fail-Open", "Toshkent", "Chilonzor", slug, token, now);
 
-        var context = new ThrowingIncrementFakeDbContext([school]);
+        // 2026-09-03: `GetSchoolInfoQueryHandler` mavjud dastur BO'LMASA `409 NO_PROGRAM_AVAILABLE`
+        // qaytaradi, shu sabab bu (hisoblagich haqidagi) test uchun bitta mavjud dastur kerak —
+        // aks holda test o'z maqsadidan boshqa sababga ko'ra yiqilardi.
+        var program = AssessmentProgram.CreateSystemPublished(
+            Guid.NewGuid(), "LINKVIEW_PROGRAM", "Havola hisoblagichi dasturi", null, 1, [(Guid.NewGuid(), 1)], now);
+
+        var context = new ThrowingIncrementFakeDbContext([school], [program]);
         var executor = new LinqToObjectsAsyncQueryExecutor();
         var logger = new RecordingLogger<GetSchoolInfoQueryHandler>();
         var handler = new GetSchoolInfoQueryHandler(context, executor, new FakeDateTime(now), logger);
@@ -110,8 +116,13 @@ public sealed class GetSchoolInfoQueryHandlerTests
     private sealed class ThrowingIncrementFakeDbContext : IAppDbContext
     {
         private readonly List<School> _schools;
+        private readonly List<AssessmentProgram> _programs;
 
-        public ThrowingIncrementFakeDbContext(List<School> schools) => _schools = schools;
+        public ThrowingIncrementFakeDbContext(List<School> schools, List<AssessmentProgram> programs)
+        {
+            _schools = schools;
+            _programs = programs;
+        }
 
         public IQueryable<School> Schools => _schools.AsQueryable();
 
@@ -133,7 +144,7 @@ public sealed class GetSchoolInfoQueryHandlerTests
 
         public IQueryable<AnalysisJob> AnalysisJobs => Enumerable.Empty<AnalysisJob>().AsQueryable();
 
-        public IQueryable<AssessmentProgram> AssessmentPrograms => Enumerable.Empty<AssessmentProgram>().AsQueryable();
+        public IQueryable<AssessmentProgram> AssessmentPrograms => _programs.AsQueryable();
 
         public IQueryable<ProgramTest> ProgramTests => Enumerable.Empty<ProgramTest>().AsQueryable();
 

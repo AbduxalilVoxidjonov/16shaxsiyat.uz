@@ -57,6 +57,10 @@
 | P39 | Login sessiyasi barqarorligi | frontend-react | ✅ | — | **Egasi topgan bloklovchi** · vaqtinchalik xato sessiyani o'chirmaydi |
 | P33 | Anketa konstruktori | frontend + backend | ✅ | — | Talqin oraliqlari muharriri · `issues[]` ro'yxati · `displayOrder` |
 | P40 | AI UI ↔ API shartnomasi | frontend + backend | ✅ | — | `baseUrl` jimgina o'chishi tuzatildi · shablon hisobot belgisi |
+| P41 | Havola sog'ligi va ogohlantirishlar | backend + frontend | ✅ | — | Dastursiz maktab paneldа belgilanadi · `409 NO_PROGRAM_AVAILABLE` |
+| P42 | Excel import, shablon, anketa yaratish | backend + frontend | ✅ | — | Eksport↔import aylanma testi · zip bomba himoyasi |
+| P43 | Savolma-savol javoblar va tahlili | backend + frontend | ✅ | — | Teskari tuzatilgan qiymat · ishonchlilik signallari |
+| P44 | AI tahlil tugmasi, avtomatik o'chirildi | backend + frontend | ✅ | — | Egasining qarori · `Ai__AutoAnalyzeOnCompletion=false` |
 | P38 | Katalog: tizim testini tahrirlash UI | frontend-react | ✅ | — | **Egasi so'radi** · ko'rish+tahrirlash, o'chirish yo'q |
 
 ---

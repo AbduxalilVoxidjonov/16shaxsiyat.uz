@@ -8,6 +8,8 @@ import { ErrorState } from '@/shared/ui/ErrorState';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { useToast } from '@/shared/ui/useToast';
 import { AppError } from '@/shared/api/AppError';
+import { useAiReadinessQuery } from '@/shared/api/useAiReadinessQuery';
+import { AI_RUNNABLE_STATUSES } from '@/shared/lib/aiAnalysisState';
 import { ROUTES } from '@/shared/config/routes';
 import { useAssessmentDetailQuery } from '../api/useAssessmentDetailQuery';
 import { useRerunAnalysisMutation } from '../api/useRerunAnalysisMutation';
@@ -22,7 +24,7 @@ import {
   resolveSessionMeta,
 } from '../model/sessionMeta';
 import { buildTestSummaryRows, normalizeTestResults } from '../model/testSummary';
-import { RERUNNABLE_STATUSES, type AiProvider } from '../model/types';
+import { type AiProvider } from '../model/types';
 
 function DetailSkeleton() {
   return (
@@ -56,11 +58,18 @@ export default function AssessmentDetailPage() {
   const toast = useToast();
   usePageTitle(t('pages.assessmentDetail.title'));
 
-  const detailQuery = useAssessmentDetailQuery(id);
+  const { query: detailQuery, pollTimedOut } = useAssessmentDetailQuery(id);
   const rerunMutation = useRerunAnalysisMutation();
 
   const [rerunOpen, setRerunOpen] = useState(false);
   const [rerunQueued, setRerunQueued] = useState(false);
+
+  // Provayder sozlanmagani haqidagi ogohlantirish FAQAT tahlil tugmasi chiqadigan
+  // holatlarda kerak — boshqa holatda ortiqcha so'rov yuborilmaydi.
+  const detailStatus = detailQuery.data?.status ?? null;
+  const { hasConfiguredProvider } = useAiReadinessQuery(
+    detailStatus !== null && AI_RUNNABLE_STATUSES.includes(detailStatus),
+  );
 
   const backLink = (
     <Link
@@ -100,17 +109,20 @@ export default function AssessmentDetailPage() {
   const meta = resolveSessionMeta(detail, parseAssessmentLocationState(location.state));
   const results = normalizeTestResults(detail.results);
   const rows = buildTestSummaryRows(results, detail.tests);
-  // Holat NOMA'LUM bo'lsa tugma ochiq qoladi: serverning qarorini oldindan taxmin qilmaymiz —
-  // ruxsat etilmagan o'tishda backend `409` bilan aniq sabab qaytaradi.
-  const canRerun = meta.status === null || RERUNNABLE_STATUSES.includes(meta.status);
-
   const rerunError = !rerunMutation.isError
     ? undefined
     : rerunMutation.error instanceof AppError && rerunMutation.error.status === 409
       ? t('assessmentDetail.rerunDialog.conflictError')
       : t('assessmentDetail.rerunDialog.error');
 
-  async function handleRerun(provider: AiProvider | null) {
+  /**
+   * `POST /api/admin/assessments/{id}/rerun-analysis` — `docs/07` 3.3. Domen qo'riqchisi
+   * `Completed` dan ham ruxsat beradi, ya'ni BIRINCHI tahlil ham shu endpoint orqali ketadi.
+   *
+   * @param viaDialog Tasdiq oynasidan chaqirildimi — xato o'sha oynada ko'rsatiladi;
+   *   tasdiqsiz (birinchi) tahlilda xato toast bilan aytiladi.
+   */
+  async function runAnalysis(provider: AiProvider | null, viaDialog: boolean) {
     if (!id) return;
     try {
       await rerunMutation.mutateAsync({ assessmentId: id, provider });
@@ -118,8 +130,20 @@ export default function AssessmentDetailPage() {
       setRerunOpen(false);
       setRerunQueued(true);
     } catch {
-      // Xato dialog ichida `error` orqali ko'rsatiladi — oyna ochiq qoladi.
+      if (!viaDialog) {
+        toast.show({ variant: 'danger', title: rerunError ?? t('assessmentDetail.rerunDialog.error') });
+      }
+      // Tasdiq oynasidagi xato dialog ichida `error` orqali ko'rsatiladi — oyna ochiq qoladi.
     }
+  }
+
+  /** Tasdiq FAQAT mavjud hisobot ustiga yozilganda so'raladi (birinchi tahlilda yo'q). */
+  function handleRunAnalysis({ requiresConfirmation }: { requiresConfirmation: boolean }) {
+    if (requiresConfirmation) {
+      setRerunOpen(true);
+      return;
+    }
+    void runAnalysis(null, false);
   }
 
   return (
@@ -150,15 +174,17 @@ export default function AssessmentDetailPage() {
         analysis={detail.aiAnalysis}
         history={detail.aiHistory ?? []}
         assessmentStatus={meta.status}
-        canRerun={canRerun}
-        onRerun={() => setRerunOpen(true)}
+        onRunAnalysis={handleRunAnalysis}
+        isStartingAnalysis={rerunMutation.isPending && !rerunOpen}
         rerunQueued={rerunQueued}
+        pollTimedOut={pollTimedOut}
+        hasConfiguredProvider={hasConfiguredProvider}
       />
 
       <RerunAnalysisDialog
         open={rerunOpen}
         onClose={() => setRerunOpen(false)}
-        onConfirm={(provider) => void handleRerun(provider)}
+        onConfirm={(provider) => void runAnalysis(provider, true)}
         isSubmitting={rerunMutation.isPending}
         error={rerunError}
       />

@@ -7,8 +7,17 @@ namespace StudentRoadMap.Domain.Scoring;
 /// Barcha strategiyalar uchun umumiy sof yordamchi funksiyalar. Bitta strategiya boshqasini
 /// chaqirmaydi degan qoida (`prompts/09-scoring-engine.md`) shu yordamchiga taalluqli emas —
 /// bu strategiyalararo emas, umumiy matematik yordamchi.
+///
+/// <para>
+/// <b>Nega `public`</b> (2026-09-03): admin "savolma-savol tahlil" javobida har javobning
+/// TESKARI TUZATILGAN qiymati (`AdminAssessmentAnswerDto.EffectiveValue`) ko'rsatiladi.
+/// Formula (`v' = (max + min) − v`, `docs/03` §1) SHU YERDA yashaydi va `Application`
+/// qatlami uni AYNAN shu metod orqali chaqiradi — ikkinchi nusxa yozilsa, u vaqt o'tib
+/// strategiyalardagi formuladan ajralib, jimgina noto'g'ri qiymat ko'rsatardi. Faqat
+/// ko'rinish (`internal` → `public`) o'zgardi; birorta formula yoki chegara TEGILMAGAN.
+/// </para>
 /// </summary>
-internal static class ScoringMath
+public static class ScoringMath
 {
     /// <summary>
     /// Savolning xom javobini oladi va `[min,max]` oralig'ida ekanligini tekshiradi. Javob yo'q

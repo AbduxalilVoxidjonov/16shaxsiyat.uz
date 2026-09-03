@@ -236,6 +236,7 @@ To'liq va izohli ro'yxat — `.env.example` (repo ildizida). Qisqacha jadval:
 | `App__KnownProxies` | `api` | Ishonchli proksi subneti — §7 MAXSUS DIQQAT |
 | `App__FrontendUrl` | `api` | CORS va havola generatsiyasi |
 | `App__SeedOnStartup` | `api` | Production'da `false` — seed alohida `seed` konteyneri bilan |
+| `Ai__AutoAnalyzeOnCompletion` | `api` | Sessiya yakunlangach AI tahlilini AVTOMATIK navbatga qo'yish. Standart **`false`** (AI xarajati nazorati, 2026-09-03 egasi qarori) — tahlil admin paneldagi tugma bilan qo'lda ishga tushiriladi. Pastda §6.1 |
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` / `ADMIN_EMAIL` | `seed` | Yagona superadmin — bo'lmasa seed uni yaratmaydi |
 | `FRONTEND_URL` | (hujjat/eslatma) | `docs`/skriptlarda ishlatiladigan haqiqiy domen |
 | `API_URL` | (hujjat/eslatma) | `frontend/package.json` dagi `generate:api` standart manzili |
@@ -244,6 +245,19 @@ To'liq va izohli ro'yxat — `.env.example` (repo ildizida). Qisqacha jadval:
 
 Kalit almashtirish (`Security__EncryptionKey` rotatsiyasi): admin panel orqali AI
 kalitlarini qayta kiritish eng sodda yo'l; avtomatik re-encrypt skripti v2.
+
+### 6.1 `Ai__AutoAnalyzeOnCompletion` — avtomatik AI tahlili
+
+- **Standart: `false`** (`appsettings.json` da ham `false`; berilmasa ham `false`).
+  Sessiya yakunlanadi, ballar/ishonchlilik/`StudentSnapshot` avvalgidek hisoblanadi, lekin
+  AI navbatiga hech narsa qo'yilmaydi va sessiya `Completed` holatida qoladi.
+- **Qo'lda ishga tushirish bayroqdan MUSTAQIL:** admin paneldagi "AI tahlil qilish" tugmasi
+  (`POST /api/admin/assessments/{id}/rerun-analysis`) har doim ishlaydi.
+- Yoqish: `.env` da `Ai__AutoAnalyzeOnCompletion=true` → `docker compose up -d api`.
+  **Kod o'zgarmaydi, migratsiya kerak emas** — faqat konteyner qayta ko'tariladi.
+- `docker-compose.yml` bu qiymatni `api`/`migrate`/`seed` ga `${Ai__AutoAnalyzeOnCompletion:-false}`
+  bilan uzatadi — `.env` da qator bo'lmasa ham xavfsiz standart (`false`) qo'llanadi.
+- Batafsil oqim: `docs/09` 8.0-bo'lim; qaror sababi: `docs/06` 8-bo'lim (2026-09-03).
 
 ---
 

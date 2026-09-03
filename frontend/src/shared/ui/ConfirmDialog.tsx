@@ -17,6 +17,12 @@ export interface ConfirmDialogProps {
   isConfirming?: boolean;
   /** Tasdiqlashdan keyingi xato matni (agar mutatsiya muvaffaqiyatsiz bo'lsa). */
   error?: string;
+  /**
+   * Ogohlantirish va xato orasidagi ixtiyoriy qo'shimcha blok — masalan "bu amal nechta
+   * maktabni havolasiz qoldiradi" ro'yxati (`ProgramImpactNotice`, 2026-09-03). `warning`
+   * `<p>` ichida render qilingani uchun ro'yxat/blok elementlarini u yerga qo'yib bo'lmaydi.
+   */
+  children?: ReactNode;
 }
 
 /**
@@ -37,6 +43,7 @@ export function ConfirmDialog({
   confirmVariant = 'danger',
   isConfirming = false,
   error,
+  children,
 }: ConfirmDialogProps) {
   const { t } = useTranslation();
 
@@ -62,6 +69,7 @@ export function ConfirmDialog({
           {warning}
         </p>
       )}
+      {children && <div className="mt-2">{children}</div>}
       {error && (
         <p role="alert" className="mt-2 text-sm text-danger-600">
           {error}

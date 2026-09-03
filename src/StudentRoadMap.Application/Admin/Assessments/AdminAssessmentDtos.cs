@@ -105,11 +105,55 @@ public sealed record AdminAssessmentTestItemDto(
     int AnsweredCount);
 
 /// <summary>
-/// `GET /api/admin/assessments/{id}/answers` — `docs/07` 3.3-bo'lim: "Xom javoblar (audit
-/// uchun)". `prompts/15` MAXSUS DIQQAT #5: savol matni, javob, `durationMs`, `revisionCount` —
-/// `scale`/`scaleDirection` BU YERDA HAM YO'Q (`CLAUDE.md` 9-band ruhi — ular faqat admin
-/// KATALOGIDA ko'rinadi, javoblar ro'yxatida emas). Bog'langan (max ~190 savol/sessiya,
-/// `docs/05` §5) — sahifalanmaydi, to'liq ro'yxat qaytadi.
+/// `GET /api/admin/assessments/{id}/answers` javobi — `docs/07` 3.3-bo'lim: "Xom javoblar
+/// (audit uchun)". Bog'langan hajm (max ~190 savol/sessiya, `docs/05` §5) — sahifalanmaydi.
+///
+/// <para>
+/// <b>Nega massiv emas, konvert</b> (2026-09-03, egasining talabi): jadvalning o'zi savolma-savol
+/// ma'noni beradi, lekin ISHONCHLILIK BALLI sessiya darajasida hisoblanadi (`docs/03` §7) —
+/// "nega 62" degan savolga javob berish uchun sessiya signallari (`AllSameAnswer`,
+/// `ShortSession`), shkala darajasidagi teskari savol ziddiyati va `ScoringConstants`
+/// CHEGARALARI ham kerak. Chegaralar javobda uzatiladi (`Thresholds`) — frontend ularni
+/// QO'LDA TAKRORLAMAYDI, aks holda `ScoringConstants` o'zgarganda UI jimgina eskirib qolardi.
+/// </para>
+/// <para>
+/// `Session`/`Scales` signallari HAR DOIM BUTUN sessiya bo'yicha hisoblanadi — `testCode`
+/// filtri faqat `Answers` ro'yxatini toraytiradi. Sabab: `ReliabilityCalculator` ham sessiya
+/// darajasida ishlaydi (straight-lining 4 blok bo'ylab uzluksiz sanaladi), bitta test bloki
+/// ichida qayta hisoblansa BOSHQA (yolg'on) qiymat chiqardi.
+/// </para>
+/// </summary>
+public sealed record AdminAssessmentAnswersDto(
+    IReadOnlyList<AdminAssessmentAnswerDto> Answers,
+    AdminAnswerSessionSignalsDto Session,
+    IReadOnlyList<AdminAnswerScaleSignalDto> Scales,
+    AdminAnswerThresholdsDto Thresholds);
+
+/// <summary>
+/// Bitta javob qatori — `prompts/15` MAXSUS DIQQAT #5 dagi maydonlar + javobning MA'NOSI
+/// (2026-09-03).
+///
+/// <para>
+/// ⚠️ <b>`Scale`/`ScaleDirection`/`ScaleNameUz`/`EffectiveValue` FAQAT ADMIN javobida.</b>
+/// `CLAUDE.md` 9-band ommaviy (o'quvchi) API'ni nazarda tutadi: u yerda bu maydonlar
+/// o'lchanayotgan konstruktni va savolning teskari ekanini ochib berardi, ya'ni o'quvchi
+/// javobini moslashtirib natijani buzishi mumkin edi. Admin katalogida (`docs/07` §3.4) ular
+/// allaqachon ochiq; audit jadvalida ham shu qoida amal qiladi. Sizib chiqmasligi
+/// `PublicTestQuestionsEndpointTests` da xom JSON va swagger sxemasi ustidan qulflangan.
+/// </para>
+/// <para>
+/// <b>`EffectiveValue` — jadvaldagi eng muhim ustun.</b> Teskari savolga (`ScaleDirection = -1`)
+/// berilgan `5` shkalaga `1` bo'lib tushadi. Qiymat <see cref="StudentRoadMap.Domain.Scoring.ScoringMath.ApplyDirection"/>
+/// — strategiyalar ishlatadigan AYNAN O'SHA domen funksiyasi — orqali hisoblanadi; bu yerda
+/// formula QAYTA YOZILMAGAN.
+/// </para>
+/// <para>
+/// `IsFastAnswer` — `DurationMs &lt; ScoringConstants.FastAnswerDurationThresholdMs`.
+/// `StraightLiningBlockIndex` — javob TO'LIQ 12talik bir xil qiymat blokiga tushsa uning
+/// tartib raqami (1 dan), aks holda `null`. Barcha javob bir xil bo'lsa bloklar
+/// BELGILANMAYDI: `docs/03` §7.1 band 1 bo'yicha bu holatda faqat `AllSameAnswer` jarimasi
+/// qo'llanadi, straight-lining esa qo'llanmaydi — UI ham shu bilan izchil bo'lishi kerak.
+/// </para>
 /// </summary>
 public sealed record AdminAssessmentAnswerDto(
     Guid QuestionId,
@@ -120,7 +164,64 @@ public sealed record AdminAssessmentAnswerDto(
     string? SelectedOptionText,
     int DurationMs,
     int RevisionCount,
-    DateTimeOffset AnsweredAt);
+    DateTimeOffset AnsweredAt,
+    string QuestionType,
+    string Scale,
+    string? ScaleNameUz,
+    int ScaleDirection,
+    decimal Weight,
+    int EffectiveValue,
+    bool IsFastAnswer,
+    int? StraightLiningBlockIndex);
+
+/// <summary>
+/// Sessiya darajasidagi ishonchlilik signallari (`docs/03` §7) — bo'lim boshida ko'rsatiladi.
+/// `Survey` (ballanmaydigan) test bloklari hisobga OLINMAYDI: `RecalculateAssessmentScoresCommandHandler`
+/// ham ularni `ReliabilityCalculator`ga bermaydi, ikki joy bir xil to'plamda ishlashi shart.
+/// </summary>
+/// <param name="AnsweredCount">Hisobga olingan (ballanadigan) javoblar soni — `p` ning maxraji.</param>
+/// <param name="FastAnswerCount">`DurationMs &lt; 900` bo'lgan javoblar soni.</param>
+/// <param name="StraightLiningBlockCount">To'liq 12talik bir xil qiymat bloklari soni.</param>
+/// <param name="AllSameAnswer">Barcha javob bir xil — `docs/03` §7 dagi 50 ballik jarima.</param>
+/// <param name="ShortSession">Sessiya 6 daqiqadan qisqa.</param>
+/// <param name="TotalDurationSeconds">Sessiya davomiyligi (`Assessment.TotalDurationSeconds`), hisoblanmagan bo'lsa `null`.</param>
+/// <param name="ReliabilityScore">Saqlangan ishonchlilik balli — hisoblanmagan bo'lsa `null` (0 EMAS).</param>
+/// <param name="ReliabilityFlag">`Reliable` | `Questionable` | `Unreliable` yoki `null`.</param>
+public sealed record AdminAnswerSessionSignalsDto(
+    int AnsweredCount,
+    int FastAnswerCount,
+    int StraightLiningBlockCount,
+    bool AllSameAnswer,
+    bool ShortSession,
+    int? TotalDurationSeconds,
+    double? ReliabilityScore,
+    string? ReliabilityFlag);
+
+/// <summary>
+/// Shkala darajasidagi teskari savol ziddiyati (`docs/03` §7.1 band 4) — FAQAT ikkala
+/// yo'nalish ham mavjud bo'lgan shkalalar uchun. `ForwardAvgPct`/`ReverseAvgPct` —
+/// normallashgan (0–100) o'rtachalar, `ReverseAvgPct` teskari TUZATILGAN qiymatlardan;
+/// `MismatchPct` — ularning ayirmasi moduli, ya'ni hujjatdagi `d_shkala × 100`.
+/// Jarima butun sessiya bo'yicha `d × 25` (o'rtacha) — bu yerda alohida shkalaning
+/// hissasi ko'rsatiladi, jarimaning o'zi EMAS.
+/// </summary>
+public sealed record AdminAnswerScaleSignalDto(
+    string Scale,
+    string? ScaleNameUz,
+    int ForwardCount,
+    int ReverseCount,
+    double ForwardAvgPct,
+    double ReverseAvgPct,
+    double MismatchPct);
+
+/// <summary>
+/// `ScoringConstants` dagi chegaralar — mijozga UZATILADI, mijozda qayta yozilmaydi
+/// (`docs/03` §7; `CLAUDE.md` 3-band ruhi: chegara bitta manbada).
+/// </summary>
+public sealed record AdminAnswerThresholdsDto(
+    int FastAnswerDurationMs,
+    int StraightLiningMinRunLength,
+    double ShortSessionMinutes);
 
 /// <summary>
 /// `POST /api/admin/assessments/{id}/recalculate-scores` javobi — `docs/07`da aniq namuna YO'Q.

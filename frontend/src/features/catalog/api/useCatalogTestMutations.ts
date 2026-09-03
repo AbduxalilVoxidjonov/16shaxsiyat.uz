@@ -1,7 +1,37 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminRequest } from '@/shared/api/adminClient';
-import type { CatalogTestDetail } from '../model/types';
+import type { CatalogTestDetail, TestScoringMode } from '../model/types';
 import { CATALOG_QUERY_KEYS } from './catalogKeys';
+
+/** `POST /api/admin/catalog/tests` so'rov tanasi (`CreateCatalogTestRequest`). */
+export interface CreateCatalogTestPayload {
+  code: string;
+  nameUz: string;
+  descriptionUz: string | null;
+  estimatedMinutes: number;
+  pageSize: number;
+  scoringMode: TestScoringMode;
+}
+
+/**
+ * `POST /api/admin/catalog/tests` — `docs/07` §3.4: "Yangi `Custom` anketa — `Draft`
+ * holatida yaratiladi". Yuklashsiz, katalog sahifasining o'zida yaratish yo'li: backendda
+ * to'liq CRUD (P37) va tahrirlash sahifasi (P38) allaqachon bor edi, faqat tugmasi yo'q edi.
+ * Band kod uchun backend `409` beradi (`ux_test_definitions_code`).
+ */
+export function useCreateCatalogTest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateCatalogTestPayload) =>
+      adminRequest<CatalogTestDetail>('/api/admin/catalog/tests', {
+        method: 'POST',
+        body: payload,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: CATALOG_QUERY_KEYS.list() });
+    },
+  });
+}
 
 /** `PUT /api/admin/catalog/tests/{id}` so'rov tanasi (`UpdateCatalogTestRequest`). */
 export interface UpdateCatalogTestPayload {

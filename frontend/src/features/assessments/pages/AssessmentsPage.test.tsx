@@ -61,6 +61,8 @@ const SCHOOL_ROW = {
   studentCount: 42,
   completedCount: 17,
   lastActivityAt: '2026-08-30T10:00:00Z',
+  // `docs/07` 3.1 (2026-09-03): havola sog'ligi — bu fikstura "sog'lom" maktab.
+  linkHealth: { status: 'Ok', availableProgramCount: 1, usableProgramCount: 1 },
 } satisfies Schemas['AdminSchoolListItemDto'];
 
 /** Detal sahifasi o'rniga — qatordan uzatilgan navigatsiya holatini ko'rsatuvchi qo'g'irchoq. */

@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { Dialog } from '@/shared/ui/Dialog';
+import { ConfirmDialog } from '@/shared/ui/ConfirmDialog';
 import { Button } from '@/shared/ui/Button';
 import { Input } from '@/shared/ui/Input';
 import { Select } from '@/shared/ui/Select';
@@ -13,6 +14,8 @@ import { AppError } from '@/shared/api/AppError';
 import { useProgramQuery } from '../api/useProgramQuery';
 import { useCreateProgram } from '../api/useCreateProgram';
 import { useUpdateProgram } from '../api/useUpdateProgram';
+import { useProgramImpactQuery } from '../api/useProgramImpactQuery';
+import { ProgramImpactNotice } from './ProgramImpactNotice';
 import {
   programFormSchema,
   PROGRAM_FORM_DEFAULT_VALUES,
@@ -36,6 +39,11 @@ const FORM_ID = 'program-form-dialog';
  * manbai). Tizim dasturida ham nom/tavsif/tartib/ko'rinish tahrirlanadi (`docs/06` §8
  * 2026-09-02: "ko'rinishi va biriktirishi o'zgartiriladi") — faqat **tarkib** (testlar)
  * qulflangan, u bu dialogda umuman yo'q (alohida `ProgramTestsList`da boshqariladi).
+ *
+ * **2026-09-03:** ko'rinishni `Public` dan `Assigned` ga o'zgartirish — dasturni o'chirish
+ * bilan bir xil oqibatga olib keladi (dastur endi faqat biriktirilgan maktablarga ko'rinadi),
+ * shu sabab saqlashdan OLDIN tasdiq oynasi chiqadi va nechta maktab havolasiz qolishi
+ * ko'rsatiladi (`?action=makeAssigned`). Amal taqiqlanmaydi.
  */
 export function ProgramFormDialog({ open, programId, onClose, onCreated }: ProgramFormDialogProps) {
   const { t } = useTranslation();
@@ -73,7 +81,11 @@ export function ProgramFormDialog({ open, programId, onClose, onCreated }: Progr
     }
   }, [open, isEdit, detailQuery.data, reset]);
 
-  const onSubmit = handleSubmit(async (values) => {
+  // `Public → Assigned` o'zgarishi tasdiqlanmaguncha shu yerda kutib turadi.
+  const [pendingValues, setPendingValues] = useState<ProgramFormValues | null>(null);
+  const impactQuery = useProgramImpactQuery(programId, 'makeAssigned', pendingValues !== null);
+
+  async function submitValues(values: ProgramFormValues) {
     try {
       if (isEdit && programId) {
         await updateProgram.mutateAsync({
@@ -102,75 +114,114 @@ export function ProgramFormDialog({ open, programId, onClose, onCreated }: Progr
       const message = caught instanceof AppError ? caught.message : t('programs.form.genericError');
       toast.show({ variant: 'danger', title: message });
     }
+  }
+
+  const onSubmit = handleSubmit(async (values) => {
+    const losesPublicVisibility =
+      isEdit && detailQuery.data?.visibility === 'Public' && values.visibility === 'Assigned';
+
+    if (losesPublicVisibility) {
+      setPendingValues(values);
+      return;
+    }
+
+    await submitValues(values);
   });
 
   const isMutating = createProgram.isPending || updateProgram.isPending || isSubmitting;
   const isLoadingDetail = isEdit && detailQuery.isPending;
 
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      title={isEdit ? t('programs.form.editTitle') : t('programs.form.createTitle')}
-      footer={
-        <>
-          <Button variant="outline" onClick={onClose} disabled={isMutating}>
-            {t('common.cancel')}
-          </Button>
-          <Button type="submit" form={FORM_ID} isLoading={isMutating} disabled={isLoadingDetail}>
-            {isEdit ? t('programs.form.submitEditCta') : t('programs.form.submitCreateCta')}
-          </Button>
-        </>
-      }
+  const confirmDialog = pendingValues !== null && (
+    <ConfirmDialog
+      open
+      onClose={() => setPendingValues(null)}
+      onConfirm={() => {
+        const values = pendingValues;
+        setPendingValues(null);
+        void submitValues(values);
+      }}
+      title={t('programs.visibilityChange.title')}
+      description={pendingValues.nameUz}
+      warning={t('programs.visibilityChange.description')}
+      confirmLabel={t('programs.visibilityChange.confirmCta')}
+      confirmVariant="primary"
+      isConfirming={isMutating}
     >
-      {isLoadingDetail ? (
-        <div className="flex flex-col gap-4">
-          {Array.from({ length: 4 }, (_, index) => (
-            <Skeleton key={index} className="h-11 w-full" />
-          ))}
-        </div>
-      ) : (
-        <form
-          id={FORM_ID}
-          onSubmit={(event) => void onSubmit(event)}
-          noValidate
-          className="flex flex-col gap-4"
-        >
-          <Input
-            label={t('programs.form.codeLabel')}
-            hint={isEdit ? t('programs.form.codeLockedHint') : t('programs.form.codeHint')}
-            error={errors.code?.message}
-            disabled={isEdit}
-            {...register('code')}
-          />
-          <Input
-            label={t('programs.form.nameLabel')}
-            error={errors.nameUz?.message}
-            {...register('nameUz')}
-          />
-          <Textarea
-            label={t('programs.form.descriptionLabel')}
-            error={errors.descriptionUz?.message}
-            {...register('descriptionUz')}
-          />
-          <Input
-            type="number"
-            label={t('programs.form.displayOrderLabel')}
-            error={errors.displayOrder?.message}
-            {...register('displayOrder', { valueAsNumber: true })}
-          />
-          <Select
-            label={t('programs.form.visibilityLabel')}
-            hint={t('programs.form.visibilityHint')}
-            options={[
-              { value: 'Public', label: t('programs.visibility.public') },
-              { value: 'Assigned', label: t('programs.visibility.assigned') },
-            ]}
-            error={errors.visibility?.message}
-            {...register('visibility')}
-          />
-        </form>
-      )}
-    </Dialog>
+      <ProgramImpactNotice
+        impact={impactQuery.data}
+        isPending={impactQuery.isPending}
+        isError={impactQuery.isError}
+      />
+    </ConfirmDialog>
+  );
+
+  return (
+    <>
+      {confirmDialog}
+      <Dialog
+        open={open}
+        onClose={onClose}
+        title={isEdit ? t('programs.form.editTitle') : t('programs.form.createTitle')}
+        footer={
+          <>
+            <Button variant="outline" onClick={onClose} disabled={isMutating}>
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" form={FORM_ID} isLoading={isMutating} disabled={isLoadingDetail}>
+              {isEdit ? t('programs.form.submitEditCta') : t('programs.form.submitCreateCta')}
+            </Button>
+          </>
+        }
+      >
+        {isLoadingDetail ? (
+          <div className="flex flex-col gap-4">
+            {Array.from({ length: 4 }, (_, index) => (
+              <Skeleton key={index} className="h-11 w-full" />
+            ))}
+          </div>
+        ) : (
+          <form
+            id={FORM_ID}
+            onSubmit={(event) => void onSubmit(event)}
+            noValidate
+            className="flex flex-col gap-4"
+          >
+            <Input
+              label={t('programs.form.codeLabel')}
+              hint={isEdit ? t('programs.form.codeLockedHint') : t('programs.form.codeHint')}
+              error={errors.code?.message}
+              disabled={isEdit}
+              {...register('code')}
+            />
+            <Input
+              label={t('programs.form.nameLabel')}
+              error={errors.nameUz?.message}
+              {...register('nameUz')}
+            />
+            <Textarea
+              label={t('programs.form.descriptionLabel')}
+              error={errors.descriptionUz?.message}
+              {...register('descriptionUz')}
+            />
+            <Input
+              type="number"
+              label={t('programs.form.displayOrderLabel')}
+              error={errors.displayOrder?.message}
+              {...register('displayOrder', { valueAsNumber: true })}
+            />
+            <Select
+              label={t('programs.form.visibilityLabel')}
+              hint={t('programs.form.visibilityHint')}
+              options={[
+                { value: 'Public', label: t('programs.visibility.public') },
+                { value: 'Assigned', label: t('programs.visibility.assigned') },
+              ]}
+              error={errors.visibility?.message}
+              {...register('visibility')}
+            />
+          </form>
+        )}
+      </Dialog>
+    </>
   );
 }

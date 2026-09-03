@@ -1,42 +1,71 @@
 import { useRef, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertCircle, CheckCircle2, FileJson, Upload } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Download, FileSpreadsheet, Upload } from 'lucide-react';
 import { Dialog } from '@/shared/ui/Dialog';
 import { Button } from '@/shared/ui/Button';
 import { Badge } from '@/shared/ui/Badge';
+import { Select } from '@/shared/ui/Select';
 import { useToast } from '@/shared/ui/useToast';
 import { AppError } from '@/shared/api/AppError';
-import { validateTestImportFile, type ImportValidationResult } from '../model/importSchema';
+import {
+  toImportIssues,
+  validateTestImportFile,
+  validateTestImportObject,
+  type ImportValidationResult,
+} from '../model/importSchema';
 import { useImportTestMutation } from '../api/useImportTestMutation';
+import { useDownloadImportTemplate, useDownloadTestExcel, useParseExcelMutation } from '../api/useCatalogExcel';
+import type { CatalogTestListItem } from '../model/types';
 
 export interface TestImportDialogProps {
   open: boolean;
   onClose: () => void;
+  /** Namuna sifatida yuklab olish mumkin bo'lgan mavjud anketalar (katalog ro'yxati). */
+  tests?: readonly CatalogTestListItem[];
 }
 
 const DUPLICATE_CODE_ERROR_CODE = 'TEST_CODE_DUPLICATE';
 
+/** `.json` bo'lmagan har qanday fayl Excel deb hisoblanadi — `.xls`/`.xlsm` ni SERVER rad etadi (aniq xabar bilan). */
+function isJsonFile(file: File): boolean {
+  return file.name.toLowerCase().endsWith('.json');
+}
+
 /**
- * "Test yuklash" — `prompts/35` B-bo'lim. Fayl tanlangan zahoti (tarmoqqa yuborilmasdan)
- * mijoz tomonida to'liq validatsiya va preview ko'rsatiladi (`validateTestImportFile`);
- * xato bo'lsa yuklash tugmasi o'chiq (B4-band). Muvaffaqiyatli yuklash `Draft` test
- * yaratadi (B5-band) — bu mutatsiya hech qachon `publish` chaqirmaydi.
+ * "Anketa yuklash" — `prompts/35` B-bo'lim + P39 (Excel). Ikkala format ham bitta oqimdan
+ * o'tadi: fayl → `ImportValidationResult` (oldindan ko'rish + xatolar) → mavjud yaratish yo'li.
+ *
+ * - `.xlsx` — serverga yuboriladi (`POST /api/admin/catalog/import/parse-excel`), u ClosedXML
+ *   bilan o'qib MAVJUD JSON import sxemasidagi obyektni qaytaradi; hech narsa saqlanmaydi;
+ * - `.json` — mijoz tomonida, tarmoqqa umuman chiqmasdan o'qiladi (seed sxemasi).
+ *
+ * Ikkala holatda ham validatsiya bitta funksiyada (`validateTestImportObject`) — shu sabab
+ * ikkita parallel import mantiqi yo'q.
  */
-export function TestImportDialog({ open, onClose }: TestImportDialogProps) {
+export function TestImportDialog({ open, onClose, tests = [] }: TestImportDialogProps) {
   const { t } = useTranslation();
   const toast = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [result, setResult] = useState<ImportValidationResult | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [sampleTestId, setSampleTestId] = useState<string>('');
 
   const importTest = useImportTestMutation();
+  const parseExcel = useParseExcelMutation();
+  const downloadTemplate = useDownloadImportTemplate();
+  const downloadSample = useDownloadTestExcel();
+
+  const sampleOptions = tests.map((test) => ({ value: test.id, label: `${test.nameUz} (${test.code})` }));
+  const selectedSampleId = sampleTestId || (sampleOptions[0]?.value ?? '');
+  const selectedSample = tests.find((test) => test.id === selectedSampleId);
 
   function handleClose() {
     setFileName(null);
     setResult(null);
     setSubmitError(null);
     importTest.reset();
+    parseExcel.reset();
     onClose();
   }
 
@@ -45,8 +74,33 @@ export function TestImportDialog({ open, onClose }: TestImportDialogProps) {
     if (!file) return;
     setFileName(file.name);
     setSubmitError(null);
-    const text = await file.text();
-    setResult(validateTestImportFile(text));
+    setResult(null);
+
+    if (isJsonFile(file)) {
+      setResult(validateTestImportFile(await file.text()));
+      return;
+    }
+
+    try {
+      const parsed = await parseExcel.mutateAsync(file);
+      const data: unknown = (parsed as { data?: unknown }).data ?? null;
+      setResult(validateTestImportObject(data, toImportIssues(parsed)));
+    } catch (caught) {
+      // Fayl darajasidagi xato (zip emas, buzilgan, `.xls`/`.xlsm`, juda katta) — backend
+      // tayyor o'zbekcha xabar beradi, ichki tafsilotsiz (P31).
+      setResult({
+        canImport: false,
+        data: null,
+        preview: null,
+        issues: [
+          {
+            code: caught instanceof AppError ? caught.code : 'EXCEL_PARSE_FAILED',
+            message:
+              caught instanceof AppError ? caught.message : t('catalog.importDialog.genericError'),
+          },
+        ],
+      });
+    }
   }
 
   async function handleImport() {
@@ -92,11 +146,61 @@ export function TestImportDialog({ open, onClose }: TestImportDialogProps) {
       }
     >
       <div className="flex flex-col gap-4">
+        <section className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+          <p className="flex items-center gap-2 text-sm font-medium text-neutral-900">
+            <FileSpreadsheet size={16} aria-hidden="true" />
+            {t('catalog.importDialog.formatTitle')}
+          </p>
+          <p className="mt-1 text-sm text-neutral-600">{t('catalog.importDialog.formatSheets')}</p>
+          <p className="mt-1 text-sm text-neutral-600">{t('catalog.importDialog.formatBands')}</p>
+          <p className="mt-1 text-xs text-neutral-500">{t('catalog.importDialog.formatJson')}</p>
+
+          <div className="mt-3 flex flex-col gap-2">
+            <Button
+              variant="outline"
+              onClick={() => void downloadTemplate.mutateAsync()}
+              isLoading={downloadTemplate.isPending}
+            >
+              <Download size={16} aria-hidden="true" />
+              {t('catalog.importDialog.downloadTemplate')}
+            </Button>
+
+            {sampleOptions.length > 0 && (
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                <div className="flex-1">
+                  <Select
+                    label={t('catalog.importDialog.sampleLabel')}
+                    hint={t('catalog.importDialog.sampleHint')}
+                    options={sampleOptions}
+                    value={selectedSampleId}
+                    onChange={(event) => setSampleTestId(event.target.value)}
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  disabled={!selectedSample}
+                  isLoading={downloadSample.isPending}
+                  onClick={() => {
+                    if (!selectedSample) return;
+                    void downloadSample.mutateAsync({
+                      id: selectedSample.id,
+                      code: selectedSample.code,
+                    });
+                  }}
+                >
+                  <Download size={16} aria-hidden="true" />
+                  {t('catalog.importDialog.downloadSample')}
+                </Button>
+              </div>
+            )}
+          </div>
+        </section>
+
         <div>
           <input
             ref={fileInputRef}
             type="file"
-            accept="application/json,.json"
+            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/json,.json"
             className="sr-only"
             id="test-import-file-input"
             onChange={(event) => void handleFileChange(event)}
@@ -113,12 +217,16 @@ export function TestImportDialog({ open, onClose }: TestImportDialogProps) {
           </label>
         </div>
 
+        {parseExcel.isPending && (
+          <p className="text-sm text-neutral-600">{t('catalog.importDialog.parsing')}</p>
+        )}
+
         {result && (
           <div className="flex flex-col gap-3">
             {result.preview && (
               <div className="rounded-lg border border-neutral-200 p-3">
                 <p className="flex items-center gap-2 text-sm font-medium text-neutral-900">
-                  <FileJson size={16} aria-hidden="true" />
+                  <FileSpreadsheet size={16} aria-hidden="true" />
                   {result.preview.nameUz} ({result.preview.code})
                 </p>
                 <p className="mt-1 text-sm text-neutral-600">

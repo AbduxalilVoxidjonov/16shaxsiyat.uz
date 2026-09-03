@@ -10,6 +10,7 @@ using StudentRoadMap.Application.Admin.Schools;
 using StudentRoadMap.Application.Admin.Schools.Create;
 using StudentRoadMap.Application.Admin.Schools.Delete;
 using StudentRoadMap.Application.Admin.Schools.GetById;
+using StudentRoadMap.Application.Admin.Schools.LinkHealth;
 using StudentRoadMap.Application.Admin.Schools.List;
 using StudentRoadMap.Application.Admin.Schools.RegenerateLink;
 using StudentRoadMap.Application.Admin.Schools.ToggleActive;
@@ -55,6 +56,23 @@ public sealed class SchoolsController : ControllerBase
     {
         var query = new ListSchoolsQuery(search, region, isActive, page, pageSize, sort);
         var result = await _sender.Send(query, cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>
+    /// `GET /api/admin/schools/link-health` — butun tizim bo'yicha "nechta maktab havolasi
+    /// ishlamaydi" (`docs/07` 3.1, 2026-09-03). Boshqaruv panelidagi banner shundan oziqlanadi.
+    /// Yo'l `{id:guid}` dan OLDIN e'lon qilingan bo'lishi shart emas (marshrut cheklovi `:guid`
+    /// tufayli `link-health` unga tushmaydi), lekin o'qish uchun shu yerda turadi.
+    /// </summary>
+    [HttpGet("link-health")]
+    [ProducesResponseType(typeof(AdminSchoolsLinkHealthDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden, "application/problem+json")]
+    public async Task<ActionResult<AdminSchoolsLinkHealthDto>> LinkHealth(CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new GetSchoolsLinkHealthQuery(), cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
     }

@@ -52,7 +52,28 @@ public sealed record CatalogTestDetailDto(
     bool ShuffleQuestions,
     int DisplayOrder);
 
-/// <summary>`GET /api/admin/catalog/tests/{id}/questions` — frontend `CatalogQuestionItem` bilan bir xil maydonlar (+ `textRu`/`textEn`/`isSystem`, frontendda ishlatilmaydi, lekin javobni buzmaydi).</summary>
+/// <summary>
+/// `GET /api/admin/catalog/tests/{id}/questions` — frontend `CatalogQuestionItem` bilan bir xil
+/// maydonlar (+ `textRu`/`textEn`/`isSystem`, frontendda ishlatilmaydi, lekin javobni buzmaydi).
+///
+/// <para>
+/// <b><see cref="ScaleNameUz"/> — FAQAT admin katalogi uchun.</b> `CLAUDE.md` 9-qoidasi
+/// `scale`/`scaleDirection`ni o'quvchi API'siga chiqarishni taqiqlaydi; nom undan ham
+/// xavfliroq — u o'lchanayotgan konstruktni OCHIQ aytadi ("Artistik"), ya'ni o'quvchi javobini
+/// moslashtirib natijani buzishi mumkin. Shu sabab bu maydon `Application/Public/**` DTO'larida
+/// YO'Q va bo'lmaydi ham; yo'qligi `PublicTestQuestionsEndpointTests.GetTestQuestions_JavobVaSwaggerda_ScaleMaydoniYoq`
+/// da xom JSON ustidan qulflangan.
+/// </para>
+/// <para>
+/// <c>null</c> — noma'lum shkala kodi (`CatalogScaleNameResolver` ga qarang). Bu xato emas,
+/// degradatsiya: frontend shunda faqat kodni ko'rsatadi.
+/// </para>
+/// <para>
+/// <see cref="ScaleDescriptionUz"/> — o'sha manbadan keladigan QISQA izoh (`docs/03` da bo'lsa
+/// yoki `TestScale.DescriptionUz`). Tizim metodikasi sahifasidagi "Shkalalar" ma'lumot bloki
+/// uchun; ko'pincha <c>null</c>.
+/// </para>
+/// </summary>
 public sealed record CatalogQuestionItemDto(
     Guid Id,
     string Code,
@@ -66,7 +87,9 @@ public sealed record CatalogQuestionItemDto(
     decimal Weight,
     bool IsRequired,
     bool IsActive,
-    bool IsSystem);
+    bool IsSystem,
+    string? ScaleNameUz,
+    string? ScaleDescriptionUz);
 
 /// <summary>`docs/03` §6.1 saqlash shakli: `{ "from":0, "to":33, "label":"Past" }`.</summary>
 public sealed record InterpretationBandDto(double From, double To, string Label);

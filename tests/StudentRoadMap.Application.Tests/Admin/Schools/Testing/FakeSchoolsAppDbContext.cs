@@ -31,6 +31,19 @@ internal sealed class FakeSchoolsAppDbContext : IAppDbContext
 
     public List<Assessment> AssessmentList { get; } = [];
 
+    // ————— Havola sog'ligi (`SchoolLinkHealthEvaluator`) uchun katalog jadvallari —————
+    // 2026-09-03: maktab ro'yxati/detali endi "havola ishlaydimi" ni ham hisoblaydi, shu sabab
+    // bu to'rtta jadval ham soxta kontekstda mavjud bo'lishi shart.
+    public List<AssessmentProgram> ProgramList { get; } = [];
+
+    public List<ProgramTest> ProgramTestList { get; } = [];
+
+    public List<SchoolProgram> SchoolProgramList { get; } = [];
+
+    public List<TestDefinition> TestDefinitionList { get; } = [];
+
+    public List<Question> QuestionList { get; } = [];
+
     public IQueryable<School> Schools => SchoolList.Where(s => !s.IsDeleted).AsQueryable();
 
     public IQueryable<Student> Students => StudentList.Where(s => !s.IsDeleted).AsQueryable();
@@ -70,19 +83,19 @@ internal sealed class FakeSchoolsAppDbContext : IAppDbContext
 
     public IQueryable<TestResult> TestResults => throw new NotSupportedException();
 
-    public IQueryable<TestDefinition> TestDefinitions => throw new NotSupportedException();
+    public IQueryable<TestDefinition> TestDefinitions => TestDefinitionList.AsQueryable();
 
-    public IQueryable<Question> Questions => throw new NotSupportedException();
+    public IQueryable<Question> Questions => QuestionList.AsQueryable();
 
     public IQueryable<TestScale> TestScales => throw new NotSupportedException();
 
     public IQueryable<AnalysisJob> AnalysisJobs => throw new NotSupportedException();
 
-    public IQueryable<AssessmentProgram> AssessmentPrograms => throw new NotSupportedException();
+    public IQueryable<AssessmentProgram> AssessmentPrograms => ProgramList.AsQueryable();
 
-    public IQueryable<ProgramTest> ProgramTests => throw new NotSupportedException();
+    public IQueryable<ProgramTest> ProgramTests => ProgramTestList.AsQueryable();
 
-    public IQueryable<SchoolProgram> SchoolPrograms => throw new NotSupportedException();
+    public IQueryable<SchoolProgram> SchoolPrograms => SchoolProgramList.AsQueryable();
 
     public IQueryable<AnswerOption> AnswerOptions => throw new NotSupportedException();
 
@@ -152,6 +165,8 @@ internal sealed class FakeSchoolsAppSettings : IAppSettings
     public int SessionLifetimeDays => 7;
 
     public bool ShowResultToStudent => false;
+
+    public bool AutoAnalyzeOnCompletion => false;
 
     public int RefreshTokenDays => 14;
 

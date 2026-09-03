@@ -387,20 +387,40 @@ Nusxa **"Qoralama"** holatida yaratiladi va unda **hamma narsa tahrirlanadi**.
 
 ### 4.3 O'z anketangizni yaratish
 
-O'z anketangizni yaratishning ikki yo'li bor:
+O'z anketangizni yaratishning uch yo'li bor.
 
 **A) Tayyor metodikadan nusxa olish** — yuqoridagi **"Nusxa olish"**. Eng oson yo'l.
 
-**B) JSON fayldan yuklash** — **"Test yuklash"** tugmasi:
+**B) Panelda yaratish** — **"Yangi anketa"** tugmasi. Fayl umuman kerak emas:
+kod (katta lotin harflari, raqam, `-`, `_`), nom, tavsif, ballash rejimi
+(**"Ballanadi"** yoki **"So'rovnoma"**), taxminiy vaqt va bir sahifadagi savollar sonini
+kiritasiz → anketa **"Qoralama"** holatida yaratiladi va tahrirlash sahifasi ochiladi.
+Savollar va shkalalarni o'sha yerda birma-bir qo'shasiz.
 
-1. Ochilgan **"Test yuklash"** oynasida faylni tanlang yoki shu yerga tashlang
-   (faqat `.json`).
-2. Fayl to'g'ri bo'lsa, savollar soni va taxminiy vaqt ko'rsatiladi va
-   **"Fayl to'g'ri — yuklashga tayyor"** yozuvi chiqadi. Xato bo'lsa —
-   **"Topilgan xatolar (N)"** ro'yxati chiqadi, ularni tuzatib qayta urinib ko'ring.
-3. **"Yuklash"** — anketa **"Qoralama"** holatida yaratiladi.
+**C) Excel fayldan yuklash** — **"Anketa yuklash"** tugmasi:
 
-Fayl tuzilishini metodolog yoki texnik mutaxassis tayyorlaydi.
+1. Avval **namunani yuklab oling**. Ikki variant bor:
+   - **bo'sh shablon** — ko'rsatma varag'i va bitta to'ldirilgan misol qatori bilan;
+   - **mavjud anketani Excel'ga chiqarish** — masalan "16 tipli shaxsiyat modeli"ni
+     yuklab olsangiz, 60 ta savol, shkalalar va og'irliklar bilan to'ldirilgan haqiqiy
+     fayl chiqadi. Uni nusxalab o'zingiznikini yozish eng oson yo'l.
+2. Fayl **beshta varaqdan** iborat: **Anketa** (kod, nom, tavsif), **Shkalalar**,
+   **Oraliqlar** (talqin oraliqlari), **Savollar**, **Ko'rsatma**. Ustunlar tartibi
+   ahamiyatsiz — sarlavha nomi bo'yicha topiladi.
+3. To'ldirilgan faylni tanlang yoki oynaga tashlang (`.xlsx`). Eski `.xls` va makrosli
+   `.xlsm` qabul qilinmaydi — Excel'da **"Farqli saqlash" → `.xlsx`** qiling.
+4. Fayl o'qilgach savollar soni, shkalalar va topilgan xatolar ko'rsatiladi. Xato bo'lsa
+   ro'yxat chiqadi — tuzatib qayta urinib ko'ring. **Hech narsa saqlanmaydi**, to siz
+   tasdiqlamaguningizcha.
+5. **"Yuklash"** — anketa **"Qoralama"** holatida yaratiladi.
+
+> **Talqin oraliqlarini to'ldirishni unutmang.** Ularsiz anketa yaratiladi, lekin
+> **nashr qilinmaydi**: har bir shkalada oraliqlar 0 dan 100 gacha bo'shliqsiz qoplashi
+> va butun son bo'lishi shart (`0–33`, `34–66`, `67–100`). Bu qoida **Ko'rsatma**
+> varag'ida ham yozilgan.
+
+Eski `.json` format ham ishlaydi (seed fayllari bilan bir xil sxema) — u metodolog yoki
+texnik mutaxassis uchun.
 
 **Anketani to'ldirish** (o'z anketangizda, Qoralama holatida):
 

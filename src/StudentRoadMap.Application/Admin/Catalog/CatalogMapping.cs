@@ -56,20 +56,55 @@ internal static class CatalogMapping
         test.ShuffleQuestions,
         test.DisplayOrder);
 
-    public static CatalogQuestionItemDto ToQuestionDto(Question question) => new(
-        question.Id,
-        question.Code,
-        question.DisplayOrder,
-        question.TextUz,
-        question.TextRu,
-        question.TextEn,
-        question.QuestionType.ToString(),
-        question.Scale,
-        question.ScaleDirection,
-        question.Weight,
-        question.IsRequired,
-        question.IsActive,
-        question.IsSystem);
+    /// <summary>
+    /// <paramref name="scaleNames"/> MAJBURIY parametr — shkala nomi ikki manbadan kelishi mumkin
+    /// (`Custom` anketaning o'z `TestScale`i yoki tizim metodikasi uchun `SystemScaleCatalog`),
+    /// va u savolning o'zida YO'Q. Ixtiyoriy qilinsa, chaqiruvchi uni unutgan joyda nom jimgina
+    /// `null` bo'lib qolardi — shu sabab har bir chaqiruvchi aniq resolver beradi
+    /// (nom kerak bo'lmagan joyda <see cref="CatalogScaleNameResolver.None"/>).
+    /// </summary>
+    public static CatalogQuestionItemDto ToQuestionDto(Question question, CatalogScaleNameResolver scaleNames)
+    {
+        ArgumentNullException.ThrowIfNull(question);
+        ArgumentNullException.ThrowIfNull(scaleNames);
+
+        return new CatalogQuestionItemDto(
+            question.Id,
+            question.Code,
+            question.DisplayOrder,
+            question.TextUz,
+            question.TextRu,
+            question.TextEn,
+            question.QuestionType.ToString(),
+            question.Scale,
+            question.ScaleDirection,
+            question.Weight,
+            question.IsRequired,
+            question.IsActive,
+            question.IsSystem,
+            scaleNames.Resolve(question.Scale),
+            scaleNames.ResolveDescription(question.Scale));
+    }
+
+    /// <summary>
+    /// Anketaning shkalalarini alohida so'rov bilan yuklab, nom resolverini quradi — agregat
+    /// TRACKED yuklanmagan (`AsNoTracking` so'rov) joylar uchun, u yerda `test.Scales` bo'sh
+    /// bo'ladi (`LoadTrackedAsync` izohidagi bilan bir xil sabab).
+    /// </summary>
+    public static async Task<CatalogScaleNameResolver> LoadScaleNamesAsync(
+        IAppDbContext context,
+        IAsyncQueryExecutor executor,
+        TestDefinition test,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(test);
+
+        var scales = await executor.ToListAsync(
+            context.AsNoTracking(context.TestScales).Where(s => s.TestDefinitionId == test.Id),
+            cancellationToken).ConfigureAwait(false);
+
+        return CatalogScaleNameResolver.Create(test.ScoringStrategyCode, scales);
+    }
 
     public static CatalogScaleItemDto ToScaleDto(TestScale scale, int questionCount) => new(
         scale.Id,

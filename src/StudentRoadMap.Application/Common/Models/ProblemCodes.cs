@@ -41,6 +41,18 @@ public static class ProblemCodes
     public const string ProgramRequired = "PROGRAM_REQUIRED";
 
     /// <summary>
+    /// `docs/07` §1.1 (2026-09-03): havola VA token TO'G'RI, maktab FAOL — lekin bu maktab uchun
+    /// bironta mavjud dastur yo'q (`ProgramAvailability`). Bu `NOT_FOUND` dan ATAYIN ajratilgan:
+    /// "havola noto'g'ri" (o'quvchi maktabga havolani qayta so'rab murojaat qiladi) va "havola
+    /// to'g'ri, lekin test hali tayyorlanmagan" (maktab admini dasturni yoqishi kerak) — butunlay
+    /// boshqa harakat talab qiladi. `409` ga xaritalanadi: resurs BOR, lekin joriy holati
+    /// so'rovni bajarishga imkon bermaydi (`404`/`410` allaqachon boshqa ma'noda band —
+    /// `NOT_FOUND` noma'lum slug/noto'g'ri token, `SCHOOL_INACTIVE` o'chirilgan maktab).
+    /// PM'ga savol: `docs/06` 6-bo'lim jadvaliga rasman kiritilsinmi?
+    /// </summary>
+    public const string NoProgramAvailable = "NO_PROGRAM_AVAILABLE";
+
+    /// <summary>
     /// P13 (`prompts/13-auth-va-jwt.md`) superadmin auth oqimi uchun qo'shildi — PM tomonidan
     /// `docs/06`ga rasman kiritilgan (423).
     /// </summary>
@@ -93,6 +105,16 @@ public static class ProblemCodes
     /// <summary>Holat mashinasi noto'g'ri o'tish (masalan `Archived` dan `Published`ga) — `TestDefinition.Publish`/`Archive`.</summary>
     public const string TestDefinitionInvalidTransition = "TEST_DEFINITION_INVALID_TRANSITION";
 
+    // --- P39 (Excel shablon va yuklash, `docs/07` §3.4) ---
+
+    /// <summary>
+    /// `POST /api/admin/catalog/import/parse-excel` — yuklangan fayl umuman o'qilmadi: ZIP
+    /// (Open XML) emas, buzilgan, eski `.xls` yoki makrolı `.xlsm`, yoki qator chegarasidan
+    /// oshgan. `400` — mijoz boshqa fayl yuborishi kerak. Fayl HAJMI chegarasi bu kodga
+    /// TUSHMAYDI: u `413 PAYLOAD_TOO_LARGE` (`ProblemDetailsSetup`, P31).
+    /// </summary>
+    public const string ImportFileInvalid = "IMPORT_FILE_INVALID";
+
     /// <summary>`Error.Code` → HTTP status. Ro'yxatda yo'q kod uchun standart qiymat `409` (domen holat mashinasi konflikti).</summary>
     public static readonly IReadOnlyDictionary<string, int> HttpStatusByCode = new Dictionary<string, int>(StringComparer.Ordinal)
     {
@@ -113,6 +135,7 @@ public static class ProblemCodes
         [InternalError] = StatusCodes.Status500InternalServerError,
         [AccessCodeInvalid] = StatusCodes.Status400BadRequest,
         [ProgramRequired] = StatusCodes.Status400BadRequest,
+        [NoProgramAvailable] = StatusCodes.Status409Conflict,
         [AccountLocked] = StatusCodes.Status423Locked,
         [TotpRequired] = StatusCodes.Status401Unauthorized,
         [TotpAlreadyEnabled] = StatusCodes.Status409Conflict,
@@ -124,6 +147,7 @@ public static class ProblemCodes
         [ScaleInUse] = StatusCodes.Status409Conflict,
         [QuestionCodeDuplicate] = StatusCodes.Status409Conflict,
         [TestDefinitionInvalidTransition] = StatusCodes.Status409Conflict,
+        [ImportFileInvalid] = StatusCodes.Status400BadRequest,
     };
 
     /// <summary>Default (`docs/06` jadvaliga kirmagan domen kodlari uchun) — holat mashinasi konflikti.</summary>

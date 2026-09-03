@@ -7,6 +7,7 @@ using StudentRoadMap.Api.Common;
 using StudentRoadMap.Api.Contracts.Admin.Catalog;
 using StudentRoadMap.Api.Extensions;
 using StudentRoadMap.Application.Admin.Catalog;
+using StudentRoadMap.Application.Admin.Catalog.Excel;
 using StudentRoadMap.Application.Admin.Catalog.Questions.Create;
 using StudentRoadMap.Application.Admin.Catalog.Questions.Delete;
 using StudentRoadMap.Application.Admin.Catalog.Questions.List;
@@ -27,6 +28,7 @@ using StudentRoadMap.Application.Admin.Catalog.Tests.ToggleActive;
 using StudentRoadMap.Application.Admin.Catalog.Tests.Update;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
+using StudentRoadMap.Domain.Common;
 
 namespace StudentRoadMap.Api.Controllers.Admin;
 
@@ -329,6 +331,113 @@ public sealed class AssessmentCatalogController : ControllerBase
         var result = await _sender.Send(command, cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    // --- Excel: shablon, eksport, o'qish (P39, `docs/07` §3.4) -----------------------------
+
+    /// <summary>
+    /// `GET /api/admin/catalog/tests/{id}/export.xlsx` — mavjud anketani Excel'ga chiqaradi.
+    /// Tizim metodikasi uchun ham OCHIQ: bu o'qish amali, BR-8 faqat o'zgartirishni qulflaydi
+    /// (`CLAUDE.md` 9a). Aynan shu — import uchun eng yaxshi namuna.
+    /// </summary>
+    [HttpGet("tests/{id:guid}/export.xlsx")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    public async Task<IActionResult> ExportTestExcel(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new ExportCatalogTestExcelQuery(id), cancellationToken).ConfigureAwait(false);
+        if (!result.IsSuccess)
+        {
+            return this.ToProblem(result.Error);
+        }
+
+        var file = result.Value;
+        return File(file.Content, file.ContentType, file.FileName);
+    }
+
+    /// <summary>`GET /api/admin/catalog/import-template.xlsx` — bo'sh shablon (ko'rsatma varag'i + bitta namunaviy qator).</summary>
+    [HttpGet("import-template.xlsx")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ImportTemplateExcel(CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new GetCatalogExcelTemplateQuery(), cancellationToken).ConfigureAwait(false);
+        if (!result.IsSuccess)
+        {
+            return this.ToProblem(result.Error);
+        }
+
+        var file = result.Value;
+        return File(file.Content, file.ContentType, file.FileName);
+    }
+
+    /// <summary>
+    /// `POST /api/admin/catalog/import/parse-excel` — `.xlsx` ni o'qib, MAVJUD JSON import
+    /// sxemasidagi obyektni va topilgan xatolar ro'yxatini qaytaradi. HECH NARSA SAQLANMAYDI:
+    /// oldindan ko'rish, validatsiya va yaratish frontend'dagi MAVJUD yo'l orqali ketadi, shu
+    /// sabab ikkita alohida import mantiqi paydo bo'lmaydi va serverda vaqtinchalik holat
+    /// saqlash kerak emas.
+    ///
+    /// <para>
+    /// <b>Xavfsizlik.</b> `.xlsx` — ZIP arxiv, ya'ni himoyasiz yuklash endpointi butun API'ni
+    /// bo'g'ib qo'yishi mumkin. <see cref="RequestSizeLimitAttribute"/> Kestrel darajasida
+    /// tanani chegaralaydi (oshsa `413 PAYLOAD_TOO_LARGE` — P31 da qo'shilgan ishlov),
+    /// pastdagi aniq tekshiruv esa multipart ichidagi FAYL qismini chegaralaydi. Qolgan
+    /// tekshiruvlar (zip bomba, `.xls`/`.xlsm`, mazmun bo'yicha Open XML, qator soni)
+    /// `CatalogExcelWorkbook.Parse` da.
+    /// </para>
+    /// </summary>
+    [HttpPost("import/parse-excel")]
+    [RequestSizeLimit(CatalogExcelLimits.MaxFileBytes)]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(ParseCatalogExcelResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status413PayloadTooLarge, "application/problem+json")]
+    public async Task<ActionResult<ParseCatalogExcelResultDto>> ParseImportExcel(IFormFile? file, CancellationToken cancellationToken)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return this.ToProblem(new Error(ProblemCodes.ImportFileInvalid, "Fayl yuborilmadi."));
+        }
+
+        if (file.Length > CatalogExcelLimits.MaxFileBytes)
+        {
+            return PayloadTooLarge();
+        }
+
+        using var buffer = new MemoryStream();
+        await using (var stream = file.OpenReadStream())
+        {
+            await stream.CopyToAsync(buffer, cancellationToken).ConfigureAwait(false);
+        }
+
+        var result = await _sender.Send(new ParseCatalogExcelQuery(buffer.ToArray()), cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>
+    /// `413` javobi — `ProblemDetailsSetup.PayloadTooLarge` kodi bilan, `ControllerResultExtensions.ToProblem`
+    /// bilan AYNAN bir xil shaklda (P31: har bir xato `code` va `traceId` bilan, ichki tafsilotsiz).
+    /// `ProblemCodes.HttpStatusByCode` da `413` yo'q — u Kestrel/transport darajasidagi kod,
+    /// domen xatosi emas, shu sabab bu yerda aniq quriladi.
+    /// </summary>
+    private ObjectResult PayloadTooLarge()
+    {
+        var problem = new ProblemDetails
+        {
+            Status = StatusCodes.Status413PayloadTooLarge,
+            Title = "Fayl juda katta",
+            Detail = $"Ruxsat etilgan hajm — {CatalogExcelLimits.MaxFileBytes / (1024 * 1024)} MB.",
+            Instance = HttpContext.Request.Path,
+        };
+        problem.Extensions["code"] = ProblemDetailsSetup.PayloadTooLarge;
+        problem.Extensions["traceId"] = HttpContext.TraceIdentifier;
+
+        return new ObjectResult(problem)
+        {
+            StatusCode = StatusCodes.Status413PayloadTooLarge,
+            ContentTypes = { "application/problem+json" },
+        };
     }
 
     private Guid RequireAdminUserId() =>

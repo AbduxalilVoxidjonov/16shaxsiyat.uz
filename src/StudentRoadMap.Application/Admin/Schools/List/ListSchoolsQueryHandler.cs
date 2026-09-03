@@ -1,4 +1,5 @@
 using MediatR;
+using StudentRoadMap.Application.Admin.Schools.LinkHealth;
 using StudentRoadMap.Application.Admin.Common;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
@@ -97,6 +98,15 @@ internal sealed class ListSchoolsQueryHandler : IRequestHandler<ListSchoolsQuery
                     LastActivityAt = g.Max(x => x.LastAssessmentAt),
                 });
 
+        // Havola sog'ligi — sahifadagi maktablar uchun BITTA batch hisob (`SchoolLinkHealthEvaluator`:
+        // katalog uchun 4 so'rov + biriktirmalar uchun 1 so'rov, maktab bo'yicha SIKL YO'Q —
+        // `completed_assessment_count` naqshi bilan bir xil ruh). Mezon ommaviy
+        // `GetSchoolInfoQueryHandler` niki bilan AYNAN bir xil (`ProgramAvailability`) —
+        // aks holda panel "hammasi joyida" deb yolg'on aytardi (2026-09-03 jonli hodisasi).
+        var linkHealthBySchoolId = await SchoolLinkHealthEvaluator
+            .EvaluateManyAsync(_context, _executor, schoolIds, cancellationToken)
+            .ConfigureAwait(false);
+
         var items = pageSchools
             .Select(s =>
             {
@@ -111,7 +121,8 @@ internal sealed class ListSchoolsQueryHandler : IRequestHandler<ListSchoolsQuery
                     s.IsActive,
                     aggregate?.StudentCount ?? 0,
                     aggregate?.CompletedCount ?? 0,
-                    aggregate?.LastActivityAt);
+                    aggregate?.LastActivityAt,
+                    linkHealthBySchoolId[s.Id]);
             })
             .ToList();
 

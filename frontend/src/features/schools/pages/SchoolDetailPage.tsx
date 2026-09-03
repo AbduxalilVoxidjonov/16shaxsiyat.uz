@@ -12,6 +12,7 @@ import { formatDate } from '@/shared/lib/formatDate';
 import { ROUTES } from '@/shared/config/routes';
 import { useSchoolDetailQuery } from '../api/useSchoolDetailQuery';
 import { SchoolLinkCell } from '../components/SchoolLinkCell';
+import { SchoolLinkHealthBadge } from '../components/SchoolLinkHealthBadge';
 import { SchoolQrModal, type SchoolQrModalData } from '../components/SchoolQrModal';
 import { SchoolFormDialog } from '../components/SchoolFormDialog';
 import { RegenerateLinkDialog } from '../components/RegenerateLinkDialog';
@@ -148,7 +149,14 @@ export default function SchoolDetailPage() {
             {formatDate(school.createdAt)}
           </InfoRow>
           <InfoRow label={t('schools.detail.info.link')}>
-            <SchoolLinkCell publicUrl={school.publicUrl} onShowQr={() => setQrOpen(true)} />
+            <SchoolLinkCell
+              publicUrl={school.publicUrl}
+              linkHealth={school.linkHealth}
+              onShowQr={() => setQrOpen(true)}
+            />
+          </InfoRow>
+          <InfoRow label={t('schools.linkHealth.detailHeading')}>
+            <SchoolLinkHealthBadge linkHealth={school.linkHealth} showReason />
           </InfoRow>
           <InfoRow label={t('schools.detail.info.notes')}>{orDash(school.notes)}</InfoRow>
         </dl>

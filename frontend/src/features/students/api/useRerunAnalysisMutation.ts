@@ -7,7 +7,12 @@ import { STUDENTS_QUERY_KEYS } from './studentsKeys';
 export interface RerunAnalysisInput {
   studentId: string;
   assessmentId: string;
-  provider: AiProvider;
+  /**
+   * `null` — provayder tanlanmagan: so'rovda `provider` umuman yuborilmaydi va backend o'z
+   * standart fallback zanjirini ishlatadi (`docs/09` 8-bo'lim). Tasdiqsiz ishga tushirilgan
+   * BIRINCHI tahlil aynan shu yo'ldan ketadi.
+   */
+  provider: AiProvider | null;
 }
 
 /**
@@ -22,7 +27,7 @@ async function rerunAnalysis({ assessmentId, provider }: RerunAnalysisInput): Pr
   try {
     await adminRequest<void>(`/api/admin/assessments/${assessmentId}/rerun-analysis`, {
       method: 'POST',
-      body: { provider },
+      body: provider ? { provider } : {},
     });
   } catch (error) {
     if (error instanceof AppError && error.status === 202) {

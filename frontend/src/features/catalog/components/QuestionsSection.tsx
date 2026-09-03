@@ -16,11 +16,21 @@ import {
   useReorderCatalogQuestions,
 } from '../api/useCatalogQuestionMutations';
 import { useCatalogErrorMessage } from '../lib/useCatalogErrorMessage';
-import type { CatalogQuestionItem, CatalogTestDetail } from '../model/types';
+import type { CatalogQuestionItem, CatalogTestDetail, QuestionType } from '../model/types';
+import { QUESTION_TYPE_VALUES } from '../model/types';
 import { QuestionEditorDialog } from './QuestionEditorDialog';
 
 export interface QuestionsSectionProps {
   test: CatalogTestDetail;
+}
+
+/**
+ * `type` sxemada oddiy `string` (backend `QuestionType.ToString()`). Tanilgan qiymat bo'lsa
+ * o'zbekcha nom, aks holda xom kod ko'rsatiladi — noma'lum turni "Likert (5 ball)" deb
+ * atash kodning o'zidan yomonroq bo'lardi.
+ */
+function isKnownQuestionType(value: string): value is QuestionType {
+  return (QUESTION_TYPE_VALUES as readonly string[]).includes(value);
 }
 
 /**
@@ -109,93 +119,114 @@ export function QuestionsSection({ test }: QuestionsSectionProps) {
         />
       )}
 
+      {/* Qo'shimcha `overflow-x-auto` o'ram YO'Q: `Table` ning O'ZI `relative w-full
+          overflow-x-auto` konteyneri bilan keladi (P30-6). Ikkinchi konteyner keng mazmunni
+          ikki qatlamda siljitib, `sr-only` elementlar uchun tuzatilgan "containing block"
+          xatosini qaytarish xavfini tug'diradi — jadval kengaydi (savol turi + shkala nomi),
+          shu sabab siljish konteyneri BITTA bo'lishi muhim. */}
       {!questionsQuery.isPending && !questionsQuery.isError && questions.length > 0 && (
-        <div className="overflow-x-auto">
-          <Table aria-label={t('catalog.detail.questionsHeading')}>
-            <TableHeader>
-              <TableRow>
-                <TableHead>#</TableHead>
-                <TableHead>{t('catalog.questionsTable.text')}</TableHead>
-                <TableHead>{t('catalog.questionsTable.scale')}</TableHead>
-                <TableHead>{t('catalog.questionsTable.direction')}</TableHead>
-                <TableHead>{t('catalog.questionsTable.weight')}</TableHead>
-                <TableHead>{t('catalog.questionsTable.state')}</TableHead>
-                <TableHead>{t('catalog.questionsTable.actions')}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {questions.map((question, index) => (
-                <TableRow key={question.id}>
-                  <TableCell>{question.order}</TableCell>
-                  <TableCell>{question.textUz}</TableCell>
-                  <TableCell className="text-neutral-500">{question.scale}</TableCell>
-                  <TableCell>
-                    <Badge variant={question.direction === 1 ? 'neutral' : 'warning'}>
-                      {question.direction === 1
-                        ? t('catalog.questionsTable.directionForward')
-                        : t('catalog.questionsTable.directionReverse')}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-neutral-500">{question.weight}</TableCell>
-                  <TableCell>
-                    <Badge variant={question.isActive ? 'success' : 'neutral'}>
-                      {question.isActive ? t('catalog.badge.active') : t('catalog.badge.inactive')}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
+        <Table aria-label={t('catalog.detail.questionsHeading')}>
+          <TableHeader>
+            <TableRow>
+              <TableHead>#</TableHead>
+              <TableHead>{t('catalog.questionsTable.text')}</TableHead>
+              <TableHead>{t('catalog.questionsTable.type')}</TableHead>
+              <TableHead>{t('catalog.questionsTable.scale')}</TableHead>
+              <TableHead>{t('catalog.questionsTable.direction')}</TableHead>
+              <TableHead>{t('catalog.questionsTable.weight')}</TableHead>
+              <TableHead>{t('catalog.questionsTable.state')}</TableHead>
+              <TableHead>{t('catalog.questionsTable.actions')}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {questions.map((question, index) => (
+              <TableRow key={question.id}>
+                <TableCell>{question.order}</TableCell>
+                <TableCell>{question.textUz}</TableCell>
+                <TableCell className="whitespace-nowrap text-neutral-500">
+                  {isKnownQuestionType(question.type)
+                    ? t(`catalog.questionType.${question.type}`)
+                    : question.type}
+                </TableCell>
+                {/* Nom ASOSIY, kod ikkinchi darajali — lekin kod OLIB TASHLANMAYDI: import
+                    formati va savol tahrirlash aynan kod bo'yicha ishlaydi, admin uni ko'rishi
+                    kerak. `scaleNameUz` `null` bo'lsa (noma'lum kod) faqat kod ko'rinadi. */}
+                <TableCell className="whitespace-nowrap">
+                  {question.scaleNameUz ? (
+                    <>
+                      <span className="block text-neutral-900">{question.scaleNameUz}</span>
+                      <span className="block text-xs text-neutral-400">{question.scale}</span>
+                    </>
+                  ) : (
+                    <span className="text-neutral-500">{question.scale}</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={question.direction === 1 ? 'neutral' : 'warning'}>
+                    {question.direction === 1
+                      ? t('catalog.questionsTable.directionForward')
+                      : t('catalog.questionsTable.directionReverse')}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-neutral-500">{question.weight}</TableCell>
+                <TableCell>
+                  <Badge variant={question.isActive ? 'success' : 'neutral'}>
+                    {question.isActive ? t('catalog.badge.active') : t('catalog.badge.inactive')}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label={t('catalog.actions.editQuestionAria', {
+                        code: question.code,
+                      })}
+                      onClick={() => {
+                        openEdit(question);
+                      }}
+                    >
+                      <Pencil size={14} aria-hidden="true" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label={t('catalog.actions.moveUpAria', { code: question.code })}
+                      disabled={index === 0 || reorderQuestions.isPending}
+                      onClick={() => void handleMove(index, -1)}
+                    >
+                      <ArrowUp size={14} aria-hidden="true" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label={t('catalog.actions.moveDownAria', { code: question.code })}
+                      disabled={index === questions.length - 1 || reorderQuestions.isPending}
+                      onClick={() => void handleMove(index, 1)}
+                    >
+                      <ArrowDown size={14} aria-hidden="true" />
+                    </Button>
+                    {!test.isSystem && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        aria-label={t('catalog.actions.editQuestionAria', {
+                        aria-label={t('catalog.actions.deleteQuestionAria', {
                           code: question.code,
                         })}
                         onClick={() => {
-                          openEdit(question);
+                          setDeleteError(null);
+                          setPendingDelete(question);
                         }}
                       >
-                        <Pencil size={14} aria-hidden="true" />
+                        <Trash2 size={14} className="text-danger-600" aria-hidden="true" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        aria-label={t('catalog.actions.moveUpAria', { code: question.code })}
-                        disabled={index === 0 || reorderQuestions.isPending}
-                        onClick={() => void handleMove(index, -1)}
-                      >
-                        <ArrowUp size={14} aria-hidden="true" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        aria-label={t('catalog.actions.moveDownAria', { code: question.code })}
-                        disabled={index === questions.length - 1 || reorderQuestions.isPending}
-                        onClick={() => void handleMove(index, 1)}
-                      >
-                        <ArrowDown size={14} aria-hidden="true" />
-                      </Button>
-                      {!test.isSystem && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          aria-label={t('catalog.actions.deleteQuestionAria', {
-                            code: question.code,
-                          })}
-                          onClick={() => {
-                            setDeleteError(null);
-                            setPendingDelete(question);
-                          }}
-                        >
-                          <Trash2 size={14} className="text-danger-600" aria-hidden="true" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
 
       {editorOpen && (

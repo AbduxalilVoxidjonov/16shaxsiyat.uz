@@ -4,8 +4,9 @@ using StudentRoadMap.Application.Common.Interfaces;
 namespace StudentRoadMap.Infrastructure.Common;
 
 /// <summary>
-/// `App:*` sir bo'lmagan sozlamalarni `IConfiguration`dan o'qiydi (`docs/06-arxitektura.md`
-/// 7-bo'lim). Standart qiymatlar hujjatdagi qiymatlarga mos (`SessionLifetimeDays: 7`).
+/// `App:*`/`Jwt:*`/`Ai:*` sir bo'lmagan sozlamalarni `IConfiguration`dan o'qiydi
+/// (`docs/06-arxitektura.md` 7-bo'lim). Standart qiymatlar hujjatdagi qiymatlarga mos
+/// (`SessionLifetimeDays: 7`, `AutoAnalyzeOnCompletion: false`).
 /// </summary>
 internal sealed class AppSettingsProvider : IAppSettings
 {
@@ -25,6 +26,12 @@ internal sealed class AppSettingsProvider : IAppSettings
         _ = bool.TryParse(configuration["App:ShowResultToStudent"], out var showResultToStudent);
         ShowResultToStudent = showResultToStudent;
 
+        // `bool.TryParse` bo'sh/noto'g'ri qiymatda `false` qaytaradi — bu AYNAN xohlangan
+        // standart (`docs/06` 8-bo'lim, 2026-09-03 egasi qarori: AI xarajati nazorati).
+        // Sozlama BERILMAGAN muhitda avtomatik tahlil O'CHIQ bo'ladi.
+        _ = bool.TryParse(configuration["Ai:AutoAnalyzeOnCompletion"], out var autoAnalyzeOnCompletion);
+        AutoAnalyzeOnCompletion = autoAnalyzeOnCompletion;
+
         var refreshDaysRaw = configuration["Jwt:RefreshTokenDays"];
         RefreshTokenDays = int.TryParse(refreshDaysRaw, out var refreshDays) ? refreshDays : DefaultRefreshTokenDays;
 
@@ -35,6 +42,8 @@ internal sealed class AppSettingsProvider : IAppSettings
     public int SessionLifetimeDays { get; }
 
     public bool ShowResultToStudent { get; }
+
+    public bool AutoAnalyzeOnCompletion { get; }
 
     public int RefreshTokenDays { get; }
 

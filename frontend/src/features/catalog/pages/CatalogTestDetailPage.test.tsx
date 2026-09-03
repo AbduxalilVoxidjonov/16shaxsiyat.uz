@@ -1,16 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
 import { jsonResponse, listResponse, problemResponse } from '@/test/apiMock';
 import type { PublishIssue } from '../model/publishIssues';
-import type {
-  CatalogQuestionItem,
-  CatalogScaleItem,
-  CatalogTestDetail,
-} from '../model/types';
+import type { CatalogQuestionItem, CatalogScaleItem, CatalogTestDetail } from '../model/types';
 import CatalogTestDetailPage from './CatalogTestDetailPage';
 
 /**
@@ -57,6 +53,10 @@ function questionRow(overrides: Partial<CatalogQuestionItem> = {}): CatalogQuest
     isRequired: true,
     isActive: true,
     isSystem: true,
+    // Shkala nomi/tavsifi BACKEND'dan keladi (`docs/07` §3.4) — frontendda kod → nom
+    // jadvali yo'q, shu sabab mock ham aynan javob shaklini takrorlaydi.
+    scaleNameUz: 'Ekstraversiya/Introversiya',
+    scaleDescriptionUz: null,
     ...overrides,
   };
 }
@@ -99,7 +99,8 @@ function mockFetch({
     if (url.endsWith('/questions')) {
       return Promise.resolve(listResponse<'CatalogQuestionItemDto'>(questions));
     }
-    if (url.endsWith('/scales')) return Promise.resolve(listResponse<'CatalogScaleItemDto'>(scales));
+    if (url.endsWith('/scales'))
+      return Promise.resolve(listResponse<'CatalogScaleItemDto'>(scales));
     if (url.includes('/api/admin/catalog/scales/')) {
       return Promise.resolve(jsonResponse<'CatalogScaleItemDto'>(scales[0] ?? scaleRow()));
     }
@@ -395,5 +396,106 @@ describe('CatalogTestDetailPage — `Custom` test', () => {
 
     expect(await screen.findByLabelText('Shkala')).toBeEnabled();
     expect(screen.getByLabelText("Og'irlik")).toBeEnabled();
+  });
+});
+
+describe('CatalogTestDetailPage — savollar jadvali va tizim shkalalari', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("shkala ustunida NOM asosiy, kod esa ikkinchi darajali bo'lib qoladi", async () => {
+    mockFetch();
+    renderPage();
+
+    // Tekshiruv AYNAN savollar jadvali ichida — sahifada shkalalar ma'lumot bloki ham bor.
+    const table = within(await screen.findByRole('table'));
+
+    // Nom ko'rinadi...
+    expect(table.getByText('Ekstraversiya/Introversiya')).toBeInTheDocument();
+    // ...kod esa OLIB TASHLANMAYDI: import formati va savol tahrirlash kod bo'yicha ishlaydi.
+    const code = table.getByText('EI');
+    expect(code).toBeInTheDocument();
+    expect(code.className).toContain('text-xs');
+  });
+
+  it("`scaleNameUz` null bo'lsa faqat kod ko'rsatiladi, qo'shnisi esa nomini yo'qotmaydi", async () => {
+    // Ikkita qator ATAYLAB: bittasi noma'lum kod (`null` nom), ikkinchisi nomli. Shu bilan
+    // test ham degradatsiyani (kod qoladi), ham asosiy yo'lni (nom ko'rinadi) bir vaqtda
+    // tekshiradi — faqat `null` qatorli test ESKI kodda ham yashil bo'lardi.
+    mockFetch({
+      questions: [
+        questionRow({ id: 'q-1', code: 'MB-Q01', order: 1, scale: 'XYZ', scaleNameUz: null }),
+        questionRow({ id: 'q-2', code: 'MB-Q02', order: 2, scale: 'EI' }),
+      ],
+    });
+    renderPage();
+
+    const table = within(await screen.findByRole('table'));
+
+    expect(table.getByText('XYZ')).toBeInTheDocument();
+    expect(table.getByText('Ekstraversiya/Introversiya')).toBeInTheDocument();
+    // Noma'lum kod uchun nom O'YLAB TOPILMAYDI — faqat bitta nomli qator bor.
+    expect(table.getAllByText('Ekstraversiya/Introversiya')).toHaveLength(1);
+  });
+
+  it("savol turi ustuni o'zbekcha nom bilan chiqadi", async () => {
+    mockFetch({
+      questions: [
+        questionRow({ id: 'q-1', code: 'MB-Q01', order: 1, type: 'Likert5' }),
+        questionRow({ id: 'q-2', code: 'MB-Q02', order: 2, type: 'ForcedChoice' }),
+      ],
+    });
+    renderPage();
+
+    expect(await screen.findByRole('columnheader', { name: 'Savol turi' })).toBeInTheDocument();
+    const table = within(screen.getByRole('table'));
+    expect(table.getByText('Likert (5 ball)')).toBeInTheDocument();
+    expect(table.getByText('Majburiy tanlov')).toBeInTheDocument();
+  });
+
+  it("tizim metodikasida shkalalar FAQAT KO'RISH bloki chiqadi (tugmalarsiz)", async () => {
+    mockFetch({
+      questions: [
+        questionRow({ id: 'q-1', code: 'MB-Q01', order: 1, scale: 'EI' }),
+        questionRow({ id: 'q-2', code: 'MB-Q02', order: 2, scale: 'EI' }),
+        questionRow({
+          id: 'q-3',
+          code: 'MB-Q11',
+          order: 3,
+          scale: 'SN',
+          scaleNameUz: 'Sezish/Intuitsiya',
+          scaleDescriptionUz: 'Ma`lumotni qanday qabul qiladi',
+        }),
+      ],
+    });
+    renderPage();
+
+    expect(await screen.findByText("Shkalalar (faqat ko'rish uchun)")).toBeInTheDocument();
+    // Nom + kod + nechta savol.
+    expect(await screen.findByText('(EI)')).toBeInTheDocument();
+    expect(screen.getByText('(SN)')).toBeInTheDocument();
+    expect(screen.getByText('2 ta savol')).toBeInTheDocument();
+    // Tavsif bo'lsa ko'rsatiladi.
+    expect(screen.getByText('Ma`lumotni qanday qabul qiladi')).toBeInTheDocument();
+    // Tahrirlash yo'llari YO'Q — bu CRUD bo'limi emas.
+    expect(screen.queryByRole('button', { name: /Shkala qo'shish/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /shkalasini tahrirlash/ })).not.toBeInTheDocument();
+    // Talqin oraliqlari tizim metodikasida YO'Q (`SUM` uchun) — soxta blok chizilmaydi.
+    expect(screen.queryByText(/Talqin oraliqlari belgilanmagan/)).not.toBeInTheDocument();
+  });
+
+  it("`Custom` testda ma'lumot bloki emas, tahrirlanadigan shkalalar bo'limi chiqadi", async () => {
+    mockFetch({
+      detail: testDetail({ kind: 'Custom', isSystem: false, status: 'Draft' }),
+      questions: [
+        questionRow({ isSystem: false, scale: 'STRESS', scaleNameUz: 'Stressga munosabat' }),
+      ],
+      scales: [scaleRow()],
+    });
+    renderPage();
+
+    expect(await screen.findByRole('button', { name: /Shkala qo'shish/ })).toBeInTheDocument();
+    expect(screen.queryByText("Shkalalar (faqat ko'rish uchun)")).not.toBeInTheDocument();
   });
 });

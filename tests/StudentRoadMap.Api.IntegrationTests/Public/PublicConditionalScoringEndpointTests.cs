@@ -78,7 +78,9 @@ public sealed class PublicSurveyOnlySessionEndpointTests : IClassFixture<PublicA
         var verifyDb = verifyScope.ServiceProvider.GetRequiredService<AppDbContext>();
         var assessment = await verifyDb.Assessments.AsNoTracking().SingleAsync(a => a.SessionToken == sessionToken);
 
-        assessment.Status.Should().Be(AssessmentStatus.Analyzing);
+        // `Ai:AutoAnalyzeOnCompletion` standart `false` — yakunlangan sessiya `Completed`da qoladi
+        // (`docs/06` 8-bo'lim, 2026-09-03 egasi qarori). Yakunlash mantiqi o'zgarmagan.
+        assessment.Status.Should().Be(AssessmentStatus.Completed);
         // Ishonchlilik hali ham hisoblanadi (u har qanday javob to'plamiga tegishli, `prompts/34` D12-band).
         assessment.ReliabilityScore.Should().NotBeNull();
         assessment.ReliabilityFlag.Should().NotBeNull();

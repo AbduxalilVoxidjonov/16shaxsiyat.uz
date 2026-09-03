@@ -216,12 +216,32 @@ export type StudentProfileResponse = Omit<
 };
 
 /**
- * `GET /api/admin/assessments/{id}/answers?testCode=` — `docs/07` 3.3-bo'lim ("Xom javoblar,
- * audit uchun"), backend `AdminAssessmentAnswerDto`.
+ * `GET /api/admin/assessments/{id}/answers` — `docs/07` 3.3-bo'lim ("Savolma-savol javoblar
+ * va tahlili"), backend `AdminAssessmentAnswerDto`.
  *
  * Ilgari bu tip qo'lda yozilgan edi va javob qiymati maydoni `value` deb nomlangan edi —
- * backend esa `rawValue` yuboradi. Natijada dialogdagi "Javob" ustuni HAR DOIM bo'sh
+ * backend esa `rawValue` yuboradi. Natijada jadvaldagi "Javob" ustuni HAR DOIM bo'sh
  * ko'rinardi, test esa mock ham `value` yozgani uchun yashil qolardi. Re-export shu sinfdagi
  * xatoni butunlay yopadi.
+ *
+ * `effectiveValue` — TESKARI TUZATILGAN qiymat (`docs/03` §1: teskari savolga berilgan `5`
+ * shkalaga `1` bo'lib tushadi). Backend uni `ScoringMath.ApplyDirection` bilan hisoblaydi;
+ * frontendda formula QAYTA YOZILMAYDI.
  */
 export type RawAnswerDto = components['schemas']['AdminAssessmentAnswerDto'];
+
+/** Sessiya darajasidagi ishonchlilik signallari — backend `AdminAnswerSessionSignalsDto` (`docs/03` §7). */
+export type AnswerSessionSignalsDto = components['schemas']['AdminAnswerSessionSignalsDto'];
+
+/** Shkala darajasidagi teskari savol ziddiyati — backend `AdminAnswerScaleSignalDto` (`docs/03` §7.1 band 4). */
+export type AnswerScaleSignalDto = components['schemas']['AdminAnswerScaleSignalDto'];
+
+/**
+ * `ScoringConstants` chegaralari — backend `AdminAnswerThresholdsDto`. Frontendda
+ * QO'LDA TAKRORLANMAYDI: `900 ms` / `12` / `6 daqiqa` faqat shu javobdan o'qiladi, shunda
+ * domendagi konstanta o'zgarsa UI avtomatik ergashadi.
+ */
+export type AnswerThresholdsDto = components['schemas']['AdminAnswerThresholdsDto'];
+
+/** `GET /api/admin/assessments/{id}/answers` to'liq javobi — backend `AdminAssessmentAnswersDto`. */
+export type AssessmentAnswersDto = components['schemas']['AdminAssessmentAnswersDto'];

@@ -91,6 +91,13 @@ internal sealed class UpdateTestQuestionCommandHandler : IRequestHandler<UpdateT
             _catalogCache.InvalidateTestDefinition(testDefinition.Id, testDefinition.Code);
         }
 
-        return Result.Success(CatalogMapping.ToQuestionDto(question));
+        // `testDefinition` `AsNoTracking` so'rov bilan olingan — `Scales` kolleksiyasi BO'SH,
+        // shu sabab shkalalar alohida yuklanadi. Anketa topilmasa (nazariy holat: savol bor,
+        // testi yo'q) nom berilmaydi — noto'g'ri nomdan ko'ra `null` yaxshi.
+        var scaleNames = testDefinition is null
+            ? CatalogScaleNameResolver.None
+            : await CatalogMapping.LoadScaleNamesAsync(_context, _executor, testDefinition, cancellationToken).ConfigureAwait(false);
+
+        return Result.Success(CatalogMapping.ToQuestionDto(question, scaleNames));
     }
 }

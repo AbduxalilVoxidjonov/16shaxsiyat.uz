@@ -24,6 +24,7 @@ import { PublishTestDialog } from '../components/PublishTestDialog';
 import { PublishedEditWarning } from '../components/PublishedEditWarning';
 import { QuestionsSection } from '../components/QuestionsSection';
 import { ScalesSection } from '../components/ScalesSection';
+import { SystemScalesInfoSection } from '../components/SystemScalesInfoSection';
 import { TestMetaDialog } from '../components/TestMetaDialog';
 
 /**
@@ -243,7 +244,14 @@ export default function CatalogTestDetailPage() {
 
       <QuestionsSection test={test} />
 
-      {!test.isSystem && <ScalesSection testId={test.id} />}
+      {/* Shkalalar CRUD faqat `Custom` uchun (BR-8, `docs/07` §3.4). Tizim metodikasida uning
+          o'rniga FAQAT O'QISH bloki chiqadi — aks holda admin `EI`/`ART` nima ekanini
+          sahifadan bilib ololmasdi. */}
+      {test.isSystem ? (
+        <SystemScalesInfoSection testId={test.id} />
+      ) : (
+        <ScalesSection testId={test.id} />
+      )}
 
       {metaOpen && (
         <TestMetaDialog

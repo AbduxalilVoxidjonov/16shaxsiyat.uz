@@ -116,6 +116,12 @@ public sealed class AdminSchoolsMutationEndpointTests : IClassFixture<PublicApiT
         var oldAccessToken = TestDataFactory.NewAccessToken("regen-old-1");
         var school = await TestDataFactory.CreateSchoolAsync(db, now, "regen-maktab-1", oldAccessToken);
 
+        // Bu test HAVOLA haqida (eski token darhol ishlamay qolishi), dastur haqida emas.
+        // Lekin 2026-09-03 dan beri dastursiz maktab `409 NO_PROGRAM_AVAILABLE` beradi, shu
+        // sabab "eski havola ishlayapti" bosqichi uchun maktabga mavjud dastur kerak
+        // (nashr qilingan test standart `Public` dasturga biriktiriladi).
+        await TestDataFactory.CreatePublishedTestAsync(db, now, "REGEN_TEST", displayOrder: 1);
+
         using var client = await AuthenticatedClientAsync("schools-regen-admin");
 
         // Eski havola hozircha ishlaydi.

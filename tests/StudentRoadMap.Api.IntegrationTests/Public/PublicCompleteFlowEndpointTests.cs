@@ -106,7 +106,10 @@ public sealed class PublicCompleteFlowEndpointTests : IClassFixture<PublicApiTes
         var completeSessionResponse = await client.PostAsync(new Uri("/api/public/sessions/complete", UriKind.Relative), content: null);
         completeSessionResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var completeSessionBody = await completeSessionResponse.Content.ReadFromJsonAsync<CompleteSessionResult>(TestJson.Options);
-        completeSessionBody!.Status.Should().Be("Analyzing");
+        // ⚠️ `Ai:AutoAnalyzeOnCompletion` standart `false` (`docs/06` 8-bo'lim, 2026-09-03 egasi
+        // qarori) — sessiya `Completed` bo'lib qoladi, AI tahlili admin panelidagi tugma bilan
+        // QO'LDA ishga tushiriladi. Bayroq YOQILGAN oqim `PublicAutoAnalyzeFlagEndpointTests`da.
+        completeSessionBody!.Status.Should().Be("Completed");
         completeSessionBody.ShowResultToStudent.Should().BeFalse("standart `App:ShowResultToStudent` `false` (`prompts/12` cheklovi 8)");
 
         using (var verifyScope = _factory.Services.CreateScope())
@@ -114,7 +117,7 @@ public sealed class PublicCompleteFlowEndpointTests : IClassFixture<PublicApiTes
             var verifyDb = verifyScope.ServiceProvider.GetRequiredService<AppDbContext>();
             var assessment = await verifyDb.Assessments.AsNoTracking().SingleAsync(a => a.SessionToken == sessionToken);
 
-            assessment.Status.Should().Be(AssessmentStatus.Analyzing);
+            assessment.Status.Should().Be(AssessmentStatus.Completed, "standart `Ai:AutoAnalyzeOnCompletion=false`");
             assessment.TotalDurationSeconds.Should().NotBeNull();
             // Aniq son (masalan `30.0`) bilan tekshirmaymiz — bu haqiqiy devor-soati vaqtiga
             // (`ShortSession` jarimasi 6 daqiqadan qisqa bo'lsa) bog'liq bo'lib, sekin CI'da
@@ -140,7 +143,7 @@ public sealed class PublicCompleteFlowEndpointTests : IClassFixture<PublicApiTes
         var secondCompleteSessionResponse = await client.PostAsync(new Uri("/api/public/sessions/complete", UriKind.Relative), content: null);
         secondCompleteSessionResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var secondBody = await secondCompleteSessionResponse.Content.ReadFromJsonAsync<CompleteSessionResult>(TestJson.Options);
-        secondBody!.Status.Should().Be("Analyzing");
+        secondBody!.Status.Should().Be("Completed");
     }
 
     private static async Task<string> StartSessionAsync(HttpClient client, School school, string accessToken, string fullName, DateOnly birthDate)

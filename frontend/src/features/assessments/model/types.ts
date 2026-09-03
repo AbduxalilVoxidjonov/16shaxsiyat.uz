@@ -38,17 +38,12 @@ export type AiAnalysisStatus = 'Pending' | 'Running' | 'Succeeded' | 'Failed';
 /** `Domain/Ai/AiProvider.cs` — sxemada haqiqiy `enum` sifatida bor. */
 export type AiProvider = components['schemas']['AiProvider'];
 
-/**
- * `RerunAnalysisCommandHandler` (`assessment.MarkAnalyzing`) faqat shu uchta holatdan
- * qayta tahlilga ruxsat beradi — boshqasida backend `409` qaytaradi. Tugma holati ma'lum
- * bo'lganda oldindan o'chiriladi (holat NOMA'LUM bo'lsa tugma ochiq qoladi — server
- * qarorini taxmin qilmaymiz).
+/*
+ * Ruxsat etilgan holatlar ro'yxati (`Completed`/`Analyzed`/`AnalysisFailed`) endi bu yerda
+ * EMAS: u o'quvchi profili bilan umumiy — `shared/lib/aiAnalysisState.ts`
+ * (`AI_RUNNABLE_STATUSES`). Ikki nusxa ikki ekranning bir-biridan uzilib qolishiga olib
+ * kelardi.
  */
-export const RERUNNABLE_STATUSES: readonly AssessmentStatus[] = [
-  'Completed',
-  'Analyzed',
-  'AnalysisFailed',
-];
 
 /**
  * Natija bloklari — hammasi `schema.d.ts` dan re-export (backend
