@@ -6,6 +6,7 @@ import { Button, Card, EmptyState, ErrorState, Skeleton } from '@/shared/ui';
 import { ROUTES } from '@/shared/config/routes';
 import { AppError } from '@/shared/api/AppError';
 import { useStudentResult } from '../api/useStudentResult';
+import { useSessionState } from '../api/useSessionState';
 import { useSessionStore } from '../store/sessionStore';
 import { useSessionExpiredGuard } from '../hooks/useSessionExpiredGuard';
 
@@ -35,6 +36,9 @@ export default function StudentResultPage() {
   const handleSessionExpired = useSessionExpiredGuard(slug);
 
   const resultQuery = useStudentResult(hasSession);
+  // Batareya bayrog'i sessiya holatidan keladi (`docs/07` 1.3-bo'lim). `FinishPage` allaqachon
+  // shu so'rovni bajargan — bir xil `queryKey`, ya'ni odatda keshdan olinadi.
+  const sessionStateQuery = useSessionState(hasSession);
 
   usePageTitle(t('pages.result.title'));
 
@@ -46,6 +50,20 @@ export default function StudentResultPage() {
 
   if (!hasSession) {
     return <Navigate to={ROUTES.public.landing(slug)} replace />;
+  }
+
+  // `docs/06` 8-bo'lim (2026-09-02 qaror) + qarorlar jurnali: "ma'lumot yo'q" `0`/bo'sh karta
+  // bilan almashtirilmaydi. Dasturda shaxsiyat batareyasi bo'lmasa tip HECH QACHON hisoblanmaydi,
+  // shu sabab shaxsiyat widget'lari umuman render qilinmaydi — bayroq bo'yicha, metodika KODI
+  // bo'yicha emas (`hasPersonalityBattery`, `Domain.Catalog.PersonalityBattery`). `undefined`
+  // (holat hali kelmagan/xato) — "yo'q" DEGANI EMAS, shu sabab qat'iy `=== false`.
+  if (sessionStateQuery.data?.hasPersonalityBattery === false) {
+    return (
+      <EmptyState
+        title={t('publicAssessment.noBattery.title')}
+        description={t('publicAssessment.noBattery.description')}
+      />
+    );
   }
 
   if (resultQuery.isPending) {
@@ -91,8 +109,8 @@ export default function StudentResultPage() {
     return <ResultSkeleton />;
   }
 
-  // `docs/06` 8-bo'lim, CLAUDE.md MAXSUS DIQQAT 3-band: dasturda shaxsiyat batareyasi
-  // (MBTI16) bo'lmasa `GetStudentResultQueryHandler` baribir `200` qaytaradi, lekin
+  // Ikkinchi himoya qatlami — `docs/06` 8-bo'lim, CLAUDE.md MAXSUS DIQQAT 3-band: batareyasiz
+  // dasturda `GetStudentResultQueryHandler` baribir `200` qaytaradi, lekin
   // `personalityType`/`typeName`/`shortDescription` BO'SH QATOR bo'ladi — bo'sh tip kartasi
   // ko'rsatish "0" ko'rsatish bilan bir xil xato (soxta xulosa). Shu sabab bo'sh
   // `personalityType` — "natija yo'q" holati, xato EMAS.

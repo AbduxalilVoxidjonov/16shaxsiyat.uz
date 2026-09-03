@@ -10,6 +10,7 @@ using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Identity.Login;
 using StudentRoadMap.Application.Public.StartSession;
 using StudentRoadMap.Domain.Assessments;
+using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Identity;
 using StudentRoadMap.Domain.Students;
 using StudentRoadMap.Infrastructure.Persistence;
@@ -97,7 +98,7 @@ public sealed class AdminAssessmentsRecalculateScoresEndpointTests : IClassFixtu
         var now = DateTimeOffset.UtcNow;
         var accessToken = TestDataFactory.NewAccessToken("recalc-ok");
         var school = await TestDataFactory.CreateSchoolAsync(db, now, "maktab-recalc-ok", accessToken);
-        var testDefinition = await TestDataFactory.CreatePublishedRiasecShapedTestWithOptionalExtrasAsync(db, now, "RIASEC", 1, extraOptionalCount: 0);
+        var testDefinition = await TestDataFactory.CreatePublishedRiasecShapedTestWithOptionalExtrasAsync(db, now, "RIASEC", 1, extraOptionalCount: 0, kind: TestKind.Standard);
 
         // Haqiqiy ommaviy oqim orqali sessiyani to'liq yakunlaymiz (real `ScoringEngine` +
         // `ReliabilityCalculator` — hand-crafted `TestResult` EMAS).

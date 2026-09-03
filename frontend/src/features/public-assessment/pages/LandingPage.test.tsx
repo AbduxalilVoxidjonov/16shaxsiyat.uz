@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
+import { jsonResponse, problemResponse, type Schemas } from '@/test/apiMock';
 import LandingPage from './LandingPage';
 import { useSessionStore } from '../store/sessionStore';
 
@@ -30,9 +31,10 @@ const SCHOOL_INFO_BODY = {
       testCount: 4,
       questionCount: 190,
       estimatedMinutes: 31,
+      hasPersonalityBattery: true,
     },
   ],
-};
+} satisfies Schemas['GetSchoolInfoResult'];
 
 const TWO_PROGRAMS_BODY = {
   ...SCHOOL_INFO_BODY,
@@ -44,6 +46,7 @@ const TWO_PROGRAMS_BODY = {
       testCount: 4,
       questionCount: 190,
       estimatedMinutes: 31,
+      hasPersonalityBattery: true,
     },
     {
       code: 'CAREER_SURVEY',
@@ -52,22 +55,13 @@ const TWO_PROGRAMS_BODY = {
       testCount: 1,
       questionCount: 20,
       estimatedMinutes: 4,
+      // Shaxsiyat batareyasisiz dastur (`Survey` blok) — `docs/06` 8-bo'lim.
+      hasPersonalityBattery: false,
     },
   ],
-};
+} satisfies Schemas['GetSchoolInfoResult'];
 
-const NO_PROGRAMS_BODY = { ...SCHOOL_INFO_BODY, programs: [] };
-
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
-function problemResponse(code: string, status: number, title = 'Xato'): Response {
-  return jsonResponse({ code, title, status, type: `https://studentroadmap/errors/${code}` }, status);
-}
+const NO_PROGRAMS_BODY = { ...SCHOOL_INFO_BODY, programs: [] } satisfies Schemas['GetSchoolInfoResult'];
 
 function renderLanding(initialPath = '/t/demo-school?k=tok123') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -98,7 +92,7 @@ describe('LandingPage', () => {
   });
 
   it("maktab ma'lumotini yuklab, sarlavha, 4 ta test kartasi va Boshlash tugmasini ko'rsatadi", async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(SCHOOL_INFO_BODY)));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse<'GetSchoolInfoResult'>(SCHOOL_INFO_BODY)));
 
     renderLanding();
 
@@ -111,7 +105,7 @@ describe('LandingPage', () => {
   });
 
   it("so'rov to'g'ri manzil va query bilan yuboriladi (k parametri)", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(SCHOOL_INFO_BODY));
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse<'GetSchoolInfoResult'>(SCHOOL_INFO_BODY));
     vi.stubGlobal('fetch', fetchMock);
 
     renderLanding('/t/demo-school?k=tok123');
@@ -151,7 +145,7 @@ describe('LandingPage', () => {
   });
 
   it("'Boshlash' bosilganda k parametri saqlangan holda ro'yxatdan o'tish sahifasiga o'tadi", async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(SCHOOL_INFO_BODY)));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse<'GetSchoolInfoResult'>(SCHOOL_INFO_BODY)));
     const user = userEvent.setup();
 
     renderLanding();
@@ -169,7 +163,7 @@ describe('LandingPage', () => {
         const url = String(input);
         if (url.includes('/api/public/sessions/me')) {
           return Promise.resolve(
-            jsonResponse({
+            jsonResponse<'GetSessionStateResult'>({
               assessmentId: 'assessment-1',
               status: 'InProgress',
               student: { firstNameShort: 'Sardor', grade: 9 },
@@ -177,10 +171,11 @@ describe('LandingPage', () => {
               currentTestCode: 'BIG5',
               tests: [],
               progressPercent: 25,
+              hasPersonalityBattery: true,
             }),
           );
         }
-        return Promise.resolve(jsonResponse(SCHOOL_INFO_BODY));
+        return Promise.resolve(jsonResponse<'GetSchoolInfoResult'>(SCHOOL_INFO_BODY));
       }),
     );
 
@@ -203,7 +198,7 @@ describe('LandingPage', () => {
         if (url.includes('/api/public/sessions/me')) {
           return Promise.resolve(problemResponse('SESSION_EXPIRED', 410));
         }
-        return Promise.resolve(jsonResponse(SCHOOL_INFO_BODY));
+        return Promise.resolve(jsonResponse<'GetSchoolInfoResult'>(SCHOOL_INFO_BODY));
       }),
     );
 
@@ -218,7 +213,7 @@ describe('LandingPage', () => {
 
   // `prompts/36` — dastur tanlovi.
   it("bitta dastur bo'lganda tanlov ekrani ko'rsatilmaydi (regressiya)", async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(SCHOOL_INFO_BODY)));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse<'GetSchoolInfoResult'>(SCHOOL_INFO_BODY)));
 
     renderLanding();
 
@@ -229,7 +224,7 @@ describe('LandingPage', () => {
   });
 
   it("bir nechta dastur bo'lganda tanlov kartalarini ko'rsatadi, tanlanmaguncha Boshlash o'chiq bo'ladi", async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(TWO_PROGRAMS_BODY)));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse<'GetSchoolInfoResult'>(TWO_PROGRAMS_BODY)));
     const user = userEvent.setup();
 
     renderLanding();
@@ -245,7 +240,7 @@ describe('LandingPage', () => {
   });
 
   it("dastur tanlab 'Boshlash' bosilganda tanlov sessionStore'da saqlanadi va ro'yxatdan o'tishga o'tadi", async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(TWO_PROGRAMS_BODY)));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse<'GetSchoolInfoResult'>(TWO_PROGRAMS_BODY)));
     const user = userEvent.setup();
 
     renderLanding();
@@ -259,7 +254,7 @@ describe('LandingPage', () => {
   });
 
   it("maktabda dastur yo'q bo'lsa tushunarli xabar ko'rsatadi (Boshlash tugmasisiz)", async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(NO_PROGRAMS_BODY)));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse<'GetSchoolInfoResult'>(NO_PROGRAMS_BODY)));
 
     renderLanding();
 

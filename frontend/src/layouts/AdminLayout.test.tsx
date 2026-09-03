@@ -6,13 +6,7 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { AdminLayout } from './AdminLayout';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { setAdminAccessToken } from '@/shared/api/adminClient';
-
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(body === undefined ? null : JSON.stringify(body), {
-    status,
-    headers: body === undefined ? {} : { 'content-type': 'application/json' },
-  });
-}
+import { emptyResponse, type Schemas } from '@/test/apiMock';
 
 function renderAdminLayout() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -36,7 +30,13 @@ describe('AdminLayout', () => {
     useAuthStore.setState({
       isRestoring: false,
       accessToken: 'token-1',
-      user: { id: 'u1', username: 'sardor.admin' },
+      user: {
+        id: 'u1',
+        username: 'sardor.admin',
+        email: 'sardor@16shaxsiyat.uz',
+        role: 'SuperAdmin',
+        totpEnabled: false,
+      } satisfies Schemas['AdminUserDto'],
     });
   });
 
@@ -68,7 +68,7 @@ describe('AdminLayout', () => {
   });
 
   it("'Chiqish' bosilganda logout so'rovi yuboriladi, mahalliy sessiya tozalanadi va login sahifasiga o'tadi", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(undefined, 204));
+    const fetchMock = vi.fn().mockResolvedValue(emptyResponse(204));
     vi.stubGlobal('fetch', fetchMock);
     const user = userEvent.setup();
 

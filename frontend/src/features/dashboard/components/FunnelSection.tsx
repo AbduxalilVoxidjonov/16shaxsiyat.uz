@@ -4,6 +4,7 @@ import { Card } from '@/shared/ui/Card';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { buildFunnelSteps } from '../model/funnel';
 import type { DashboardFunnel } from '../model/types';
+import { VisuallyHidden } from '@/shared/ui/VisuallyHidden';
 
 export interface FunnelSectionProps {
   /**
@@ -91,31 +92,33 @@ export function FunnelSection({ funnel }: FunnelSectionProps) {
       </ol>
 
       {/* Ekran o'quvchisi uchun yashirin jadval alternativi — docs/11, 4-bo'lim. */}
-      <table className="sr-only" data-testid="funnel-table">
-        <caption>{t('dashboard.funnel.tableCaption')}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{t('dashboard.funnel.tableStepColumn')}</th>
-            <th scope="col">{t('dashboard.funnel.tableCountColumn')}</th>
-            <th scope="col">{t('dashboard.funnel.tablePercentColumn')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {steps.map((step) => (
-            <tr key={step.key}>
-              <td>{t(`dashboard.funnel.steps.${step.key}`)}</td>
-              <td>{step.count}</td>
-              <td>
-                {step.percentOfPrevious === null
-                  ? t('dashboard.funnel.noPreviousData')
-                  : t('dashboard.funnel.percentOfPrevious', {
-                      value: step.percentOfPrevious.toFixed(0),
-                    })}
-              </td>
+      <VisuallyHidden>
+        <table data-testid="funnel-table">
+          <caption>{t('dashboard.funnel.tableCaption')}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{t('dashboard.funnel.tableStepColumn')}</th>
+              <th scope="col">{t('dashboard.funnel.tableCountColumn')}</th>
+              <th scope="col">{t('dashboard.funnel.tablePercentColumn')}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {steps.map((step) => (
+              <tr key={step.key}>
+                <td>{t(`dashboard.funnel.steps.${step.key}`)}</td>
+                <td>{step.count}</td>
+                <td>
+                  {step.percentOfPrevious === null
+                    ? t('dashboard.funnel.noPreviousData')
+                    : t('dashboard.funnel.percentOfPrevious', {
+                        value: step.percentOfPrevious.toFixed(0),
+                      })}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </VisuallyHidden>
     </Card>
   );
 }

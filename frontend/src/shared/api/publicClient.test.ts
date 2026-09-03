@@ -1,17 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { typedResponse } from '@/test/apiMock';
 import { publicRequest } from './publicClient';
 import { STORAGE_KEYS } from '@/shared/config/storageKeys';
 
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
+/**
+ * Bu testda sinaladigan narsa — `X-Session-Token` header'i, javob DTO'si emas; shu sabab
+ * tana ataylab minimal joy egallovchi (sxemadagi biror DTO emas).
+ */
+interface OkStub {
+  ok: boolean;
 }
 
 describe('publicRequest', () => {
   beforeEach(() => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ ok: true })));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(typedResponse<OkStub>({ ok: true })));
     localStorage.clear();
   });
 

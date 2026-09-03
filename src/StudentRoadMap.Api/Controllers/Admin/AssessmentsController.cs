@@ -61,13 +61,14 @@ public sealed class AssessmentsController : ControllerBase
     }
 
     /// <summary>
-    /// `GET /api/admin/assessments/{id}` — `docs/07` 3.3-bo'lim: "To'liq detal (yuqoridagi
-    /// `latestAssessment` shakli)".
+    /// `GET /api/admin/assessments/{id}` — `docs/07` 3.3-bo'lim: to'liq detal. `latestAssessment`
+    /// yadrosi (`{id, results, aiAnalysis, aiHistory}`) + sessiya sarlavhasi va `tests[]`
+    /// (`AdminAssessmentDetailDto`, 2026-09-03).
     /// </summary>
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(AdminLatestAssessmentDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AdminAssessmentDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
-    public async Task<ActionResult<AdminLatestAssessmentDto>> GetById(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<AdminAssessmentDetailDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetAssessmentByIdQuery(id), cancellationToken).ConfigureAwait(false);
 

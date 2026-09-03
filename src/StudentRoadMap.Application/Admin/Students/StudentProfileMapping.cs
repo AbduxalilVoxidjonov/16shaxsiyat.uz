@@ -1,3 +1,4 @@
+using StudentRoadMap.Application.Common;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Public.Common;
 using StudentRoadMap.Domain.Ai;
@@ -32,16 +33,58 @@ internal static class StudentProfileMapping
         ["CONV"] = "C",
     };
 
+    /// <summary>
+    /// `docs/07` 3.2 `results` blokini yig'adi.
+    ///
+    /// <para>
+    /// ⚠️ Qaysi natija qaysi blokka tushishi metodika KODI bilan aniqlanmaydi (`docs/06`
+    /// 8-bo'lim, 2026-09-02 "dastur" qarori). Ilgari bu yerda `TestCode == "MBTI16"` kabi satr
+    /// solishtiruvi turardi va `AssessmentProgram` kiritilgandan keyin JIMGINA buzilardi:
+    /// `MBTI16` KODLI `Custom` anketa haqiqiy batareya o'rniga `results.MBTI16` ga tushib
+    /// ketardi (yoki `PERS-BAT-1` kabi boshqa kodli HAQIQIY batareya umuman ko'rinmasdi) —
+    /// hech qanday xato ko'rsatilmasdi. Mezon — `PersonalityBattery.RoleOf`
+    /// (`ScoringStrategyCode`, ya'ni natijani hisoblagan ALGORITM bo'yicha),
+    /// `PromptBuilder`/`RecalculateAssessmentScoresCommandHandler` bilan BIR XIL.
+    /// </para>
+    ///
+    /// <para>
+    /// **JSON kalitlari o'zgarmaydi** — `MBTI16`/`BIG5`/`RIASEC`/`ACTIVITY`
+    /// (`AdminTestResultsDto` dagi `JsonPropertyName`, 2026-09-03 qarori). O'zgargani — faqat
+    /// qaysi natija qaysi kalitga tushishining MEZONI.
+    /// </para>
+    ///
+    /// <para>
+    /// Rol xaritasi BITTA so'rov bilan yuklanadi (`LoadByAssessmentTestIdAsync`) — N+1 yo'q.
+    /// Sessiya identifikatori `TestResult.AssessmentId` dan olinadi: hamma chaqiruvchi bu
+    /// ro'yxatni AYNAN bitta sessiya bo'yicha filtrlab beradi, shu sabab imzoni o'zgartirish
+    /// (va to'rtta chaqiruvchini tahrirlash) shart emas.
+    /// </para>
+    /// </summary>
     public static async Task<AdminTestResultsDto> BuildTestResultsAsync(
         IReadOnlyList<TestResult> testResults,
         IAppDbContext context,
         IAsyncQueryExecutor executor,
         CancellationToken cancellationToken)
     {
-        var mbti = testResults.FirstOrDefault(r => r.TestCode == "MBTI16");
-        var bigFive = testResults.FirstOrDefault(r => r.TestCode == "BIG5");
-        var riasec = testResults.FirstOrDefault(r => r.TestCode == "RIASEC");
-        var activity = testResults.FirstOrDefault(r => r.TestCode == "ACTIVITY");
+        ArgumentNullException.ThrowIfNull(testResults);
+
+        if (testResults.Count == 0)
+        {
+            // Hali birorta natija yo'q — hamma blok `null` (bo'sh obyekt EMAS: "ma'lumot yo'q"
+            // va "nol ball" bir xil emas, `docs/06` qarorlar jurnali 2026-09-02).
+            return new AdminTestResultsDto(null, null, null, null);
+        }
+
+        var rolesByAssessmentTestId = await PersonalityBatteryRoles
+            .LoadByAssessmentTestIdAsync(context, executor, testResults[0].AssessmentId, cancellationToken)
+            .ConfigureAwait(false);
+
+        // Batareyasiz dasturda (yoki roli tanilmagan `Custom` anketalarda) xarita bo'sh bo'ladi
+        // va tegishli blok `null` qaytadi.
+        var mbti = PersonalityBatteryRoles.FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.PersonalityType);
+        var bigFive = PersonalityBatteryRoles.FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.Traits);
+        var riasec = PersonalityBatteryRoles.FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.CareerInterest);
+        var activity = PersonalityBatteryRoles.FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.Activity);
 
         return new AdminTestResultsDto(
             mbti is null ? null : await BuildMbti16Async(mbti, context, executor, cancellationToken).ConfigureAwait(false),
@@ -189,12 +232,21 @@ internal static class StudentProfileMapping
             .ToList();
     }
 
+    /// <summary>
+    /// `docs/07` 3.2 `aiAnalysis`. Mazmun bo'limlari `AiAnalysisContent` orqali yig'iladi —
+    /// haqiqat manbai `AiAnalysis.ResponseJson` (`docs/09` 5-bo'lim sxemasi), entity ustunlari
+    /// esa faqat zaxira (shablon hisobot va eski yozuvlar) uchun. Shu bilan `learningStyle`,
+    /// `motivationProfile`, `activityAssessment`, `disclaimer`, `reliabilityNote` va
+    /// `strengths`/`growthAreas`/`attentionFlags` tuzilmasi admin ekraniga yetib boradi.
+    /// </summary>
     public static AdminAiAnalysisDto? BuildAiAnalysis(AiAnalysis? current)
     {
         if (current is null)
         {
             return null;
         }
+
+        var content = AiAnalysisContent.From(current);
 
         return new AdminAiAnalysisDto(
             current.Id,
@@ -203,15 +255,23 @@ internal static class StudentProfileMapping
             current.Model,
             current.PromptVersion,
             current.CreatedAt,
-            current.Summary,
-            current.PersonalityPortrait,
-            DeserializeStringList(current.StrengthsJson),
-            DeserializeStringList(current.GrowthAreasJson),
-            DeserializeCareerSuggestions(current.CareerSuggestionsJson),
-            DeserializeStringList(current.RecommendationsJson),
-            current.TeacherNotes,
-            current.ParentNotes,
-            DeserializeStringList(current.AttentionFlagsJson));
+            current.IsFallbackReport,
+            content.IsModerated,
+            current.ErrorMessage,
+            content.Summary,
+            content.PersonalityPortrait,
+            content.Strengths,
+            content.GrowthAreas,
+            content.LearningStyle,
+            content.MotivationProfile,
+            content.ActivityAssessment,
+            content.CareerSuggestions,
+            content.StudentRecommendations,
+            content.TeacherNotes,
+            content.ParentNotes,
+            content.AttentionFlags,
+            content.ReliabilityNote,
+            content.Disclaimer);
     }
 
     public static IReadOnlyList<AdminAiHistoryItemDto> BuildAiHistory(IReadOnlyList<AiAnalysis> analyses) =>
@@ -219,45 +279,4 @@ internal static class StudentProfileMapping
             .OrderByDescending(a => a.CreatedAt)
             .Select(a => new AdminAiHistoryItemDto(a.Id, a.Provider.ToString(), a.CreatedAt, a.Status.ToString(), a.IsCurrent))
             .ToList();
-
-    private static IReadOnlyList<string> DeserializeStringList(string? json)
-    {
-        if (string.IsNullOrWhiteSpace(json))
-        {
-            return [];
-        }
-
-        try
-        {
-            return System.Text.Json.JsonSerializer.Deserialize<List<string>>(json) ?? [];
-        }
-        catch (System.Text.Json.JsonException)
-        {
-            // AI javobi hali P16-18 shakliga to'liq mos kelmasligi mumkin — noto'g'ri JSON
-            // butun profilni yiqitmasin, faqat bo'sh ro'yxat qaytadi.
-            return [];
-        }
-    }
-
-    private static IReadOnlyList<AdminCareerSuggestionDto> DeserializeCareerSuggestions(string? json)
-    {
-        if (string.IsNullOrWhiteSpace(json))
-        {
-            return [];
-        }
-
-        try
-        {
-            return System.Text.Json.JsonSerializer.Deserialize<List<AdminCareerSuggestionDto>>(json, JsonOptions) ?? [];
-        }
-        catch (System.Text.Json.JsonException)
-        {
-            return [];
-        }
-    }
-
-    private static readonly System.Text.Json.JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true,
-    };
 }

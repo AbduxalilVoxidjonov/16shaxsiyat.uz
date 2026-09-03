@@ -444,7 +444,25 @@ create index ix_audit_logs_admin_user_id on audit_logs(admin_user_id);
 
 -- TOTP kodini qayta ishlatishga qarshi himoya: oxirgi ishlatilgan vaqt qadami.
 alter table admin_users add column totp_last_used_step bigint null;
+
+-- Optimistik konkurentlik tokeni. ⚠️ DOIMIY `DEFAULT` BO'LMASLIGI SHART: qiymat har
+-- yangilanishda yangi `Guid` bilan almashadi (`AppDbContext.SaveChanges`), shu sabab
+-- ustun darajasidagi doimiy default token vazifasini o'ldiradi (qiymatsiz INSERT jimgina
+-- bir xil qiymat yozardi). `20260902070721_AddAuditLogsAndTotpSupport` EF Core
+-- `defaultValue:` orqali `'000…0'::uuid` doimiy default qoldirgan edi —
+-- `20260902194217_DropConcurrencyStampDefault` uni olib tashlab, nol-GUID qolgan
+-- qatorlarni `gen_random_uuid()` bilan tiklaydi.
+alter table admin_users add column concurrency_stamp uuid not null;  -- DEFAULT yo'q!
 ```
+
+> **Qoida (`defaultValue` tuzog'i):** mavjud jadvalga `NOT NULL` ustun qo'shganda EF Core
+> `migrationBuilder.AddColumn(..., defaultValue: X)` yozadi va buni **bir martalik backfill
+> emas, ustunning DOIMIY `DEFAULT`i** sifatida chiqaradi. Bu `bool`/`int`/enum bayroqlari
+> uchun to'g'ri (modelda ham `HasDefaultValue` bor). Lekin qiymati **har qator uchun noyob**
+> bo'lishi kerak bo'lgan ustun (identifikator, token, vaqt tamg'asi) uchun noto'g'ri —
+> u yerda backfill xom SQL bilan (`UPDATE ... SET x = gen_random_uuid()`) bajarilib,
+> `DEFAULT` qoldirilmasligi kerak. Buni `tests/StudentRoadMap.Migrations.Tests`
+> (`MigratsiyaSxemasi_ModeldanQurilganSxemaBilanBirXil`) avtomatik ushlaydi.
 
 ---
 

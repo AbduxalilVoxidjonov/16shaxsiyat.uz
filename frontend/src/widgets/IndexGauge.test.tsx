@@ -35,7 +35,10 @@ describe('IndexGauge', () => {
   it('yashirin jadval alternativi mavjud', () => {
     render(<IndexGauge value={68.4} label="Yetuklik indeksi" levelText="Yaxshi" />);
     const table = screen.getByTestId('index-gauge-table');
-    expect(table.className).toContain('sr-only');
+    // Jadval `sr-only` O'RAM ichida (`VisuallyHidden`) — `sr-only` ni jadvalning
+    // O'ZIGA berib bo'lmaydi: u holda jadval eni sahifadan chiqib ketadi (P30-5,
+    // izohi `shared/ui/VisuallyHidden.tsx` da).
+    expect(table.parentElement?.className).toContain('sr-only');
     expect(within(table).getByText('68.4')).toBeInTheDocument();
   });
 });

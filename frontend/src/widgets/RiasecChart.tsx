@@ -2,9 +2,15 @@ import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 import { usePrefersReducedMotion } from '@/shared/hooks/usePrefersReducedMotion';
+import { VisuallyHidden } from '@/shared/ui/VisuallyHidden';
 
-/** RIASEC 6 tipi — `scale` kodlari docs/03, 4.1-bo'lim ("bazadagi scale qiymatlari"). */
-export type RiasecTypeCode = 'R' | 'I' | 'ART' | 'SOC' | 'ENT' | 'CONV';
+/**
+ * RIASEC 6 tipi — **Holland harflari** `R I A S E C` (docs/03, 4.1-bo'lim: "matnda qisqalik
+ * uchun R-I-A-S-E-C harflari"; docs/07, 3.2-bo'lim `RIASEC.types` kalitlari). Bu bazadagi
+ * `scale` kodlari (`R, I, ART, SOC, ENT, CONV`) EMAS — API `scale` kodlarini hech qachon
+ * chiqarmaydi (CLAUDE.md 9-band), ularni `StudentProfileMapping` harfga o'giradi.
+ */
+export type RiasecTypeCode = 'R' | 'I' | 'A' | 'S' | 'E' | 'C';
 
 export interface RiasecChartProps {
   types: Record<RiasecTypeCode, number>;
@@ -15,15 +21,20 @@ export interface RiasecChartProps {
   className?: string;
 }
 
-const TYPE_ORDER: RiasecTypeCode[] = ['R', 'I', 'ART', 'SOC', 'ENT', 'CONV'];
-/** Holland kodidagi qisqa harf (docs/03: "matnda qisqalik uchun R-I-A-S-E-C harflari"). */
-const SHORT_LETTER: Record<RiasecTypeCode, string> = {
+/** Holland olti burchagi tartibi (docs/03, 4.2-bo'lim). */
+const TYPE_ORDER: RiasecTypeCode[] = ['R', 'I', 'A', 'S', 'E', 'C'];
+
+/**
+ * Harf → i18n kaliti. Tarjima kalitlari (`widgets.riasecChart.type.*`) `scale` kodlari bilan
+ * nomlangan, API esa harf bilan keladi — moslama shu yerda, bitta joyda.
+ */
+const TYPE_LABEL_KEY: Record<RiasecTypeCode, string> = {
   R: 'R',
   I: 'I',
-  ART: 'A',
-  SOC: 'S',
-  ENT: 'E',
-  CONV: 'C',
+  A: 'ART',
+  S: 'SOC',
+  E: 'ENT',
+  C: 'CONV',
 };
 
 /** Differensiatsiya < 20 — docs/03, 4.2-bo'lim: "qiziqishlar hali aniq shakllanmagan". */
@@ -42,10 +53,10 @@ export function RiasecChart({ types, resultCode, differentiation, className }: R
 
   const chartData = TYPE_ORDER.map((code) => ({
     code,
-    letter: SHORT_LETTER[code],
-    label: t(`widgets.riasecChart.type.${code}`),
+    letter: code,
+    label: t(`widgets.riasecChart.type.${TYPE_LABEL_KEY[code]}`),
     value: types[code],
-    isTop: topLetters.has(SHORT_LETTER[code]),
+    isTop: topLetters.has(code),
   }));
 
   const ariaLabel = t('widgets.riasecChart.ariaLabel', {
@@ -112,23 +123,25 @@ export function RiasecChart({ types, resultCode, differentiation, className }: R
           : t('widgets.riasecChart.differentiationValue', { value: differentiation.toFixed(1) })}
       </p>
 
-      <table className="sr-only" data-testid="riasec-chart-table">
-        <caption>{ariaLabel}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{t('widgets.riasecChart.tableTypeColumn')}</th>
-            <th scope="col">{t('widgets.riasecChart.tableValueColumn')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {chartData.map((row) => (
-            <tr key={row.code}>
-              <td>{row.label}</td>
-              <td>{row.value.toFixed(1)}%</td>
+      <VisuallyHidden>
+        <table data-testid="riasec-chart-table">
+          <caption>{ariaLabel}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{t('widgets.riasecChart.tableTypeColumn')}</th>
+              <th scope="col">{t('widgets.riasecChart.tableValueColumn')}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {chartData.map((row) => (
+              <tr key={row.code}>
+                <td>{row.label}</td>
+                <td>{row.value.toFixed(1)}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </VisuallyHidden>
     </div>
   );
 }

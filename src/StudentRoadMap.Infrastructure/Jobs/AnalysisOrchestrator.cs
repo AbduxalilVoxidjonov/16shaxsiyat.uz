@@ -178,7 +178,7 @@ public sealed class AnalysisOrchestrator : IAnalysisOrchestrator
             lastFailedAttempt.OverrideErrorMessage(BadRequestAggregateMessage);
         }
 
-        var fallbackContent = await FallbackReportBuilder.BuildAsync(testResults, _context, _executor, cancellationToken).ConfigureAwait(false);
+        var fallbackContent = await FallbackReportBuilder.BuildAsync(assessmentId, testResults, _context, _executor, cancellationToken).ConfigureAwait(false);
         var fallbackProvider = providers.Count > 0 ? providers[0].Kind : AiProvider.Gemini;
         var fallbackReport = AiAnalysis.CreateFallbackReport(
             Guid.NewGuid(),
@@ -253,13 +253,14 @@ public sealed class AnalysisOrchestrator : IAnalysisOrchestrator
                     lastErrorKind = result.ErrorKind;
                     lastAnalysis = analysis;
 
-                    if (result.ErrorKind is AiErrorKind.Auth or AiErrorKind.BadRequest)
+                    if (result.ErrorKind is AiErrorKind.Auth or AiErrorKind.BadRequest or AiErrorKind.ModelNotFound)
                     {
                         // Retry YO'Q — darhol keyingi providerga (`docs/09` 7-bo'lim, `AiErrorKind` izohi).
+                        // `ModelNotFound` ham shu guruhda: model nomi urinishlar orasida o'zgarmaydi.
                         return ProviderOutcome.Failed(lastErrorKind, lastAnalysis);
                     }
 
-                    // RateLimit/Server/Timeout/Unknown → backoff bilan qayta urinish.
+                    // RateLimit/Server/Timeout/Network/Unknown → backoff bilan qayta urinish.
                     if (networkRetryCount < NetworkRetryBackoffs.Length)
                     {
                         await _delay(NetworkRetryBackoffs[networkRetryCount], cancellationToken).ConfigureAwait(false);

@@ -1,8 +1,10 @@
 using MediatR;
+using StudentRoadMap.Application.Common;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
 using StudentRoadMap.Application.Public.Common;
 using StudentRoadMap.Domain.Assessments;
+using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Common;
 
 namespace StudentRoadMap.Application.Public.GetStudentResult;
@@ -16,7 +18,10 @@ namespace StudentRoadMap.Application.Public.GetStudentResult;
 ///   BIRINCHI qaytariladi — DB'ga bekorga murojaat qilinmaydi.
 /// - `202` (`Result.Success(null)`, kontroller `Accepted()`ga aylantiradi) — sessiya hali
 ///   `Analyzed` holatiga yetmagan (P18'gacha, AI ulanmagan bo'lsa, bu HAR DOIM shu holat).
-/// - `200` — `Analyzed` holatida, `MBTI16`/`RIASEC` `TestResult`laridan qurilgan qisqartirilgan natija.
+/// - `200` — `Analyzed` holatida, batareyaning shaxsiyat tipi (`PersonalityBatteryRole.PersonalityType`)
+///   va kasb qiziqishlari (`PersonalityBatteryRole.CareerInterest`) `TestResult`laridan qurilgan
+///   qisqartirilgan natija. Bu natijalar metodika KODI bo'yicha emas, domen roli bo'yicha
+///   tanlanadi (`Domain.Catalog.PersonalityBattery`) — sabab pastdagi izohda.
 /// </summary>
 internal sealed class GetStudentResultQueryHandler : IRequestHandler<GetStudentResultQuery, Result<GetStudentResultResult?>>
 {
@@ -71,17 +76,28 @@ internal sealed class GetStudentResultQueryHandler : IRequestHandler<GetStudentR
             _context.AsNoTracking(_context.TestResults).Where(r => r.AssessmentId == assessment.Id),
             cancellationToken).ConfigureAwait(false);
 
-        var mbtiCode = testResults.FirstOrDefault(r => r.TestCode == "MBTI16")?.ResultCode;
-        var riasecCode = testResults.FirstOrDefault(r => r.TestCode == "RIASEC")?.ResultCode;
+        // ⚠️ Natija QAYSI test blokidan olinishi metodika KODI bilan aniqlanmaydi (`docs/06`
+        // 8-bo'lim, 2026-09-02 "dastur" qarori). Ilgari bu yerda `TestCode == "MBTI16"` /
+        // `"RIASEC"` satr solishtiruvi turardi: `Custom` dastur boshqa kodli metodika ishlatsa
+        // (yoki kod versiyalansa) ekran JIMGINA noto'g'ri holatga tushardi — `MBTI16` kodli
+        // superadmin anketasi shaxsiyat tipi o'rniga o'tib ketardi, hech qanday xato ko'rinmasdi.
+        // Mezon — `PersonalityBattery.RoleOf` domen qoidasi (`PersonalityBatteryRoles` orqali).
+        var rolesByAssessmentTestId = await PersonalityBatteryRoles.LoadByAssessmentTestIdAsync(
+            _context, _executor, assessment.Id, cancellationToken).ConfigureAwait(false);
+
+        var personalityTypeCode = PersonalityBatteryRoles
+            .FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.PersonalityType)?.ResultCode;
+        var careerInterestCode = PersonalityBatteryRoles
+            .FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.CareerInterest)?.ResultCode;
 
         string typeName = "";
         string shortDescription = "";
         IReadOnlyList<string> topStrengths = [];
 
-        if (!string.IsNullOrEmpty(mbtiCode))
+        if (!string.IsNullOrEmpty(personalityTypeCode))
         {
             var typeCatalogEntry = await _executor.FirstOrDefaultAsync(
-                _context.AsNoTracking(_context.TypeCatalog).Where(t => t.Code == mbtiCode),
+                _context.AsNoTracking(_context.TypeCatalog).Where(t => t.Code == personalityTypeCode),
                 cancellationToken).ConfigureAwait(false);
 
             if (typeCatalogEntry is not null)
@@ -92,10 +108,10 @@ internal sealed class GetStudentResultQueryHandler : IRequestHandler<GetStudentR
             }
         }
 
-        var careerFields = await ResolveCareerFieldsAsync(riasecCode, cancellationToken).ConfigureAwait(false);
+        var careerFields = await ResolveCareerFieldsAsync(careerInterestCode, cancellationToken).ConfigureAwait(false);
 
         var result = new GetStudentResultResult(
-            PersonalityType: mbtiCode ?? "",
+            PersonalityType: personalityTypeCode ?? "",
             TypeName: typeName,
             ShortDescription: shortDescription,
             TopStrengths: topStrengths,
@@ -115,14 +131,14 @@ internal sealed class GetStudentResultQueryHandler : IRequestHandler<GetStudentR
     /// yo'q) — bo'sh ro'yxat, xato emas (kasb yo'nalishlari ixtiyoriy ma'lumot).
     /// PM'ga savol: bu moslash mantiqi (aniq talqin yo'qligi sababli) tasdiqlanishi kerak.
     /// </summary>
-    private async Task<IReadOnlyList<string>> ResolveCareerFieldsAsync(string? riasecCode, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<string>> ResolveCareerFieldsAsync(string? hollandCode, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrEmpty(riasecCode))
+        if (string.IsNullOrEmpty(hollandCode))
         {
             return [];
         }
 
-        var codeLetters = riasecCode.ToCharArray();
+        var codeLetters = hollandCode.ToCharArray();
 
         var careerMapEntries = await _executor.ToListAsync(
             _context.AsNoTracking(_context.CareerMap).OrderBy(c => c.RelevanceOrder),

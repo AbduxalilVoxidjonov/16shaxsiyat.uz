@@ -3,18 +3,25 @@ import { useTranslation } from 'react-i18next';
 import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/shared/lib/cn';
 
+/**
+ * `docs/09-ai-analiz-moduli.md` 5-bo'lim `strengths[]`. `description`/`evidence` — sxemada
+ * majburiy, lekin zaxira (shablon) hisobotda faqat `title` bo'ladi, shuning uchun ular
+ * `null` bo'lishi mumkin (bo'sh satr EMAS).
+ */
 export interface AiStrength {
   title: string;
-  description: string;
-  evidence: string;
+  description?: string | null;
+  evidence?: string | null;
 }
 
+/** `docs/09` 5-bo'lim `growthAreas[]`. */
 export interface AiGrowthArea {
   title: string;
-  description: string;
-  actionStep: string;
+  description?: string | null;
+  actionStep?: string | null;
 }
 
+/** `docs/09` 5-bo'lim `careerSuggestions[]`. */
 export interface AiCareerSuggestion {
   field: string;
   why: string;
@@ -24,8 +31,9 @@ export interface AiCareerSuggestion {
 
 export type AiAttentionFlagSeverity = 'info' | 'attention' | 'high';
 
+/** `docs/09` 5-bo'lim `attentionFlags[]`. `code` — eski/zaxira yozuvlarda `null`. */
 export interface AiAttentionFlag {
-  code: string;
+  code?: string | null;
   message: string;
   severity: AiAttentionFlagSeverity;
 }
@@ -49,6 +57,12 @@ export interface AiReportSections {
   teacherNotes?: string[] | null;
   parentNotes?: string[] | null;
   attentionFlags?: AiAttentionFlag[] | null;
+  /**
+   * `docs/09` 4.1 "ISHONCHLILIK" bandi — javoblar ishonchsiz bo'lganda AI shu maydonda
+   * ochiq aytadi. `disclaimer` bilan birga hisobotning CHEKLOVLARINI bildiradi, shuning
+   * uchun ikkalasi ham UI'da hech qachon yashirilmaydi.
+   */
+  reliabilityNote?: string | null;
   disclaimer?: string | null;
 }
 
@@ -109,7 +123,10 @@ export function AiReportView({ sections, className }: AiReportViewProps) {
     careerSuggestions.length > 0 ||
     studentRecommendations.length > 0 ||
     teacherNotes.length > 0 ||
-    parentNotes.length > 0;
+    parentNotes.length > 0 ||
+    attentionFlags.length > 0 ||
+    Boolean(sections.reliabilityNote) ||
+    Boolean(sections.disclaimer);
 
   if (!hasAnyContent) {
     return (
@@ -126,7 +143,7 @@ export function AiReportView({ sections, className }: AiReportViewProps) {
           </h4>
           <ul className="flex flex-col gap-2">
             {attentionFlags.map((flag, index) => (
-              <li key={`${flag.code}-${String(index)}`} className="flex items-start gap-2 text-sm">
+              <li key={`${flag.code ?? 'flag'}-${String(index)}`} className="flex items-start gap-2 text-sm">
                 <AlertTriangle
                   size={16}
                   className="mt-0.5 shrink-0 text-warning-600"
@@ -167,8 +184,10 @@ export function AiReportView({ sections, className }: AiReportViewProps) {
             {strengths.map((strength, index) => (
               <li key={`${strength.title}-${String(index)}`}>
                 <p className="font-medium text-neutral-900">{strength.title}</p>
-                <p>{strength.description}</p>
-                <p className="mt-0.5 text-xs text-neutral-500">{strength.evidence}</p>
+                {strength.description && <p>{strength.description}</p>}
+                {strength.evidence && (
+                  <p className="mt-0.5 text-xs text-neutral-500">{strength.evidence}</p>
+                )}
               </li>
             ))}
           </ul>
@@ -183,11 +202,15 @@ export function AiReportView({ sections, className }: AiReportViewProps) {
             {growthAreas.map((area, index) => (
               <li key={`${area.title}-${String(index)}`}>
                 <p className="font-medium text-neutral-900">{area.title}</p>
-                <p>{area.description}</p>
-                <p className="mt-0.5 text-neutral-600">
-                  <span className="font-medium">{t('widgets.aiReportView.actionStepLabel')}</span>{' '}
-                  {area.actionStep}
-                </p>
+                {area.description && <p>{area.description}</p>}
+                {area.actionStep && (
+                  <p className="mt-0.5 text-neutral-600">
+                    <span className="font-medium">
+                      {t('widgets.aiReportView.actionStepLabel')}
+                    </span>{' '}
+                    {area.actionStep}
+                  </p>
+                )}
               </li>
             ))}
           </ul>
@@ -233,7 +256,7 @@ export function AiReportView({ sections, className }: AiReportViewProps) {
             {careerSuggestions.map((suggestion, index) => (
               <li key={`${suggestion.field}-${String(index)}`}>
                 <p className="font-medium text-neutral-900">{suggestion.field}</p>
-                <p>{suggestion.why}</p>
+                {suggestion.why && <p>{suggestion.why}</p>}
                 {suggestion.exampleProfessions && suggestion.exampleProfessions.length > 0 && (
                   <p className="mt-0.5 text-xs text-neutral-500">
                     {suggestion.exampleProfessions.join(' · ')}
@@ -295,8 +318,21 @@ export function AiReportView({ sections, className }: AiReportViewProps) {
         </ReportSection>
       )}
 
+      {/*
+        `reliabilityNote` va `disclaimer` — hisobotning CHEKLOVLARI (docs/09 4.2, 13-talab va
+        "ISHONCHLILIK" bandi). Ular akkordeon ichida emas, doim ochiq ko'rinadi va akkordeon
+        yopilsa ham yashirilmaydi.
+      */}
+      {sections.reliabilityNote && (
+        <p className="rounded-xl border border-warning-300 bg-warning-50 p-4 text-sm text-warning-800">
+          <span className="font-medium">{t('widgets.aiReportView.reliabilityNoteLabel')}</span>{' '}
+          {sections.reliabilityNote}
+        </p>
+      )}
+
       {sections.disclaimer && (
         <p className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-xs text-neutral-500">
+          <span className="font-medium">{t('widgets.aiReportView.disclaimerLabel')}</span>{' '}
           {sections.disclaimer}
         </p>
       )}

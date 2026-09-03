@@ -1,7 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using StudentRoadMap.Application.Common;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Domain.Assessments;
+using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Scoring;
 using StudentRoadMap.Domain.Students;
 
@@ -38,13 +40,6 @@ public sealed class PromptBuilder : IPromptBuilder
 {
     /// <summary>`prompt_templates.key` — hozircha yagona shablon (`docs/09` 4-bo'lim).</summary>
     public const string DefaultTemplateKey = DefaultPromptTemplates.Key;
-
-    private const string Mbti16Code = "MBTI16";
-    private const string Big5Code = "BIG5";
-    private const string RiasecCode = "RIASEC";
-    private const string ActivityCode = "ACTIVITY";
-
-    private static readonly string[] SystemTestCodes = [Mbti16Code, Big5Code, RiasecCode, ActivityCode];
 
     private static readonly string[] Mbti16Axes = ["EI", "SN", "TF", "JP"];
 
@@ -130,16 +125,31 @@ public sealed class PromptBuilder : IPromptBuilder
             Flag: (assessment.ReliabilityFlag ?? ReliabilityFlag.Reliable).ToString(),
             Notes: []);
 
-        var mbtiResult = testResults.FirstOrDefault(r => r.TestCode == Mbti16Code);
-        var bigFiveResult = testResults.FirstOrDefault(r => r.TestCode == Big5Code);
-        var riasecResult = testResults.FirstOrDefault(r => r.TestCode == RiasecCode);
-        var activityResult = testResults.FirstOrDefault(r => r.TestCode == ActivityCode);
+        // ⚠️ ENG MUHIM: qaysi natija shaxsiyat tipi/omillar/kasb qiziqishi/aktivlik ekani
+        // metodika KODI bilan aniqlanmaydi (`docs/06` 8-bo'lim, 2026-09-02 "dastur" qarori).
+        // Ilgari bu yerda `TestCode == "MBTI16"` (va `SystemTestCodes` ro'yxati) turardi:
+        // `MBTI16` KODLI `Custom` anketa AI promptiga `personality16` bloki sifatida tushib
+        // ketardi (`PERS-BAT-1` kabi boshqa kodli HAQIQIY batareya esa `customTests`ga) — ya'ni
+        // o'quvchi jimgina NOTO'G'RI tahlil olardi. Mezon — `PersonalityBattery.RoleOf`
+        // (`ScoringStrategyCode` bo'yicha), `CompleteSessionCommandHandler` bilan BIR XIL.
+        var rolesByAssessmentTestId = await PersonalityBatteryRoles
+            .LoadByAssessmentTestIdAsync(_context, _executor, assessment.Id, cancellationToken)
+            .ConfigureAwait(false);
 
+        var mbtiResult = PersonalityBatteryRoles.FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.PersonalityType);
+        var bigFiveResult = PersonalityBatteryRoles.FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.Traits);
+        var riasecResult = PersonalityBatteryRoles.FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.CareerInterest);
+        var activityResult = PersonalityBatteryRoles.FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.Activity);
+
+        // Batareya bloklari (`personality16`/`bigFive`/`interests`/`activity`) `null` bo'lsa
+        // JSON'ga UMUMAN chiqmaydi (`SerializerOptions.DefaultIgnoreCondition =
+        // WhenWritingNull`) — dasturda batareya bo'lmaganda AI'ga `0` yoki bo'sh blok emas,
+        // HECH NARSA ketadi: `0` va "ma'lumot yo'q" bir xil emas (`docs/06` 8-bo'lim).
         var personality16 = await BuildPersonality16Async(mbtiResult, cancellationToken).ConfigureAwait(false);
         var bigFive = BuildBigFive(bigFiveResult);
         var interests = await BuildInterestsAsync(riasecResult, cancellationToken).ConfigureAwait(false);
         var activity = BuildActivity(activityResult);
-        var customTests = await BuildCustomTestsAsync(testResults, cancellationToken).ConfigureAwait(false);
+        var customTests = await BuildCustomTestsAsync(testResults, rolesByAssessmentTestId, cancellationToken).ConfigureAwait(false);
 
         return new AnalysisInput(context, reliability, personality16, bigFive, interests, activity, customTests);
     }
@@ -298,9 +308,21 @@ public sealed class PromptBuilder : IPromptBuilder
             NeedsAttention: flags.Contains("NeedsAttention"));
     }
 
-    private async Task<IReadOnlyList<AnalysisCustomTest>> BuildCustomTestsAsync(IReadOnlyList<TestResult> testResults, CancellationToken cancellationToken)
+    /// <summary>
+    /// `Custom` — batareya ROLI yo'q (`PersonalityBatteryRole.None`) har qanday natija: superadmin
+    /// anketalari (`SUM`) va batareyaga kirmaydigan boshqa bloklar. Ilgari bu ro'yxat qat'iy
+    /// `SystemTestCodes` (`"MBTI16"`, `"BIG5"`, ...) satrlari bo'yicha ajratilardi — natijada
+    /// `MBTI16` KODLI superadmin anketasi `customTests`dan TUSHIB QOLARDI (va yuqorida
+    /// `personality16` sifatida noto'g'ri talqin qilinardi).
+    /// </summary>
+    private async Task<IReadOnlyList<AnalysisCustomTest>> BuildCustomTestsAsync(
+        IReadOnlyList<TestResult> testResults,
+        IReadOnlyDictionary<Guid, PersonalityBatteryRole> rolesByAssessmentTestId,
+        CancellationToken cancellationToken)
     {
-        var customResults = testResults.Where(r => !SystemTestCodes.Contains(r.TestCode, StringComparer.Ordinal)).ToList();
+        var customResults = testResults
+            .Where(r => !rolesByAssessmentTestId.ContainsKey(r.AssessmentTestId))
+            .ToList();
         if (customResults.Count == 0)
         {
             return [];

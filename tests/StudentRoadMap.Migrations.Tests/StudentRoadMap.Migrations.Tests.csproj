@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    MIGRATSIYA SINOVLARI — HAQIQIY PostgreSQL (Testcontainers).
+
+    Nima uchun alohida loyiha: qolgan barcha sinov loyihalari (`Api.IntegrationTests`,
+    `Infrastructure.Tests`) `EnsureCreated()` / SQLite ustida ishlaydi — ular MIGRATSIYALARNI
+    UMUMAN BAJARMAYDI. Oqibati P34 da amalda ko'rindi (`docs/13` §8): ikki bosqichli
+    migratsiyada mavjud `assessments` qatorlari `program_id`siz qolib FK/NOT NULL cheklovini
+    buzardi va deploy to'xtardi — hech bir test buni ushlay olmadi. Bu loyiha aynan shu
+    bo'shliqni yopadi: haqiqiy Postgres 16 konteynerida migratsiya YO'LI (nol holatdan,
+    ma'lumot bilan backfill, idempotentlik) sinaladi.
+
+    Bu testlar SEKIN (konteyner ko'tariladi) — `docs/12` §5.1 da ishga tushirish tartibi
+    yozilgan; CI'da alohida `migrations` job.
+  -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="FluentAssertions" Version="8.10.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <!-- Haqiqiy PostgreSQL 16 konteyneri; host porti TASODIFIY (Testcontainers o'zi tanlaydi) —
+         jonli `16shaxsiyat` bazasi bilan hech qanday kesishuv yo'q (`MigrationsPostgresFixture`). -->
+    <PackageReference Include="Testcontainers.PostgreSql" Version="4.14.0" />
+    <!-- `DbSeeder` `IConfiguration` talab qiladi (`ADMIN_USERNAME`/`ADMIN_PASSWORD`) — sinovda
+         `AddInMemoryCollection` bilan beriladi. -->
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\StudentRoadMap.Infrastructure\StudentRoadMap.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <!-- `DbSeeder` `AppContext.BaseDirectory/SeedData/...` dan o'qiydi — haqiqiy seed fayllari
+       (4 test-ta'rifi + tip katalogi + kasb xaritasi) chiqish katalogiga ko'chiriladi. Manba
+       fayllar tahrirlanmaydi/dublikat qilinmaydi (`Infrastructure.Tests` bilan bir xil naqsh). -->
+  <ItemGroup>
+    <Content Include="..\..\src\StudentRoadMap.Infrastructure\Persistence\SeedData\**\*.json">
+      <Link>SeedData\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

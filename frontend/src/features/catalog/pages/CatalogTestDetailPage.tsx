@@ -14,13 +14,13 @@ import { ROUTES } from '@/shared/config/routes';
 import { useCatalogTestDetailQuery } from '../api/useCatalogTestDetailQuery';
 import {
   useArchiveCatalogTest,
-  usePublishCatalogTest,
   useToggleCatalogTestActive,
 } from '../api/useCatalogTestLifecycleMutations';
 import { useDeleteCatalogTest } from '../api/useCatalogTestMutations';
 import { useCatalogErrorMessage } from '../lib/useCatalogErrorMessage';
 import { TEST_STATUS_BADGE_VARIANT } from '../model/types';
 import { DuplicateTestDialog } from '../components/DuplicateTestDialog';
+import { PublishTestDialog } from '../components/PublishTestDialog';
 import { PublishedEditWarning } from '../components/PublishedEditWarning';
 import { QuestionsSection } from '../components/QuestionsSection';
 import { ScalesSection } from '../components/ScalesSection';
@@ -44,12 +44,12 @@ export default function CatalogTestDetailPage() {
   const toErrorMessage = useCatalogErrorMessage();
 
   const detailQuery = useCatalogTestDetailQuery(id ?? null);
-  const publishTest = usePublishCatalogTest();
   const toggleActive = useToggleCatalogTestActive();
   const archiveTest = useArchiveCatalogTest();
   const deleteTest = useDeleteCatalogTest();
 
   const [metaOpen, setMetaOpen] = useState(false);
+  const [publishOpen, setPublishOpen] = useState(false);
   const [duplicateOpen, setDuplicateOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -193,13 +193,9 @@ export default function CatalogTestDetailPage() {
             {test.status === 'Draft' && (
               <Button
                 size="sm"
-                isLoading={publishTest.isPending}
-                onClick={() =>
-                  void runLifecycleAction(
-                    (testId) => publishTest.mutateAsync(testId),
-                    'catalog.publish.successTitle',
-                  )
-                }
+                onClick={() => {
+                  setPublishOpen(true);
+                }}
               >
                 {t('catalog.actions.publish')}
               </Button>
@@ -255,6 +251,17 @@ export default function CatalogTestDetailPage() {
           test={test}
           onClose={() => {
             setMetaOpen(false);
+          }}
+        />
+      )}
+
+      {publishOpen && (
+        <PublishTestDialog
+          open
+          testId={test.id}
+          testName={test.nameUz}
+          onClose={() => {
+            setPublishOpen(false);
           }}
         />
       )}

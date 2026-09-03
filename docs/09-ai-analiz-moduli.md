@@ -247,6 +247,16 @@ faqat 16 tipli model, Big Five va RIASEC natijalariga asosla.
 
 ---
 
+> **Javob qayerda saqlanadi.** Yuqoridagi sxema bo'yicha kelgan XOM javob to'liq holda
+> `AiAnalysis.ResponseJson`da saqlanadi va admin hisoboti (`GET /api/admin/students/{id}`
+> → `latestAssessment.aiAnalysis`, `docs/07` 3.2) AYNAN shundan yig'iladi. `ai_analyses`
+> jadvalidagi alohida ustunlar (`strengths_json`, `teacher_notes`, …) — tez o'qish uchun
+> YASSILANGAN ikkilamchi nusxa; ular sxemadagi tuzilmani va beshta maydonni
+> (`learningStyle`, `motivationProfile`, `activityAssessment`, `disclaimer`,
+> `reliabilityNote`) saqlamaydi, shuning uchun hisobot manbai sifatida ishlatilmaydi.
+
+---
+
 ## 6. Validatsiya va post-filtr
 
 `AiResponseValidator` ketma-ket tekshiradi:
@@ -260,6 +270,9 @@ faqat 16 tipli model, Big Five va RIASEC natijalariga asosla.
    — topilsa: 1 marta qayta so'raladi ("quyidagi so'zlarni ishlatma"); yana chiqsa
    o'sha maydon "moderatsiya qilindi" belgisi bilan saqlanadi va `AttentionFlags` ga
    `MODERATION_REQUIRED` qo'shiladi (superadmin ko'radi).
+   > Bu belgi admin API'sida `aiAnalysis.isModerated = true` va `attentionFlags` ichidagi
+   > `MODERATION_REQUIRED` (`severity: "high"`) sifatida ochiq qaytariladi (`docs/07` 3.2) —
+   > post-filtrdan toza o'tmagan matn ekranda belgisiz qolmaydi.
 4. **Uzunlik va tillar** — matn asosan lotin o'zbek alifbosida ekanini yengil tekshirish
    (kiril ulushi > 30% bo'lsa retry).
 5. **Nomlar sizmasligi** — javobda o'quvchi ismi bo'lmasligi kerak (promptga yuborilmagan,

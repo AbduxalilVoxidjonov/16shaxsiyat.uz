@@ -3,6 +3,7 @@ using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
 using StudentRoadMap.Application.Public.Common;
 using StudentRoadMap.Domain.Assessments;
+using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Common;
 
 namespace StudentRoadMap.Application.Public.GetSession;
@@ -60,7 +61,7 @@ internal sealed class GetSessionStateQueryHandler : IRequestHandler<GetSessionSt
         var definitionLookup = (await _executor.ToListAsync(
                 _context.AsNoTracking(_context.TestDefinitions)
                     .Where(t => testDefinitionIds.Contains(t.Id))
-                    .Select(t => new { t.Id, t.Code, t.NameUz, t.EstimatedMinutes }),
+                    .Select(t => new { t.Id, t.Code, t.NameUz, t.EstimatedMinutes, t.Kind, t.ScoringMode }),
                 cancellationToken).ConfigureAwait(false))
             .ToDictionary(x => x.Id, x => x);
 
@@ -68,11 +69,22 @@ internal sealed class GetSessionStateQueryHandler : IRequestHandler<GetSessionSt
         string? currentTestCode = null;
         var locked = false;
 
+        // `docs/06` 8-bo'lim (2026-09-02): dasturda shaxsiyat batareyasi BO'LMASLIGI mumkin.
+        // Mezon — `Domain.Catalog.PersonalityBattery` (kod satri emas); ta'rif topilmasa
+        // (nazariy: anketa o'chirilgan) batareya YO'Q deb hisoblanadi — "ma'lumot yo'q"ni
+        // "bor" bilan almashtirmaymiz.
+        var hasPersonalityBattery = false;
+
         foreach (var test in assessmentTests)
         {
             var definition = definitionLookup.GetValueOrDefault(test.TestDefinitionId);
             var code = definition?.Code ?? "?";
             string status;
+
+            if (definition is not null && PersonalityBattery.Includes(definition.Kind, definition.ScoringMode))
+            {
+                hasPersonalityBattery = true;
+            }
 
             if (locked)
             {
@@ -110,7 +122,8 @@ internal sealed class GetSessionStateQueryHandler : IRequestHandler<GetSessionSt
             assessment.ExpiresAt,
             currentTestCode,
             tests,
-            progressPercent);
+            progressPercent,
+            hasPersonalityBattery);
 
         return Result.Success(result);
     }

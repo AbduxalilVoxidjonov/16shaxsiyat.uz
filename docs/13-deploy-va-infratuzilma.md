@@ -67,12 +67,16 @@ Muhim tafsilotlar:
   yuboradi (alohida `api.16shaxsiyat.uz` subdomeni YO'Q — dastlabki reja shu edi, lekin
   amalda soddalashtirildi: bitta domen, bitta sertifikat, CORS umuman kerak emas).
   `web-nginx.conf` `/api/`, `/swagger`, `/health` yo'llarini `api:8080`ga proksilaydi.
-- **`db` porti xostga chiqarilgan** (`5432:5432`) — admin vositalari (`psql`, backup
-  skripti) bilan to'g'ridan-to'g'ri ulanish uchun qulay, lekin production serverida bu
-  portni **firewall bilan tashqi dunyodan yopish shart** (faqat localhost/VPN'dan kirish).
-  Aks holda Postgres internetga ochiq qoladi. Tekshirish: `sudo ufw status` yoki
-  bulut provayderining xavfsizlik guruhi qoidalarida `5432` faqat ishonchli manzillarga
-  ochilganini tasdiqlang.
+- **`db` porti xostga chiqarilgan** — `127.0.0.1:${DB_PORT:-5433}:5432`, ya'ni faqat
+  lokal interfeys. Admin vositalari (`psql`, backup skripti) bilan to'g'ridan-to'g'ri
+  ulanish uchun qulay. Production serverida ham bu portni **firewall bilan tashqi
+  dunyodan yopish shart** (faqat localhost/VPN'dan kirish); tekshirish: `sudo ufw status`
+  yoki bulut provayderining xavfsizlik guruhi qoidalari.
+
+  **Nega standart 5433, 5432 emas:** 2026-09-02 da butun stek `port is already allocated`
+  bilan ko'tarilmay qolgan edi — shu mashinadagi boshqa loyihaning Postgres'i 5432 ni
+  egallab turgan. Konteynerlararo aloqaga ta'sir qilmaydi (ular `Host=db;Port=5432`
+  ishlatadi). Kerak bo'lsa `.env` da `DB_PORT` bilan o'zgartiriladi.
 - **Tarmoq subneti QAT'IY belgilangan** — 5-bo'lim, MAXSUS DIQQAT.
 
 ---
@@ -149,8 +153,8 @@ Farqlar sababi va oqibati:
   Tunnel ulanishi CNAME orqali avtomatik sozlanadi (Zero Trust > Tunnels > Public Hostname).
 - **Kiruvchi port yo'q**: serverning firewall'ida hech qanday portni ochish shart emas
   (80/443 ham) — bu klassik reverse-proksi sxemasidan ko'ra kichikroq hujum yuzasi.
-  Faqat `db`ning `5432` porti host'ga chiqqan (§2) — buni administrativ maqsadda ochiq
-  qoldirish yoki firewall bilan cheklash tanlovi qoladi.
+  Faqat `db` porti host'ga chiqqan va u ham `127.0.0.1` ga bog'langan (§2) — tashqi
+  tarmoqdan ko'rinmaydi.
 - **`.uz` domeni**: yillik uzaytirish eslatmasi hali kuchda — muddat o'tsa Tunnel'ning o'zi
   ishlaydi, lekin domen hech kimga ko'rsatmaydi.
 
@@ -314,6 +318,61 @@ tekshirishi kerak bo'lgan savol — "agar bu migratsiya BO'SH BO'LMAGAN producti
 ishga tushsa, oraliq holatda cheklov buzilmaydimi?" Javob "ha, buzilishi mumkin" bo'lsa,
 backfill o'sha migratsiya ichiga ko'chiriladi, `seed`ga emas.
 
+### 8.1. Endi bu AVTOMATIK sinaladi (2026-09-03)
+
+Yuqoridagi ikkinchi muammo ("integratsiya testlari `EnsureCreated()` ishlatgani uchun bu
+ketma-ketlik muammosini umuman ushlay olmasdi") **yopildi**:
+`tests/StudentRoadMap.Migrations.Tests` haqiqiy PostgreSQL 16 konteynerida (Testcontainers)
+migratsiya yo'lini sinaydi — `docs/12` §5.1.
+
+Aynan shu bo'lim tasvirlagan ssenariy avtomatlashtirilgan: migratsiyalar **oraliq nuqtagacha**
+qo'llanadi (`20260902070721_AddAuditLogsAndTotpSupport` — `program_id` ustuni hali yo'q, va
+`20260902123104_AddAssessmentPrograms` — ustun bor, qiymatlar `NULL`), o'sha sxemaga mos
+ma'lumot (maktab, o'quvchilar, sessiyalar, 4 metodika) yoziladi, keyin qolgan migratsiyalar
+bitta `Database.MigrateAsync()` chaqiruvida (`--migrate` kabi) qo'llanadi va natija
+tasdiqlanadi: barcha eski sessiyalar tizim dasturiga backfill qilingan, yetim/nol-GUID qator
+yo'q, FK kuchda, ustun `NOT NULL`.
+
+**Yangi migratsiya qo'shganda nima qilish kerak:** agar migratsiya mavjud jadvalga `NOT NULL`
+ustun yoki `FOREIGN KEY` qo'shsa, `BackfillMigrationTests` ga o'sha migratsiyadan OLDINGI
+nuqtani oraliq nuqta sifatida oladigan test qo'shing — "bo'sh bazada o'tdi" YETARLI EMAS.
+
+CI: `.github/workflows/ci.yml` → `migrations` job (`SRM_REQUIRE_DOCKER=1`, Docker bo'lmasa
+job qizil bo'ladi — testlar jimgina skip bo'lmaydi).
+
+**Shu qatlam topgan va TUZATILGAN qarz (2026-09-03):**
+`admin_users.concurrency_stamp` migratsiya qilingan bazada
+`DEFAULT '00000000-0000-0000-0000-000000000000'::uuid` bilan qolar edi (EF `AddColumn`
+`defaultValue`ni DOIMIY default sifatida chiqargan), modelda esa default yo'q — ya'ni
+production sxemasi barcha testlar ko'rgan sxemadan farq qilardi, va `concurrency_stamp`
+(optimistik konkurentlik tokeni) qiymatsiz `INSERT`da jimgina nol-GUID olardi.
+
+Tuzatish: **`20260902194217_DropConcurrencyStampDefault`** (yangi migratsiya; qo'llangan
+migratsiyalar TAHRIRLANMAGAN, `CLAUDE.md` 7-qoida). Ikki qadam, destruktiv emas:
+
+```sql
+ALTER TABLE admin_users ALTER COLUMN concurrency_stamp DROP DEFAULT;
+UPDATE admin_users
+SET concurrency_stamp = gen_random_uuid()
+WHERE concurrency_stamp = '00000000-0000-0000-0000-000000000000'::uuid;
+```
+
+`gen_random_uuid()` volatil — HAR QATOR uchun qayta hisoblanadi, ya'ni default tufayli bir
+xil stamp olgan mavjud adminlar endi noyob qiymat oladi. `WHERE` sharti tufayli idempotent.
+Sinovi: `ConcurrencyStampDefaultTests` — (a) barcha migratsiyalardan keyin ustunda DEFAULT
+yo'q va `concurrency_stamp`siz `INSERT` 23502 bilan rad etiladi; (b) oraliq nuqtadan
+(`20260902070721_AddAuditLogsAndTotpSupport`) boshlab nol-GUID stamp'li adminlar yozilib,
+qolgan migratsiyalar qo'llangach har biri NOYOB qiymat oladi va to'g'ri stamp'lar tegilmaydi.
+`SchemaDriftBaseline.KnownColumnDefaultDrifts` endi **bo'sh** — ustun `DEFAULT`lari bo'yicha
+ochiq qarz yo'q, har qanday yangi farq testni darhol qizil qiladi.
+
+**Umumiy qoida (`defaultValue` tuzog'i):** mavjud jadvalga `NOT NULL` ustun qo'shganda EF
+`defaultValue:`ni bir martalik backfill emas, **doimiy `DEFAULT`** sifatida chiqaradi. Bu
+`bool`/`int`/enum bayroqlari uchun to'g'ri (modelda ham `HasDefaultValue` bor, ya'ni sxema
+model bilan mos qoladi). Qiymati **har qator uchun noyob** bo'lishi kerak bo'lgan ustun
+(identifikator, token, vaqt tamg'asi) uchun esa xato: backfill xom SQL bilan bajarilib,
+`DEFAULT` qoldirilmasligi kerak (`docs/05` §2 oxiridagi qoida).
+
 ---
 
 ## 9. Backup va tiklanish
@@ -416,12 +475,28 @@ Tekshirish (subnet nomuvofiqligi bo'lmasligi uchun, §7):
 docker network inspect 16shaxsiyat_default --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}'
 ```
 
+### 11.1.1 Kompyuter uyquga ketgandan keyin (macOS/Docker Desktop)
+
+Mashina uxlaganda yoki Docker Desktop qayta ishga tushganda konteynerlar **to'xtaydi va
+o'zi qaytmaydi**, garchi `restart: unless-stopped` yozilgan bo'lsa ham. Sabab: ular
+`Exited (0)` — ya'ni "muvaffaqiyatli to'xtatilgan" deb belgilanadi, `unless-stopped`
+esa aynan shunday to'xtatilganini qaytarmaydi. Bu Docker'ning kutilgan xatti-harakati.
+
+Belgisi: sayt ochilmaydi yoki Cloudflare xato sahifasi ko'rsatadi.
+
+```bash
+docker compose ps -a            # hammasi "Exited (0)" bo'lsa — shu holat
+docker compose up -d            # qayta ko'tarish (build shart emas)
+```
+
+Server (Linux) da bu muammo yo'q — u uxlamaydi va `dockerd` avtomatik ishga tushadi.
+
 ### 11.2 Lokal ishlab chiqish (Docker'siz backend/frontend, faqat `db` Docker'da)
 
 ```bash
 docker compose up -d db
 dotnet user-secrets set "ConnectionStrings:Postgres" \
-  "Host=localhost;Port=5432;Database=studentroadmap;Username=srm;Password=<.env dagi DB_PASSWORD>" \
+  "Host=localhost;Port=5433;Database=studentroadmap;Username=srm;Password=<.env dagi DB_PASSWORD>" \
   -p src/StudentRoadMap.Api
 dotnet run --project src/StudentRoadMap.Api -- --migrate
 dotnet run --project src/StudentRoadMap.Api -- --seed

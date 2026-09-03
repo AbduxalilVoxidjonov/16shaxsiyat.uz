@@ -39,7 +39,7 @@ boshqaradi, har bir o'quvchining individual profilini ko'radi.
 | 13 | [13-deploy-va-infratuzilma.md](13-deploy-va-infratuzilma.md) | Docker, compose, CI/CD, backup, monitoring | DevOps |
 | 14 | [14-yol-xaritasi.md](14-yol-xaritasi.md) | Sprintlar, bosqichlar, Definition of Done | Hamma |
 | 15 | [15-glossariy.md](15-glossariy.md) | Atamalar lug'ati (uz/en) | Hamma |
-| 16 | [16-foydalanuvchi-qollanmasi.md](16-foydalanuvchi-qollanmasi.md) | Superadmin qo'llanmasi: maktab qo'shish, havola va QR, o'quvchi profili, dastur biriktirish, test yuklash | Superadmin |
+| 16 | [16-foydalanuvchi-qollanmasi.md](16-foydalanuvchi-qollanmasi.md) | Foydalanuvchi qo'llanmasi: kirish va 2FA, maktab va havola/QR, dasturlar, anketalar va talqin oraliqlari, natijalar va eksport, AI sozlamalari, maxfiylik; 9-bo'lim — maktab mas'uli uchun qisqa varaqa | Superadmin, maktab mas'uli |
 | 17 | [17-16personalities-tahlili.md](17-16personalities-tahlili.md) | 16Personalities tahlili: metodika, UX, biznes modeli, huquqiy chegara va bizga xulosalar | Mahsulot egasi, PM, psixometrika |
 
 ---

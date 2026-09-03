@@ -6,20 +6,33 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import LoginPage from './LoginPage';
 import { useAuthStore } from '../store/authStore';
 import { getAdminAccessToken } from '@/shared/api/adminClient';
+import { jsonResponse, problemResponse, type Schemas } from '@/test/apiMock';
 
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
+/**
+ * `LoginResult.user` — backend `AdminUserDto` (`docs/07` 2-bo'lim): `email` va `role`
+ * MAJBURIY. Ilgari bu mock faqat `{id, username}` edi — chala shakl, lekin `unknown`
+ * tanali lokal `jsonResponse` uni tekshirmagani uchun test yashil qolardi.
+ */
+const ADMIN_USER = {
+  id: 'u1',
+  username: 'admin',
+  email: 'admin@16shaxsiyat.uz',
+  fullName: 'Bosh administrator',
+  role: 'SuperAdmin',
+  totpEnabled: false,
+} satisfies Schemas['AdminUserDto'];
 
-function problemResponse(code: string, status: number, detail?: string): Response {
-  return jsonResponse(
-    { code, title: 'Xato', status, detail, type: `https://studentroadmap/errors/${code}` },
-    status,
-  );
-}
+const LOGIN_RESULT = {
+  accessToken: 'access-123',
+  expiresIn: 1800,
+  user: ADMIN_USER,
+} satisfies Schemas['LoginResult'];
+
+const LOGIN_RESULT_AFTER_TOTP = {
+  accessToken: 'access-456',
+  expiresIn: 1800,
+  user: ADMIN_USER,
+} satisfies Schemas['LoginResult'];
 
 function renderLoginPage(initialPath = '/admin/login') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -59,13 +72,7 @@ describe('LoginPage', () => {
   it("muvaffaqiyatli login qilinganda boshqaruv paneliga o'tadi", async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
-        jsonResponse({
-          accessToken: 'access-123',
-          expiresIn: 1800,
-          user: { id: 'u1', username: 'admin' },
-        }),
-      ),
+      vi.fn().mockResolvedValue(jsonResponse<'LoginResult'>(LOGIN_RESULT)),
     );
 
     renderLoginPage();
@@ -73,19 +80,13 @@ describe('LoginPage', () => {
 
     expect(await screen.findByText('DASHBOARD_STUB')).toBeInTheDocument();
     expect(useAuthStore.getState().accessToken).toBe('access-123');
-    expect(useAuthStore.getState().user).toEqual({ id: 'u1', username: 'admin' });
+    expect(useAuthStore.getState().user).toEqual(ADMIN_USER);
   });
 
   it("returnUrl bo'lsa muvaffaqiyatli logindan keyin o'sha sahifaga o'tadi", async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
-        jsonResponse({
-          accessToken: 'access-123',
-          expiresIn: 1800,
-          user: { id: 'u1', username: 'admin' },
-        }),
-      ),
+      vi.fn().mockResolvedValue(jsonResponse<'LoginResult'>(LOGIN_RESULT)),
     );
 
     renderLoginPage('/admin/login?returnUrl=%2Fadmin%2Fstudents');
@@ -97,13 +98,7 @@ describe('LoginPage', () => {
   it("access token hech qachon localStorage'ga yozilmaydi", async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
-        jsonResponse({
-          accessToken: 'access-123',
-          expiresIn: 1800,
-          user: { id: 'u1', username: 'admin' },
-        }),
-      ),
+      vi.fn().mockResolvedValue(jsonResponse<'LoginResult'>(LOGIN_RESULT)),
     );
 
     renderLoginPage();
@@ -168,13 +163,7 @@ describe('LoginPage', () => {
       .mockImplementation((_input: RequestInfo | URL, init?: RequestInit) => {
         const body = init?.body ? (JSON.parse(String(init.body)) as { totpCode?: string }) : {};
         if (body.totpCode === '123456') {
-          return Promise.resolve(
-            jsonResponse({
-              accessToken: 'access-456',
-              expiresIn: 1800,
-              user: { id: 'u1', username: 'admin' },
-            }),
-          );
+          return Promise.resolve(jsonResponse<'LoginResult'>(LOGIN_RESULT_AFTER_TOTP));
         }
         return Promise.resolve(problemResponse('TOTP_REQUIRED', 401));
       });

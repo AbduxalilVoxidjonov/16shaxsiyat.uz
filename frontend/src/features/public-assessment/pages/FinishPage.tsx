@@ -39,7 +39,12 @@ export default function FinishPage() {
   const hasSession = Boolean(sessionToken) && storedSlug === slug;
   const handleSessionExpired = useSessionExpiredGuard(slug);
 
-  const sessionStateQuery = useSessionState(hasSession);
+  // `refetchOnMount: 'always'` — ESKI keshga tayanib qaror qabul qilmaslik uchun.
+  // `queryClient` da `staleTime: 30_000`: tez o'quvchi barcha bloklarni 30 soniyadan tez
+  // yechsa `sessions/me` bir marta ham qayta so'ralmasdi va pastdagi `currentTestCode`
+  // qorovuli TESTNING BOSHIDAGI suratga qarab allaqachon tugallangan blokka qaytarib
+  // yuborardi (u yerda `startTest` → `409` → bo'sh skelet, chiqib bo'lmaydigan halqa).
+  const sessionStateQuery = useSessionState(hasSession, { refetchOnMount: 'always' });
   const completeSession = useCompleteSession();
   const calledRef = useRef(false);
   const [resultButtonReady, setResultButtonReady] = useState(false);
@@ -76,7 +81,9 @@ export default function FinishPage() {
     return <Navigate to={ROUTES.public.landing(slug)} replace />;
   }
 
-  if (sessionStateQuery.isPending) {
+  // `isFetching` ham kutiladi: mount'dagi qayta so'rov TUGAMAGUNCHA quyidagi
+  // `currentTestCode` qorovuli eski ma'lumot bo'yicha yo'naltirib yuborishi mumkin edi.
+  if (sessionStateQuery.isPending || sessionStateQuery.isFetching) {
     return <FinishSkeleton />;
   }
 
@@ -118,14 +125,16 @@ export default function FinishPage() {
   }
 
   // `docs/06` 8-bo'lim, CLAUDE.md MAXSUS DIQQAT 2/3-band: shaxsiyat batareyasisiz (yoki faqat
-  // `Survey` blokli) dasturda ball/tip HECH QACHON hisoblanmaydi — `GetStudentResult` "MBTI16"
-  // topa olmay bo'sh maydonlar bilan qaytaradi. Bu yerda buni oldindan bilamiz (dastur tarkibida
-  // "MBTI16" yo'q), shu sabab natija ekraniga umuman taklif qilinmaydi — "bo'sh joy/0" o'rniga
-  // shunchaki "javoblaringiz saqlandi" ko'rinishi ko'rsatiladi. `StudentResultPage` o'zi ham
-  // (to'g'ridan-to'g'ri havola bilan kirilsa) xuddi shu holatni ushlaydi (himoya ikki qatlamda).
-  const hasPersonalityBattery = sessionState.tests.some((test) => test.code === 'MBTI16');
-
-  if (!hasPersonalityBattery) {
+  // `Survey` blokli) dasturda ball/tip HECH QACHON hisoblanmaydi — shu sabab natija ekraniga
+  // umuman taklif qilinmaydi: "bo'sh joy/0" o'rniga "javoblaringiz saqlandi" ko'rsatiladi.
+  //
+  // Manba — backend BAYROG'I (`GET /sessions/me` → `hasPersonalityBattery`, `docs/07` 1.3-bo'lim),
+  // metodika kodi EMAS. Ilgari bu yerda `tests.some(t => t.code === 'MBTI16')` turardi va ikki
+  // holatda JIMGINA buzilardi: (1) `Custom` dastur boshqa kodli metodika ishlatsa; (2) kod
+  // o'zgarsa/versiyalansa. Bayroq domen qoidasi (`Domain.Catalog.PersonalityBattery`) bilan
+  // hisoblanadi. `StudentResultPage` o'zi ham (to'g'ridan-to'g'ri havola bilan kirilsa) xuddi
+  // shu bayroqni tekshiradi — himoya ikki qatlamda.
+  if (!sessionState.hasPersonalityBattery) {
     return (
       <div className="flex flex-col items-center gap-4 py-16 text-center">
         <h1 className="text-xl font-bold text-neutral-900">{t('publicAssessment.survey.thanksHeading')}</h1>

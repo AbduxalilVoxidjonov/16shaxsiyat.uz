@@ -74,6 +74,8 @@ export default function TestPage() {
 
   const [page, setPage] = useState(1);
   const [invalidIds, setInvalidIds] = useState<ReadonlySet<string>>(new Set());
+  /** Oxirgi sahifada "Keyingi" bosilgach navbatdagi javoblar yuborilmoqda (`complete`dan OLDIN). */
+  const [isSavingBeforeComplete, setIsSavingBeforeComplete] = useState(false);
   const startedTestCodeRef = useRef<string | null>(null);
   const initializedPageRef = useRef(false);
   const fieldsetRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -186,12 +188,15 @@ export default function TestPage() {
 
   function handlePrev() {
     if (page <= 1) return;
-    autosave.flush();
+    // Sahifa ichida harakat — serverga bog'liq emas, shu sabab kutilmaydi (oflaynda ham ishlaydi).
+    void autosave.flush();
     setPage((prev) => prev - 1);
     scrollToTop();
   }
 
-  function handleNext() {
+  async function handleNext() {
+    if (isSavingBeforeComplete || completeTest.isPending) return; // ikki marta bosishdan himoya
+
     const questions = questionsQuery.data?.questions ?? [];
     const unanswered = questions.filter((q) => q.isRequired && displayValue(q) === null);
     if (unanswered.length > 0) {
@@ -203,11 +208,38 @@ export default function TestPage() {
       return;
     }
 
-    autosave.flush();
     const totalPages = started?.totalPages ?? questionsQuery.data?.totalPages ?? page;
     if (page < totalPages) {
+      // Oraliq sahifa — keyingi sahifa serverdagi javoblarga BOG'LIQ EMAS (qiymatlar mahalliy
+      // navbatdan ko'rsatiladi), shu sabab yuborish kutilmaydi: oflayn o'quvchi ham testni
+      // davom ettira oladi (E2E-3).
+      void autosave.flush();
       setPage((prev) => prev + 1);
       scrollToTop();
+      return;
+    }
+
+    // OXIRGI SAHIFA (P30-2 poygasi). `POST .../complete` backendda "barcha majburiy savollarga
+    // javob berilganmi" deb TEKSHIRADI, ya'ni u navbatdagi javoblarga BOG'LIQ. Ilgari `flush()`
+    // natijasi kutilmasdi va tez javob berilganda `complete` autosave paketidan OLDIN yetib
+    // borib `400 VALIDATION_ERROR (unansweredCount)` qaytarardi — o'quvchi testni yakunlay
+    // olmasdi. Endi `complete` faqat navbat serverga YETIB BORGANDAN keyin yuboriladi.
+    setIsSavingBeforeComplete(true);
+    let saved: boolean;
+    try {
+      saved = await autosave.flush();
+    } finally {
+      setIsSavingBeforeComplete(false);
+    }
+
+    if (!saved) {
+      // Javoblar YO'QOLMAYDI — ular `localStorage` navbatida (`pending: true`) qoladi va
+      // keyingi urinishda/ulanish tiklanganda qayta yuboriladi (P21).
+      toast.show({
+        variant: 'danger',
+        title: t('test.saveFailedTitle'),
+        description: t('test.saveFailedDescription'),
+      });
       return;
     }
 
@@ -349,7 +381,14 @@ export default function TestPage() {
           <Button variant="outline" onClick={handlePrev} disabled={page <= 1}>
             {t('common.back')}
           </Button>
-          <Button onClick={handleNext} isLoading={completeTest.isPending}>
+          <Button
+            onClick={() => {
+              void handleNext();
+            }}
+            // `Button` `disabled={disabled || isLoading}` qiladi — yuklanish paytida ikkinchi
+            // bosish mumkin emas, foydalanuvchi esa kutayotganini ko'radi.
+            isLoading={isSavingBeforeComplete || completeTest.isPending}
+          >
             {t('common.next')}
           </Button>
         </div>

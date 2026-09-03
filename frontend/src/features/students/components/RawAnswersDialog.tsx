@@ -76,11 +76,9 @@ export function RawAnswersDialog({ open, onClose, assessmentId }: RawAnswersDial
                 {answersQuery.data.map((answer) => (
                   <TableRow key={answer.questionCode}>
                     <TableCell>{answer.questionText}</TableCell>
-                    <TableCell>{answer.value}</TableCell>
+                    <TableCell>{answer.rawValue}</TableCell>
                     <TableCell>
-                      {answer.durationMs === null
-                        ? '—'
-                        : t('studentProfile.rawAnswers.durationMs', { count: answer.durationMs })}
+                      {t('studentProfile.rawAnswers.durationMs', { count: answer.durationMs })}
                     </TableCell>
                     <TableCell>{answer.revisionCount}</TableCell>
                   </TableRow>

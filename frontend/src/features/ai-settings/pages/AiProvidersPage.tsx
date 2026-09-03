@@ -70,11 +70,14 @@ export default function AiProvidersPage() {
                   displayName: provider,
                   maskedApiKey: null,
                   model: '',
+                  baseUrl: null,
                   maxOutputTokens: 4096,
                   temperature: 0.4,
                   isDefault: false,
                   isActive: false,
                   fallbackOrder: 100,
+                  lastCheckedAt: null,
+                  lastCheckStatus: null,
                 },
             )}
           />

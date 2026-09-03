@@ -1,3 +1,4 @@
+import type { components } from '@/shared/api/schema';
 import { QUESTION_TYPE_VALUES, type CatalogQuestionItem, type QuestionType } from './types';
 
 /**
@@ -17,33 +18,25 @@ export interface QuestionFormValues {
   weight: number;
 }
 
-/** `PUT /api/admin/catalog/questions/{id}` so'rov tanasi (`UpdateTestQuestionRequest`). */
-export interface UpdateQuestionPayload {
-  textUz: string;
-  textRu: string | null;
-  textEn: string | null;
-  isActive: boolean;
-  order: number;
-  isRequired: boolean;
-  /** Tizim savolida `undefined` — JSON'ga umuman tushmaydi (pastdagi izohga qarang). */
-  scale?: string;
-  direction?: 1 | -1;
-  weight?: number;
-}
+/**
+ * `PUT /api/admin/catalog/questions/{id}` so'rov tanasi — backend
+ * `UpdateTestQuestionRequest` dan re-export. `direction` sxemada `int?`, domenda faqat
+ * `+1`/`-1` — toraytirildi. Tizim savolida `scale`/`direction`/`weight` `undefined` bo'ladi
+ * va `JSON.stringify` ularni tanaga umuman qo'shmaydi (pastdagi izohga qarang).
+ */
+export type UpdateQuestionPayload = Omit<
+  components['schemas']['UpdateTestQuestionRequest'],
+  'direction'
+> & { direction?: 1 | -1 };
 
-/** `POST /api/admin/catalog/tests/{id}/questions` so'rov tanasi (`CreateTestQuestionRequest`). */
-export interface CreateQuestionPayload {
-  code: string;
-  order: number;
-  textUz: string;
-  textRu: string | null;
-  textEn: string | null;
-  type: QuestionType;
-  scale: string;
-  direction: 1 | -1;
-  weight: number;
-  isRequired: boolean;
-}
+/**
+ * `POST /api/admin/catalog/tests/{id}/questions` so'rov tanasi — backend
+ * `CreateTestQuestionRequest` dan re-export; `type`/`direction` toraytirildi.
+ */
+export type CreateQuestionPayload = Omit<
+  components['schemas']['CreateTestQuestionRequest'],
+  'type' | 'direction'
+> & { type: QuestionType; direction: 1 | -1 };
 
 function trimmedOrNull(value: string): string | null {
   const trimmed = value.trim();

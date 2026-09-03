@@ -76,7 +76,10 @@ export function StudentDiagramsSection({
       </Card>
 
       <Card title={t('studentProfile.diagrams.activityHeading')}>
-        {activity ? (
+        {/* `!= null` — sxemada `activityIndex?: number | null`, ya'ni maydon javobda umuman
+            bo'lmasligi ham mumkin; ilgari `!== null` turgani uchun bunday holatda diagramma
+            `undefined` ball bilan chizilardi. */}
+        {activity && activity.activityIndex != null ? (
           <ActivityBars
             scales={activity.scales}
             activityIndex={activity.activityIndex}

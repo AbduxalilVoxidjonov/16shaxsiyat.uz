@@ -45,6 +45,12 @@ public sealed class TestDefinition : AggregateRoot
     /// <summary>`Scored` — ballanadigan anketa; `Survey` — oddiy so'rovnoma (`ScoringStrategyCode` ishlatilmaydi).</summary>
     public TestScoringMode ScoringMode { get; private set; }
 
+    /// <summary>
+    /// Ushbu anketa "shaxsiyat batareyasi"ga (ilmiy metodikalar) kiradimi — mezon va uning
+    /// asosi `PersonalityBattery` sinfida (kod satri bo'yicha EMAS).
+    /// </summary>
+    public bool IsPersonalityBattery => PersonalityBattery.Includes(Kind, ScoringMode);
+
     public TestDefinitionStatus Status { get; private set; }
 
     public Guid? CreatedByAdminUserId { get; private set; }

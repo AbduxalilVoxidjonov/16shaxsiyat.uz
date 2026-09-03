@@ -50,17 +50,25 @@ builder.Services.AddSwaggerGen(options =>
     options.SchemaFilter<RequiredNonNullablePropertiesSchemaFilter>();
 });
 
-builder.Services.AddProblemDetails(options =>
-{
-    // RFC 9457 formatiga mos `code` maydoni uchun joy (docs/06-arxitektura.md, 6-bo'lim).
-    // Konkret `code` qiymatlari `ExceptionHandlingMiddleware` (`IExceptionHandler`) orqali to'ldiriladi.
-    options.CustomizeProblemDetails = context =>
-    {
-        context.ProblemDetails.Extensions.TryAdd("traceId", context.HttpContext.TraceIdentifier);
-    };
-});
+// RFC 9457 `ProblemDetails` + `code` maydoni (docs/06-arxitektura.md, 6-bo'lim). Konkret `code`
+// qiymatlarini `ExceptionHandlingMiddleware`/`ControllerResultExtensions`/auth handlerlari
+// beradi; `ProblemDetailsSetup` faqat ular yetib bormagan TRANSPORT xatolariga (404/405/415…)
+// zaxira kod qo'yadi.
+builder.Services.AddConfiguredProblemDetails();
+
+// `[ApiController]`ning standart `ValidationProblemDetails` javobini (unda `code` YO'Q) loyihaning
+// yagona shakli bilan almashtiradi — buzuq JSON, noto'g'ri tur va yo'q maydon holatlari uchun.
+builder.Services.AddModelStateProblemDetails();
 
 builder.Services.AddExceptionHandler<ExceptionHandlingMiddleware>();
+
+// `docs/08-auth-va-xavfsizlik.md` 7-bo'lim: HSTS 1 yil + subdomenlar. `UseHsts()` standart
+// qiymati atigi 30 kun, shu sabab aniq berilyapti. Faqat Production'da qo'llanadi (pastda).
+builder.Services.AddHsts(options =>
+{
+    options.MaxAge = TimeSpan.FromDays(365);
+    options.IncludeSubDomains = true;
+});
 
 builder.Services.AddRateLimitPolicies();
 
@@ -153,6 +161,17 @@ if (app.Configuration.GetValue<bool>("App:SeedOnStartup"))
 // tayanadi (`ForwardedHeadersSetup` izohiga qarang, `docs/13` 4-bo'lim).
 app.UseConfiguredForwardedHeaders();
 
+// Xavfsizlik sarlavhalari — quvurning eng boshida, shunda undan keyingi HAR QANDAY javob
+// (xato, 404, rate limit, auth rad javobi) ularni oladi (`docs/08` 7-bo'lim).
+app.UseSecurityHeaders();
+
+// Swagger FAQAT Development'da (`docs/08` 9-bo'lim ro'yxati: "Swagger production'da
+// o'chirilgan"). `docker-compose.yml` standart holatda `ASPNETCORE_ENVIRONMENT=Production`
+// beradi — ya'ni ishlab chiqarishda `/swagger` va `/swagger/v1/swagger.json` umuman
+// ro'yxatga olinmaydi (404). Sxema hujjati ichki API yuzasini (barcha admin endpointlari,
+// maydon nomlari, enum qiymatlari) ochib beradi va autentifikatsiyasiz o'qiladi — bu
+// razvedka uchun tayyor xarita. Frontend'ning `npm run generate:api` buyrug'i lokal
+// (Development) API'ga qarshi ishlaydi, shu sabab bu qaror ish oqimini buzmaydi.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

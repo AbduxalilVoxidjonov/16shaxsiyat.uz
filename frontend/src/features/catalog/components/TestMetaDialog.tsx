@@ -43,7 +43,7 @@ export function TestMetaDialog({ open, test, onClose }: TestMetaDialogProps) {
     defaultValues: {
       nameUz: test.nameUz,
       descriptionUz: test.descriptionUz ?? '',
-      displayOrder: 0,
+      displayOrder: test.displayOrder,
       estimatedMinutes: test.estimatedMinutes,
       pageSize: test.pageSize,
       shuffleQuestions: test.shuffleQuestions,
@@ -55,10 +55,7 @@ export function TestMetaDialog({ open, test, onClose }: TestMetaDialogProps) {
     reset({
       nameUz: test.nameUz,
       descriptionUz: test.descriptionUz ?? '',
-      // `displayOrder` detal javobida YO'Q (`CatalogTestDetailDto` uni qaytarmaydi), shu
-      // sabab joriy qiymatni ko'rsatib bo'lmaydi — maydon aniq yorliq va tushuntirish bilan
-      // ochiq qoldirilgan (saqlash uni kiritilgan songa o'rnatadi).
-      displayOrder: 0,
+      displayOrder: test.displayOrder,
       estimatedMinutes: test.estimatedMinutes,
       pageSize: test.pageSize,
       shuffleQuestions: test.shuffleQuestions,

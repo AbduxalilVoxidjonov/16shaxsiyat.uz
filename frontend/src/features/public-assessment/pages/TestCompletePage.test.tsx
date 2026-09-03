@@ -4,12 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
+import { jsonResponse, type Schemas } from '@/test/apiMock';
 import TestCompletePage from './TestCompletePage';
 import { useSessionStore } from '../store/sessionStore';
-
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
-}
 
 // `PublicTestSummaryDto` shakli (docs/07 1.3-bo'lim, P36: `name`/`estimatedMinutes` bilan) —
 // `TestPage` xuddi shu ro'yxatni `navigate(..., { state: { tests } })` orqali uzatadi.
@@ -18,7 +15,7 @@ const SESSION_TESTS = [
   { code: 'BIG5', name: 'Shaxsiyatning 5 omili', status: 'Completed', answered: 50, total: 50, order: 2, estimatedMinutes: 8 },
   { code: 'RIASEC', name: 'Kasb qiziqishlari', status: 'InProgress', answered: 0, total: 48, order: 3, estimatedMinutes: 7 },
   { code: 'ACTIVITY', name: 'Aktivlik va motivatsiya', status: 'Locked', answered: 0, total: 32, order: 4, estimatedMinutes: 5 },
-];
+] satisfies Schemas['PublicTestSummaryDto'][];
 
 function seedSession() {
   useSessionStore.getState().setSession('sess-token-1', 'demo-school', 'assessment-1');
@@ -85,7 +82,7 @@ describe('TestCompletePage', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(
-        jsonResponse({
+        jsonResponse<'GetSessionStateResult'>({
           assessmentId: 'assessment-1',
           status: 'InProgress',
           student: { firstNameShort: 'Sardor', grade: 9 },
@@ -93,6 +90,7 @@ describe('TestCompletePage', () => {
           currentTestCode: 'RIASEC',
           tests: SESSION_TESTS,
           progressPercent: 55,
+          hasPersonalityBattery: true,
         }),
       ),
     );
@@ -109,7 +107,7 @@ describe('TestCompletePage', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(
-        jsonResponse({
+        jsonResponse<'GetSessionStateResult'>({
           assessmentId: 'assessment-1',
           status: 'InProgress',
           student: { firstNameShort: 'Sardor', grade: 9 },
@@ -117,6 +115,7 @@ describe('TestCompletePage', () => {
           currentTestCode: 'RIASEC',
           tests: SESSION_TESTS,
           progressPercent: 55,
+          hasPersonalityBattery: true,
         }),
       ),
     );

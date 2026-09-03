@@ -68,11 +68,19 @@ internal sealed class TestAiProviderCommandHandler : IRequestHandler<TestAiProvi
         return Result.Success(new AdminAiProviderTestResultDto(health.IsHealthy, (int)stopwatch.ElapsedMilliseconds, message));
     }
 
+    /// <summary>
+    /// Xato TURIga qarab oldindan yozilgan o'zbekcha xabar — provayder javobining xom matni
+    /// (kalit, so'rov tanasi) HECH QACHON ishlatilmaydi. Har bir xabar adminni ANIQ keyingi
+    /// harakatga yo'naltiradi (`prompts/28` MAXSUS DIQQAT #3).
+    /// </summary>
     private static string MessageForError(AiErrorKind kind) => kind switch
     {
-        AiErrorKind.Auth => "API kaliti noto'g'ri yoki bekor qilingan.",
-        AiErrorKind.RateLimit => "Provayder limiti tugagan, birozdan keyin urinib ko'ring.",
-        AiErrorKind.Timeout or AiErrorKind.Server => "Provayder javob bermadi.",
+        AiErrorKind.Auth => "API kaliti noto'g'ri yoki bekor qilingan — kalitni qayta kiriting.",
+        AiErrorKind.RateLimit => "Provayder kvotasi/limiti tugagan — birozdan keyin urinib ko'ring yoki tarifni tekshiring.",
+        AiErrorKind.ModelNotFound => "Model topilmadi — model nomini tekshiring.",
+        AiErrorKind.Network => "Provayderga ulanib bo'lmadi — internet aloqasini tekshiring.",
+        AiErrorKind.Timeout or AiErrorKind.Server => "Provayder javob bermadi — birozdan keyin qayta urinib ko'ring.",
+        AiErrorKind.Schema => "Provayder kutilgan shakldagi javob qaytarmadi.",
         AiErrorKind.BadRequest => "So'rov shakli noto'g'ri — bu bizning xatomiz, jurnalga qarang.",
         _ => "Noma'lum xato yuz berdi.",
     };

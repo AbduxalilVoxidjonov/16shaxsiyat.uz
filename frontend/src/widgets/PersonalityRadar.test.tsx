@@ -48,7 +48,10 @@ describe('PersonalityRadar', () => {
       />,
     );
     const table = screen.getByTestId('personality-radar-table');
-    expect(table.className).toContain('sr-only');
+    // Jadval `sr-only` O'RAM ichida (`VisuallyHidden`) — `sr-only` ni jadvalning
+    // O'ZIGA berib bo'lmaydi: u holda jadval eni sahifadan chiqib ketadi (P30-5,
+    // izohi `shared/ui/VisuallyHidden.tsx` da).
+    expect(table.parentElement?.className).toContain('sr-only');
     expect(within(table).getAllByRole('row').length).toBeGreaterThan(1);
   });
 });

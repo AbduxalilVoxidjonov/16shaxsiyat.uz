@@ -15,7 +15,9 @@ export interface TestConnectionButtonProps {
  * "Aloqani tekshirish" — `docs/11` A-7, `prompts/28` MAXSUS DIQQAT #3: natija aniq bo'lishi
  * kerak — muvaffaqiyat ("Ishlayapti · N ms") yoki xato **TURI** bilan (backend `message`
  * maydonida "kalit noto'g'ri" / "limit tugagan" / "javob bermadi" kabi aniq matn qaytaradi —
- * bu yerda umumiy "Xatolik" bilan ALMASHTIRILMAYDI, aynan ko'rsatiladi).
+ * bu yerda umumiy "Xatolik" bilan ALMASHTIRILMAYDI, aynan ko'rsatiladi). Backend `message`ni
+ * `AiErrorKind` bo'yicha oldindan yozilgan matnlardan quradi — provayderning XOM javobi
+ * (potentsial API kaliti bilan) u yerga TUSHMAYDI (`TestAiProviderCommandHandler`).
  */
 export function TestConnectionButton({ provider, disabled }: TestConnectionButtonProps) {
   const { t } = useTranslation();
@@ -59,7 +61,9 @@ export function TestConnectionButton({ provider, disabled }: TestConnectionButto
       {result && !result.ok && (
         <p role="alert" className="flex items-center gap-1.5 text-sm font-medium text-danger-700">
           <XCircle size={16} aria-hidden="true" />
-          {result.message ?? t('aiSettings.provider.testConnection.unknownError')}
+          {result.message.trim() === ''
+            ? t('aiSettings.provider.testConnection.unknownError')
+            : result.message}
         </p>
       )}
 

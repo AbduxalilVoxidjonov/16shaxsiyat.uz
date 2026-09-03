@@ -12,6 +12,12 @@ COPY tests/StudentRoadMap.Domain.Tests/*.csproj          tests/StudentRoadMap.Do
 COPY tests/StudentRoadMap.Application.Tests/*.csproj     tests/StudentRoadMap.Application.Tests/
 COPY tests/StudentRoadMap.Infrastructure.Tests/*.csproj  tests/StudentRoadMap.Infrastructure.Tests/
 COPY tests/StudentRoadMap.Api.IntegrationTests/*.csproj  tests/StudentRoadMap.Api.IntegrationTests/
+COPY tests/StudentRoadMap.Migrations.Tests/*.csproj      tests/StudentRoadMap.Migrations.Tests/
+# DIQQAT: solution'ga yangi loyiha qo'shilsa, shu ro'yxatga ham qator qo'shiladi.
+# `dotnet restore StudentRoadMap.sln` solution'dagi HAR BIR csproj ni talab qiladi —
+# bittasi yetishmasa `MSB3202` bilan yiqiladi va API obrazi umuman yig'ilmaydi
+# (2026-09-03 da aynan shu sodir bo'ldi: yangi `Migrations.Tests` qo'shilib, bu
+# qator unutilgan edi — deploy to'liq bloklangan).
 # Butun solution restore qilinadi — `Microsoft.EntityFrameworkCore.Design` ning
 # tranzitiv paketlari (masalan `Humanizer.Core`) faqat shunda to'liq tushadi.
 RUN dotnet restore StudentRoadMap.sln

@@ -4,7 +4,12 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useSearchParams } from 'react-router';
 import AuditLogPage from './AuditLogPage';
+import { pagedResponse, type Schemas } from '@/test/apiMock';
 
+/**
+ * `GET /api/admin/audit-logs` qatorlari — backend `AdminAuditLogItemDto` shakli
+ * (`docs/07` 3.7-bo'lim). `satisfies` mockni sxemaga bog'laydi.
+ */
 const ENTRY_1 = {
   id: 42,
   adminUserId: '11111111-2222-3333-4444-555555555555',
@@ -16,7 +21,7 @@ const ENTRY_1 = {
   ipHash: 'abc123hash',
   userAgent: 'Mozilla/5.0',
   createdAt: '2026-08-30T10:15:00Z',
-};
+} satisfies Schemas['AdminAuditLogItemDto'];
 
 const ENTRY_NO_DIFF = {
   id: 40,
@@ -29,7 +34,7 @@ const ENTRY_NO_DIFF = {
   ipHash: 'abc123hash',
   userAgent: 'Mozilla/5.0',
   createdAt: '2026-08-28T08:00:00Z',
-};
+} satisfies Schemas['AdminAuditLogItemDto'];
 
 const ENTRY_2 = {
   id: 41,
@@ -42,32 +47,13 @@ const ENTRY_2 = {
   ipHash: 'abc123hash',
   userAgent: 'Mozilla/5.0',
   createdAt: '2026-08-29T09:00:00Z',
-};
+} satisfies Schemas['AdminAuditLogItemDto'];
 
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
-function pagedResponse(items: unknown[]) {
-  return {
-    items,
-    page: 1,
-    pageSize: 20,
-    totalCount: items.length,
-    totalPages: 1,
-    hasNext: false,
-    hasPrevious: false,
-  };
-}
-
-function mockFetch(items: unknown[] = [ENTRY_1, ENTRY_2]) {
+function mockFetch(items: Schemas['AdminAuditLogItemDto'][] = [ENTRY_1, ENTRY_2]) {
   const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
     const url = String(input);
     if (url.includes('/api/admin/audit-logs')) {
-      return Promise.resolve(jsonResponse(pagedResponse(items)));
+      return Promise.resolve(pagedResponse<'AdminAuditLogItemDto'>(items));
     }
     return Promise.reject(new Error(`unexpected fetch: ${url}`));
   });

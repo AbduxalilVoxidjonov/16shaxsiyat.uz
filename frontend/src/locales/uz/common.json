@@ -101,12 +101,22 @@
       "enableSuccess": "2FA muvaffaqiyatli yoqildi. Zaxira kodlarni xavfsiz joyda saqlang.",
       "disableSuccess": "2FA o'chirildi.",
       "secretLabel": "Maxfiy kalit",
-      "recoveryCodesLabel": "Zaxira kodlar (har biri bir marta ishlatiladi)",
       "confirmDisableTitle": "2FA'ni o'chirishni tasdiqlang",
       "confirmDisableDescription": "Davom etish uchun joriy parolingizni kiriting.",
       "passwordLabel": "Parol",
       "passwordRequired": "Parolni kiriting.",
-      "genericError": "Amalni bajarishda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
+      "genericError": "Amalni bajarishda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring.",
+      "backupCodesLabel": "Zaxira kodlar (har biri faqat bir marta ishlatiladi)",
+      "backupCodesHint": "Bu 8 ta kod faqat hozir, shu oynada ko'rsatiladi va boshqa ko'rsatilmaydi. Telefoningizni yo'qotsangiz, hisobga kirishning yagona yo'li — shu kodlar.",
+      "copyCta": "Nusxalash",
+      "copySuccess": "Zaxira kodlar nusxalandi.",
+      "copyError": "Nusxalab bo'lmadi — kodlarni qo'lda ko'chirib oling.",
+      "downloadCta": "Fayl sifatida saqlash",
+      "downloadError": "Faylni saqlab bo'lmadi — kodlarni qo'lda ko'chirib oling.",
+      "downloadFileHeading": "Shaxsiyat — 2FA zaxira kodlari. Har biri faqat bir marta ishlatiladi.",
+      "acknowledgeLabel": "Zaxira kodlarni xavfsiz joyda saqlab oldim",
+      "acknowledgeCta": "Saqlab oldim",
+      "acknowledgeRequired": "Oynani yopishdan oldin zaxira kodlarni saqlaganingizni tasdiqlang — ular boshqa ko'rsatilmaydi."
     }
   },
   "pages": {
@@ -224,6 +234,8 @@
     "progressLabel": "{{answered}} ta savoldan {{total}} tasiga javob berildi",
     "progressText": "{{answered}}/{{total}} savol",
     "offlineBanner": "Internet yo'q — javoblaring saqlanmoqda, ulanish tiklanganda yuboriladi.",
+    "saveFailedTitle": "Javoblar serverga yuborilmadi",
+    "saveFailedDescription": "Internet aloqasini tekshirib, \"Keyingi\" tugmasini qayta bos. Javoblaring qurilmangda saqlanib turibdi — yo'qolmaydi.",
     "saveStatus": {
       "saving": "Saqlanmoqda…",
       "saved": "Saqlandi"
@@ -595,6 +607,8 @@
         "recommendations": "Tavsiyalar"
       },
       "actionStepLabel": "Keyingi qadam:",
+      "reliabilityNoteLabel": "Ishonchlilik izohi:",
+      "disclaimerLabel": "Eslatma:",
       "learningStyleLabel": "O'quv uslubi",
       "motivationProfileLabel": "Motivatsiya",
       "activityAssessmentLabel": "Aktivlik baholovi",
@@ -644,6 +658,9 @@
       "failedDescription": "AI tahlil yakunlanmadi. Boshqa provider bilan qayta urinib ko'ring.",
       "retryCta": "Qayta urinish",
       "fallbackBadge": "Avtomatik shablon hisobot",
+      "fallbackNotice": "Bu matnni AI yozmagan: barcha AI provayderlari javob bermagani uchun tizim avtomatik shablon hisobot tayyorladi. Uni shaxsiy tahlil sifatida o'qimang — AI sozlamalarini tekshirib, tahlilni qayta ishga tushiring.",
+      "moderatedBadge": "Moderatsiya qilingan hisobot",
+      "moderatedNotice": "Bu javobda taqiqlangan atama ikkinchi urinishda ham topilgan, shuning uchun u \"moderatsiya qilindi\" belgisi bilan saqlangan. Matnni o'quvchiga yoki ota-onaga ko'rsatishdan oldin albatta ko'zdan kechiring va zarur bo'lsa tahlilni qayta ishga tushiring.",
       "unreliableBanner": "Javoblar juda tez berilgan, natija ishonchsiz bo'lishi mumkin. Qayta topshirish tavsiya etiladi.",
       "noAnalysisYet": "Bu sessiya uchun AI tahlil hali mavjud emas.",
       "providerMeta": "{{provider}} · {{promptVersion}} · {{date}}"
@@ -1084,7 +1101,7 @@
       "nameLabel": "Nomi",
       "descriptionLabel": "Tavsifi",
       "displayOrderLabel": "Katalogdagi tartib raqami",
-      "displayOrderHint": "API joriy tartib raqamini qaytarmaydi — saqlansa, tartib shu yerda kiritilgan songa o'rnatiladi.",
+      "displayOrderHint": "Katalog ro'yxatidagi joriy tartib. Kichik raqam ro'yxatda yuqorida turadi.",
       "minutesLabel": "Taxminiy vaqt (daqiqa)",
       "minutesHint": "O'quvchiga ko'rsatiladigan taxminiy davomiylik.",
       "pageSizeLabel": "Bir sahifadagi savollar soni",
@@ -1129,12 +1146,12 @@
       "nameLabel": "Nomi",
       "descriptionLabel": "Tavsifi",
       "displayOrderLabel": "Tartib raqami",
-      "bandsPreserved": "Talqin oraliqlari ({{count}} ta) shu ko'rinishda saqlanadi — bu oynada tahrirlanmaydi.",
       "createSuccess": "Shkala qo'shildi",
       "editSuccess": "Shkala saqlandi"
     },
     "scalesList": {
-      "questionCount": "{{count}} ta savol"
+      "questionCount": "{{count}} ta savol",
+      "bandsMissing": "Talqin oraliqlari belgilanmagan — nashrdan oldin qo'shing."
     },
     "scaleDelete": {
       "title": "Shkalani o'chirish",
@@ -1151,7 +1168,19 @@
       "successTitle": "Nusxa yaratildi"
     },
     "publish": {
-      "successTitle": "Anketa nashr etildi"
+      "successTitle": "Anketa nashr etildi",
+      "title": "Anketani nashr qilish",
+      "description": "Nashr etilgan anketa faqat YANGI o'quvchi sessiyalariga qo'shiladi. Nashrdan oldin tizim anketani tekshiradi.",
+      "retryCta": "Qayta urinish",
+      "issuesTitle": "Nashrga to'sqinlik qilayotgan {{count}} ta muammo:",
+      "scaleContext": "{{scale}} shkalasi —",
+      "questionContext": "{{code}} savoli —",
+      "issues": {
+        "TEST_HAS_NO_QUESTIONS": "Anketada kamida bitta faol savol bo'lishi kerak.",
+        "TEST_HAS_NO_SCALES": "Anketada kamida bitta shkala bo'lishi kerak.",
+        "QUESTION_WITHOUT_SCALE": "Savolga shkala biriktirilmagan.",
+        "unknown": "Nashrga to'sqinlik qilayotgan muammo aniqlandi."
+      }
     },
     "toggleActive": {
       "successTitle": "Anketa faolligi yangilandi"
@@ -1182,6 +1211,35 @@
       "concurrencyConflict": "Yozuv bir vaqtda boshqa joyda o'zgartirildi. Sahifani yangilab, qayta urining.",
       "network": "Server bilan bog'lanib bo'lmadi. Internet aloqasini tekshirib, qayta urining.",
       "generic": "Amalni bajarib bo'lmadi. Birozdan keyin qayta urinib ko'ring."
+    },
+    "bands": {
+      "heading": "Talqin oraliqlari",
+      "rule": "Chegaralar butun son bo'lsin; \"gacha\" qiymati oraliqqa kiradi; keyingi oraliq oldingisidan roppa-rosa 1 ga katta sondan boshlanadi; birinchisi 0 dan boshlanib, oxirgisi 100 da tugaydi.",
+      "addRow": "Oraliq qo'shish",
+      "emptyHint": "Oraliq qo'shilmagan. Anketani nashr qilish uchun 0 dan 100 gacha to'liq qoplanishi shart.",
+      "fromLabel": "Dan",
+      "toLabel": "Gacha",
+      "labelLabel": "Daraja nomi",
+      "fromAria": "{{index}}-oraliq: dan",
+      "toAria": "{{index}}-oraliq: gacha",
+      "labelAria": "{{index}}-oraliq: daraja nomi",
+      "removeRowAria": "{{index}}-oraliqni o'chirish",
+      "splitCountLabel": "Nechta oraliq",
+      "splitCta": "Teng bo'lish",
+      "splitHint": "0–100 ni teng oraliqlarga bo'ladi: 3 → 0–33 / 34–66 / 67–100.",
+      "levelLow": "Past",
+      "levelMid": "O'rtacha",
+      "levelHigh": "Yuqori",
+      "levelNumbered": "{{index}}-daraja",
+      "issues": {
+        "SCALE_BANDS_MISSING": "Talqin oraliqlari belgilanmagan.",
+        "SCALE_BAND_NOT_INTEGER": "Oraliq chegaralari butun son bo'lishi shart: kasrli chegarada ba'zi ballar hech qaysi oraliqqa tushmay qoladi.",
+        "SCALE_BAND_INVALID": "Oraliqning boshlanishi tugashidan katta — \"dan\" qiymati \"gacha\" dan kichik yoki teng bo'lsin.",
+        "SCALE_BAND_INCOMPLETE": "Oraliqlar 0 dan boshlanib 100 da tugashi shart.",
+        "SCALE_BAND_GAP": "Oraliqlar orasida bo'shliq bor: keyingi oraliq oldingisining oxiridan keyingi sondan boshlansin.",
+        "SCALE_BAND_OVERLAP": "Oraliqlar ustma-ust tushadi: \"gacha\" qiymati ham oraliqqa kiradi, shuning uchun keyingisi undan 1 ga katta sondan boshlansin.",
+        "LABEL_REQUIRED": "Har bir oraliqqa daraja nomini kiriting (masalan: Past, O'rtacha, Yuqori)."
+      }
     }
   },
   "aiSettings": {
@@ -1329,6 +1387,139 @@
       "Assessment": "Sessiya",
       "AssessmentProgram": "Dastur",
       "AiProviderConfig": "AI provayder"
+    }
+  },
+  "assessmentDetail": {
+    "backCta": "Sessiyalar ro'yxatiga",
+    "heading": "Sessiya",
+    "idCaption": "Sessiya ID: {{id}}",
+    "overviewHeading": "Sessiya haqida umumiy ma'lumot",
+    "notFoundTitle": "Sessiya topilmadi",
+    "notFoundDescription": "Bu sessiya o'chirilgan yoki havola noto'g'ri.",
+    "loadError": "Sessiya ma'lumotini yuklab bo'lmadi.",
+    "enums": {
+      "status": {
+        "Draft": "Qoralama",
+        "InProgress": "Davom etmoqda",
+        "Completed": "Yakunlangan",
+        "Analyzing": "Tahlil qilinmoqda",
+        "Analyzed": "Tahlil qilingan",
+        "AnalysisFailed": "Tahlil muvaffaqiyatsiz",
+        "Abandoned": "Tashlab ketilgan"
+      },
+      "aiStatus": {
+        "Pending": "Navbatda",
+        "Running": "Bajarilmoqda",
+        "Succeeded": "Tayyor",
+        "Failed": "Muvaffaqiyatsiz"
+      }
+    },
+    "meta": {
+      "heading": "Sessiya ma'lumoti",
+      "unknown": "Ma'lumot yo'q",
+      "unavailableNotice": "Bu sessiyaning holati, vaqti, maktabi va o'quvchisi hozircha faqat sessiyalar ro'yxatidan ochilganda ko'rsatiladi. Ro'yxatga qayting va sessiyani o'sha yerdan oching.",
+      "status": "Holat",
+      "student": "O'quvchi",
+      "school": "Maktab",
+      "program": "Dastur",
+      "startedAt": "Boshlangan",
+      "completedAt": "Yakunlangan",
+      "notCompleted": "Yakunlanmagan",
+      "duration": "Davomiylik",
+      "durationValue": "{{count}} daqiqa"
+    },
+    "reliability": {
+      "heading": "Ishonchlilik indeksi",
+      "outOf": "/ 100",
+      "scoreUnknown": "Ball hisoblanmagan",
+      "explanation": "Ishonchlilik indeksi (0–100) javoblarning sifatini o'lchaydi: bir xil javoblar ketma-ketligi, juda tez bosish va o'zaro zid javoblar ballni pasaytiradi. Past ball natija yomon degani EMAS — u natijaga ishonib bo'lmasligini bildiradi.",
+      "flagAdvice": {
+        "Reliable": "Javoblar izchil — natijani odatdagidek talqin qilish mumkin.",
+        "Questionable": "Ba'zi javoblarda shubha bor — natijani ehtiyotkorlik bilan talqin qiling va kerak bo'lsa o'quvchi bilan suhbatlashing.",
+        "Unreliable": "Javoblarga ishonib bo'lmaydi — bu natija asosida qaror chiqarmang, testni qayta topshirishni taklif qiling."
+      },
+      "notCalculatedTitle": "Ishonchlilik hali hisoblanmagan",
+      "notCalculatedDescription": "Indeks sessiya yakunlangandan keyin hisoblanadi. Sessiya hali tugallanmagan yoki ballar qayta hisoblanmagan bo'lishi mumkin."
+    },
+    "tests": {
+      "heading": "Testlar bo'yicha natijalar",
+      "columnTest": "Test",
+      "columnState": "Holat",
+      "columnResult": "Natija",
+      "state": {
+        "scored": "Ball hisoblangan",
+        "notScored": "Ballanmaydi",
+        "noData": "Natija yo'q"
+      },
+      "notScored": "Ballanmaydi (so'rovnoma)",
+      "noData": "Ma'lumot yo'q",
+      "index": {
+        "maturity": "Yetuklik indeksi: {{value}}",
+        "activity": "Aktivlik indeksi: {{value}}"
+      },
+      "indexUnknown": "Indeks hisoblanmagan",
+      "names": {
+        "MBTI16": "16 tipli shaxsiyat modeli",
+        "BIG5": "Xarakterning 5 omili",
+        "RIASEC": "Kasb qiziqishlari",
+        "ACTIVITY": "O'quv aktivligi"
+      },
+      "emptyTitle": "Test natijasi yo'q",
+      "emptyDescription": "Bu sessiyada hali birorta test natijasi qayd etilmagan."
+    },
+    "ai": {
+      "heading": "AI tahlil",
+      "providerMeta": "{{provider}} · {{model}} · {{promptVersion}} · {{date}}",
+      "historyToggle": "Tarix ({{count}})",
+      "historyCurrent": "joriy",
+      "rerunCta": "Tahlilni qayta ishga tushirish",
+      "rerunHint": "Qayta tahlil AI hisobotini yangidan yozdiradi — ballar va o'quvchi javoblari o'zgarmaydi. Hisobot chala, xato yoki avtomatik shablon bo'lsa, shuningdek AI provayderi yoki prompt versiyasi o'zgargan bo'lsa ishga tushiring.",
+      "rerunDisabledHint": "Qayta tahlil faqat yakunlangan sessiyada ishlaydi — bu sessiya hali tugallanmagan yoki tashlab ketilgan.",
+      "queuedNotice": "Tahlil navbatga qo'yildi. Odatda bir necha daqiqa vaqt ketadi — tayyor bo'lgach shu sahifada yangi hisobot ko'rinadi.",
+      "analyzingTitle": "Tahlil tayyorlanmoqda",
+      "analyzingDescription": "Odatda 1 daqiqa vaqt ketadi. Sahifa avtomatik yangilanadi.",
+      "failedTitle": "Tahlil muvaffaqiyatsiz",
+      "failedDescription": "AI tahlil yakunlanmadi. Boshqa provayder bilan qayta urinib ko'ring.",
+      "fallbackBadge": "Avtomatik shablon hisobot",
+      "fallbackNotice": "Bu matnni AI yozmagan: barcha AI provayderlari javob bermagani uchun tizim avtomatik shablon hisobot tayyorladi. Uni shaxsiy tahlil sifatida o'qimang — AI sozlamalarini tekshirib, tahlilni qayta ishga tushiring.",
+      "moderatedBadge": "Moderatsiya qilingan hisobot",
+      "moderatedNotice": "Bu javobda taqiqlangan atama ikkinchi urinishda ham topilgan, shuning uchun u \"moderatsiya qilindi\" belgisi bilan saqlangan. Matnni o'quvchiga yoki ota-onaga ko'rsatishdan oldin albatta ko'zdan kechiring.",
+      "noAnalysisYet": "Bu sessiya uchun AI tahlil hali mavjud emas."
+    },
+    "rerunDialog": {
+      "title": "Tahlilni qayta ishga tushirish",
+      "description": "AI hisobot yangidan yoziladi, joriy hisobot esa tarixga o'tadi.",
+      "warning": "Ballar va javoblar o'zgarmaydi — faqat AI matni qayta yoziladi. Bu amal AI limitidan token sarflaydi.",
+      "providerLabel": "Provayder",
+      "providerHint": "Avtomatik tanlansa tizim o'z fallback zanjirini ishlatadi.",
+      "providerAuto": "Avtomatik (standart zanjir)",
+      "submitCta": "Ha, qayta ishga tushirilsin",
+      "success": "Tahlil navbatga qo'yildi",
+      "error": "Tahlilni qayta ishga tushirib bo'lmadi. Birozdan so'ng qayta urinib ko'ring.",
+      "conflictError": "Bu holatdagi sessiyani qayta tahlil qilib bo'lmaydi — avval sessiya yakunlangan bo'lishi kerak."
+    }
+  },
+  "assessments": {
+    "filters": {
+      "status": "Holat",
+      "allStatuses": "Barcha holatlar",
+      "school": "Maktab",
+      "allSchools": "Barcha maktablar",
+      "from": "Sanadan",
+      "to": "Sanagacha",
+      "clearAll": "Filtrlarni tozalash"
+    },
+    "table": {
+      "ariaLabel": "Sessiyalar ro'yxati",
+      "student": "O'quvchi",
+      "school": "Maktab",
+      "program": "Dastur",
+      "status": "Holat",
+      "startedAt": "Boshlangan",
+      "completedAt": "Yakunlangan",
+      "reliability": "Ishonchlilik",
+      "emptyTitle": "Sessiya topilmadi",
+      "emptyDescription": "Tanlangan filtrlarga mos sessiya yo'q. Filtrlarni o'zgartirib ko'ring."
     }
   }
 }

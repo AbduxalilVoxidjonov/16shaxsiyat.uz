@@ -57,7 +57,7 @@ describe('widgets — axe a11y', () => {
   it('RiasecChart', async () => {
     const { container } = render(
       <RiasecChart
-        types={{ R: 62, I: 88, ART: 71, SOC: 40, ENT: 35, CONV: 48 }}
+        types={{ R: 62, I: 88, A: 71, S: 40, E: 35, C: 48 }}
         resultCode="IRA"
         differentiation={53}
       />,

@@ -53,7 +53,8 @@ internal static class CatalogMapping
         usedInProgramCount,
         test.DescriptionUz,
         test.PageSize,
-        test.ShuffleQuestions);
+        test.ShuffleQuestions,
+        test.DisplayOrder);
 
     public static CatalogQuestionItemDto ToQuestionDto(Question question) => new(
         question.Id,

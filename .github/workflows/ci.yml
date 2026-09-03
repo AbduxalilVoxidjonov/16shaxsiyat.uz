@@ -54,13 +54,17 @@ jobs:
       - name: dotnet build (0 xato, 0 ogohlantirish)
         run: dotnet build StudentRoadMap.sln --no-restore --configuration Release
 
-      # Testlar haqiqiy Postgres/Docker talab qilmaydi: integratsiya testlari SQLite +
-      # `WebApplicationFactory` ichki `ConfigureAppConfiguration` orqali sozlanadi
-      # (`PublicApiTestFactory` — Jwt/Encryption kalitlari test konfiguratsiyasida qattiq
-      # yozilgan, muhit o'zgaruvchisi shart emas).
-      - name: dotnet test
+      # Bu job Docker TALAB QILMAYDI: integratsiya testlari SQLite + `WebApplicationFactory`
+      # ichki `ConfigureAppConfiguration` orqali sozlanadi (`PublicApiTestFactory` —
+      # Jwt/Encryption kalitlari test konfiguratsiyasida qattiq yozilgan).
+      # `Category=Migrations` (Testcontainers, haqiqiy Postgres 16) ATAYLAB chiqarib
+      # tashlanadi va quyidagi ALOHIDA `migrations` job'ida ishga tushiriladi — u yerda
+      # `SRM_REQUIRE_DOCKER=1`, ya'ni Docker bo'lmasa testlar JIMGINA SKIP bo'lmaydi,
+      # balki job qizil bo'ladi (`docs/12` §5.1).
+      - name: dotnet test (migratsiya testlaridan tashqari)
         run: >
           dotnet test StudentRoadMap.sln --no-build --configuration Release
+          --filter "Category!=Migrations"
           --collect:"XPlat Code Coverage" --results-directory ./coverage
           --logger "trx;LogFileName=test-results.trx"
 
@@ -98,6 +102,53 @@ jobs:
         run: >
           dotnet ef migrations has-pending-model-changes
           -p src/StudentRoadMap.Infrastructure -s src/StudentRoadMap.Api --no-build --configuration Release
+
+  # ---------------------------------------------------------------------------------------
+  # 1b) Migratsiya testlari — HAQIQIY PostgreSQL 16 (Testcontainers).
+  #
+  #     Nima uchun alohida: qolgan barcha testlar `EnsureCreated()`/SQLite ustida ishlaydi,
+  #     ya'ni migratsiyalarni UMUMAN bajarmaydi. P34 da aynan shu bo'shliq tufayli ikki
+  #     bosqichli migratsiyadagi bloklovchi xato faqat jonli deploy'da ko'rindi (`docs/13` §8).
+  #
+  #     `SRM_REQUIRE_DOCKER=1` — MAJBURIY rejim: Docker topilmasa testlar "skip" bo'lib
+  #     jimgina yashil o'tmaydi, aniq xato bilan yiqiladi. Bu shart o'chirilmasin.
+  # ---------------------------------------------------------------------------------------
+  migrations:
+    name: Migratsiya testlari (Testcontainers · Postgres 16)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: NuGet keshi
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # Konteyner ko'tarilishini tezlashtiradi (image oldindan tortiladi).
+      - name: postgres:16-alpine image'ini tortish
+        run: docker pull postgres:16-alpine
+
+      - name: dotnet test (faqat migratsiya testlari)
+        env:
+          SRM_REQUIRE_DOCKER: '1'
+        run: >
+          dotnet test tests/StudentRoadMap.Migrations.Tests/StudentRoadMap.Migrations.Tests.csproj
+          --configuration Release --filter "Category=Migrations"
+          --logger "trx;LogFileName=migration-test-results.trx"
+
+      - name: Test natijalarini saqlash
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-test-results
+          path: '**/migration-test-results.trx'
+          retention-days: 14
 
   # ---------------------------------------------------------------------------------------
   # 2) Frontend: typecheck, lint, unit testlar, build.
@@ -184,10 +235,40 @@ jobs:
         if: always()
         run: kill "$(cat api.pid)" 2>/dev/null || true
 
+      # Sxema fayli haqiqatan qayta yozilganini tasdiqlash — `openapi-typescript` yiqilib,
+      # eski fayl joyida qolsa `git diff` ALDAB bo'sh chiqardi (ishlamaydigan darvoza
+      # ishlamaydigan tekshiruvdan yomonroq).
+      - name: Generatsiya haqiqatan bajarilganini tekshirish
+        run: |
+          f=frontend/src/shared/api/schema.d.ts
+          if [ ! -s "$f" ]; then
+            echo "::error::$f generatsiyadan keyin bo'sh — 'npm run generate:api' yiqilgan."
+            exit 1
+          fi
+          if ! grep -q "components" "$f"; then
+            echo "::error::$f da 'components' bloki yo'q — swagger javobi noto'g'ri."
+            exit 1
+          fi
+
       - name: git diff bo'sh bo'lishi shart (kontrakt sinxron)
         run: |
           if ! git diff --exit-code -- frontend/src/shared/api/schema.d.ts; then
-            echo "::error::frontend/src/shared/api/schema.d.ts eskirgan — 'npm run generate:api' ishga tushirib, natijani commit qiling."
+            cat <<'MSG'
+          ::error::frontend/src/shared/api/schema.d.ts ESKIRGAN — backend shartnomasi o'zgargan.
+
+          Nima qilish kerak (tartib bilan):
+            1. `npm run generate:api` (lokal API ko'tarilgan holda) va natijani commit qiling.
+            2. Yuqoridagi diff'ni MAYDON DARAJASIDA o'qing: o'zgargan/qo'shilgan har maydon
+               uchun uni ishlatuvchi frontend kodi bormi?
+            3. `frontend/eslint.config.js` dagi "VAQTINCHALIK ISTISNOLAR" ro'yxatini QISQARTIRING —
+               yangi sxema qamragan tiplar endi `components['schemas'][...]` dan re-export
+               qilinishi shart (`docs/10` 6-bo'lim), qo'lda yozilgan nusxa qolmasin.
+            4. `npm run typecheck` — qo'lda yozilgan tip bilan yangi sxema orasidagi farq
+               shu bosqichda ko'rinadi.
+
+          Nega qat'iy: 2026-09-02/03 da aynan eskirgan sxema + qo'lda yozilgan DTO tufayli
+          oltita shartnoma nomuvofiqligi ishlab chiqarishga chiqib ketdi (`docs/12` §11).
+          MSG
             exit 1
           fi
 
@@ -219,38 +300,86 @@ jobs:
         run: docker compose build api app
 
   # ---------------------------------------------------------------------------------------
-  # 5) E2E (Playwright) — `docs/12` §8/§10: faqat `main`ga push'da, VA faqat stsenariylar
-  #    yozilgandan keyin (P30). Hozircha `frontend/playwright.config.*` yo'q — shu sabab
-  #    bu job avtomatik o'tkazib yuboriladi (yashil "skipped", qizil emas).
+  # 5) E2E (Playwright) — `docs/12` §8/§10: faqat `main`ga push'da va `release/*` PR'larida.
+  #
+  #    MUHIT: testlar JONLI saytga qarshi ISHLAMAYDI. `frontend/e2e/global-setup.ts`
+  #    `docker-compose.e2e.yml` ni ALOHIDA loyiha nomi (`shaxsiyat-e2e`) va bir martalik
+  #    bo'sh baza bilan ko'taradi, frontend esa shu yerda `vite build` qilinib lokal
+  #    preview server orqali uzatiladi (`frontend/e2e/support/preview-server.mjs`).
+  #
+  #    Superadmin login/parol KODDA EMAS — repozitoriy sirlaridan keladi
+  #    (`E2E_ADMIN_USERNAME`/`E2E_ADMIN_PASSWORD`, `.env.example` ga qarang). Sirlar
+  #    berilmagan bo'lsa job aniq xato bilan yiqiladi, jimgina yashil o'tmaydi.
   # ---------------------------------------------------------------------------------------
   e2e:
-    name: E2E (Playwright, faqat main)
+    name: E2E (Playwright · chromium 1440px va 390px)
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || startsWith(github.head_ref, 'release/')
     needs: [backend, frontend]
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
-      - name: Playwright sozlanganini tekshirish
-        id: check
-        run: |
-          if [ -f frontend/playwright.config.ts ] || [ -f frontend/playwright.config.js ]; then
-            echo "configured=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Playwright hali sozlanmagan (P30) — E2E job o'tkazib yuborildi."
-          fi
-
-      - if: steps.check.outputs.configured == 'true'
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - if: steps.check.outputs.configured == 'true'
-        working-directory: frontend
+      - name: Sirlar berilganini tekshirish
+        env:
+          E2E_ADMIN_USERNAME: ${{ secrets.E2E_ADMIN_USERNAME }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
         run: |
-          npm ci
-          npx playwright install --with-deps
-          npm run test:e2e
+          if [ -z "$E2E_ADMIN_USERNAME" ] || [ -z "$E2E_ADMIN_PASSWORD" ]; then
+            echo "::error::E2E_ADMIN_USERNAME/E2E_ADMIN_PASSWORD repo sirlarida yo'q (.env.example)."
+            exit 1
+          fi
+
+      - name: npm ci
+        working-directory: frontend
+        run: npm ci
+
+      - name: Playwright brauzeri (chromium)
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      # E2E steki uchun image — `docker-compose.e2e.yml` `shaxsiyat-e2e-api:latest` ni
+      # kutadi. `globalSetup` uni o'zi ham qura oladi, lekin bu yerda qurish qadamning
+      # xatosi aniqroq ko'rinadi (va build vaqti Playwright taymeriga tushmaydi).
+      - name: E2E API image'ini qurish
+        env:
+          E2E_DB_PASSWORD: build-only
+          E2E_JWT_KEY: build-only
+          E2E_ENCRYPTION_KEY: build-only
+          E2E_ADMIN_USERNAME: build-only
+          E2E_ADMIN_PASSWORD: build-only
+        run: docker compose -f docker-compose.e2e.yml -p shaxsiyat-e2e build
+
+      - name: Playwright testlari
+        working-directory: frontend
+        env:
+          E2E_ADMIN_USERNAME: ${{ secrets.E2E_ADMIN_USERNAME }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+        run: npm run test:e2e
+
+      # Yiqilgan testning `trace` va skrinshotlari — nosozlikni CI logisiz tekshirish uchun.
+      - name: E2E artefaktlari
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            frontend/e2e/.tmp/playwright-report/**
+            frontend/e2e/.tmp/test-results/**
+          retention-days: 14
+
+      - name: E2E stekini o'chirish
+        if: always()
+        env:
+          E2E_DB_PASSWORD: teardown
+          E2E_JWT_KEY: teardown
+          E2E_ENCRYPTION_KEY: teardown
+          E2E_ADMIN_USERNAME: teardown
+          E2E_ADMIN_PASSWORD: teardown
+        run: docker compose -f docker-compose.e2e.yml -p shaxsiyat-e2e down -v --remove-orphans || true

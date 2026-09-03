@@ -115,17 +115,60 @@ rozilik checkbox va matn (`consentText`) mavjud. Rozilik vaqti `consent_given_at
 
 ## 7. HTTP xavfsizlik sarlavhalari
 
+Sarlavhalar IKKI joyda qo'yiladi, chunki ikki xil kontent beriladi (P31 da amalga oshirildi):
+
+| Kim | Qayerda | Nimaga |
+|-----|---------|--------|
+| API (`/api/**`, `/health`) | `Api/Middleware/SecurityHeadersMiddleware.cs` | Faqat JSON/fayl qaytaradi |
+| Frontend (SPA) | `docker/web-nginx.conf` (`location /` va `location /assets/`) | Haqiqiy sahifa beradi |
+
+**Ikkalasida bir xil:**
+
 ```
-Strict-Transport-Security: max-age=31536000; includeSubDomains
 X-Content-Type-Options: nosniff
 X-Frame-Options: DENY
 Referrer-Policy: strict-origin-when-cross-origin
 Permissions-Policy: geolocation=(), microphone=(), camera=()
-Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline';
-                         script-src 'self'; connect-src 'self' https://api.16shaxsiyat.uz
 ```
 
-HTTP → HTTPS redirect; production'da HSTS yoqiladi.
+**API CSP** — API hech qanday skript/stil bermaydi, shu sabab eng qattiq siyosat:
+
+```
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'
+```
+
+Istisno: `/swagger**` yo'llariga CSP QO'YILMAYDI (Swagger UI inline skript/stildan foydalanadi,
+CSP bilan sahifa oq ekranga aylanadi). Swagger faqat Development'da yoqiladi, shu sabab bu
+istisno production'da mavjud emas.
+
+**Frontend CSP** (nginx):
+
+```
+Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none';
+                         frame-ancestors 'none'; form-action 'self'; script-src 'self';
+                         style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+                         font-src 'self' data: https://fonts.gstatic.com;
+                         img-src 'self' data:; connect-src 'self'
+```
+
+- `unsafe-eval` YO'Q (`prompts/31` cheklovi).
+- `unsafe-inline` faqat STIL uchun: React `style={{…}}` atributlari va grafik kutubxonalari
+  inline stil qo'yadi. Skript uchun kerak emas — Vite build'i faqat tashqi
+  `<script type="module">` chiqaradi (`index.html`da inline skript yo'q).
+- Google Fonts `index.html`da ishlatiladi → `fonts.googleapis.com` (stil) +
+  `fonts.gstatic.com` (shrift fayllari).
+- `connect-src 'self'` yetarli: API ayni origin ostida (`/api/` nginx proksisi), tashqi
+  `https://api.16shaxsiyat.uz` ga to'g'ridan-to'g'ri murojaat qilinmaydi.
+
+> **nginx tuzog'i.** `add_header` MEROS OLINMAYDI: `location` blokida bitta `add_header`
+> bo'lsa, `server` darajasidagi barchasi bekor bo'ladi. `location /` va `location /assets/`
+> da `Cache-Control` qo'yilgani uchun xavfsizlik sarlavhalari HAR IKKALA blokda ataylab
+> takrorlangan. `/api/`, `/swagger`, `/health` bloklariga qo'yilmagan — u yerda API o'z
+> sarlavhalarini beradi (takroriy/zid CSP bo'lmasligi uchun).
+
+HTTP → HTTPS redirect; production'da HSTS yoqiladi:
+`Strict-Transport-Security: max-age=31536000; includeSubDomains` (`AddHsts` + `UseHsts`,
+faqat Production muhitida).
 
 ---
 
@@ -145,14 +188,25 @@ Har yozuvda: kim, qachon, qaysi obyekt, `before/after` (sirlarsiz), IP xeshi, us
 
 ## 9. Chiqarishdan oldingi xavfsizlik ro'yxati
 
-- [ ] `Jwt:Key`, `Security:EncryptionKey`, DB paroli — faqat env, repo'da yo'q
+- [x] `Jwt:Key`, `Security:EncryptionKey`, DB paroli — faqat env, repo'da yo'q
+      (`docker-compose.yml` `${...:?}` bilan majburlaydi; `appsettings.json`da sir yo'q)
 - [ ] Default superadmin paroli birinchi kirishda **majburiy** o'zgartiriladi
-- [ ] Swagger production'da o'chirilgan
-- [ ] `ASPNETCORE_ENVIRONMENT=Production`, batafsil xato sahifalari o'chiq
-- [ ] CORS faqat real domen
-- [ ] Rate limitlar yoqilgan va tekshirilgan
-- [ ] HTTPS + HSTS + xavfsizlik sarlavhalari
-- [ ] DB foydalanuvchisi superuser emas, faqat kerakli huquqlar
-- [ ] Backup yoqilgan va **tiklanishi sinovdan o'tgan**
-- [ ] Log'larda shaxsiy ma'lumot yo'qligi tekshirilgan
-- [ ] AI promptiga shaxsiy ma'lumot ketmasligi test bilan qamrab olingan
+      (`MustChangePassword` — P31 doirasida BAJARILMADI, alohida vazifa)
+- [x] Swagger production'da o'chirilgan — `Program.cs` uni faqat `IsDevelopment()`da
+      ro'yxatga oladi; `docker-compose.yml` standarti `ASPNETCORE_ENVIRONMENT=Production`,
+      ya'ni `/swagger` 404. Sabab: sxema butun ichki API yuzasini (admin endpointlari,
+      maydon nomlari, enum qiymatlari) autentifikatsiyasiz ochib beradi
+- [x] `ASPNETCORE_ENVIRONMENT=Production`, batafsil xato sahifalari o'chiq — barcha xatolar
+      `ProblemDetails`, stack trace/SQL/fayl yo'li/CLR tip nomi chiqmaydi (`docs/06` §6)
+- [x] CORS faqat real domen — `App:FrontendUrl` berilmasa hech qanday origin ochilmaydi;
+      production'da SPA va API bitta origin ostida (nginx proksisi), ya'ni CORS umuman ishlamaydi
+- [x] Rate limitlar yoqilgan va tekshirilgan — `docs/07` §4 dagi 5 siyosat, integratsiya
+      testlari bilan (`AdminApiRateLimitTests`, `AuthLoginRateLimitTests`,
+      `PublicSessionRateLimitTests`, `RateLimitRetryAfterTests`); `429` `Retry-After` bilan
+- [x] HTTPS + HSTS + xavfsizlik sarlavhalari — 7-bo'limga qarang; `SecurityHeadersTests`
+- [ ] DB foydalanuvchisi superuser emas, faqat kerakli huquqlar (infra vazifasi)
+- [ ] Backup yoqilgan va **tiklanishi sinovdan o'tgan** (infra vazifasi)
+- [x] Log'larda shaxsiy ma'lumot yo'qligi tekshirilgan — Serilog `Destructure.ByTransforming`
+      (`Program.cs`), audit yozuvlarida xom IP emas `IpHash`, eksport auditida qidiruv matni
+      o'rniga `HasSearch: true/false`
+- [x] AI promptiga shaxsiy ma'lumot ketmasligi test bilan qamrab olingan (P16–P18)

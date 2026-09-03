@@ -4,6 +4,13 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useSearchParams } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
+import {
+  emptyResponse,
+  jsonResponse,
+  pagedResponse,
+  problemResponse,
+  type Schemas,
+} from '@/test/apiMock';
 import SchoolsPage from './SchoolsPage';
 
 const SCHOOL_1 = {
@@ -17,8 +24,14 @@ const SCHOOL_1 = {
   studentCount: 120,
   completedCount: 80,
   lastActivityAt: '2026-08-30T10:00:00Z',
-};
+} satisfies Schemas['AdminSchoolListItemDto'];
 
+/**
+ * `GET/PUT/POST /api/admin/schools[/{id}]` javobi — backend `AdminSchoolDetailDto`.
+ *
+ * Fixture sxemadan tekshiriladi (`satisfies Schemas['AdminSchoolDetailDto']`) — maydon
+ * nomi/tipi backenddan uzilsa `tsc` qizaradi (`docs/10` §6.4).
+ */
 const SCHOOL_DETAIL = {
   id: 'school-1',
   name: SCHOOL_1.name,
@@ -45,33 +58,7 @@ const SCHOOL_DETAIL = {
     completionRate: 0.667,
     lastActivityAt: SCHOOL_1.lastActivityAt,
   },
-};
-
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
-function problemResponse(code: string, status: number, detail?: string): Response {
-  return jsonResponse(
-    { code, title: 'Xato', status, detail, type: `https://studentroadmap/errors/${code}` },
-    status,
-  );
-}
-
-function listResponse(items: unknown[] = [SCHOOL_1]) {
-  return {
-    items,
-    page: 1,
-    pageSize: 20,
-    totalCount: items.length,
-    totalPages: 1,
-    hasNext: false,
-    hasPrevious: false,
-  };
-}
+} satisfies Schemas['AdminSchoolDetailDto'];
 
 interface FetchMockOptions {
   deleteResponse?: () => Response | Promise<Response>;
@@ -93,31 +80,33 @@ function mockFetch(options: FetchMockOptions = {}) {
 
     if (url.includes('/api/admin/schools/school-1/regenerate-link')) {
       return Promise.resolve(
-        jsonResponse({
+        jsonResponse<'RegenerateSchoolLinkResult'>({
           publicUrl: 'https://16shaxsiyat.uz/t/12-maktab-qokon-2?k=newtoken',
           qrCodeBase64: 'bmV3',
         }),
       );
     }
     if (url.includes('/api/admin/schools/school-1/toggle-active')) {
-      return Promise.resolve(jsonResponse({ ...SCHOOL_DETAIL, isActive: !SCHOOL_DETAIL.isActive }));
-    }
-    if (url.includes('/api/admin/schools/school-1') && method === 'DELETE') {
       return Promise.resolve(
-        options.deleteResponse ? options.deleteResponse() : new Response(null, { status: 204 }),
+        jsonResponse<'AdminSchoolDetailDto'>({ ...SCHOOL_DETAIL, isActive: !SCHOOL_DETAIL.isActive }),
       );
     }
+    if (url.includes('/api/admin/schools/school-1') && method === 'DELETE') {
+      return Promise.resolve(options.deleteResponse ? options.deleteResponse() : emptyResponse(204));
+    }
     if (url.includes('/api/admin/schools/school-1') && method === 'PUT') {
-      return Promise.resolve(jsonResponse(SCHOOL_DETAIL));
+      return Promise.resolve(jsonResponse<'AdminSchoolDetailDto'>(SCHOOL_DETAIL));
     }
     if (url.includes('/api/admin/schools/school-1') && method === 'GET') {
-      return Promise.resolve(jsonResponse(SCHOOL_DETAIL));
+      return Promise.resolve(jsonResponse<'AdminSchoolDetailDto'>(SCHOOL_DETAIL));
     }
     if (url.includes('/api/admin/schools') && method === 'POST') {
-      return Promise.resolve(jsonResponse({ ...SCHOOL_DETAIL, id: 'school-2' }, 201));
+      return Promise.resolve(
+        jsonResponse<'AdminSchoolDetailDto'>({ ...SCHOOL_DETAIL, id: 'school-2' }, 201),
+      );
     }
     if (url.includes('/api/admin/schools') && method === 'GET') {
-      return Promise.resolve(jsonResponse(listResponse()));
+      return Promise.resolve(pagedResponse<'AdminSchoolListItemDto'>([SCHOOL_1]));
     }
     return Promise.reject(new Error(`unexpected fetch: ${method} ${url}`));
   });

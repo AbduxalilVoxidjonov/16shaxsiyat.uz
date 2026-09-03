@@ -9,9 +9,18 @@ import { cn } from '@/shared/lib/cn';
  * PM tasdig'i bilan bog'liqlikdan butunlay olib tashlandi).
  */
 
+/**
+ * `relative` ATAYLAB: jadval ichida `sr-only` elementlar bor (saralash yo'nalishini aytuvchi
+ * `<span>`, `DataTable.tsx`). Tailwind ning `.sr-only` yordamchisi `position: absolute` beradi,
+ * `<th>`/`<td>` esa pozitsiyalangan emas — natijada ularning "containing block"i bosh hujjat
+ * (ICB) bo'lib qoladi va ular `overflow-x: auto` konteyneridan QOCHIB chiqadi: 390px da
+ * gorizontal siljish 1px lik yashirin `<span>` sababli butun SAHIFAGA tarqaladi (P30-6:
+ * `scrollWidth` 676 > 390). `relative` konteynerni "containing block"ka aylantiradi — endi
+ * keng mazmun faqat SHU konteyner ichida siljiydi, `body` esa siljimaydi.
+ */
 export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="w-full overflow-x-auto rounded-xl border border-neutral-200">
+    <div className="relative w-full overflow-x-auto rounded-xl border border-neutral-200">
       <table className={cn('w-full border-collapse text-left text-sm', className)} {...props} />
     </div>
   );

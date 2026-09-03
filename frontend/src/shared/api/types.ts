@@ -21,6 +21,13 @@ export interface ProblemDetails {
   code?: string;
   traceId?: string;
   errors?: Record<string, string[]>;
+  /**
+   * RFC 9457 "extension members" — backend `ProblemDetails.Extensions` ga qo'shgan har qanday
+   * qo'shimcha maydon (masalan `POST /catalog/tests/{id}/publish` ning `issues[]`,
+   * `docs/07` 3.4-bo'lim). Shakli endpointdan endpointga farq qiladi, shu sabab `unknown` —
+   * `AppError.extensions` orqali yetib boradi va ishlatuvchi feature uni o'zi tekshiradi.
+   */
+  [key: string]: unknown;
 }
 
 /**
@@ -113,40 +120,18 @@ export type SaveAnswerItem = components['schemas']['SaveAnswerItemRequest'];
 export type SaveAnswersResponse = components['schemas']['SaveAnswersResult'];
 
 /**
- * MUVAQQAT QO'LDA YOZILGAN TIPLAR — docs/07-api-shartnoma.md, 1.7–1.9-bo'lim.
+ * Test/sessiya yakunlash va o'quvchi natijasi — docs/07-api-shartnoma.md, 1.7–1.9-bo'lim.
  *
- * P12 (`CompleteTest`/`CompleteSession`/`GetStudentResult`) hali backend'da yozilmoqda (parallel
- * agent) — bu endpoint'lar hozircha swagger'da yo'q, shu sabab `schema.d.ts`da mavjud emas.
- * `docs/10` 6-bo'limdagi "faqat generatsiya, qo'lda DTO yo'q" qoidasidan bu FAQAT shu sabab —
- * P12 tayyor bo'lishini kutmasdan E-4/E-5/E-6'ni shartnoma bo'yicha yozish uchun (`prompts/21`
- * ko'rsatmasi) — vaqtincha chetlanadi. P12 tugagach: `npm run generate:api` ishga tushiriladi,
- * bu 3 tip pastdagi kabi `components['schemas'][...]`dan re-export bilan almashtiriladi va
- * maydon nomi/nullability'da farq chiqsa ishlatuvchi kod (`FinishPage`, `StudentResultPage`,
- * `TestCompletePage`, tegishli testlar) shunga qarab tuzatiladi.
+ * P12 (`CompleteTest`/`CompleteSession`/`GetStudentResult`) backendda tayyor va sxemada bor
+ * (`CompleteTestResult`, `CompleteSessionResult`, `GetStudentResultResult`) — quyidagilar
+ * ham re-export, qo'lda yozilgan nusxa YO'Q.
  */
 
 /** `POST /sessions/tests/{testCode}/complete` javobi — `docs/07` 1.7-bo'lim. */
-export interface CompleteTestResponse {
-  testCode: string;
-  status: string;
-  nextTestCode?: string | null;
-  allTestsCompleted: boolean;
-}
+export type CompleteTestResponse = components['schemas']['CompleteTestResult'];
 
 /** `POST /sessions/complete` javobi — `docs/07` 1.8-bo'lim. */
-export interface CompleteSessionResponse {
-  status: string;
-  message: string;
-  showResultToStudent: boolean;
-  resultAvailableAt?: string | null;
-}
+export type CompleteSessionResponse = components['schemas']['CompleteSessionResult'];
 
 /** `GET /sessions/result` javobi — `docs/07` 1.9-bo'lim. Aktivlik ball/bayroq/xom ball YO'Q. */
-export interface StudentResultResponse {
-  personalityType: string;
-  typeName: string;
-  shortDescription: string;
-  topStrengths: string[];
-  careerFields: string[];
-  note: string;
-}
+export type StudentResultResponse = components['schemas']['GetStudentResultResult'];

@@ -18,7 +18,7 @@ import { RegenerateLinkDialog } from '../components/RegenerateLinkDialog';
 import { SchoolStatsCards } from '../components/SchoolStatsCards';
 
 /** Ma'lumot bo'lmagan matnli maydon uchun `—` (nol bilan chalkashmaydi — nol faqat sonlarda). */
-function orDash(value: string | null): string {
+function orDash(value: string | null | undefined): string {
   return value && value.trim() !== '' ? value : '—';
 }
 

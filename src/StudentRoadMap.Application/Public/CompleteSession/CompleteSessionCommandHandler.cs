@@ -1,4 +1,5 @@
 using MediatR;
+using StudentRoadMap.Application.Common;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
 using StudentRoadMap.Application.Public.Common;
@@ -99,7 +100,15 @@ internal sealed class CompleteSessionCommandHandler : IRequestHandler<CompleteSe
             _context.TestResults.Where(r => r.AssessmentId == assessment.Id),
             cancellationToken).ConfigureAwait(false);
 
-        ApplyMaturityIndexIfPossible(testResults);
+        // ⚠️ Qaysi natija BIG5/ACTIVITY/MBTI16/RIASEC ekani metodika KODI bilan aniqlanmaydi
+        // (`docs/06` 8-bo'lim, 2026-09-02 "dastur" qarori). Ilgari bu handler `TestCode == "BIG5"`
+        // kabi satr solishtiruvi bilan ishlardi va `Custom` dasturda JIMGINA buzilardi: shu kodli
+        // superadmin anketasi `CompositeScorer`ga BIG5 sifatida kirib ketardi (yoki aksincha,
+        // boshqa kodli haqiqiy batareya e'tibordan chetda qolardi). Mezon — `PersonalityBattery.RoleOf`.
+        var rolesByAssessmentTestId = await PersonalityBatteryRoles.LoadByAssessmentTestIdAsync(
+            _context, _executor, assessment.Id, cancellationToken).ConfigureAwait(false);
+
+        ApplyMaturityIndexIfPossible(testResults, rolesByAssessmentTestId);
 
         // P12-R1: ishonchlilik — xronologik tartibda tuzilgan `ReliabilityInput`. ⚠️ `Survey`
         // test bloklari (`nonSurveyAssessmentTestIds`) CHIQARIB TASHLANADI — nafaqat
@@ -128,7 +137,7 @@ internal sealed class CompleteSessionCommandHandler : IRequestHandler<CompleteSe
         // AI navbati P18 da ulandi (`AnalysisJobQueue`, `Infrastructure/Jobs`).
         assessment.MarkAnalyzing(now);
 
-        await UpdateStudentSnapshotAsync(assessment, testResults, now, cancellationToken).ConfigureAwait(false);
+        await UpdateStudentSnapshotAsync(assessment, testResults, rolesByAssessmentTestId, now, cancellationToken).ConfigureAwait(false);
 
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
@@ -148,16 +157,19 @@ internal sealed class CompleteSessionCommandHandler : IRequestHandler<CompleteSe
 
     /// <summary>
     /// `CompositeScorer.ApplyMaturityIndex` (`Domain/Scoring`, o'zgartirilmaydi) chaqiradi —
-    /// BIG5/ACTIVITY `TestResult`lari `jsonb` ustunlaridan qayta o'qiladi (ular alohida
+    /// `Traits` (BIG5 strategiyasi) va `Activity` (ACTIVITY strategiyasi) ROLIDAGI `TestResult`lar
+    /// `jsonb` ustunlaridan qayta o'qiladi (ular alohida
     /// `CompleteTestCommand` chaqiruvlarida, turli vaqtda yozilgan — bitta requestda ikkalasi
     /// ham xotirada bo'lishi mumkin emas). Faqat `CompositeScorer` talab qiladigan maydonlar
     /// (`NormalizedScores`) haqiqiy — qolganlari (`RawScores`/`Flags`/`InterpretationKey`)
     /// natijada ishlatilmagani uchun bo'sh/o'rnbosar qiymat bilan to'ldiriladi.
     /// </summary>
-    private static void ApplyMaturityIndexIfPossible(IReadOnlyList<TestResult> testResults)
+    private static void ApplyMaturityIndexIfPossible(
+        IReadOnlyList<TestResult> testResults,
+        IReadOnlyDictionary<Guid, PersonalityBatteryRole> rolesByAssessmentTestId)
     {
-        var bigFive = testResults.FirstOrDefault(r => r.TestCode == "BIG5");
-        var activity = testResults.FirstOrDefault(r => r.TestCode == "ACTIVITY");
+        var bigFive = PersonalityBatteryRoles.FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.Traits);
+        var activity = PersonalityBatteryRoles.FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.Activity);
 
         if (bigFive is null || activity is null)
         {
@@ -246,13 +258,15 @@ internal sealed class CompleteSessionCommandHandler : IRequestHandler<CompleteSe
 
     /// <summary>
     /// `Student.UpdateSnapshot` (mavjud domen metodi) orqali tip/indekslar/`NeedsAttention`
-    /// yangilanadi (`prompts/12` cheklovi 6). `MBTI16`/`RIASEC` shu sessiyada bo'lmasa (masalan
-    /// test to'plami boshqacha bo'lsa) mos maydon `null` qoladi — snapshot bo'sh emas, faqat
-    /// mavjud ma'lumot bilan yangilanadi.
+    /// yangilanadi (`prompts/12` cheklovi 6). Har bir natija BATAREYA ROLI bo'yicha topiladi
+    /// (`PersonalityBattery.RoleOf`, metodika kodi bo'yicha EMAS): shu sessiyada mos rol
+    /// bo'lmasa (masalan dasturda batareya yo'q yoki test to'plami boshqacha) mos maydon
+    /// `null` qoladi — snapshot bo'sh emas, faqat mavjud ma'lumot bilan yangilanadi.
     /// </summary>
     private async Task UpdateStudentSnapshotAsync(
         Assessment assessment,
         IReadOnlyList<TestResult> testResults,
+        IReadOnlyDictionary<Guid, PersonalityBatteryRole> rolesByAssessmentTestId,
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
@@ -268,15 +282,19 @@ internal sealed class CompleteSessionCommandHandler : IRequestHandler<CompleteSe
             return;
         }
 
-        var mbti = testResults.FirstOrDefault(r => r.TestCode == "MBTI16");
-        var bigFive = testResults.FirstOrDefault(r => r.TestCode == "BIG5");
-        var activity = testResults.FirstOrDefault(r => r.TestCode == "ACTIVITY");
-        var riasec = testResults.FirstOrDefault(r => r.TestCode == "RIASEC");
+        var mbti = PersonalityBatteryRoles.FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.PersonalityType);
+        var bigFive = PersonalityBatteryRoles.FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.Traits);
+        var activity = PersonalityBatteryRoles.FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.Activity);
+        var riasec = PersonalityBatteryRoles.FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.CareerInterest);
 
         ActivityLevel? activityLevel = null;
         var needsAttention = student.NeedsAttention;
         if (activity is not null)
         {
+            // ⚠️ Bu yerdagi `"ACTIVITY"` — metodika KODI emas, `ActivityStrategy` yozadigan
+            // `Levels` lug'atining kaliti (`docs/03` §5.2 natija shartnomasi). Natijaning O'ZI
+            // yuqorida ROL bo'yicha topilgan, ya'ni uni aynan `ACTIVITY` strategiyasi hisoblagani
+            // allaqachon kafolatlangan — kalit shu strategiyaning chiqish shartnomasidan o'qiladi.
             var levels = TestResultJson.DeserializeLevels(activity.LevelsJson);
             if (levels.TryGetValue("ACTIVITY", out var levelCode) && Enum.TryParse<ActivityLevel>(levelCode, out var parsedLevel))
             {

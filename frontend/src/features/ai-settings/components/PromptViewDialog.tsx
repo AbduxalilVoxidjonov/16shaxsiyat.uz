@@ -18,7 +18,7 @@ export function PromptViewDialog({ prompt, onClose }: PromptViewDialogProps) {
     <Dialog
       open={prompt !== null}
       onClose={onClose}
-      title={prompt ? `${prompt.key} · v${String(prompt.version)}` : ''}
+      title={prompt ? `${prompt.key} · ${prompt.version}` : ''}
       className="max-w-2xl"
     >
       {prompt && (

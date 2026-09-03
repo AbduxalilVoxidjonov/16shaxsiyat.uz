@@ -1,12 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { jsonResponse } from '@/test/apiMock';
 import { sendAnswersKeepalive } from './answersApi';
 import type { SaveAnswerItem } from '@/shared/api/types';
 
+/** `POST /sessions/tests/{testCode}/answers` javobi — `docs/07` 1.6-bo'lim. */
 function okResponse(): Response {
-  return new Response(JSON.stringify({ savedCount: 1, answered: 1, total: 1 }), {
-    status: 200,
-    headers: { 'content-type': 'application/json' },
-  });
+  return jsonResponse<'SaveAnswersResult'>({ savedCount: 1, answered: 1, total: 1 });
 }
 
 describe('sendAnswersKeepalive', () => {

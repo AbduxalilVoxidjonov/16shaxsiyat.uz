@@ -11,8 +11,13 @@ function currentMonthRange(): { from: string; to: string } {
   return { from: from.toISOString().slice(0, 10), to: now.toISOString().slice(0, 10) };
 }
 
-function formatCost(value: number | null): string {
-  return value === null ? '—' : `$${value.toFixed(2)}`;
+/**
+ * `docs/07` §8 `null` qoidasi: narx konfiguratsiyasi yo'q bo'lsa `0` EMAS `—`.
+ * Sxemada `estimatedCostUsd?: number | null` — maydon javobda umuman bo'lmasligi ham
+ * mumkin, shu sabab `== null` (ilgari `=== null` edi va `undefined` da `$undefined` chiqardi).
+ */
+function formatCost(value: number | null | undefined): string {
+  return value == null ? '—' : `$${value.toFixed(2)}`;
 }
 
 /**
@@ -47,13 +52,13 @@ export function UsageStatsSection() {
             <div className="rounded-lg bg-neutral-50 p-3">
               <dt className="text-xs text-neutral-500">{t('aiSettings.usage.inputTokens')}</dt>
               <dd className="text-lg font-semibold text-neutral-900">
-                {usageQuery.data.totalInputTokens}
+                {usageQuery.data.inputTokens}
               </dd>
             </div>
             <div className="rounded-lg bg-neutral-50 p-3">
               <dt className="text-xs text-neutral-500">{t('aiSettings.usage.outputTokens')}</dt>
               <dd className="text-lg font-semibold text-neutral-900">
-                {usageQuery.data.totalOutputTokens}
+                {usageQuery.data.outputTokens}
               </dd>
             </div>
             <div className="rounded-lg bg-neutral-50 p-3">

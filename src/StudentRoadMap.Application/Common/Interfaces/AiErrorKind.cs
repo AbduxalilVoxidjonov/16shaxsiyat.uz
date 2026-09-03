@@ -21,4 +21,19 @@ public enum AiErrorKind
     Server = 5,
     Unknown = 6,
     BadRequest = 7,
+
+    /// <summary>
+    /// Model nomi provayderda topilmadi (404, yoki tanasida `model ... not found` /
+    /// `model_not_found` bo'lgan 4xx). `BadRequest` bilan bir xil retry siyosati — shu
+    /// providerda qayta urinish befoyda (model nomi o'zgarmaydi), lekin zanjirdagi keyingi
+    /// providerga o'tiladi. Admin uchun xabar boshqacha: "model topilmadi — model nomini
+    /// tekshiring" (P28 koordinator ko'rsatmasi, 2026-09-02).
+    /// </summary>
+    ModelNotFound = 8,
+
+    /// <summary>
+    /// Provayderga umuman ulanib bo'lmadi (DNS, TLS, `HttpRequestException`) — HTTP javob YO'Q.
+    /// `Timeout`/`Server` kabi qayta urinishga arziydi; admin uchun xabar "tarmoq" haqida.
+    /// </summary>
+    Network = 9,
 }

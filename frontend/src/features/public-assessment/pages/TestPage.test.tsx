@@ -4,19 +4,10 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
+import { jsonResponse, problemResponse, type Schemas } from '@/test/apiMock';
 import TestPage from './TestPage';
+import { readAnswerStore } from '../lib/answerQueue';
 import { useSessionStore } from '../store/sessionStore';
-
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
-function problemResponse(code: string, status: number): Response {
-  return jsonResponse({ code, title: 'Xato', status, type: `https://studentroadmap/errors/${code}` }, status);
-}
 
 const SCALE_LABELS = [
   { value: 1, label: "Umuman qo'shilmayman" },
@@ -24,9 +15,11 @@ const SCALE_LABELS = [
   { value: 3, label: 'Bilmadim' },
   { value: 4, label: "Qo'shilaman" },
   { value: 5, label: "To'liq qo'shilaman" },
-];
+] satisfies Schemas['PublicScaleLabelDto'][];
 
-function sessionStateBody(overrides: Record<string, unknown> = {}) {
+function sessionStateBody(
+  overrides: Partial<Schemas['GetSessionStateResult']> = {},
+): Schemas['GetSessionStateResult'] {
   return {
     assessmentId: 'assessment-1',
     status: 'InProgress',
@@ -42,11 +35,14 @@ function sessionStateBody(overrides: Record<string, unknown> = {}) {
       { code: 'ACTIVITY', name: 'Aktivlik va motivatsiya', status: 'Locked', answered: 0, total: 32, order: 4, estimatedMinutes: 5 },
     ],
     progressPercent: 25,
+    hasPersonalityBattery: true,
     ...overrides,
   };
 }
 
-function questionsPage(overrides: Record<string, unknown> = {}) {
+function questionsPage(
+  overrides: Partial<Schemas['GetTestQuestionsResult']> = {},
+): Schemas['GetTestQuestionsResult'] {
   return {
     testCode: 'BIG5',
     page: 1,
@@ -94,15 +90,17 @@ interface MockOptions {
   sessionState?: () => Response | Promise<Response>;
   startTest?: (testCode: string) => Response | Promise<Response>;
   questions?: () => Response | Promise<Response>;
+  /** Autosave (`POST .../answers`) javobi — P30-2 poygasini boshqarish uchun. */
+  answers?: () => Response | Promise<Response>;
 }
 
-function mockFetch({ sessionState, startTest, questions }: MockOptions = {}) {
+function mockFetch({ sessionState, startTest, questions, answers }: MockOptions = {}) {
   const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     const method = init?.method ?? 'GET';
 
     if (url.includes('/sessions/me')) {
-      return Promise.resolve(sessionState ? sessionState() : jsonResponse(sessionStateBody()));
+      return Promise.resolve(sessionState ? sessionState() : jsonResponse<'GetSessionStateResult'>(sessionStateBody()));
     }
     if (url.includes('/start') && method === 'POST') {
       const match = /\/tests\/([^/]+)\/start/.exec(url);
@@ -110,18 +108,20 @@ function mockFetch({ sessionState, startTest, questions }: MockOptions = {}) {
       return Promise.resolve(
         startTest
           ? startTest(testCode)
-          : jsonResponse({ testCode, status: 'InProgress', pageSize: 3, totalPages: 1 }),
+          : jsonResponse<'StartTestResult'>({ testCode, status: 'InProgress', pageSize: 3, totalPages: 1 }),
       );
     }
     if (url.includes('/questions')) {
-      return Promise.resolve(questions ? questions() : jsonResponse(questionsPage()));
+      return Promise.resolve(questions ? questions() : jsonResponse<'GetTestQuestionsResult'>(questionsPage()));
     }
     if (url.includes('/answers') && method === 'POST') {
-      return Promise.resolve(jsonResponse({ savedCount: 1, answered: 1, total: 3 }));
+      return Promise.resolve(
+        answers ? answers() : jsonResponse<'SaveAnswersResult'>({ savedCount: 1, answered: 1, total: 3 }),
+      );
     }
     if (url.includes('/complete') && method === 'POST') {
       return Promise.resolve(
-        jsonResponse({ testCode: 'BIG5', status: 'Completed', nextTestCode: 'RIASEC', allTestsCompleted: false }),
+        jsonResponse<'CompleteTestResult'>({ testCode: 'BIG5', status: 'Completed', nextTestCode: 'RIASEC', allTestsCompleted: false }),
       );
     }
     return Promise.reject(new Error(`unexpected fetch: ${method} ${url}`));
@@ -150,6 +150,22 @@ function renderTestPage(initialPath = '/t/demo-school/test/BIG5') {
 
 function seedSession() {
   useSessionStore.getState().setSession('sess-token-1', 'demo-school', 'assessment-1');
+}
+
+/** `fetch` mock'iga berilgan URL bo'lagini o'z ichiga olgan chaqiruvlar soni. */
+function countCalls(fetchMock: ReturnType<typeof mockFetch>, fragment: string): number {
+  return fetchMock.mock.calls.filter((call) => String(call[0]).includes(fragment)).length;
+}
+
+/** Uchta savolga (`questionsPage()`) javob beradi — oxirgi sahifa to'liq to'ldiriladi. */
+async function answerAllThree(user: ReturnType<typeof userEvent.setup>) {
+  const q1 = within(screen.getByText('Savol bir').closest('fieldset') as HTMLElement);
+  const q2 = within(screen.getByText('Savol ikki').closest('fieldset') as HTMLElement);
+  const q3 = within(screen.getByText('Savol uch').closest('fieldset') as HTMLElement);
+
+  await user.click(q1.getByRole('radio', { name: "Qo'shilaman" }));
+  await user.click(q2.getByRole('radio', { name: 'Bilmadim' }));
+  await user.click(q3.getByRole('radio', { name: "To'liq qo'shilaman" }));
 }
 
 describe('TestPage', () => {
@@ -223,6 +239,71 @@ describe('TestPage', () => {
     });
   });
 
+  /**
+   * P30-2 (BLOKLOVCHI) regressiyasi. Oxirgi sahifada tez javob berilib darhol "Keyingi"
+   * bosilganda `POST .../complete` autosave paketidan OLDIN yetib borar edi va backend
+   * `400 VALIDATION_ERROR (unansweredCount)` qaytarardi — o'quvchi testni yakunlay olmasdi.
+   * Bu yerda autosave javobi ataylab "havoda" ushlab turiladi: `complete` u tugagunicha
+   * YUBORILMASLIGI shart.
+   */
+  it("oxirgi sahifada `complete` faqat autosave serverga yetib BORGANDAN keyin yuboriladi (P30-2)", async () => {
+    seedSession();
+    let releaseAnswers: (() => void) | undefined;
+    const answersGate = new Promise<void>((resolve) => {
+      releaseAnswers = resolve;
+    });
+    const fetchMock = mockFetch({
+      answers: async () => {
+        await answersGate;
+        return jsonResponse<'SaveAnswersResult'>({ savedCount: 3, answered: 3, total: 3 });
+      },
+    });
+    const user = userEvent.setup();
+    renderTestPage();
+
+    await screen.findByText('Savol bir');
+    await answerAllThree(user);
+
+    const nextButton = screen.getByRole('button', { name: 'Keyingi' });
+    await user.click(nextButton);
+
+    // Autosave so'rovi yo'lga chiqdi, lekin hali tugamadi.
+    await waitFor(() => {
+      expect(countCalls(fetchMock, '/answers')).toBeGreaterThan(0);
+    });
+    expect(countCalls(fetchMock, '/complete')).toBe(0);
+    // Foydalanuvchi kutayotganini KO'RADI va ikki marta bosa OLMAYDI.
+    expect(nextButton).toBeDisabled();
+    expect(nextButton).toHaveAttribute('aria-busy', 'true');
+    await user.click(nextButton);
+    expect(countCalls(fetchMock, '/complete')).toBe(0);
+
+    releaseAnswers?.();
+
+    expect(await screen.findByText('DONE_STUB')).toBeInTheDocument();
+    expect(countCalls(fetchMock, '/complete')).toBe(1);
+  });
+
+  it("autosave yiqilsa `complete` YUBORILMAYDI, xato xabari chiqadi va javoblar navbatda qoladi", async () => {
+    seedSession();
+    const fetchMock = mockFetch({ answers: () => Promise.reject(new Error('network down')) });
+    const user = userEvent.setup();
+    renderTestPage();
+
+    await screen.findByText('Savol bir');
+    await answerAllThree(user);
+    await user.click(screen.getByRole('button', { name: 'Keyingi' }));
+
+    expect(await screen.findByText('Javoblar serverga yuborilmadi')).toBeInTheDocument();
+    expect(countCalls(fetchMock, '/complete')).toBe(0);
+    expect(screen.getByText('Savol bir')).toBeInTheDocument(); // hali shu sahifada
+
+    // Javoblar YO'QOLMAGAN — mahalliy navbatda `pending: true` holida turibdi (P21).
+    const store = readAnswerStore();
+    expect(store['q1']).toMatchObject({ value: 4, pending: true });
+    expect(store['q3']).toMatchObject({ value: 5, pending: true });
+  });
+
   it("sessiya muddati tugagan bo'lsa (410) landing'ga qaytaradi", async () => {
     seedSession();
     mockFetch({ sessionState: () => problemResponse('SESSION_EXPIRED', 410) });
@@ -242,7 +323,7 @@ describe('TestPage', () => {
       startTest: (testCode) =>
         testCode === 'RIASEC'
           ? problemResponse('TEST_NOT_UNLOCKED', 409)
-          : jsonResponse({ testCode, status: 'InProgress', pageSize: 3, totalPages: 1 }),
+          : jsonResponse<'StartTestResult'>({ testCode, status: 'InProgress', pageSize: 3, totalPages: 1 }),
     });
     renderTestPage('/t/demo-school/test/RIASEC');
 
@@ -254,7 +335,7 @@ describe('TestPage', () => {
     seedSession();
     mockFetch({
       questions: () =>
-        jsonResponse(
+        jsonResponse<'GetTestQuestionsResult'>(
           questionsPage({
             questions: [
               {

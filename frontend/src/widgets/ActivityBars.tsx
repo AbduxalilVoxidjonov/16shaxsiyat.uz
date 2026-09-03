@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/shared/lib/cn';
 import { IndexGauge } from './IndexGauge';
+import { VisuallyHidden } from '@/shared/ui/VisuallyHidden';
 
 /** Aktivlik shkalalari — docs/03, 5.1-bo'lim. */
 export type ActivityScaleCode = 'MOT' | 'SELF' | 'SOCA' | 'ENG';
@@ -62,23 +63,25 @@ export function ActivityBars({
           );
         })}
 
-        <table className="sr-only" data-testid="activity-bars-table">
-          <caption>{t('widgets.activityBars.tableCaption')}</caption>
-          <thead>
-            <tr>
-              <th scope="col">{t('widgets.activityBars.tableScaleColumn')}</th>
-              <th scope="col">{t('widgets.activityBars.tableValueColumn')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {SCALE_ORDER.map((code) => (
-              <tr key={code}>
-                <td>{t(`widgets.activityBars.scale.${code}`)}</td>
-                <td>{clampPct(scales[code]).toFixed(1)}%</td>
+        <VisuallyHidden>
+          <table data-testid="activity-bars-table">
+            <caption>{t('widgets.activityBars.tableCaption')}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{t('widgets.activityBars.tableScaleColumn')}</th>
+                <th scope="col">{t('widgets.activityBars.tableValueColumn')}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {SCALE_ORDER.map((code) => (
+                <tr key={code}>
+                  <td>{t(`widgets.activityBars.scale.${code}`)}</td>
+                  <td>{clampPct(scales[code]).toFixed(1)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </VisuallyHidden>
       </div>
 
       <div className="sm:w-48">

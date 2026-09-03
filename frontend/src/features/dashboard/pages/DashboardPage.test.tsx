@@ -4,14 +4,13 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useSearchParams } from 'react-router';
 import DashboardPage from './DashboardPage';
+import { jsonResponse, problemResponse, type Schemas } from '@/test/apiMock';
 
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
+/**
+ * `GET /api/admin/dashboard/stats` javobi — backend `AdminDashboardStatsDto` shakli
+ * (`docs/07` 3.6-bo'lim). `satisfies` tufayli maydon nomi yoki tipi backenddan uzilsa
+ * `tsc` xato beradi.
+ */
 const FULL_STATS = {
   totals: {
     schools: 42,
@@ -68,10 +67,10 @@ const FULL_STATS = {
       lastActivityAt: '2026-08-30T10:00:00Z',
     },
   ],
-};
+} satisfies Schemas['AdminDashboardStatsDto'];
 
 interface FetchMockOptions {
-  stats?: unknown;
+  stats?: Schemas['AdminDashboardStatsDto'];
   statsErrorStatus?: number;
 }
 
@@ -80,14 +79,11 @@ function mockFetch(options: FetchMockOptions = {}) {
     const url = String(input);
     if (url.includes('/api/admin/dashboard/stats')) {
       if (options.statsErrorStatus) {
-        return Promise.resolve(
-          jsonResponse(
-            { code: 'INTERNAL_ERROR', title: 'Xato', status: options.statsErrorStatus },
-            options.statsErrorStatus,
-          ),
-        );
+        return Promise.resolve(problemResponse('INTERNAL_ERROR', options.statsErrorStatus));
       }
-      return Promise.resolve(jsonResponse(options.stats ?? FULL_STATS));
+      return Promise.resolve(
+        jsonResponse<'AdminDashboardStatsDto'>(options.stats ?? FULL_STATS),
+      );
     }
     return Promise.reject(new Error(`unexpected fetch: ${url}`));
   });

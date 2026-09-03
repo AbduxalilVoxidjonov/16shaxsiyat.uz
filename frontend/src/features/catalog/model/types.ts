@@ -1,24 +1,14 @@
+import type { components } from '@/shared/api/schema';
 import type { BadgeVariant } from '@/shared/ui/Badge';
 
 /**
- * MUVAQQAT QO'LDA YOZILGAN TIPLAR — `docs/07-api-shartnoma.md` 3.4-bo'lim ("Test katalogi
- * va anketa konstruktori"). Naqsh `shared/api/types.ts`dagi "MUVAQQAT QO'LDA YOZILGAN
- * TIPLAR" bo'limi va `features/students/model/enums.ts`dagi izoh bilan bir xil.
+ * Test katalogi va anketa konstruktori DTO'lari — `docs/07-api-shartnoma.md` 3.4-bo'lim,
+ * backend `AssessmentCatalogController` (P37) + `AdminCatalogDtos.cs`.
  *
- * **Tasdiqlangan bo'shliq:** bu endpointlar backend'da HALI YO'Q. Tekshirildi —
- * `src/StudentRoadMap.Api/Controllers/Admin/` ichida faqat `SchoolsController`,
- * `StudentsController`, `AssessmentsController`, `AssessmentProgramsController` (P34),
- * `DashboardController`, `AuditController` bor; katalog/test CRUD controller yo'q.
- * `IAppDbContext.TestDefinitions` mavjud, lekin uni ochuvchi admin Query/Command'lar yo'q.
- * Bu holat `features/students/model/enums.ts`da ham oldindan qayd etilgan
- * ("frontendda hali ularni olib keladigan ommaviy katalog endpointi ulanmagan... hozircha
- * boshqa promptda").
- *
- * **Natija:** bu feature'dagi so'rovlar (`api/*.ts`) real, docs/07 shartnomasi bo'yicha
- * yozilgan, lekin backend tayyor bo'lguncha `404`/tarmoq xatosi qaytaradi — sahifalar buni
- * `ErrorState` + "Qayta urinish" bilan to'g'ri ko'rsatadi (soxta muvaffaqiyat YO'Q).
- * Backend qo'shilgach: `npm run generate:api`, bu tiplar `schema.d.ts`dan re-export bilan
- * almashtiriladi.
+ * Barcha DTO `shared/api/schema.d.ts` dan **re-export** (`docs/10` §6). Enum maydonlari
+ * (`kind`, `status`, `scoringMode`, `direction`) sxemada `string`/`number` — backend ularni
+ * `ToString()`/`int` bilan yuboradi, shu sabab `Omit<…> & { … }` bilan TORAYTIRILADI
+ * (`docs/10` §6.2, 2-naqsh): maydon NOMI baribir sxemadan tekshiriladi.
  */
 
 export const TEST_SCORING_MODE_VALUES = ['Scored', 'Survey'] as const;
@@ -33,29 +23,36 @@ export const TEST_STATUS_BADGE_VARIANT: Record<TestDefinitionStatus, BadgeVarian
   Archived: 'danger',
 };
 
-/** `GET /api/admin/catalog/tests` — ro'yxat elementi (`docs/07` 3.4: "Barchasi"). */
-export interface CatalogTestListItem {
-  id: string;
-  code: string;
-  nameUz: string;
+/**
+ * Sxemada `kind`/`status`/`scoringMode` — oddiy `string` (backend `ToString()`).
+ * Katalog jadvali va dialoglari aynan shu uch union'ga tayanadi (nishon/tugma holati),
+ * shu sabab ular toraytiriladi.
+ */
+type CatalogTestEnums = {
   kind: 'System' | 'Custom';
-  isSystem: boolean;
   status: TestDefinitionStatus;
-  isActive: boolean;
   scoringMode: TestScoringMode;
-  questionCount: number;
-  scaleCount: number;
-  estimatedMinutes: number;
-  version: number;
-  usedInProgramCount: number;
-}
+};
 
-/** `GET /api/admin/catalog/tests/{id}` — batafsil. */
-export interface CatalogTestDetail extends CatalogTestListItem {
-  descriptionUz: string | null;
-  pageSize: number;
-  shuffleQuestions: boolean;
-}
+/** `GET /api/admin/catalog/tests` — ro'yxat elementi (`docs/07` 3.4: "Barchasi"). */
+export type CatalogTestListItem = Omit<
+  components['schemas']['CatalogTestListItemDto'],
+  keyof CatalogTestEnums
+> &
+  CatalogTestEnums;
+
+/**
+ * `GET /api/admin/catalog/tests/{id}` — batafsil (`CatalogTestDetailDto`).
+ *
+ * `displayOrder` — katalogdagi tartib raqami. `PUT /tests/{id}` uni MAJBURIY talab qiladi,
+ * shu sabab detal javobida ham bor — aks holda meta oynasi joriy tartibni bilmasdan saqlar
+ * va uni tasodifiy qiymatga o'zgartirar edi.
+ */
+export type CatalogTestDetail = Omit<
+  components['schemas']['CatalogTestDetailDto'],
+  keyof CatalogTestEnums
+> &
+  CatalogTestEnums;
 
 /**
  * `QuestionType` (backend `Domain/Catalog/QuestionType.cs`) — savol turi faqat YARATISHDA
@@ -70,39 +67,19 @@ export const QUESTION_TYPE_VALUES = [
 ] as const;
 export type QuestionType = (typeof QUESTION_TYPE_VALUES)[number];
 
-/** `GET /api/admin/catalog/tests/{id}/questions` — bitta savol qatori. */
-export interface CatalogQuestionItem {
-  id: string;
-  code: string;
-  order: number;
-  textUz: string;
-  textRu: string | null;
-  textEn: string | null;
-  type: string;
-  scale: string;
-  direction: 1 | -1;
-  weight: number;
-  isRequired: boolean;
-  isActive: boolean;
-  /** Savol tizim metodikasiga tegishlimi — `scale`/`direction`/`weight` qulflangan (BR-8). */
-  isSystem: boolean;
-}
+/**
+ * `GET /api/admin/catalog/tests/{id}/questions` — bitta savol qatori
+ * (`CatalogQuestionItemDto`). `direction` sxemada oddiy `int`, domenda esa faqat `+1`/`-1`
+ * (`docs/03` 1.2 "teskari savol") — toraytirildi. `isSystem` bo'lsa
+ * `scale`/`direction`/`weight` qulflangan (BR-8, `CLAUDE.md` 9a).
+ */
+export type CatalogQuestionItem = Omit<
+  components['schemas']['CatalogQuestionItemDto'],
+  'direction'
+> & { direction: 1 | -1 };
 
 /** `docs/03` 6.1-bo'lim saqlash shakli: `{ "from": 0, "to": 33, "label": "Past" }`. */
-export interface InterpretationBand {
-  from: number;
-  to: number;
-  label: string;
-}
+export type InterpretationBand = components['schemas']['InterpretationBandDto'];
 
 /** `GET /api/admin/catalog/tests/{id}/scales` — faqat `Custom` testlarda tahrirlanadi. */
-export interface CatalogScaleItem {
-  id: string;
-  testDefinitionId: string;
-  code: string;
-  nameUz: string;
-  descriptionUz: string | null;
-  displayOrder: number;
-  interpretationBands: InterpretationBand[];
-  questionCount: number;
-}
+export type CatalogScaleItem = components['schemas']['CatalogScaleItemDto'];

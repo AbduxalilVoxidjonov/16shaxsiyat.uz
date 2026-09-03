@@ -25,15 +25,18 @@ function StatCard({ label, value, hint }: { label: string; value: string; hint?:
  * - hisoblagichlar (ro'yxatdan o'tgan / yakunlagan / jarayonda) — hech kim topshirmagan bo'lsa
  *   ham `0` ko'rsatiladi, `—` EMAS;
  * - `completionRate` — backend **ulush (0..1)** qaytaradi (`docs/07` 3.1), shu sabab bu yerda
- *   `× 100` qilinadi; `null` (hali hech kim ro'yxatdan o'tmagan → nisbat aniqlanmagan) bo'lsa
- *   `—` ko'rsatiladi, `0%` emas — `dashboard`dagi `SchoolBreakdownTable` bilan bir xil qoida;
+ *   `× 100` qilinadi; `null`/yo'q (hali hech kim ro'yxatdan o'tmagan → nisbat aniqlanmagan)
+ *   bo'lsa `—` ko'rsatiladi, `0%` emas — `dashboard`dagi `SchoolBreakdownTable` bilan bir xil qoida;
  * - `lastActivityAt` — `null` bo'lsa `formatDate` `—` qaytaradi.
  */
 export function SchoolStatsCards({ stats }: SchoolStatsCardsProps) {
   const { t } = useTranslation();
 
+  // `== null` — `null` VA `undefined` ikkalasini ham qamraydi: sxemada maydon ixtiyoriy
+  // (`completionRate?: number | null`), ya'ni javobda umuman bo'lmasligi mumkin. Ilgari bu
+  // yerda `=== null` turardi va maydon tushib qolganda `undefined * 100` → `NaN%` chiqardi.
   const completionRate =
-    stats.completionRate === null ? '—' : `${(stats.completionRate * 100).toFixed(0)}%`;
+    stats.completionRate == null ? '—' : `${(stats.completionRate * 100).toFixed(0)}%`;
 
   return (
     <section aria-label={t('schools.detail.stats.ariaLabel')}>

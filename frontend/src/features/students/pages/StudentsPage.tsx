@@ -125,7 +125,7 @@ export default function StudentsPage() {
     {
       id: 'maturityIndex',
       header: t('students.table.maturityIndex'),
-      cell: (row) => (row.maturityIndex === null ? '—' : row.maturityIndex.toFixed(1)),
+      cell: (row) => (row.maturityIndex == null ? '—' : row.maturityIndex.toFixed(1)),
     },
     {
       id: 'activityLevel',

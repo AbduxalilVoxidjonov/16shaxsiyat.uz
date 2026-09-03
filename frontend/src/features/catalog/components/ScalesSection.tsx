@@ -90,6 +90,17 @@ export function ScalesSection({ testId }: ScalesSectionProps) {
                 {scale.descriptionUz && (
                   <p className="text-sm text-neutral-600">{scale.descriptionUz}</p>
                 )}
+                {/* Talqin oraliqlari qisqacha — nashrdan oldin "qaysi shkalada oraliq yo'q"
+                    savoli shu yerda javob topadi (`docs/03` §6.3). */}
+                <p className="mt-1 text-sm text-neutral-500">
+                  {scale.interpretationBands.length > 0
+                    ? scale.interpretationBands
+                        .map((band) =>
+                          `${String(band.from)}–${String(band.to)} ${band.label}`.trim(),
+                        )
+                        .join(' · ')
+                    : t('catalog.scalesList.bandsMissing')}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="neutral">
@@ -125,6 +136,9 @@ export function ScalesSection({ testId }: ScalesSectionProps) {
 
       {dialogOpen && (
         <ScaleDialog
+          // Tahrirlanayotgan shkala almashsa oyna QAYTA mount bo'ladi — talqin oraliqlari
+          // holati (`useState` boshlang'ich qiymati) yangi shkaladan olinishi uchun.
+          key={editing?.id ?? 'new'}
           open
           testId={testId}
           scale={editing}

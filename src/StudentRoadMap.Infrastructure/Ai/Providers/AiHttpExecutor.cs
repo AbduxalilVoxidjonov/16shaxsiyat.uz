@@ -22,6 +22,26 @@ internal static class AiHttpExecutor
     /// <summary>Xato xabariga qo'shiladigan provayder tanasining maksimal uzunligi (log shovqinini cheklash uchun).</summary>
     private const int MaxErrorBodyLength = 300;
 
+    /// <summary>Noto'g'ri/bekor qilingan kalitni bildiruvchi javob belgilari (Gemini/OpenAI/Anthropic).</summary>
+    private static readonly string[] InvalidKeyMarkers =
+    [
+        "API_KEY_INVALID",
+        "API key not valid",
+        "invalid_api_key",
+        "invalid x-api-key",
+        "authentication_error",
+        "PERMISSION_DENIED",
+    ];
+
+    /// <summary>Model nomi topilmaganini bildiruvchi javob belgilari.</summary>
+    private static readonly string[] ModelNotFoundMarkers =
+    [
+        "model_not_found",
+        "is not found for API version",
+        "not_found_error",
+        "does not exist or you do not have access",
+    ];
+
     public static async Task<AiHttpOutcome> SendAsync(
         HttpClient httpClient,
         HttpRequestMessage request,
@@ -43,7 +63,7 @@ internal static class AiHttpExecutor
         }
         catch (HttpRequestException ex)
         {
-            return new AiHttpOutcome(false, string.Empty, AiErrorKind.Unknown, Redact($"Tarmoqqa ulanishda xato: {ex.Message}", apiKey));
+            return new AiHttpOutcome(false, string.Empty, AiErrorKind.Network, Redact($"Tarmoqqa ulanishda xato: {ex.Message}", apiKey));
         }
 
         using (response)
@@ -63,7 +83,7 @@ internal static class AiHttpExecutor
                 return new AiHttpOutcome(true, body, AiErrorKind.None, null);
             }
 
-            var errorKind = ClassifyStatusCode(response.StatusCode);
+            var errorKind = ClassifyFailure(response.StatusCode, body);
             var message = Redact(BuildErrorMessage(response.StatusCode, body), apiKey);
             return new AiHttpOutcome(false, body, errorKind, message);
         }
@@ -84,6 +104,52 @@ internal static class AiHttpExecutor
         _ when (int)statusCode >= 400 => AiErrorKind.BadRequest,
         _ => AiErrorKind.Unknown,
     };
+
+    /// <summary>
+    /// Status kodi + provayder javobining TANASI bo'yicha aniqroq tur. Uchala provayder
+    /// noto'g'ri kalitni turlicha bildiradi: Gemini `400 INVALID_ARGUMENT` + `API_KEY_INVALID`,
+    /// OpenAI `401 invalid_api_key`, Anthropic `401 authentication_error`. Faqat status kodiga
+    /// tayanilsa Gemini'ning noto'g'ri kaliti `BadRequest` ("bu bizning xatomiz") bo'lib
+    /// ko'rinardi — admin uchun mutlaqo chalg'ituvchi (P28 jonli tekshiruvda aniqlangan,
+    /// 2026-09-02). Shuningdek 404 / `model_not_found` → `ModelNotFound`.
+    /// <para>
+    /// Tana matni FAQAT tur aniqlash uchun o'qiladi — foydalanuvchiga ko'rsatiladigan xabar
+    /// `TestAiProviderCommandHandler`da turdan quriladi, tanadan EMAS.
+    /// </para>
+    /// </summary>
+    public static AiErrorKind ClassifyFailure(HttpStatusCode statusCode, string body)
+    {
+        var byStatus = ClassifyStatusCode(statusCode);
+        if (byStatus is AiErrorKind.RateLimit or AiErrorKind.Server)
+        {
+            return byStatus;
+        }
+
+        if (ContainsAny(body, InvalidKeyMarkers))
+        {
+            return AiErrorKind.Auth;
+        }
+
+        if (statusCode == HttpStatusCode.NotFound || ContainsAny(body, ModelNotFoundMarkers))
+        {
+            return AiErrorKind.ModelNotFound;
+        }
+
+        return byStatus;
+    }
+
+    private static bool ContainsAny(string body, IReadOnlyList<string> markers)
+    {
+        foreach (var marker in markers)
+        {
+            if (body.Contains(marker, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>API kalitini (agar tasodifan tana yoki xabarda uchrasa) `***` bilan almashtiradi —
     /// himoya chuqurligi: provayderlar odatda kalitni js qaytarmaydi, lekin test buni qulflaydi.</summary>

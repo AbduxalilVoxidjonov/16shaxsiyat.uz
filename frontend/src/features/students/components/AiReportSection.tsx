@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown } from 'lucide-react';
+import { AlertTriangle, ChevronDown } from 'lucide-react';
 import { Card } from '@/shared/ui/Card';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Button } from '@/shared/ui/Button';
@@ -123,10 +123,36 @@ export function AiReportSection({
               {t('studentProfile.ai.unreliableBanner')}
             </p>
           )}
-          {aiAnalysis?.isFallbackReport && (
-            <span className="w-fit rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-600">
-              {t('studentProfile.ai.fallbackBadge')}
-            </span>
+          {aiAnalysis?.isFallbackReport === true && (
+            // `docs/09` 11-bo'lim: barcha provayder yiqilgach yoziladigan SHABLON hisobot.
+            // Kichik "badge" yetarli emas — admin buni shaxsiy AI tahlili deb o'qimasligi
+            // uchun sabab va keyingi qadam bilan ochiq ogohlantirish (P28 ko'rsatmasi).
+            <div
+              role="alert"
+              className="flex flex-col gap-1 rounded-xl border border-warning-300 bg-warning-50 p-3"
+            >
+              <p className="flex items-center gap-1.5 text-sm font-semibold text-warning-800">
+                <AlertTriangle size={16} aria-hidden="true" />
+                {t('studentProfile.ai.fallbackBadge')}
+              </p>
+              <p className="text-sm text-warning-800">{t('studentProfile.ai.fallbackNotice')}</p>
+            </div>
+          )}
+          {aiAnalysis?.isModerated === true && (
+            // `docs/09` 6-bo'lim (3-band): taqiqlangan atama ikkinchi urinishda ham topilgan —
+            // javob "moderatsiya qilindi" belgisi bilan saqlangan. Bu matn post-filtrdan TOZA
+            // holda o'tmagan, shuning uchun admin uni oddiy tahlil deb o'qimasligi kerak
+            // (`CLAUDE.md` 6-qoida: "AI tashxis qo'ymaydi").
+            <div
+              role="alert"
+              className="flex flex-col gap-1 rounded-xl border border-danger-300 bg-danger-50 p-3"
+            >
+              <p className="flex items-center gap-1.5 text-sm font-semibold text-danger-800">
+                <AlertTriangle size={16} aria-hidden="true" />
+                {t('studentProfile.ai.moderatedBadge')}
+              </p>
+              <p className="text-sm text-danger-800">{t('studentProfile.ai.moderatedNotice')}</p>
+            </div>
           )}
           {aiAnalysis ? (
             <AiReportView sections={aiAnalysis} />

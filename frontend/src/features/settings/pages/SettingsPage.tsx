@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { usePageTitle } from '@/shared/hooks/usePageTitle';
-import { Badge, Button, Card, Dialog, Input, Skeleton } from '@/shared/ui';
+import { Badge, Button, Card, Checkbox, Dialog, Input, Skeleton } from '@/shared/ui';
 import { useToast } from '@/shared/ui/useToast';
 import { AppError } from '@/shared/api/AppError';
 import { useChangePassword } from '../api/useChangePassword';
@@ -98,7 +98,14 @@ function ChangePasswordCard() {
   );
 }
 
-/** 2FA (TOTP) kartasi — yoqish/o'chirish skeleti (P22 qamrovi). */
+/**
+ * Zaxira kodlar `.txt` fayl nomi — foydalanuvchi diskiga tushadigan yagona nusxa.
+ * Kodlar `localStorage`/konsol/URL'ga hech qachon yozilmaydi (CLAUDE.md 4-qoida ruhi):
+ * `blob:` havolasi opaque UUID, kod matni URL'da ko'rinmaydi.
+ */
+const BACKUP_CODES_FILE_NAME = 'shaxsiyat-zaxira-kodlar.txt';
+
+/** 2FA (TOTP) kartasi — yoqish/o'chirish (P22 qamrovi). */
 function TwoFactorCard() {
   const { t } = useTranslation();
   const toast = useToast();
@@ -108,6 +115,17 @@ function TwoFactorCard() {
   const disableTotp = useDisableTotp();
 
   const [enableResult, setEnableResult] = useState<TotpEnableResponse | null>(null);
+  const [codesSaved, setCodesSaved] = useState(false);
+  const [dismissBlocked, setDismissBlocked] = useState(false);
+  /**
+   * Dialog `key`ining bir qismi. Native `<dialog>` `Escape`/backdrop bosilganda o'zini DOM
+   * darajasida yopadi, `open` prop esa o'zgarmagani uchun `shared/ui/Dialog` uni qayta ochmaydi.
+   * Nonce'ni oshirish Dialog'ni qayta o'rnatadi (remount) → effekt `showModal()`ni qayta chaqiradi.
+   * Shu tariqa oyna zaxira kodlar saqlangani tasdiqlanmaguncha yopilmaydi — `shared/ui`ga
+   * tegmasdan (u boshqa featurelar bilan bo'lishiladi).
+   */
+  const [dialogNonce, setDialogNonce] = useState(0);
+
   const [isDisableDialogOpen, setDisableDialogOpen] = useState(false);
   const [disablePassword, setDisablePassword] = useState('');
   const [disableError, setDisableError] = useState<string | null>(null);
@@ -119,11 +137,67 @@ function TwoFactorCard() {
   async function handleEnable() {
     try {
       const result = await enableTotp.mutateAsync();
+      setCodesSaved(false);
+      setDismissBlocked(false);
       setEnableResult(result);
       await invalidateAccountStatus();
     } catch {
       toast.show({ variant: 'danger', title: t('settings.twoFactor.genericError') });
     }
+  }
+
+  /**
+   * `Escape`, backdrop va yopish tugmasi shu yerga tushadi. 2FA server tomonda ALLAQACHON
+   * yoqilgan, zaxira kodlar esa boshqa hech qachon ko'rsatilmaydi — shuning uchun tasdiqlashsiz
+   * yopishga ruxsat berilmaydi (aks holda foydalanuvchi telefonini yo'qotsa hisobga kira olmaydi).
+   */
+  function handleBackupDialogClose() {
+    if (!codesSaved) {
+      setDismissBlocked(true);
+      setDialogNonce((nonce) => nonce + 1);
+      return;
+    }
+    closeBackupDialog();
+  }
+
+  function closeBackupDialog() {
+    setEnableResult(null);
+    setCodesSaved(false);
+    setDismissBlocked(false);
+  }
+
+  async function handleCopyCodes() {
+    if (!enableResult) return;
+    const clipboard = navigator.clipboard as Clipboard | undefined;
+    if (!clipboard?.writeText) {
+      toast.show({ variant: 'danger', title: t('settings.twoFactor.copyError') });
+      return;
+    }
+    try {
+      await clipboard.writeText(enableResult.backupCodes.join('\n'));
+      toast.show({ variant: 'success', title: t('settings.twoFactor.copySuccess') });
+    } catch {
+      toast.show({ variant: 'danger', title: t('settings.twoFactor.copyError') });
+    }
+  }
+
+  function handleDownloadCodes() {
+    if (!enableResult) return;
+    if (typeof URL.createObjectURL !== 'function') {
+      toast.show({ variant: 'danger', title: t('settings.twoFactor.downloadError') });
+      return;
+    }
+    const content = `${t('settings.twoFactor.downloadFileHeading')}\n\n${enableResult.backupCodes.join('\n')}\n`;
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = objectUrl;
+    link.download = BACKUP_CODES_FILE_NAME;
+    link.rel = 'noopener';
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
   }
 
   async function handleConfirmDisable() {
@@ -133,7 +207,7 @@ function TwoFactorCard() {
       return;
     }
     try {
-      await disableTotp.mutateAsync({ password: disablePassword });
+      await disableTotp.mutateAsync({ currentPassword: disablePassword });
       setDisableDialogOpen(false);
       setDisablePassword('');
       await invalidateAccountStatus();
@@ -186,10 +260,16 @@ function TwoFactorCard() {
       </div>
 
       <Dialog
+        key={`totp-backup-codes-${dialogNonce}`}
         open={Boolean(enableResult)}
-        onClose={() => setEnableResult(null)}
+        onClose={handleBackupDialogClose}
         title={t('settings.twoFactor.enableSuccess')}
-        footer={<Button onClick={() => setEnableResult(null)}>{t('common.close')}</Button>}
+        description={t('settings.twoFactor.backupCodesHint')}
+        footer={
+          <Button disabled={!codesSaved} onClick={closeBackupDialog}>
+            {t('settings.twoFactor.acknowledgeCta')}
+          </Button>
+        }
       >
         {enableResult && (
           <div className="flex flex-col gap-3 text-sm text-neutral-700">
@@ -200,15 +280,43 @@ function TwoFactorCard() {
               </code>
             </div>
             <div>
-              <p className="font-medium">{t('settings.twoFactor.recoveryCodesLabel')}</p>
-              <ul className="mt-1 grid grid-cols-2 gap-1 font-mono text-xs">
-                {enableResult.recoveryCodes.map((code) => (
-                  <li key={code} className="rounded bg-neutral-100 px-2 py-1">
+              <p id="totp-backup-codes-label" className="font-medium">
+                {t('settings.twoFactor.backupCodesLabel')}
+              </p>
+              <ul
+                aria-labelledby="totp-backup-codes-label"
+                className="mt-1 grid grid-cols-2 gap-1 font-mono text-xs"
+              >
+                {enableResult.backupCodes.map((code, index) => (
+                  // Kodlar takrorlanishi nazariy jihatdan mumkin (raqamli, tasodifiy) —
+                  // ro'yxat statik, shuning uchun kalitda indeks ishlatiladi.
+                  <li key={`${index}-${code}`} className="rounded bg-neutral-100 px-2 py-1">
                     {code}
                   </li>
                 ))}
               </ul>
             </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={() => void handleCopyCodes()}>
+                {t('settings.twoFactor.copyCta')}
+              </Button>
+              <Button size="sm" variant="outline" onClick={handleDownloadCodes}>
+                {t('settings.twoFactor.downloadCta')}
+              </Button>
+            </div>
+            <Checkbox
+              label={t('settings.twoFactor.acknowledgeLabel')}
+              checked={codesSaved}
+              onChange={(event) => {
+                setCodesSaved(event.target.checked);
+                if (event.target.checked) setDismissBlocked(false);
+              }}
+            />
+            {dismissBlocked && (
+              <p role="alert" className="text-sm text-danger-600">
+                {t('settings.twoFactor.acknowledgeRequired')}
+              </p>
+            )}
           </div>
         )}
       </Dialog>

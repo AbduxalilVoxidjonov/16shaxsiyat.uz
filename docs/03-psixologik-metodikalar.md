@@ -207,6 +207,11 @@ Natija 0–100. Talqin:
 
 > Matnda qisqalik uchun `R-I-A-S-E-C` harflari ishlatiladi, lekin **bazadagi `scale` qiymatlari**
 > `R`, `I`, `ART`, `SOC`, `ENT`, `CONV` — `A`/`S`/`E`/`C` Big Five bilan to'qnashmasligi uchun.
+>
+> **API'da esa har doim bitta harfli mnemonika:** `RIASEC.types` kalitlari `R, I, A, S, E, C`
+> (`docs/07` 3.2, "`latestAssessment.results` — KALIT NOMLARI"). `scale` kodlari natija
+> API'siga hech qachon chiqmaydi (`CLAUDE.md` 9-band); o'girish backend'da bir joyda —
+> `StudentProfileMapping.RiasecScaleToLetter`. Saqlangan `jsonb` da `scale` kodlari qoladi.
 
 ### 4.2 Scoring
 

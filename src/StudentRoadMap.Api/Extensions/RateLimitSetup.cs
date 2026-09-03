@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -40,6 +41,12 @@ public static class RateLimitSetup
     /// </summary>
     public const string AdminApi = "AdminApi";
 
+    /// <summary>Rad etilgan so'rov uchun oyna uzunligi saqlanadigan `HttpContext.Items` kaliti.</summary>
+    private const string RetryAfterWindowItemKey = "RateLimit.RetryAfterWindow";
+
+    /// <summary>Oyna uzunligi ham, liz metadatasi ham topilmasa (kutilmagan holat) — xavfsiz standart.</summary>
+    private static readonly TimeSpan DefaultRetryAfter = TimeSpan.FromMinutes(1);
+
     public static IServiceCollection AddRateLimitPolicies(this IServiceCollection services)
     {
         services.AddRateLimiter(options =>
@@ -48,15 +55,30 @@ public static class RateLimitSetup
 
             options.OnRejected = async (context, cancellationToken) =>
             {
+                // `Retry-After` (RFC 9110 10.2.3) — foydalanuvchi/klient qancha kutishini
+                // BILISHI kerak (P31 topilmasi: 429 javobida bu sarlavha yo'q edi va mijoz
+                // "birozdan so'ng" degan mavhum matndan boshqa hech narsa ololmasdi).
+                // Sekundlarda, butun songa YUQORIGA yaxlitlanadi — 0 qaytarib mijozni darhol
+                // qayta urinishga undamaslik uchun (kamida 1).
+                var retryAfter = ResolveRetryAfter(context);
+                var retryAfterSeconds = Math.Max(1, (int)Math.Ceiling(retryAfter.TotalSeconds));
+
+                context.HttpContext.Response.Headers.RetryAfter =
+                    retryAfterSeconds.ToString(CultureInfo.InvariantCulture);
+
                 var problem = new ProblemDetails
                 {
                     Status = StatusCodes.Status429TooManyRequests,
                     Title = "So'rovlar soni limitdan oshdi.",
-                    Detail = "Iltimos, birozdan so'ng qayta urinib ko'ring.",
+                    Detail = $"Iltimos, {retryAfterSeconds} soniyadan so'ng qayta urinib ko'ring.",
                     Type = "https://studentroadmap/errors/rate-limited",
                 };
                 problem.Extensions["code"] = ProblemCodes.RateLimited;
                 problem.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
+
+                // Sarlavhani o'qiy olmaydigan klient (masalan `fetch` CORS'da ochilmagan
+                // sarlavhalar) uchun bir xil qiymat tanada ham beriladi.
+                problem.Extensions["retryAfterSeconds"] = retryAfterSeconds;
 
                 // `WriteAsJsonAsync` `ContentType`ni o'zi qayta yozadi — shu sabab aniq shu yerda beriladi.
                 await context.HttpContext.Response
@@ -64,23 +86,17 @@ public static class RateLimitSetup
                     .ConfigureAwait(false);
             };
 
-            options.AddPolicy(PublicSchoolInfo, httpContext => RateLimitPartition.GetFixedWindowLimiter(
+            options.AddPolicy(PublicSchoolInfo, httpContext => FixedWindow(
+                httpContext,
                 partitionKey: GetClientIp(httpContext),
-                factory: _ => new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = 60,
-                    Window = TimeSpan.FromMinutes(1),
-                    QueueLimit = 0,
-                }));
+                permitLimit: 60,
+                window: TimeSpan.FromMinutes(1)));
 
-            options.AddPolicy(PublicStartSession, httpContext => RateLimitPartition.GetFixedWindowLimiter(
+            options.AddPolicy(PublicStartSession, httpContext => FixedWindow(
+                httpContext,
                 partitionKey: GetClientIp(httpContext),
-                factory: _ => new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = 10,
-                    Window = TimeSpan.FromHours(1),
-                    QueueLimit = 0,
-                }));
+                permitLimit: 10,
+                window: TimeSpan.FromHours(1)));
 
             // Sessiya (`X-Session-Token`) bo'yicha bo'linadi — IP emas, chunki bitta maktab
             // kompyuter sinfida bir nechta o'quvchi bitta IP orqasida bo'lishi mumkin
@@ -88,35 +104,67 @@ public static class RateLimitSetup
             // `UseRateLimiter`dan KEYIN ishga tushadi (`Program.cs`), shu sabab bu yerda xom
             // sarlavha qiymati ishlatiladi — token yaroqsiz bo'lsa ham partitsiya kaliti sifatida
             // yetarli (keyinroq autentifikatsiya 401/410 bilan rad etadi).
-            options.AddPolicy(AdminLogin, httpContext => RateLimitPartition.GetFixedWindowLimiter(
+            options.AddPolicy(AdminLogin, httpContext => FixedWindow(
+                httpContext,
                 partitionKey: GetClientIp(httpContext),
-                factory: _ => new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = 10,
-                    Window = TimeSpan.FromMinutes(5),
-                    QueueLimit = 0,
-                }));
+                permitLimit: 10,
+                window: TimeSpan.FromMinutes(5)));
 
-            options.AddPolicy(PublicSaveAnswers, httpContext => RateLimitPartition.GetFixedWindowLimiter(
+            options.AddPolicy(PublicSaveAnswers, httpContext => FixedWindow(
+                httpContext,
                 partitionKey: GetSessionToken(httpContext),
-                factory: _ => new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = 120,
-                    Window = TimeSpan.FromMinutes(1),
-                    QueueLimit = 0,
-                }));
+                permitLimit: 120,
+                window: TimeSpan.FromMinutes(1)));
 
-            options.AddPolicy(AdminApi, httpContext => RateLimitPartition.GetFixedWindowLimiter(
+            options.AddPolicy(AdminApi, httpContext => FixedWindow(
+                httpContext,
                 partitionKey: GetClientIp(httpContext),
-                factory: _ => new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = 300,
-                    Window = TimeSpan.FromMinutes(1),
-                    QueueLimit = 0,
-                }));
+                permitLimit: 300,
+                window: TimeSpan.FromMinutes(1)));
         });
 
         return services;
+    }
+
+    /// <summary>
+    /// Qat'iy oyna (fixed window) limiterini yaratadi va SHU BILAN BIRGA oyna uzunligini
+    /// `HttpContext.Items`ga qo'yadi. Sabab: `OnRejected` global (siyosatga bog'liq emas) va
+    /// rad etilgan so'rov qaysi siyosatga tegishli ekanini bilmaydi — `Retry-After` qiymatini
+    /// hisoblash uchun esa oyna uzunligi kerak. Siyosat delegati HAR so'rovda chaqiriladi,
+    /// shu sabab bu yer qiymatni saqlash uchun ishonchli joy. Limiter lizingi metadata
+    /// (`MetadataName.RetryAfter`) bersa — u ustunlik qiladi (aniqroq: oynaning QOLGAN qismi).
+    /// </summary>
+    private static RateLimitPartition<string> FixedWindow(
+        HttpContext httpContext,
+        string partitionKey,
+        int permitLimit,
+        TimeSpan window)
+    {
+        httpContext.Items[RetryAfterWindowItemKey] = window;
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = permitLimit,
+                Window = window,
+                QueueLimit = 0,
+            });
+    }
+
+    private static TimeSpan ResolveRetryAfter(OnRejectedContext context)
+    {
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var leaseRetryAfter) && leaseRetryAfter > TimeSpan.Zero)
+        {
+            return leaseRetryAfter;
+        }
+
+        if (context.HttpContext.Items.TryGetValue(RetryAfterWindowItemKey, out var stored) && stored is TimeSpan window)
+        {
+            return window;
+        }
+
+        return DefaultRetryAfter;
     }
 
     private static string GetClientIp(HttpContext httpContext) =>

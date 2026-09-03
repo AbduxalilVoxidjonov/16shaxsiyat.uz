@@ -4,7 +4,19 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import axe from 'axe-core';
 import { ToastProvider } from '@/shared/ui/Toast';
+import { problemResponse, typedResponse } from '@/test/apiMock';
 import StudentProfilePage from './StudentProfilePage';
+import type {
+  ActivityResult,
+  AiAnalysisDto,
+  AssessmentSummaryDto,
+  BigFiveResult,
+  LatestAssessmentDto,
+  Mbti16Result,
+  RiasecResult,
+  StudentDetailDto,
+  StudentProfileResponse,
+} from '../model/profileTypes';
 
 /** `widgets/a11y.test.tsx`dagi bilan bir xil sabab — jsdom'da ma'nosiz qoidalar o'chirilgan. */
 async function expectNoAxeViolations(container: Element): Promise<void> {
@@ -26,7 +38,7 @@ const STUDENT = {
   school: { id: 'school-1', name: "12-son maktab, Qo'qon" },
   consentGivenAt: '2026-08-01T10:00:00Z',
   createdAt: '2026-08-01T10:00:00Z',
-};
+} satisfies StudentDetailDto;
 
 const ASSESSMENT_SUMMARY = {
   id: 'assessment-1',
@@ -37,7 +49,7 @@ const ASSESSMENT_SUMMARY = {
   reliabilityScore: 82.5,
   reliabilityFlag: 'Reliable',
   isLatest: true,
-};
+} satisfies AssessmentSummaryDto;
 
 const MBTI16_RESULT = {
   resultCode: 'INTJ',
@@ -49,7 +61,7 @@ const MBTI16_RESULT = {
     JP: { pct: 64.1, letter: 'J', borderline: false },
   },
   borderlineAxes: [],
-};
+} satisfies Mbti16Result;
 
 const BIG5_RESULT = {
   factors: {
@@ -62,23 +74,33 @@ const BIG5_RESULT = {
   stabilityPct: 70,
   maturityIndex: 68.4,
   maturityLevel: 'Yaxshi',
-};
+} satisfies BigFiveResult;
 
 const RIASEC_RESULT = {
   resultCode: 'IRA',
-  types: { R: 62, I: 88, ART: 71, SOC: 40, ENT: 35, CONV: 48 },
+  types: { R: 62, I: 88, A: 71, S: 40, E: 35, C: 48 },
   differentiation: 53,
   consistency: 'High',
   careerFields: [{ name: 'Muhandislik', professions: ['Dasturchi'] }],
-};
+} satisfies RiasecResult;
 
 const ACTIVITY_RESULT = {
   scales: { MOT: 74, SELF: 68, SOCA: 52, ENG: 60 },
   activityIndex: 65.2,
   activityLevel: 'Moderate',
   needsAttention: false,
-};
+} satisfies ActivityResult;
 
+/**
+ * `latestAssessment.aiAnalysis` — backend `AdminAiAnalysisDto`
+ * (`Application/Admin/Students/AdminStudentDtos.cs`).
+ *
+ * Tip sxemadan EMAS, `../model/profileTypes` dan: `schema.d.ts` dagi `AdminAiAnalysisDto`
+ * eskirgan — unda `isFallbackReport`/`isModerated`/`errorMessage`/`learningStyle`/
+ * `motivationProfile`/`activityAssessment`/`reliabilityNote`/`disclaimer` YO'Q, `strengths`/
+ * `growthAreas`/`attentionFlags` esa `string[]` (backendda tuzilmali obyektlar),
+ * `teacherNotes`/`parentNotes` — `string` (backendda `string[]`).
+ */
 const AI_ANALYSIS = {
   id: 'ai-1',
   status: 'Succeeded',
@@ -86,6 +108,9 @@ const AI_ANALYSIS = {
   model: 'gemini-2.5-flash',
   promptVersion: 'v1.0',
   createdAt: '2026-08-31T10:00:00Z',
+  isFallbackReport: false,
+  isModerated: false,
+  errorMessage: null,
   summary: "Bu — o'quvchining namunaviy portreti.",
   personalityPortrait: 'Tahliliy fikrlaydi.',
   strengths: [{ title: 'Tahliliy fikrlash', description: 'Tavsif', evidence: 'Asos' }],
@@ -93,18 +118,37 @@ const AI_ANALYSIS = {
   learningStyle: "Mustaqil o'qish",
   motivationProfile: 'Aniq maqsad',
   activityAssessment: "O'rtacha faol",
-  careerSuggestions: [{ field: 'IT', why: 'Sabab', nextSteps: ['Kurs'] }],
+  // `exampleProfessions` — backend `AdminCareerSuggestionDto` da MAJBURIY; mock uni
+  // tushirib qoldirgan edi (sxemadan tiplashda topildi).
+  careerSuggestions: [
+    { field: 'IT', why: 'Sabab', exampleProfessions: ['Dasturchi'], nextSteps: ['Kurs'] },
+  ],
   studentRecommendations: ['Tavsiya'],
   teacherNotes: ['Eslatma'],
   parentNotes: ['Eslatma'],
   attentionFlags: [],
+  reliabilityNote: 'Javoblar tez berilgan, natijani ehtiyot bilan talqin qiling.',
   disclaimer: 'Bu tahlil tashxis emas.',
-};
+} satisfies AiAnalysisDto;
 
-function buildProfileResponse(overrides: {
-  assessments?: unknown[];
-  latestAssessment?: unknown;
-} = {}) {
+/**
+ * `GET /api/admin/students/{id}` javobi. `results` kalitlari — `TestDefinition.Code` bilan
+ * HARFMA-HARF bir xil (`MBTI16`/`BIG5`/`RIASEC`/`ACTIVITY`); sxemada ham aynan shunday.
+ * Qaytish tipi `StudentProfileResponse` — u SXEMADAN olingan (`AdminStudentProfileDto` +
+ * enum toraytirish), shu sabab fixture baribir shartnomaga qarab tekshiriladi.
+ *
+ * `jsonResponse<'AdminStudentProfileDto'>` EMAS, chunki sxemada `latestAssessment`/
+ * `aiAnalysis`/`results.*` faqat IXTIYORIY (`?`), `| null` emas: Swashbuckle OpenAPI 3.0 da
+ * `$ref` yonida `nullable: true` chiqara olmaydi. Backend esa `DefaultIgnoreCondition`
+ * sozlamagani uchun (`Program.cs`) bu maydonlarni ANIQ `null` bilan yuboradi — mock aynan
+ * shu haqiqiy javobni taqlid qiladi.
+ */
+function buildProfileResponse(
+  overrides: {
+    assessments?: AssessmentSummaryDto[];
+    latestAssessment?: LatestAssessmentDto | null;
+  } = {},
+): StudentProfileResponse {
   return {
     student: STUDENT,
     assessments: overrides.assessments ?? [ASSESSMENT_SUMMARY],
@@ -125,29 +169,33 @@ function buildProfileResponse(overrides: {
   };
 }
 
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
+/** Xato javobi — `ProblemDetails` (`docs/06` 6-bo'lim). */
+interface ProblemEnvelope {
+  status: number;
+  code: string;
 }
 
-function isStatusEnvelope(value: unknown): value is { status: number; body: unknown } {
-  return typeof value === 'object' && value !== null && 'status' in value && 'body' in value;
+type ProfileFetchResult = StudentProfileResponse | ProblemEnvelope;
+
+function isProblemEnvelope(value: ProfileFetchResult | undefined): value is ProblemEnvelope {
+  return value !== undefined && 'code' in value;
 }
 
-function renderPage(profileResponses: unknown[], initialEntry = '/admin/students/student-1') {
+function renderPage(
+  profileResponses: ProfileFetchResult[],
+  initialEntry = '/admin/students/student-1',
+) {
   const responses = [...profileResponses];
-  let lastResponse: unknown = responses[0];
+  let lastResponse: ProfileFetchResult | undefined = responses[0];
   const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
     const url = String(input);
     if (url.includes('/api/admin/students/student-1')) {
       const next = responses.length > 0 ? responses.shift() : lastResponse;
       lastResponse = next;
-      if (isStatusEnvelope(next)) {
-        return Promise.resolve(jsonResponse(next.body, next.status));
+      if (isProblemEnvelope(next)) {
+        return Promise.resolve(problemResponse(next.code, next.status));
       }
-      return Promise.resolve(jsonResponse(next));
+      return Promise.resolve(typedResponse<StudentProfileResponse>(next!));
     }
     return Promise.reject(new Error(`unexpected fetch: ${url}`));
   });
@@ -219,6 +267,82 @@ describe('StudentProfilePage', () => {
     expect(screen.getByText('Bu sessiya uchun AI tahlil hali mavjud emas.')).toBeInTheDocument();
   });
 
+  it("shablon (fallback) hisobotda aniq belgi ko'rsatiladi — haqiqiy AI tahlili deb o'qilmaydi", async () => {
+    renderPage([
+      buildProfileResponse({
+        latestAssessment: {
+          id: 'assessment-1',
+          results: {},
+          aiAnalysis: { ...AI_ANALYSIS, isFallbackReport: true, model: 'template' },
+          aiHistory: [],
+        },
+      }),
+    ]);
+
+    expect(await screen.findByText('Aliyev Sardor Bekzodovich')).toBeInTheDocument();
+    expect(screen.getByText('Avtomatik shablon hisobot')).toBeInTheDocument();
+    expect(screen.getByText(/Bu matnni AI yozmagan/)).toBeInTheDocument();
+    // Ogohlantirish e'tiborni tortadigan `role="alert"` bo'lishi kerak, jimgina yorliq emas.
+    expect(
+      screen.getAllByRole('alert').some((el) => el.textContent?.includes('Avtomatik shablon hisobot')),
+    ).toBe(true);
+  });
+
+  it("moderatsiya qilingan hisobotda ochiq ogohlantirish chiqadi (post-filtrdan toza o'tmagan matn)", async () => {
+    renderPage([
+      buildProfileResponse({
+        latestAssessment: {
+          id: 'assessment-1',
+          results: {},
+          aiAnalysis: {
+            ...AI_ANALYSIS,
+            isModerated: true,
+            attentionFlags: [
+              {
+                code: 'MODERATION_REQUIRED',
+                message: "Taqiqlangan atama ikkinchi urinishda ham topildi.",
+                severity: 'high',
+              },
+            ],
+          },
+          aiHistory: [],
+        },
+      }),
+    ]);
+
+    expect(await screen.findByText('Aliyev Sardor Bekzodovich')).toBeInTheDocument();
+    expect(screen.getByText('Moderatsiya qilingan hisobot')).toBeInTheDocument();
+    expect(
+      screen.getAllByRole('alert').some((el) => el.textContent?.includes('Moderatsiya qilingan hisobot')),
+    ).toBe(true);
+    // Bayroqning o'zi ham hisobot ichida ko'rinadi — jimgina yo'qolib ketmaydi.
+    expect(screen.getByText('Taqiqlangan atama ikkinchi urinishda ham topildi.')).toBeInTheDocument();
+  });
+
+  it("disclaimer va reliabilityNote hisobotda doim ko'rinadi", async () => {
+    renderPage([buildProfileResponse()]);
+
+    expect(await screen.findByText('Aliyev Sardor Bekzodovich')).toBeInTheDocument();
+    expect(screen.getByText('Bu tahlil tashxis emas.')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Javoblar tez berilgan, natijani ehtiyot bilan talqin qiling\./),
+    ).toBeInTheDocument();
+  });
+
+  it("moderatsiya qilinmagan hisobotda ogohlantirish KO'RSATILMAYDI", async () => {
+    renderPage([buildProfileResponse()]);
+
+    expect(await screen.findByText('Aliyev Sardor Bekzodovich')).toBeInTheDocument();
+    expect(screen.queryByText('Moderatsiya qilingan hisobot')).not.toBeInTheDocument();
+  });
+
+  it("haqiqiy AI tahlilida shablon belgisi KO'RSATILMAYDI", async () => {
+    renderPage([buildProfileResponse()]);
+
+    expect(await screen.findByText('Aliyev Sardor Bekzodovich')).toBeInTheDocument();
+    expect(screen.queryByText('Avtomatik shablon hisobot')).not.toBeInTheDocument();
+  });
+
   it('Unreliable holatida sariq banner ko\'rinadi', async () => {
     renderPage([
       buildProfileResponse({
@@ -261,17 +385,13 @@ describe('StudentProfilePage', () => {
   });
 
   it('404 kelsa "topilmadi" holati ko\'rsatiladi', async () => {
-    renderPage([
-      { status: 404, body: { code: 'NOT_FOUND', title: 'Topilmadi', status: 404 } },
-    ]);
+    renderPage([{ status: 404, code: 'NOT_FOUND' }]);
 
     expect(await screen.findByText('O\'quvchi topilmadi')).toBeInTheDocument();
   });
 
   it('server xatosida qayta urinish tugmasi bilan xato holati ko\'rsatiladi', async () => {
-    const fetchMock = renderPage([
-      { status: 500, body: { code: 'INTERNAL_ERROR', title: 'Xato', status: 500 } },
-    ]);
+    const fetchMock = renderPage([{ status: 500, code: 'INTERNAL_ERROR' }]);
 
     const retryButton = await screen.findByRole('button', { name: 'Qayta urinish' });
     const callsBeforeRetry = fetchMock.mock.calls.length;

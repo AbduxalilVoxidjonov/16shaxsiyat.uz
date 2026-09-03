@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { validateTestImportFile } from './importSchema';
+import { validateTestImportFile, type TestImportFile } from './importSchema';
 
-function validQuestion(overrides: Record<string, unknown> = {}) {
+/** Fayl ichidagi bitta savol — `testImportFileSchema.questions` elementi. */
+type ImportQuestion = TestImportFile['questions'][number];
+
+function validQuestion(overrides: Partial<ImportQuestion> = {}): ImportQuestion {
   return {
     code: 'Q01',
     order: 1,
@@ -15,7 +18,7 @@ function validQuestion(overrides: Record<string, unknown> = {}) {
   };
 }
 
-function validFile(overrides: Record<string, unknown> = {}) {
+function validFile(overrides: Partial<TestImportFile> = {}): TestImportFile {
   return {
     code: 'STRESS',
     nameUz: 'Stressga chidamlilik anketasi',

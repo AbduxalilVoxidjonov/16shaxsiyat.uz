@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using StudentRoadMap.Api.IntegrationTests.Testing;
 using StudentRoadMap.Application.Admin.Assessments;
@@ -127,6 +129,42 @@ public sealed class AdminAssessmentsListEndpointTests : IClassFixture<PublicApiT
             $"/api/admin/assessments?schoolId={school.Id}&sort=reliabilityScore", TestJson.Options);
 
         result!.Items.Should().NotContain(a => a.Id == assessment.Id);
+    }
+
+    /// <summary>
+    /// `programId`/`programName` (2026-09-03) — ro'yxat jadvalidagi "Dastur" ustuni. XOM JSON
+    /// ustidan tekshiriladi: `ReadFromJsonAsync&lt;Dto&gt;` kalit nomidagi farqni KO'RMAYDI
+    /// (2026-09-03 qarori) — ustun jimgina "—" bo'lib qolishining aynan shu sababi bo'lgan.
+    /// </summary>
+    [Fact]
+    public async Task List_DasturNominiQaytaradi()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var now = DateTimeOffset.UtcNow;
+
+        var school = await TestDataFactory.CreateSchoolAsync(db, now, "assess-list-program", TestDataFactory.NewAccessToken("assess-list-program"));
+        var student = MakeStudent(school.Id, now, "Dastur Ustuni Talabasi", "+998907771104");
+        db.Students.Add(student);
+        await db.SaveChangesAsync();
+
+        var programId = await TestDataFactory.GetOrCreateDefaultProgramIdAsync(db, now);
+        var program = await db.AssessmentPrograms.AsNoTracking().FirstAsync(p => p.Id == programId);
+        var assessment = MakeAssessment(student, school, now, "assess-list-program-0123456789abcd", programId);
+        db.Assessments.Add(assessment);
+        await db.SaveChangesAsync();
+
+        using var client = await AuthenticatedClientAsync("assessments-list-program-admin");
+
+        var raw = await client.GetStringAsync(
+            new Uri($"/api/admin/assessments?schoolId={school.Id}&sort=reliabilityScore", UriKind.Relative));
+
+        using var document = JsonDocument.Parse(raw);
+        var item = document.RootElement.GetProperty("items").EnumerateArray()
+            .Single(i => i.GetProperty("id").GetGuid() == assessment.Id);
+
+        item.GetProperty("programId").GetGuid().Should().Be(programId);
+        item.GetProperty("programName").GetString().Should().Be(program.NameUz);
     }
 
     [Fact]

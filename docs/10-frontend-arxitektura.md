@@ -188,11 +188,118 @@ Tartib:
 
 ## 6. Tiplar va API sinxronizatsiyasi
 
+### 6.1 Asosiy qoida
+
 - Backend `swagger.json` dan tiplar generatsiya qilinadi:
-  `npx openapi-typescript http://localhost:5000/swagger/v1/swagger.json -o src/shared/api/schema.d.ts`
-- `npm run generate:api` skripti; CI'da generatsiya natijasi commit bilan farq qilsa — build yiqiladi
-  (kontrakt eskirganini erta ko'rish uchun).
-- Qo'lda yozilgan DTO tiplariga **ruxsat yo'q** (faqat generatsiya yoki `types.ts` da re-export).
+  `npm run generate:api` → `src/shared/api/schema.d.ts` (`API_URL` bilan port ko'rsatiladi).
+- CI'da generatsiya natijasi commit bilan farq qilsa — build yiqiladi (`api-contract-sync` job,
+  `docs/13`). Kontrakt eskirganini erta ko'rish uchun.
+- Qo'lda yozilgan DTO tiplariga **ruxsat yo'q** — faqat generatsiya yoki `types.ts` da re-export.
+
+### 6.2 Re-export naqshlari
+
+```ts
+import type { components } from '@/shared/api/schema';
+
+// 1. To'g'ridan-to'g'ri re-export — DEFAULT
+export type SchoolListItemDto = components['schemas']['AdminSchoolListItemDto'];
+
+// 2. Enum toraytirish — backend enum'ni `ToString()` bilan qaytaradi, sxemada `string`.
+//    `Omit` + qayta e'lon: maydon NOMI/soni sxemadan tekshiriladi, TIPI toraytiriladi.
+export type StudentListItemDto = Omit<
+  components['schemas']['AdminStudentListItemDto'],
+  'activityLevel'
+> & { activityLevel?: ActivityLevel | null };
+
+// 3. So'rov/filtr shakllari (`*Query`) — bular backend DTO'si EMAS, qo'lda yoziladi.
+export interface SchoolsListQuery { page: number; pageSize: number }
+```
+
+**Sxema `null` ni ifodalay olmaydigan joy (`$ref` maydonlari).** Swashbuckle OpenAPI 3.0 da
+`$ref` yonida `nullable: true` chiqara olmaydi, shu sabab obyekt tipidagi nullable maydon
+sxemada faqat IXTIYORIY (`?`) bo'lib ko'rinadi — `| null` siz. Backend esa
+`DefaultIgnoreCondition` sozlanmagani uchun (`Api/Program.cs`) uni ANIQ `null` bilan yuboradi
+(`latestAssessment`, `aiAnalysis`, `results.MBTI16`, `AssessmentDetailDto.tests` …). Bunday
+maydonda `Omit<…> & { k?: X | null }` bilan `| null` QAYTA QO'SHILADI va sabab izohda
+yoziladi: sxemaga so'zma-so'z ergashish bu yerda runtime xatoga olib keladi
+(`x === undefined` tekshiruvi `null` ni o'tkazib yuboradi). Bu — YAGONA holat, unda frontend
+sxemadan kengroq bo'lishi to'g'ri; boshqa hamma joyda sxema haqiqat.
+
+**Ochiq lug'atlar (`Record<string, …>`) haqida.** Swashbuckle `IReadOnlyDictionary<string, X>`
+ni ochiq lug'at qilib chiqaradi, ya'ni kalitlar shartnomadan yo'qoladi. Kalitlar shartnomaning
+bir qismi bo'lgan joyda (`RIASEC.types` — `R I A S E C`; `BIG5.factors` — `O C E A N`;
+`MBTI16.axes` — `EI SN TF JP`) tip **yopiq kalitlar bilan** qo'lda yoziladi va sabab izohda
+yoziladi. Qiymat tipi baribir sxemadan olinadi
+(`components['schemas']['AdminFactorDto']`).
+
+### 6.3 ESLint qo'riqchisi
+
+`eslint.config.js` — `features/*/model/**` **va `shared/api/**`** ichida backend DTO'siga o'xshash nomni
+(`*Dto`, `*Request`, `*Response`, `*Result`, `*Item`, `*Detail`) `interface` yoki inline
+`type = { … }` bilan e'lon qilish **xato**. Ruxsat etilgan shakllar: `components['schemas'][…]`
+dan re-export va `Omit<…> & { … }` kesishmasi.
+
+Qamrov `shared/api/**` ga 2026-09-03 da yoyildi: qoida faqat feature'larni qamragani uchun
+`shared/api/types.ts` dagi uchta ommaviy javob tipi va `shared/api/adminClient.ts` dagi
+`RefreshResponse` ushlanmay qolgan edi (oxirgisida backend HECH QACHON yubormaydigan
+`refreshToken` maydoni bor edi).
+
+Sxema chindan eskirgan bo'lsa — sabab tegishli faylda **maydon darajasida** yoziladi va tip
+nomi `eslint.config.js` dagi istisno ro'yxatiga qo'shiladi. Bu ro'yxat `npm run generate:api`
+dan keyin **qisqarishi shart** — u texnik qarzning ochiq reyestri. 2026-09-03 da sxema qayta
+generatsiya qilingach ro'yxat **26 nomdan 2 taga** qisqardi va qolgan ikkitasi "sxema
+eskirgan" sababidan EMAS — ikkalasi ham backend DTO'si emas, shu sabab doimiy:
+
+| Nom | Nega doimiy |
+|---|---|
+| `PagedResult<T>` (`shared/api/types.ts`) | Transport generigi; sxemada har element tipi uchun alohida nom (`AdminSchoolListItemDtoPagedResult` …), generik shakl re-export qilib bo'lmaydi |
+| `ImportValidationResult` (`features/catalog/model/importSchema.ts`) | Mijoz tomonidagi zod tekshiruvi natijasi, tarmoqqa chiqmaydi; nomi shunchaki naqshga tushgan |
+
+### 6.4 Test mock'lari sxemadan tiplanadi
+
+`src/test/apiMock.ts` — barcha API mock'lari uchun yagona tiplangan yordamchi:
+
+| Yordamchi | Qachon |
+|---|---|
+| `jsonResponse<'SxemaNomi'>(body)` | Javob `schema.d.ts` da bor — DEFAULT |
+| `listResponse<'SxemaNomi'>(items)` | Sahifalanmagan massiv javob (`[...]`) |
+| `pagedResponse<'SxemaNomi'>(items)` | Sahifalangan ro'yxat (`docs/07` §4) |
+| `typedResponse<FeatureDto>(body)` | Sxemada hali yo'q / sxemasi eskirgan javob |
+| `problemResponse(code, status)` | `ProblemDetails` xatosi (`docs/06` §6) |
+| `emptyResponse(status)` | Tanasiz javob (`204`) |
+
+Fixture'lar `satisfies Schemas['…']` bilan tasdiqlanadi. Test faylida o'z
+`function jsonResponse(body: unknown, …)` nusxasini yozish **taqiqlanadi**: `unknown` hech
+narsani tekshirmaydi, shu sabab mock backenddan uzilib qolsa ham test yashil qolardi — ya'ni
+test frontendning o'z taxminini tasdiqlar, backendni emas.
+
+### 6.5 Nega bu qat'iy — 2026-09-02/03 hodisasi
+
+Bir kunda **oltita** shartnoma nomuvofiqligi topildi, hammasi bir sababdan (qo'lda yozilgan
+DTO + tiplanmagan mock):
+
+| Nomuvofiqlik | Oqibati |
+|---|---|
+| `results.mbti16` ↔ `MBTI16` | O'quvchi profilida bo'limlar bo'sh |
+| RIASEC `A` ↔ `ART` | Diagramma `TypeError` bilan buzildi |
+| `backupCodes` ↔ `recoveryCodes` | 2FA zaxira kodlari ko'rinmadi, 2FA esa yoqilgan |
+| `currentPassword` ↔ `password` | 2FA'ni o'chirib bo'lmadi |
+| AI provayder `baseUrl` yuborilmasdi | Har saqlashda sozlama jimgina o'chardi |
+| AI hisobotining 5 bo'limi DTO'da yo'q | AI yozdi, admin ko'rmadi |
+
+Sxema qayta generatsiya qilinib (2026-09-03) qolgan tiplar ham re-export'ga o'tkazilganda
+YANA to'rtta nomuvofiqlik chiqdi — hammasi `tsc` bosqichida:
+
+| Nomuvofiqlik | Oqibati |
+|---|---|
+| `RefreshResponse.refreshToken` (`adminClient.ts`) | Backend uni HECH QACHON yubormaydi (`httpOnly` cookie) — o'lik maydon; `expiresIn` esa majburiy bo'lsa-da ixtiyoriy deb yozilgan edi |
+| `AdminSchoolStatsDto.completionRate` `=== null` | Sxemada maydon IXTIYORIY — javobda bo'lmasa `undefined * 100` → `NaN%` |
+| `AdminActivityDto.activityIndex` `!== null` | Xuddi shu naqsh: maydon tushib qolsa diagramma `undefined` ball bilan chizilardi |
+| `AdminAiUsageDto.estimatedCostUsd` `=== null` | Maydon yo'q bo'lsa `$undefined` chiqardi |
+| Mock'da `careerSuggestions[].exampleProfessions` yo'q | Backend DTO'sida MAJBURIY — mock shartnomadan uzilgan edi |
+
+Himoya uch qatlamli: **(1)** re-export (`tsc` shakl farqini ushlaydi) → **(2)** ESLint
+(yangi qo'lda DTO yozilmaydi) → **(3)** CI drift (`schema.d.ts` eskirmaydi).
 
 ---
 

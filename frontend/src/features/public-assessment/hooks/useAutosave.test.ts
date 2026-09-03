@@ -219,11 +219,154 @@ describe('useAutosave', () => {
       result.current.setAnswer('q1', 3, 5);
     });
     await act(async () => {
-      result.current.flush();
+      void result.current.flush();
       await vi.advanceTimersByTimeAsync(0);
     });
 
     expect(saveAnswersMock).toHaveBeenCalledTimes(1);
+  });
+
+  // P30-2 poygasi: `TestPage` oxirgi sahifada `POST .../complete` ni AYNAN shu promise hal
+  // bo'lgandan keyin yuboradi. Promise so'rov tugashidan oldin hal bo'lsa, poyga qaytadi.
+  it("flush() qaytargan promise faqat so'rov TUGAGANDA hal bo'ladi (true)", async () => {
+    let release: ((value: unknown) => void) | undefined;
+    saveAnswersMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = resolve;
+        }),
+    );
+    const { result } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
+
+    act(() => {
+      result.current.setAnswer('q1', 3, 5);
+    });
+
+    let settled: boolean | 'pending' = 'pending';
+    let flushPromise!: Promise<boolean>;
+    act(() => {
+      flushPromise = result.current.flush();
+    });
+    void flushPromise.then((ok) => {
+      settled = ok;
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(saveAnswersMock).toHaveBeenCalledTimes(1);
+    expect(settled).toBe('pending'); // so'rov hali tugamagan — chaqiruvchi KUTISHI shart
+
+    await act(async () => {
+      release?.({ savedCount: 1, answered: 1, total: 10 });
+      await flushPromise;
+    });
+
+    expect(settled).toBe(true);
+    expect(readAnswerStore()['q1']?.pending).toBe(false);
+  });
+
+  it("flush() yuborish yiqilsa false qaytaradi va javob navbatda QOLADI (yo'qolmaydi)", async () => {
+    saveAnswersMock.mockRejectedValueOnce(new Error('network down'));
+    const { result } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
+
+    act(() => {
+      result.current.setAnswer('q1', 2, 7);
+    });
+
+    let ok: boolean | undefined;
+    await act(async () => {
+      ok = await result.current.flush();
+    });
+
+    expect(ok).toBe(false);
+    expect(readAnswerStore()['q1']).toMatchObject({ value: 2, pending: true });
+    expect(result.current.localValues).toEqual({ q1: 2 });
+  });
+
+  it('oflaynda flush() false qaytaradi va tarmoqqa umuman urinmaydi', async () => {
+    setOnline(false);
+    const { result } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
+
+    act(() => {
+      result.current.setAnswer('q1', 4, 10);
+    });
+
+    let ok: boolean | undefined;
+    await act(async () => {
+      ok = await result.current.flush();
+    });
+
+    expect(ok).toBe(false);
+    expect(saveAnswersMock).not.toHaveBeenCalled();
+    expect(readAnswerStore()['q1']?.pending).toBe(true);
+  });
+
+  it("navbat bo'sh bo'lsa flush() so'rovsiz darhol true qaytaradi", async () => {
+    const { result } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
+
+    let ok: boolean | undefined;
+    await act(async () => {
+      ok = await result.current.flush();
+    });
+
+    expect(ok).toBe(true);
+    expect(saveAnswersMock).not.toHaveBeenCalled();
+  });
+
+  it('ketma-ket flush() chaqiruvlari ZANJIRLANADI — ikkinchisi birinchisini kutadi va orada qo\'shilgan javobni ham yuboradi', async () => {
+    let release: (() => void) | undefined;
+    saveAnswersMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = () => resolve({ savedCount: 1, answered: 1, total: 10 });
+        }),
+    );
+    const { result } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
+
+    act(() => {
+      result.current.setAnswer('q1', 3, 5);
+    });
+    let first!: Promise<boolean>;
+    act(() => {
+      first = result.current.flush();
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0); // birinchi so'rov yo'lga chiqdi (va "havoda" qoldi)
+    });
+    expect(saveAnswersMock).toHaveBeenCalledTimes(1);
+
+    // Birinchi so'rov hali "havoda" — shu paytda yangi javob qo'shiladi va yana flush.
+    act(() => {
+      result.current.setAnswer('q2', 4, 6);
+    });
+    let secondDone = false;
+    let second!: Promise<boolean>;
+    act(() => {
+      second = result.current.flush();
+    });
+    void second.then(() => {
+      secondDone = true;
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(saveAnswersMock).toHaveBeenCalledTimes(1); // ikkinchi sikl birinchisini kutmoqda
+    expect(secondDone).toBe(false);
+
+    await act(async () => {
+      release?.();
+      await second;
+    });
+
+    expect(await first).toBe(true);
+    expect(await second).toBe(true);
+    expect(saveAnswersMock).toHaveBeenCalledTimes(2);
+    expect(saveAnswersMock).toHaveBeenLastCalledWith('BIG5', [
+      { questionId: 'q2', value: 4, durationMs: 6 },
+    ]);
+    expect(readAnswerStore()['q2']?.pending).toBe(false);
   });
 
   it("unmount bo'lganda qolgan navbatni yuborishga urinadi", async () => {

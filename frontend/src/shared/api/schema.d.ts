@@ -4,6 +4,1386 @@
  */
 
 export interface paths {
+    "/api/admin/ai/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminAiProviderDto"][];
+                        "application/json": components["schemas"]["AdminAiProviderDto"][];
+                        "text/json": components["schemas"]["AdminAiProviderDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/ai/providers/{provider}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    provider: components["schemas"]["AiProvider"];
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateAiProviderRequest"];
+                    "text/json": components["schemas"]["UpdateAiProviderRequest"];
+                    "application/*+json": components["schemas"]["UpdateAiProviderRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminAiProviderDto"];
+                        "application/json": components["schemas"]["AdminAiProviderDto"];
+                        "text/json": components["schemas"]["AdminAiProviderDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/ai/providers/{provider}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    provider: components["schemas"]["AiProvider"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminAiProviderTestResultDto"];
+                        "application/json": components["schemas"]["AdminAiProviderTestResultDto"];
+                        "text/json": components["schemas"]["AdminAiProviderTestResultDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/ai/providers/{provider}/set-default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    provider: components["schemas"]["AiProvider"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminAiProviderDto"];
+                        "application/json": components["schemas"]["AdminAiProviderDto"];
+                        "text/json": components["schemas"]["AdminAiProviderDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/ai/prompts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminPromptTemplateDto"][];
+                        "application/json": components["schemas"]["AdminPromptTemplateDto"][];
+                        "text/json": components["schemas"]["AdminPromptTemplateDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreatePromptTemplateRequest"];
+                    "text/json": components["schemas"]["CreatePromptTemplateRequest"];
+                    "application/*+json": components["schemas"]["CreatePromptTemplateRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminPromptTemplateDto"];
+                        "application/json": components["schemas"]["AdminPromptTemplateDto"];
+                        "text/json": components["schemas"]["AdminPromptTemplateDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/ai/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    from?: string;
+                    to?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminAiUsageDto"];
+                        "application/json": components["schemas"]["AdminAiUsageDto"];
+                        "text/json": components["schemas"]["AdminAiUsageDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/catalog/tests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    kind?: string;
+                    isSystem?: boolean;
+                    status?: string;
+                    scoringMode?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CatalogTestListItemDto"][];
+                        "application/json": components["schemas"]["CatalogTestListItemDto"][];
+                        "text/json": components["schemas"]["CatalogTestListItemDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateCatalogTestRequest"];
+                    "text/json": components["schemas"]["CreateCatalogTestRequest"];
+                    "application/*+json": components["schemas"]["CreateCatalogTestRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CatalogTestDetailDto"];
+                        "application/json": components["schemas"]["CatalogTestDetailDto"];
+                        "text/json": components["schemas"]["CatalogTestDetailDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/catalog/tests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CatalogTestDetailDto"];
+                        "application/json": components["schemas"]["CatalogTestDetailDto"];
+                        "text/json": components["schemas"]["CatalogTestDetailDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateCatalogTestRequest"];
+                    "text/json": components["schemas"]["UpdateCatalogTestRequest"];
+                    "application/*+json": components["schemas"]["UpdateCatalogTestRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CatalogTestDetailDto"];
+                        "application/json": components["schemas"]["CatalogTestDetailDto"];
+                        "text/json": components["schemas"]["CatalogTestDetailDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/catalog/tests/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CatalogTestDetailDto"];
+                        "application/json": components["schemas"]["CatalogTestDetailDto"];
+                        "text/json": components["schemas"]["CatalogTestDetailDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/catalog/tests/{id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DuplicateCatalogTestRequest"];
+                    "text/json": components["schemas"]["DuplicateCatalogTestRequest"];
+                    "application/*+json": components["schemas"]["DuplicateCatalogTestRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CatalogTestDetailDto"];
+                        "application/json": components["schemas"]["CatalogTestDetailDto"];
+                        "text/json": components["schemas"]["CatalogTestDetailDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/catalog/tests/{id}/toggle-active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CatalogTestDetailDto"];
+                        "application/json": components["schemas"]["CatalogTestDetailDto"];
+                        "text/json": components["schemas"]["CatalogTestDetailDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/catalog/tests/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CatalogTestDetailDto"];
+                        "application/json": components["schemas"]["CatalogTestDetailDto"];
+                        "text/json": components["schemas"]["CatalogTestDetailDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/catalog/tests/{id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CatalogTestPreviewDto"];
+                        "application/json": components["schemas"]["CatalogTestPreviewDto"];
+                        "text/json": components["schemas"]["CatalogTestPreviewDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/catalog/tests/{id}/scales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CatalogScaleItemDto"][];
+                        "application/json": components["schemas"]["CatalogScaleItemDto"][];
+                        "text/json": components["schemas"]["CatalogScaleItemDto"][];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateTestScaleRequest"];
+                    "text/json": components["schemas"]["CreateTestScaleRequest"];
+                    "application/*+json": components["schemas"]["CreateTestScaleRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CatalogScaleItemDto"];
+                        "application/json": components["schemas"]["CatalogScaleItemDto"];
+                        "text/json": components["schemas"]["CatalogScaleItemDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/catalog/scales/{scaleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    scaleId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateTestScaleRequest"];
+                    "text/json": components["schemas"]["UpdateTestScaleRequest"];
+                    "application/*+json": components["schemas"]["UpdateTestScaleRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CatalogScaleItemDto"];
+                        "application/json": components["schemas"]["CatalogScaleItemDto"];
+                        "text/json": components["schemas"]["CatalogScaleItemDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    scaleId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/catalog/tests/{id}/questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CatalogQuestionItemDto"][];
+                        "application/json": components["schemas"]["CatalogQuestionItemDto"][];
+                        "text/json": components["schemas"]["CatalogQuestionItemDto"][];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateTestQuestionRequest"];
+                    "text/json": components["schemas"]["CreateTestQuestionRequest"];
+                    "application/*+json": components["schemas"]["CreateTestQuestionRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CatalogQuestionItemDto"];
+                        "application/json": components["schemas"]["CatalogQuestionItemDto"];
+                        "text/json": components["schemas"]["CatalogQuestionItemDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/catalog/questions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateTestQuestionRequest"];
+                    "text/json": components["schemas"]["UpdateTestQuestionRequest"];
+                    "application/*+json": components["schemas"]["UpdateTestQuestionRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CatalogQuestionItemDto"];
+                        "application/json": components["schemas"]["CatalogQuestionItemDto"];
+                        "text/json": components["schemas"]["CatalogQuestionItemDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/catalog/tests/{id}/questions/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ReorderTestQuestionsRequest"];
+                    "text/json": components["schemas"]["ReorderTestQuestionsRequest"];
+                    "application/*+json": components["schemas"]["ReorderTestQuestionsRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CatalogQuestionItemDto"][];
+                        "application/json": components["schemas"]["CatalogQuestionItemDto"][];
+                        "text/json": components["schemas"]["CatalogQuestionItemDto"][];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/catalog/tests/{id}/questions/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ImportTestQuestionsRequest"];
+                    "text/json": components["schemas"]["ImportTestQuestionsRequest"];
+                    "application/*+json": components["schemas"]["ImportTestQuestionsRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CatalogTestDetailDto"];
+                        "application/json": components["schemas"]["CatalogTestDetailDto"];
+                        "text/json": components["schemas"]["CatalogTestDetailDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/programs": {
         parameters: {
             query?: never;
@@ -739,9 +2119,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["AdminLatestAssessmentDto"];
-                        "application/json": components["schemas"]["AdminLatestAssessmentDto"];
-                        "text/json": components["schemas"]["AdminLatestAssessmentDto"];
+                        "text/plain": components["schemas"]["AdminAssessmentDetailDto"];
+                        "application/json": components["schemas"]["AdminAssessmentDetailDto"];
+                        "text/json": components["schemas"]["AdminAssessmentDetailDto"];
                     };
                 };
                 /** @description Not Found */
@@ -883,6 +2263,69 @@ export interface paths {
                 };
                 /** @description Not Found */
                 404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/assessments/{id}/rerun-analysis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["RerunAnalysisRequest"];
+                    "text/json": components["schemas"]["RerunAnalysisRequest"];
+                    "application/*+json": components["schemas"]["RerunAnalysisRequest"];
+                };
+            };
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RerunAnalysisResultDto"];
+                        "application/json": components["schemas"]["RerunAnalysisResultDto"];
+                        "text/json": components["schemas"]["RerunAnalysisResultDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1356,6 +2799,102 @@ export interface paths {
                 };
                 /** @description Unauthorized */
                 401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/students/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    schoolId?: string;
+                    grade?: number;
+                    status?: string;
+                    needsAttention?: boolean;
+                    personalityType?: string;
+                    activityLevel?: string;
+                    from?: string;
+                    to?: string;
+                    search?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/assessments/{id}/report.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Found */
+                404: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -2590,15 +4129,33 @@ export interface components {
             promptVersion: string;
             /** Format: date-time */
             createdAt: string;
+            isFallbackReport: boolean;
+            isModerated: boolean;
+            errorMessage?: string | null;
             summary?: string | null;
             personalityPortrait?: string | null;
-            strengths: string[];
-            growthAreas: string[];
+            strengths: components["schemas"]["AdminAiStrengthDto"][];
+            growthAreas: components["schemas"]["AdminAiGrowthAreaDto"][];
+            learningStyle?: string | null;
+            motivationProfile?: string | null;
+            activityAssessment?: string | null;
             careerSuggestions: components["schemas"]["AdminCareerSuggestionDto"][];
             studentRecommendations: string[];
-            teacherNotes?: string | null;
-            parentNotes?: string | null;
-            attentionFlags: string[];
+            teacherNotes: string[];
+            parentNotes: string[];
+            attentionFlags: components["schemas"]["AdminAiAttentionFlagDto"][];
+            reliabilityNote?: string | null;
+            disclaimer?: string | null;
+        };
+        AdminAiAttentionFlagDto: {
+            code?: string | null;
+            message: string;
+            severity: string;
+        };
+        AdminAiGrowthAreaDto: {
+            title: string;
+            description?: string | null;
+            actionStep?: string | null;
         };
         AdminAiHistoryItemDto: {
             /** Format: uuid */
@@ -2608,6 +4165,57 @@ export interface components {
             createdAt: string;
             status: string;
             isCurrent: boolean;
+        };
+        AdminAiProviderDto: {
+            provider: components["schemas"]["AiProvider"];
+            displayName: string;
+            model: string;
+            baseUrl?: string | null;
+            /** Format: int32 */
+            maxOutputTokens: number;
+            /** Format: double */
+            temperature: number;
+            isDefault: boolean;
+            isActive: boolean;
+            /** Format: int32 */
+            fallbackOrder: number;
+            maskedApiKey?: string | null;
+            /** Format: date-time */
+            lastCheckedAt?: string | null;
+            lastCheckStatus?: string | null;
+        };
+        AdminAiProviderTestResultDto: {
+            ok: boolean;
+            /** Format: int32 */
+            latencyMs?: number | null;
+            message: string;
+        };
+        AdminAiStrengthDto: {
+            title: string;
+            description?: string | null;
+            evidence?: string | null;
+        };
+        AdminAiUsageByProviderDto: {
+            provider: components["schemas"]["AiProvider"];
+            /** Format: int32 */
+            calls: number;
+            /** Format: int32 */
+            inputTokens: number;
+            /** Format: int32 */
+            outputTokens: number;
+            /** Format: double */
+            estimatedCostUsd?: number | null;
+        };
+        AdminAiUsageDto: {
+            /** Format: int32 */
+            totalCalls: number;
+            /** Format: int32 */
+            inputTokens: number;
+            /** Format: int32 */
+            outputTokens: number;
+            /** Format: double */
+            estimatedCostUsd?: number | null;
+            byProvider: components["schemas"]["AdminAiUsageByProviderDto"][];
         };
         AdminAssessmentAnswerDto: {
             /** Format: uuid */
@@ -2624,6 +4232,27 @@ export interface components {
             revisionCount: number;
             /** Format: date-time */
             answeredAt: string;
+        };
+        AdminAssessmentDetailDto: {
+            /** Format: uuid */
+            id: string;
+            results: components["schemas"]["AdminTestResultsDto"];
+            aiAnalysis?: components["schemas"]["AdminAiAnalysisDto"];
+            aiHistory: components["schemas"]["AdminAiHistoryItemDto"][];
+            status: string;
+            /** Format: date-time */
+            startedAt: string;
+            /** Format: date-time */
+            completedAt?: string | null;
+            /** Format: int32 */
+            durationMinutes?: number | null;
+            /** Format: double */
+            reliabilityScore?: number | null;
+            reliabilityFlag?: string | null;
+            student?: components["schemas"]["AdminAssessmentStudentRefDto"];
+            school?: components["schemas"]["AdminAssessmentSchoolRefDto"];
+            program?: components["schemas"]["AdminAssessmentProgramRefDto"];
+            tests: components["schemas"]["AdminAssessmentTestItemDto"][];
         };
         AdminAssessmentListItemDto: {
             /** Format: uuid */
@@ -2644,6 +4273,9 @@ export interface components {
             /** Format: double */
             reliabilityScore?: number | null;
             reliabilityFlag?: string | null;
+            /** Format: uuid */
+            programId: string;
+            programName?: string | null;
         };
         AdminAssessmentListItemDtoPagedResult: {
             items: components["schemas"]["AdminAssessmentListItemDto"][];
@@ -2657,6 +4289,21 @@ export interface components {
             readonly totalPages: number;
             readonly hasNext: boolean;
             readonly hasPrevious: boolean;
+        };
+        AdminAssessmentProgramRefDto: {
+            /** Format: uuid */
+            id: string;
+            nameUz: string;
+        };
+        AdminAssessmentSchoolRefDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        AdminAssessmentStudentRefDto: {
+            /** Format: uuid */
+            id: string;
+            fullName: string;
         };
         AdminAssessmentSummaryDto: {
             /** Format: uuid */
@@ -2672,6 +4319,18 @@ export interface components {
             reliabilityScore?: number | null;
             reliabilityFlag?: string | null;
             isLatest: boolean;
+        };
+        AdminAssessmentTestItemDto: {
+            /** Format: uuid */
+            testDefinitionId: string;
+            testCode: string;
+            nameUz: string;
+            scoringMode: string;
+            status: string;
+            /** Format: int32 */
+            questionCount: number;
+            /** Format: int32 */
+            answeredCount: number;
         };
         AdminAuditLogItemDto: {
             /** Format: int64 */
@@ -2725,6 +4384,7 @@ export interface components {
         AdminCareerSuggestionDto: {
             field: string;
             why: string;
+            exampleProfessions: string[];
             nextSteps: string[];
         };
         AdminDashboardActivityItemDto: {
@@ -2893,6 +4553,18 @@ export interface components {
             /** Format: int32 */
             displayOrder: number;
         };
+        AdminPromptTemplateDto: {
+            /** Format: uuid */
+            id: string;
+            key: string;
+            version: string;
+            systemText: string;
+            userText: string;
+            jsonSchema: string;
+            isActive: boolean;
+            /** Format: date-time */
+            createdAt: string;
+        };
         AdminRecalculateScoresResultDto: {
             /** Format: uuid */
             assessmentId: string;
@@ -2969,6 +4641,10 @@ export interface components {
             studentCount: number;
             /** Format: int32 */
             completedCount: number;
+            /** Format: int32 */
+            inProgressCount: number;
+            /** Format: double */
+            completionRate?: number | null;
             /** Format: date-time */
             lastActivityAt?: string | null;
         };
@@ -3036,10 +4712,10 @@ export interface components {
             name: string;
         };
         AdminTestResultsDto: {
-            mbti16?: components["schemas"]["AdminMbti16Dto"];
-            big5?: components["schemas"]["AdminBig5Dto"];
-            riasec?: components["schemas"]["AdminRiasecDto"];
-            activity?: components["schemas"]["AdminActivityDto"];
+            MBTI16?: components["schemas"]["AdminMbti16Dto"];
+            BIG5?: components["schemas"]["AdminBig5Dto"];
+            RIASEC?: components["schemas"]["AdminRiasecDto"];
+            ACTIVITY?: components["schemas"]["AdminActivityDto"];
         };
         AdminUserDto: {
             /** Format: uuid */
@@ -3049,6 +4725,122 @@ export interface components {
             fullName?: string | null;
             role: string;
             totpEnabled: boolean;
+        };
+        /** @enum {string} */
+        AiProvider: "Gemini" | "OpenAi" | "Anthropic";
+        CatalogPreviewOptionDto: {
+            /** Format: uuid */
+            id: string;
+            textUz: string;
+            /** Format: int32 */
+            value: number;
+        };
+        CatalogPreviewQuestionDto: {
+            /** Format: uuid */
+            id: string;
+            textUz: string;
+            type: string;
+            options: components["schemas"]["CatalogPreviewOptionDto"][];
+        };
+        CatalogPreviewScaleDto: {
+            code: string;
+            nameUz: string;
+            descriptionUz?: string | null;
+        };
+        CatalogQuestionItemDto: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            /** Format: int32 */
+            order: number;
+            textUz: string;
+            textRu?: string | null;
+            textEn?: string | null;
+            type: string;
+            scale: string;
+            /** Format: int32 */
+            direction: number;
+            /** Format: double */
+            weight: number;
+            isRequired: boolean;
+            isActive: boolean;
+            isSystem: boolean;
+        };
+        CatalogScaleItemDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            testDefinitionId: string;
+            code: string;
+            nameUz: string;
+            descriptionUz?: string | null;
+            /** Format: int32 */
+            displayOrder: number;
+            interpretationBands: components["schemas"]["InterpretationBandDto"][];
+            /** Format: int32 */
+            questionCount: number;
+        };
+        CatalogTestDetailDto: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            nameUz: string;
+            kind: string;
+            isSystem: boolean;
+            status: string;
+            isActive: boolean;
+            scoringMode: string;
+            /** Format: int32 */
+            questionCount: number;
+            /** Format: int32 */
+            scaleCount: number;
+            /** Format: int32 */
+            estimatedMinutes: number;
+            /** Format: int32 */
+            version: number;
+            /** Format: int32 */
+            usedInProgramCount: number;
+            descriptionUz?: string | null;
+            /** Format: int32 */
+            pageSize: number;
+            shuffleQuestions: boolean;
+            /** Format: int32 */
+            displayOrder: number;
+        };
+        CatalogTestListItemDto: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            nameUz: string;
+            kind: string;
+            isSystem: boolean;
+            status: string;
+            isActive: boolean;
+            scoringMode: string;
+            /** Format: int32 */
+            questionCount: number;
+            /** Format: int32 */
+            scaleCount: number;
+            /** Format: int32 */
+            estimatedMinutes: number;
+            /** Format: int32 */
+            version: number;
+            /** Format: int32 */
+            usedInProgramCount: number;
+        };
+        CatalogTestPreviewDto: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            nameUz: string;
+            descriptionUz?: string | null;
+            /** Format: int32 */
+            estimatedMinutes: number;
+            /** Format: int32 */
+            pageSize: number;
+            shuffleQuestions: boolean;
+            questions: components["schemas"]["CatalogPreviewQuestionDto"][];
+            scales: components["schemas"]["CatalogPreviewScaleDto"][];
         };
         ChangePasswordRequest: {
             currentPassword: string;
@@ -3067,6 +4859,19 @@ export interface components {
             nextTestCode?: string | null;
             allTestsCompleted: boolean;
         };
+        CreateCatalogTestRequest: {
+            code: string;
+            nameUz: string;
+            descriptionUz?: string | null;
+            /** Format: int32 */
+            estimatedMinutes: number;
+            /** Format: int32 */
+            pageSize?: number | null;
+            shuffleQuestions?: boolean | null;
+            /** Format: int32 */
+            displayOrder?: number | null;
+            scoringMode?: string | null;
+        };
         CreateProgramRequest: {
             code: string;
             nameUz: string;
@@ -3074,6 +4879,13 @@ export interface components {
             /** Format: int32 */
             displayOrder: number;
             visibility: string;
+        };
+        CreatePromptTemplateRequest: {
+            key: string;
+            version: string;
+            systemText: string;
+            userText: string;
+            jsonSchema: string;
         };
         CreateSchoolRequest: {
             name: string;
@@ -3087,8 +4899,34 @@ export interface components {
             dailyRegistrationLimit?: number | null;
             notes?: string | null;
         };
+        CreateTestQuestionRequest: {
+            code: string;
+            /** Format: int32 */
+            order: number;
+            textUz: string;
+            textRu?: string | null;
+            textEn?: string | null;
+            type: string;
+            scale: string;
+            /** Format: int32 */
+            direction: number;
+            /** Format: double */
+            weight: number;
+            isRequired?: boolean | null;
+        };
+        CreateTestScaleRequest: {
+            code: string;
+            nameUz: string;
+            descriptionUz?: string | null;
+            /** Format: int32 */
+            displayOrder?: number | null;
+            interpretationBands?: components["schemas"]["InterpretationBandDto"][] | null;
+        };
         DisableTotpRequest: {
             currentPassword: string;
+        };
+        DuplicateCatalogTestRequest: {
+            newCode: string;
         };
         EnableTotpResult: {
             secret: string;
@@ -3121,6 +4959,7 @@ export interface components {
             tests: components["schemas"]["PublicTestSummaryDto"][];
             /** Format: int32 */
             progressPercent: number;
+            hasPersonalityBattery: boolean;
         };
         GetStudentResultResult: {
             personalityType: string;
@@ -3142,6 +4981,29 @@ export interface components {
             totalQuestions: number;
             scaleLabels?: components["schemas"]["PublicScaleLabelDto"][] | null;
             questions: components["schemas"]["PublicQuestionDto"][];
+        };
+        ImportQuestionItemDto: {
+            code: string;
+            /** Format: int32 */
+            order: number;
+            textUz: string;
+            type: string;
+            scale: string;
+            /** Format: int32 */
+            direction: number;
+            /** Format: double */
+            weight: number;
+            isRequired?: boolean | null;
+        };
+        ImportTestQuestionsRequest: {
+            questions: components["schemas"]["ImportQuestionItemDto"][];
+        };
+        InterpretationBandDto: {
+            /** Format: double */
+            from: number;
+            /** Format: double */
+            to: number;
+            label: string;
         };
         LoginRequest: {
             username: string;
@@ -3183,6 +5045,7 @@ export interface components {
             questionCount: number;
             /** Format: int32 */
             estimatedMinutes: number;
+            hasPersonalityBattery: boolean;
         };
         PublicQuestionDto: {
             /** Format: uuid */
@@ -3242,6 +5105,24 @@ export interface components {
         ReorderProgramTestsRequest: {
             testDefinitionIds: string[];
         };
+        ReorderQuestionItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            displayOrder: number;
+        };
+        ReorderTestQuestionsRequest: {
+            items: components["schemas"]["ReorderQuestionItem"][];
+        };
+        RerunAnalysisRequest: {
+            provider?: components["schemas"]["AiProvider"];
+            promptVersion?: string | null;
+        };
+        RerunAnalysisResultDto: {
+            /** Format: uuid */
+            assessmentId: string;
+            status: string;
+        };
         SaveAnswerItemRequest: {
             /** Format: uuid */
             questionId: string;
@@ -3297,6 +5178,29 @@ export interface components {
             /** Format: int32 */
             totalPages: number;
         };
+        UpdateAiProviderRequest: {
+            apiKey?: string | null;
+            model: string;
+            /** Format: int32 */
+            maxOutputTokens: number;
+            /** Format: double */
+            temperature: number;
+            isActive: boolean;
+            /** Format: int32 */
+            fallbackOrder: number;
+            baseUrl?: string | null;
+        };
+        UpdateCatalogTestRequest: {
+            nameUz: string;
+            descriptionUz?: string | null;
+            /** Format: int32 */
+            displayOrder: number;
+            /** Format: int32 */
+            estimatedMinutes: number;
+            shuffleQuestions: boolean;
+            /** Format: int32 */
+            pageSize: number;
+        };
         UpdateProgramRequest: {
             nameUz: string;
             descriptionUz?: string | null;
@@ -3315,6 +5219,27 @@ export interface components {
             /** Format: int32 */
             dailyRegistrationLimit?: number | null;
             notes?: string | null;
+        };
+        UpdateTestQuestionRequest: {
+            textUz: string;
+            textRu?: string | null;
+            textEn?: string | null;
+            isActive: boolean;
+            scale?: string | null;
+            /** Format: int32 */
+            direction?: number | null;
+            /** Format: double */
+            weight?: number | null;
+            /** Format: int32 */
+            order?: number | null;
+            isRequired?: boolean | null;
+        };
+        UpdateTestScaleRequest: {
+            nameUz: string;
+            descriptionUz?: string | null;
+            /** Format: int32 */
+            displayOrder: number;
+            interpretationBands?: components["schemas"]["InterpretationBandDto"][] | null;
         };
     };
     responses: never;

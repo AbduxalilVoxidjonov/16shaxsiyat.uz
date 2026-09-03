@@ -4,13 +4,16 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
+import { jsonResponse, problemResponse, type Schemas } from '@/test/apiMock';
 import RegistrationPage from './RegistrationPage';
 import { useSessionStore } from '../store/sessionStore';
 
 const CONSENT_TEXT = "Farzandimning testdan o'tishiga roziman.";
 const CONSENT_LABEL = "Ma'lumotlarim ta'lim maqsadida ishlatilishiga roziman";
 
-function schoolInfoBody(overrides: Record<string, unknown> = {}) {
+function schoolInfoBody(
+  overrides: Partial<Schemas['GetSchoolInfoResult']> = {},
+): Schemas['GetSchoolInfoResult'] {
   return {
     schoolId: 'school-1',
     name: "12-son umumiy o'rta ta'lim maktabi",
@@ -30,6 +33,7 @@ function schoolInfoBody(overrides: Record<string, unknown> = {}) {
         testCount: 1,
         questionCount: 60,
         estimatedMinutes: 9,
+        hasPersonalityBattery: true,
       },
     ],
     ...overrides,
@@ -44,6 +48,7 @@ const TWO_PROGRAMS = [
     testCount: 1,
     questionCount: 60,
     estimatedMinutes: 9,
+    hasPersonalityBattery: true,
   },
   {
     code: 'CAREER_SURVEY',
@@ -52,29 +57,13 @@ const TWO_PROGRAMS = [
     testCount: 1,
     questionCount: 20,
     estimatedMinutes: 4,
+    // Faqat `Survey` blokli dastur — shaxsiyat batareyasi yo'q (`docs/06` 8-bo'lim).
+    hasPersonalityBattery: false,
   },
-];
-
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
-function problemResponse(
-  code: string,
-  status: number,
-  extra: Record<string, unknown> = {},
-): Response {
-  return jsonResponse(
-    { code, title: 'Xato', status, detail: extra.detail, type: `https://studentroadmap/errors/${code}`, ...extra },
-    status,
-  );
-}
+] satisfies Schemas['PublicProgramSummaryDto'][];
 
 interface RouterMockOptions {
-  schoolInfo?: Record<string, unknown>;
+  schoolInfo?: Schemas['GetSchoolInfoResult'];
   postSessionResponse?: () => Response | Promise<Response>;
 }
 
@@ -82,19 +71,29 @@ function mockFetch({ schoolInfo, postSessionResponse }: RouterMockOptions) {
   const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     if (url.includes('/api/public/schools/')) {
-      return Promise.resolve(jsonResponse(schoolInfo ?? schoolInfoBody()));
+      return Promise.resolve(jsonResponse<'GetSchoolInfoResult'>(schoolInfo ?? schoolInfoBody()));
     }
     if (url.includes('/api/public/sessions') && init?.method === 'POST') {
       return Promise.resolve(
         postSessionResponse
           ? postSessionResponse()
-          : jsonResponse({
+          : jsonResponse<'StartSessionResult'>({
               sessionToken: 'sess-token-1',
               assessmentId: 'assessment-1',
               status: 'Draft',
               expiresAt: '2026-09-10T00:00:00Z',
               resumed: false,
-              tests: [{ code: 'MBTI16', status: 'NotStarted', answered: 0, total: 60, order: 1 }],
+              tests: [
+                {
+                  code: 'MBTI16',
+                  name: '16 tipli shaxsiyat modeli',
+                  status: 'NotStarted',
+                  answered: 0,
+                  total: 60,
+                  order: 1,
+                  estimatedMinutes: 9,
+                },
+              ],
             }),
       );
     }
@@ -249,7 +248,7 @@ describe('RegistrationPage', () => {
   it("400 VALIDATION_ERROR maydon xatolarini tegishli maydon ostida ko'rsatadi (backend camelCase kalitlar)", async () => {
     mockFetch({
       postSessionResponse: () =>
-        problemResponse('VALIDATION_ERROR', 400, {
+        problemResponse('VALIDATION_ERROR', 400, undefined, {
           // Backend `ValidationException.ToCamelCasePropertyPath` orqali camelCase qaytaradi —
           // `RegistrationPage` bu kalitlarni endi xaritasiz, to'g'ridan-to'g'ri RHF maydon
           // nomlariga bog'laydi (`phone` ikkalasida ham bir xil nom).
@@ -272,7 +271,7 @@ describe('RegistrationPage', () => {
   it("400 VALIDATION_ERROR 'birthDate' kalitini tug'ilgan yil maydoniga bog'laydi", async () => {
     mockFetch({
       postSessionResponse: () =>
-        problemResponse('VALIDATION_ERROR', 400, {
+        problemResponse('VALIDATION_ERROR', 400, undefined, {
           errors: { birthDate: ["Tug'ilgan sana 6-20 yosh oralig'iga to'g'ri kelishi kerak."] },
         }),
     });
@@ -292,15 +291,31 @@ describe('RegistrationPage', () => {
   it("resumed: true bo'lsa bildirishnoma ko'rsatib, davom ettirilayotgan testga o'tadi", async () => {
     mockFetch({
       postSessionResponse: () =>
-        jsonResponse({
+        jsonResponse<'StartSessionResult'>({
           sessionToken: 'resumed-token',
           assessmentId: 'assessment-2',
           status: 'InProgress',
           expiresAt: '2026-09-10T00:00:00Z',
           resumed: true,
           tests: [
-            { code: 'MBTI16', status: 'Completed', answered: 60, total: 60, order: 1 },
-            { code: 'BIG5', status: 'InProgress', answered: 5, total: 50, order: 2 },
+            {
+              code: 'MBTI16',
+              name: '16 tipli shaxsiyat modeli',
+              status: 'Completed',
+              answered: 60,
+              total: 60,
+              order: 1,
+              estimatedMinutes: 9,
+            },
+            {
+              code: 'BIG5',
+              name: 'Shaxsiyatning 5 omili',
+              status: 'InProgress',
+              answered: 5,
+              total: 50,
+              order: 2,
+              estimatedMinutes: 8,
+            },
           ],
         }),
     });
@@ -320,7 +335,7 @@ describe('RegistrationPage', () => {
   it('requiresAccessCode=true bo\'lsa kirish kodi maydonini ko\'rsatadi va ACCESS_CODE_INVALID xatosini bog\'laydi', async () => {
     mockFetch({
       schoolInfo: schoolInfoBody({ requiresAccessCode: true }),
-      postSessionResponse: () => problemResponse('ACCESS_CODE_INVALID', 400, { detail: "Kirish kodi noto'g'ri." }),
+      postSessionResponse: () => problemResponse('ACCESS_CODE_INVALID', 400, "Kirish kodi noto'g'ri."),
     });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderRegistration();

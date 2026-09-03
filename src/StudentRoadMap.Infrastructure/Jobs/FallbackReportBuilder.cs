@@ -1,4 +1,5 @@
 using System.Text.Json;
+using StudentRoadMap.Application.Common;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Domain.Assessments;
 using StudentRoadMap.Domain.Catalog;
@@ -28,13 +29,27 @@ internal static class FallbackReportBuilder
         string AttentionFlagsJson);
 
     public static async Task<FallbackContent> BuildAsync(
+        Guid assessmentId,
         IReadOnlyList<TestResult> testResults,
         IAppDbContext context,
         IAsyncQueryExecutor executor,
         CancellationToken cancellationToken)
     {
-        var mbti = testResults.FirstOrDefault(r => r.TestCode == "MBTI16");
-        var riasec = testResults.FirstOrDefault(r => r.TestCode == "RIASEC");
+        ArgumentNullException.ThrowIfNull(testResults);
+
+        // ⚠️ Qaysi natija shaxsiyat tipi (`PersonalityType`), qaysi biri kasb qiziqishi
+        // (`CareerInterest`) ekani metodika KODI bilan aniqlanmaydi (`docs/06` 8-bo'lim,
+        // 2026-09-02 "dastur" qarori). Ilgari bu yerda `TestCode == "MBTI16"` satr solishtiruvi
+        // turardi: `MBTI16` KODLI `Custom` anketa `TypeCatalog`dan tip tavsifini tortib olardi
+        // (yoki `PERS-BAT-1` kabi boshqa kodli haqiqiy batareya e'tibordan chetda qolardi) —
+        // shablon hisobot NOTO'G'RI natijadan qurilardi va hech qanday xato ko'rinmasdi.
+        // Mezon — `PersonalityBattery.RoleOf` (`ScoringStrategyCode` bo'yicha).
+        var rolesByAssessmentTestId = await PersonalityBatteryRoles
+            .LoadByAssessmentTestIdAsync(context, executor, assessmentId, cancellationToken)
+            .ConfigureAwait(false);
+
+        var mbti = PersonalityBatteryRoles.FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.PersonalityType);
+        var riasec = PersonalityBatteryRoles.FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.CareerInterest);
 
         TypeCatalogEntry? typeEntry = null;
         if (!string.IsNullOrEmpty(mbti?.ResultCode))

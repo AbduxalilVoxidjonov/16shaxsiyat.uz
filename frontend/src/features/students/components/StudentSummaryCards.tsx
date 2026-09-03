@@ -14,8 +14,11 @@ export interface StudentSummaryCardsProps {
  * Holland kodining birinchi harfidan ustuvor RIASEC tipi nomini olish uchun — docs/11 A-5
  * maketida "IRA" ostida "Tadqiqotch(i)" kabi tip nomi ko'rsatilgan. `widgets/RiasecChart.tsx`
  * bilan bir xil i18n kalitlaridan (`widgets.riasecChart.type.*`) foydalanadi, lekin
- * qisqa-harf → to'liq-kod moslamasi bu yerda mustaqil (widgets `features/*`dan import
+ * harf → i18n-kalit moslamasi bu yerda mustaqil (widgets `features/*`dan import
  * qilinmaydi va aksincha — feature widget'ning ICHKI xaritasini import qilmaydi, docs/10 2-bo'lim).
+ *
+ * `resultCode` HARFLARDAN iborat (`"IRA"`, docs/07 3.2), tarjima kalitlari esa `scale`
+ * kodlari bilan nomlangan — shu sabab moslama kerak.
  */
 const SHORT_LETTER_TO_TYPE_CODE: Record<string, string> = {
   R: 'R',
@@ -70,7 +73,7 @@ export function StudentSummaryCards({
       />
       <SummaryCard
         label={t('studentProfile.cards.maturityIndex')}
-        value={bigFive ? bigFive.maturityIndex.toFixed(1) : '—'}
+        value={bigFive?.maturityIndex != null ? bigFive.maturityIndex.toFixed(1) : '—'}
         hint={bigFive?.maturityLevel ?? t('studentProfile.cards.noData')}
       />
       <SummaryCard

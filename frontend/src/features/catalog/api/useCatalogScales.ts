@@ -22,8 +22,8 @@ export interface ScalePayload {
   displayOrder: number;
   /**
    * Backend `UpdateTestScaleCommandHandler` bandlarni `request.InterpretationBands ?? []`
-   * bilan TO'LIQ ALMASHTIRADI — yubormaslik ularni O'CHIRADI. Shu sabab tahrirlashda mavjud
-   * bandlar har doim o'zgarishsiz qaytariladi (UI'da hozircha band muharriri yo'q).
+   * bilan TO'LIQ ALMASHTIRADI — yubormaslik ularni O'CHIRADI. Shu sabab `ScaleDialog` har
+   * doim TO'LIQ ro'yxatni (muharrirdagi joriy holatni) yuboradi, "faqat o'zgarganini" emas.
    */
   interpretationBands: InterpretationBand[];
 }

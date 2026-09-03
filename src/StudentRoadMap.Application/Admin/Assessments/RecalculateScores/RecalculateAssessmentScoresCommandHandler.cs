@@ -1,6 +1,7 @@
 using MediatR;
 using StudentRoadMap.Application.Admin.Common;
 using StudentRoadMap.Application.Admin.Students;
+using StudentRoadMap.Application.Common;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
 using StudentRoadMap.Application.Public.Common;
@@ -168,7 +169,17 @@ internal sealed class RecalculateAssessmentScoresCommandHandler
                 now);
         }
 
-        ApplyMaturityIndexIfPossible(testResults);
+        // ⚠️ Qaysi natija BIG5 (`Traits`) / ACTIVITY ekani metodika KODI bilan aniqlanmaydi
+        // (`docs/06` 8-bo'lim, 2026-09-02 "dastur" qarori). Ilgari bu yerda `TestCode == "BIG5"`
+        // satr solishtiruvi turardi va `Custom` dasturda JIMGINA buzilardi: shu KODLI superadmin
+        // anketasi `CompositeScorer`ga BIG5 sifatida kirib ketardi (yoki boshqa kodli haqiqiy
+        // batareya e'tibordan chetda qolib, `MaturityIndex` umuman hisoblanmasdi) — hech qanday
+        // xato ko'rinmasdi. Mezon — `PersonalityBattery.RoleOf` (`ScoringStrategyCode` bo'yicha),
+        // `CompleteSessionCommandHandler` bilan BIR XIL.
+        var rolesByAssessmentTestId = await PersonalityBatteryRoles.LoadByAssessmentTestIdAsync(
+            _context, _executor, assessment.Id, cancellationToken).ConfigureAwait(false);
+
+        ApplyMaturityIndexIfPossible(testResults, rolesByAssessmentTestId);
 
         // ⚠️ P12-R1 (MAJBURIY, `prompts/15` "ENG MUHIM"): `ReliabilityInputBuilder.Build` orqali
         // — sessiya ICHIDAGI test tartibi (`AssessmentTest.DisplayOrder`) + har test ICHIDAGI
@@ -261,12 +272,20 @@ internal sealed class RecalculateAssessmentScoresCommandHandler
     /// <summary>
     /// `CompleteSessionCommandHandler.ApplyMaturityIndexIfPossible` bilan BIR XIL mantiq
     /// (`Domain/Scoring` — `CompositeScorer` — o'zgartirilmaydi, faqat chaqiriladi) — bu yerda
-    /// ENDI QAYTA HISOBLANGAN BIG5/ACTIVITY `TestResult`laridan o'qiydi.
+    /// ENDI QAYTA HISOBLANGAN `Traits`/`Activity` ROLIDAGI `TestResult`lardan o'qiydi.
+    ///
+    /// <para>
+    /// `internal` — handler'ning o'zi `internal`, metod esa `StudentRoadMap.Application.Tests`
+    /// dan to'g'ridan-to'g'ri sinaladi (`InternalsVisibleTo`): rol xaritasini uzatib, KODI zid
+    /// (`Custom` anketa `BIG5`/`ACTIVITY` kodi bilan) ssenariyni bazasiz tekshirish uchun.
+    /// </para>
     /// </summary>
-    private static void ApplyMaturityIndexIfPossible(IReadOnlyList<TestResult> testResults)
+    internal static void ApplyMaturityIndexIfPossible(
+        IReadOnlyList<TestResult> testResults,
+        IReadOnlyDictionary<Guid, PersonalityBatteryRole> rolesByAssessmentTestId)
     {
-        var bigFive = testResults.FirstOrDefault(r => r.TestCode == "BIG5");
-        var activity = testResults.FirstOrDefault(r => r.TestCode == "ACTIVITY");
+        var bigFive = PersonalityBatteryRoles.FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.Traits);
+        var activity = PersonalityBatteryRoles.FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.Activity);
 
         if (bigFive is null || activity is null)
         {

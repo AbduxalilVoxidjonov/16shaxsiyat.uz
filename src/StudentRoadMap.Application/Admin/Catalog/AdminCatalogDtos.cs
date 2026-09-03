@@ -22,7 +22,17 @@ public sealed record CatalogTestListItemDto(
     int Version,
     int UsedInProgramCount);
 
-/// <summary>`GET /api/admin/catalog/tests/{id}` — `CatalogTestListItem` + `descriptionUz`/`pageSize`/`shuffleQuestions` (frontend `CatalogTestDetail`).</summary>
+/// <summary>
+/// `GET /api/admin/catalog/tests/{id}` — `CatalogTestListItem` + `descriptionUz`/`pageSize`/
+/// `shuffleQuestions`/`displayOrder` (frontend `CatalogTestDetail`).
+/// <para>
+/// <c>DisplayOrder</c> ATAYLAB detal javobida ham bor: `PUT /tests/{id}` uni MAJBURIY talab
+/// qiladi (`UpdateCatalogTestCommand.DisplayOrder`), shu sabab uni qaytarmaslik admin UI'ni
+/// "joriy tartibni bilmayman" holatiga tushirar va har saqlashda tartibni tasodifiy qiymatga
+/// o'zgartirar edi. Ro'yxat DTO'siga (`CatalogTestListItemDto`) qo'shilmadi — u yerda tartib
+/// allaqachon qatorlar ketma-ketligida ko'rinadi.
+/// </para>
+/// </summary>
 public sealed record CatalogTestDetailDto(
     Guid Id,
     string Code,
@@ -39,7 +49,8 @@ public sealed record CatalogTestDetailDto(
     int UsedInProgramCount,
     string? DescriptionUz,
     int PageSize,
-    bool ShuffleQuestions);
+    bool ShuffleQuestions,
+    int DisplayOrder);
 
 /// <summary>`GET /api/admin/catalog/tests/{id}/questions` — frontend `CatalogQuestionItem` bilan bir xil maydonlar (+ `textRu`/`textEn`/`isSystem`, frontendda ishlatilmaydi, lekin javobni buzmaydi).</summary>
 public sealed record CatalogQuestionItemDto(

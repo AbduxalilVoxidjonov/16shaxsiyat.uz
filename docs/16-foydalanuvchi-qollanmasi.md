@@ -1,305 +1,912 @@
-# 16 — Superadmin uchun foydalanuvchi qo'llanmasi
+# 16 — Foydalanuvchi qo'llanmasi (Shaxsiyat)
 
-Bu qo'llanma **Shaxsiyat** boshqaruv panelidan qanday foydalanish haqida — texnik bilim
-talab qilmaydi. Har bo'lim bitta ekranga bag'ishlangan; ekran nomi sarlavhada yozilgan
-(boshqaruv panelidagi chap menyudagi nom bilan bir xil).
+**Shaxsiyat** — o'quvchining shaxsiyati, psixologik yetukligi, qiziqishlari va aktivligini
+onlayn testlar orqali aniqlaydigan platforma. Bu qo'llanma texnik bilim talab qilmaydi.
 
-> **Skrinshot uchun joy:** har bo'limda `📷 [Skrinshot: ...]` belgisi qo'yilgan — real
-> skrinshotlar tayyor bo'lganda shu joylarga qo'yiladi.
+Qo'llanma ikki xil odam uchun:
 
----
+| Kim | Nima qiladi | Qaysi bo'limlar |
+|-----|-------------|-----------------|
+| **Superadmin** — psixolog yoki koordinator, boshqaruv paneliga kiradi | Maktab qo'shadi, havola beradi, natijalarni ko'radi, sozlaydi | 1–8 |
+| **Maktab mas'uli** — maktab direktori, o'rinbosari yoki psixolog | Havolani o'quvchilarga yetkazadi, jarayonni kuzatadi | 9 (qisqa varaqa) |
 
-## 1. Tizimga kirish
+> **Muhim:** tizimda **bitta rol** bor — superadmin. Maktab mas'uli uchun alohida login
+> **yo'q**: u faqat maktabning shaxsiy havolasini oladi va o'quvchilarga tarqatadi.
+> Natijalarni faqat superadmin ko'radi.
 
-Manzil: `https://16shaxsiyat.uz/admin/login` (yoki serveringiz domeni + `/admin/login`).
-
-📷 *[Skrinshot: "Boshqaruv paneliga kirish" oynasi]*
-
-1. **Login** va **Parol** maydonlariga sizga berilgan ma'lumotlarni kiriting.
-2. Agar ikki bosqichli tasdiqlash (2FA) yoqilgan bo'lsa, **"Tasdiqlash kodi (2FA)"**
-   maydoniga telefoningizdagi autentifikatsiya ilovasi (masalan Google Authenticator)
-   ko'rsatayotgan 6 xonali kodni kiriting.
-3. **"Kirish"** tugmasini bosing.
-
-**Eslatma:**
-- Login va boshlang'ich parol tizimni o'rnatgan mutaxassis tomonidan beriladi (server
-  sozlamalarida ko'rsatilgan) — birinchi kirishdan so'ng ularni **"Sozlamalar"**
-  bo'limidan (7-bo'lim) darhol o'zgartiring.
-- Parolni 5 marta ketma-ket noto'g'ri kiritsangiz, hisob 15 daqiqaga vaqtincha bloklanadi
-  — bu begonalarning parolni "taxmin qilishga urinishi"dan himoya qiladi.
+Bu hujjatda yozilgan har bir ekran, tugma va maydon nomi haqiqiy dasturdan olingan.
+Hali qurilmagan bo'limlar **8.4-bo'limda** ochiq ro'yxat qilingan.
 
 ---
 
-## 2. Boshqaruv paneli (bosh sahifa)
+## 1. Boshlash
 
-Kirgandan so'ng ochiladigan birinchi sahifa — umumiy holat bir qarashda.
+### 1.1 Tizimga kirish
 
-📷 *[Skrinshot: Boshqaruv paneli — KPI kartochkalari, voronka, jadvallar]*
+Manzil: `https://16shaxsiyat.uz/admin/login`
 
-Yuqorida **sana oralig'i** filtri bor ("Sanadan" / "Sanagacha" yoki "Oxirgi 7 kun" /
-"Oxirgi 30 kun" tugmalari) — barcha ko'rsatkichlar shu davr uchun hisoblanadi.
+Ekran sarlavhasi — **"Boshqaruv paneliga kirish"**.
 
-**Asosiy kartochkalar:**
-- **Maktablar** — nechta maktab qo'shilgan, nechtasi faol.
-- **O'quvchilar** — jami ro'yxatdan o'tganlar soni.
-- **Yakunlangan sessiyalar** — testni to'liq topshirganlar soni.
-- **Tahlil navbatida** — AI hisobot tayyorlanayotgan o'quvchilar. Bosilsa, ularning
-  ro'yxatiga o'tkazadi.
-- **E'tibor talab qiladi** — javoblari "shubhali"/"ishonchsiz" chiqqan yoki alohida
-  e'tibor kerak bo'lgan o'quvchilar. Bosilsa, ularning ro'yxatiga o'tkazadi.
+1. **"Login"** va **"Parol"** maydonlarini to'ldiring.
+2. **"Kirish"** tugmasini bosing.
+3. Agar hisobingizda 2FA yoqilgan bo'lsa, birinchi urinishdan keyin ekranda qo'shimcha
+   **"Tasdiqlash kodi (2FA)"** maydoni paydo bo'ladi va "Davom etish uchun autentifikatsiya
+   ilovasidagi kodni kiriting" xabari chiqadi. Telefoningizdagi ilova ko'rsatayotgan
+   6 xonali kodni kiriting va yana **"Kirish"**ni bosing.
 
-**"Voronka: havoladan tahlilgacha"** — o'quvchi havolani ochishidan tortib AI tahlil
-tayyor bo'lishigacha bo'lgan yo'lni bosqichma-bosqich ko'rsatadi (havola ochilgan →
-ro'yxatdan o'tgan → boshlagan → yakunlagan → tahlil tayyor). Har bosqichda qancha
-o'quvchi "tushib qolgani" ko'rinadi — masalan, ko'p o'quvchi ro'yxatdan o'tib, lekin
-testni boshlamasa, bu muammoning qayerdaligini ko'rsatadi.
+> 2FA maydoni **doim ko'rinmaydi** — u faqat tizim kod so'raganda chiqadi. Bu normal holat.
 
-Pastda **"Maktablar kesimi"** jadvali (har maktab bo'yicha alohida statistika) va
-**diagrammalar** (shaxsiyat tiplari, aktivlik darajalari, kasb qiziqishlari taqsimoti)
-joylashgan.
+**Bilib qo'ying:**
+- Login va boshlang'ich parolni tizimni o'rnatgan texnik mutaxassis beradi. Ular server
+  sozlamalarida saqlanadi, bu hujjatda **yozilmaydi**.
+- Parol 5 marta ketma-ket noto'g'ri kiritilsa, hisob **15 daqiqaga bloklanadi**
+  ("Hisob 15 daqiqaga bloklandi" xabari). Bu parolni taxmin qilishga urinishdan himoya.
+
+### 1.2 Parolni o'zgartirish
+
+Birinchi kirishdan keyin **darhol** parolni almashtiring.
+
+Chap menyu → **"Sozlamalar"** → **"Parolni o'zgartirish"** kartasi:
+
+1. **"Joriy parol"** — hozirgi parolingiz.
+2. **"Yangi parol"** — kamida **10 belgi**, ichida kamida bitta **harf** va bitta **raqam**
+   bo'lishi shart.
+3. **"Yangi parolni tasdiqlang"** — yangi parolni yana bir marta yozing.
+4. **"Saqlash"**.
+
+Muvaffaqiyatli bo'lsa "Parol muvaffaqiyatli o'zgartirildi" xabari chiqadi.
+
+### 1.3 Ikki bosqichli tasdiqlash (2FA) va zaxira kodlar
+
+**"Sozlamalar"** → **"Ikki bosqichli autentifikatsiya (2FA)"** kartasi. Holat yozuvi
+**"Yoqilgan"** yoki **"Yoqilmagan"** deb ko'rsatiladi.
+
+**Yoqish:**
+
+1. **"Yoqish"** tugmasini bosing. 2FA **shu zahoti yoqiladi** — qo'shimcha tasdiqlash
+   qadami yo'q.
+2. Ochilgan oynada ikki narsa ko'rsatiladi:
+   - **"Maxfiy kalit"** — uzun harf-raqamli matn. Uni autentifikatsiya ilovangizga
+     (Google Authenticator, Authy va shunga o'xshash) **qo'lda kiriting**.
+   - **"Zaxira kodlar (har biri bir marta ishlatiladi)"** — bir nechta qisqa kod.
+3. Oynani yopishdan oldin ikkalasini ham ko'chirib oling.
+
+> **Bu ekranda QR kod ko'rsatilmaydi** — faqat matn ko'rinishidagi maxfiy kalit bor.
+> Ilovada "kalitni qo'lda kiritish" (`Enter a setup key`) variantini tanlang.
+
+**⚠️ Zaxira kodlar haqida — diqqat bilan o'qing:**
+
+- Zaxira kodlar **faqat shu bir marta**, shu oynada ko'rsatiladi. Oynani yopganingizdan
+  keyin ularni **hech qanday yo'l bilan qayta ko'rib bo'lmaydi**.
+- Telefoningiz yo'qolsa yoki ilova o'chib ketsa, tizimga **faqat shu kodlar orqali**
+  kirasiz. Kodlarsiz va telefonsiz hisobingiz yopiladi va tiklash uchun serverga
+  kirish huquqiga ega texnik mutaxassis kerak bo'ladi.
+- **Qayerda saqlash kerak:** qog'ozga yozib seyfga yoki qulflanadigan javonga qo'ying.
+  Ikkinchi nusxani boshqa joyda saqlang. Ish kompyuteringizning ish stolida, elektron
+  pochtangizda yoki telefoningizdagi eslatmalar ilovasida **saqlamang** —
+  parol o'g'irlansa, ular bilan birga zaxira kodlar ham o'g'irlanadi.
+- Har bir kod **bir martalik** — ishlatilgani ikkinchi marta ishlamaydi.
+
+> **Yoqishdan oldin bir daqiqa tekshiring.** "Yoqish"ni bosganingizda oynada zaxira
+> kodlar **ko'rinmasa** yoki ekranda "Sahifada xatolik yuz berdi" degan xabar chiqsa —
+> 2FA server tomonda **allaqachon yoqilgan**, lekin sizda kod yo'q. Bunday holda
+> **darhol**, tizimdan chiqmasdan turib, **"O'chirish"** tugmasi bilan 2FA'ni o'chiring
+> (parolingiz so'raladi) va texnik mutaxassisga xabar bering. Muammo tuzatilgandan keyin
+> qayta yoqasiz. Sessiyani yopib yuborsangiz va telefoningizda kod bo'lmasa, hisobingizga
+> kira olmay qolasiz.
+
+**O'chirish:** **"O'chirish"** → ochilgan oynada joriy **"Parol"**ingizni kiriting va
+tasdiqlang. Parol so'ralishi ataylab qilingan: agar kimdir sizning ochiq sessiyangizni
+o'g'irlasa ham, parolni bilmasdan 2FA'ni o'chira olmaydi.
+
+**Chiqish:** chap menyu pastidagi **"Chiqish"**.
 
 ---
 
-## 3. Maktab qo'shish va havola berish
+## 2. Maktab qo'shish va havola berish
 
 Chap menyu → **"Maktablar"**.
 
-📷 *[Skrinshot: Maktablar ro'yxati jadvali]*
+### 2.1 Yangi maktab yaratish
 
-### 3.1 Yangi maktab qo'shish
+Yuqoridagi **"Yangi maktab"** tugmasini bosing. Ochilgan formada:
 
-1. Yuqori o'ng burchakdagi **"Yangi maktab"** tugmasini bosing.
+| Maydon | Majburiymi | Izoh |
+|--------|-----------|------|
+| **"Nomi"** | Ha | Maktabning to'liq nomi |
+| **"Viloyat"** | Ha | Ro'yxatdan tanlanadi |
+| **"Tuman"** | Ha | Qo'lda yoziladi |
+| **"Maktab raqami"** | Yo'q | |
+| **"Mas'ul shaxs (F.I.Sh.)"** | Yo'q | Maktabdagi bog'lanadigan odam |
+| **"Telefon raqami"** | Yo'q | |
+| **"Kunlik ro'yxatdan o'tish limiti"** | Ha | Standart qiymat — **500** |
+| **"Kirish kodi"** | Yo'q | **6 xonali raqam**; bo'sh qoldirilsa hamma ro'yxatdan o'ta oladi |
+| **"Izoh"** | Yo'q | O'zingiz uchun eslatma |
 
-   📷 *[Skrinshot: "Yangi maktab" formasi]*
+**"Yaratish"** tugmasini bosing. Maktab ro'yxatga qo'shiladi va unga avtomatik
+**shaxsiy havola** yaratiladi.
 
-2. Formani to'ldiring:
-   - **Nomi** — maktabning to'liq nomi (majburiy).
-   - **Viloyat**, **Tuman** — ro'yxatdan tanlanadi.
-   - **Maktab raqami**, **Mas'ul shaxs (F.I.Sh.)**, **Telefon raqami**, **Izoh** —
-     ixtiyoriy, lekin to'ldirilsa bog'lanish osonlashadi.
-   - **Kunlik ro'yxatdan o'tish limiti** — bir kunda nechta o'quvchi ro'yxatdan o'ta
-     olishini cheklaydi (ortiqcha yuklanishning oldini olish uchun).
-   - **Kirish kodi** — ixtiyoriy. To'ldirilsa, o'quvchilar havolaga qo'shimcha ravishda
-     shu kodni ham bilishlari kerak bo'ladi (masalan, faqat maktab ichida e'lon
-     qilingan bo'lsa). Bo'sh qoldirilsa, havolani bilgan har kim ro'yxatdan o'ta oladi.
-3. **"Yaratish"** tugmasini bosing — maktab ro'yxatga qo'shiladi va unga avtomatik
-   **o'ziga xos havola** yaratiladi.
+### 2.2 Kunlik ro'yxatdan o'tish limiti nima uchun kerak
 
-### 3.2 Havolani olish va ulashish
+Bu — bir kunda shu maktab havolasi orqali **nechta o'quvchi ro'yxatdan o'ta olishi**.
+Standart qiymat 500.
 
-Har maktab qatorida amallar tugmalari bor:
+Nima uchun kerak:
 
-- **Havolani nusxalash** — maktabning shaxsiy havolasini buferga nusxalaydi
-  (`https://16shaxsiyat.uz/t/<maktab-kodi>` ko'rinishida). Shu havolani maktab
-  ma'muriyatiga yuboring — ular o'quvchilarga ulashadi.
-- **QR kodni ko'rish** → ochilgan oynada:
+- **Havola tarqab ketishidan himoya.** Maktab havolasi ochiq internetga (masalan,
+  ommaviy Telegram kanaliga) tushib qolsa, begonalar yuzlab soxta anketa to'ldirishi
+  mumkin. Limit shu oqimni bir kunda to'xtatadi va siz muammoni sezib ulgurasiz.
+- **Yuklamani boshqarish.** Butun maktab bir vaqtda kirsa, server ham, siz ham ortiqcha
+  yuklanadi. Limit testni bir necha kunga yoyishga majbur qiladi.
+- **Xarajat nazorati.** Har bir yakunlangan test uchun AI tahlil buyurtma qilinadi —
+  bu pul turadi. Limit kutilmagan xarajatdan saqlaydi.
 
-  📷 *[Skrinshot: QR kod oynasi]*
+Limitni maktab hajmiga qarab tanlang: sinf bo'yicha bosqichma-bosqich testlaydigan bo'lsangiz
+30–60 yetadi; bir kunda butun maktabni qamramoqchi bo'lsangiz — o'quvchilar sonidan
+biroz ko'proq qiling. Limitni istalgan vaqtda **"Tahrirlash"** orqali o'zgartirish mumkin.
 
-  - **"PNG yuklab olish"** — QR kodni rasm sifatida saqlaydi (masalan, e'lon
-    doskasiga chop etish uchun).
-  - **"Chop etish"** — to'g'ridan-to'g'ri chop etish oynasini ochadi.
-- **"Havolani yangilash"** — eski havolani DARHOL ishlamay qo'yadi va yangisini
-  yaratadi. Faqat havola "chiqib ketgan" yoki xavfsizlik sababli almashtirish kerak
-  bo'lganda ishlatiladi — maktabga yangi havolani qayta yuborishni unutmang.
-- **"Faollashtirish" / "Nofaol qilish"** — maktabni vaqtincha yopish/ochish (havola
-  ishlaydi, lekin nofaol maktabda o'quvchi "test vaqtincha yopilgan" xabarini ko'radi).
-- **"Tahrirlash"** — maktab ma'lumotlarini o'zgartirish.
-- **"O'chirish"** — maktabda hali o'quvchi yo'q bo'lsagina ishlaydi (aks holda avval
-  o'quvchilarni boshqa maktabga ko'chiring yoki maktabni shunchaki nofaol qiling).
+**"Kirish kodi"** — qo'shimcha himoya qatlami. To'ldirilsa, o'quvchi havolani bilishining
+o'zi kifoya qilmaydi: ro'yxatdan o'tish formasidagi **"Kirish kodi"** maydoniga
+6 xonali kodni ham kiritishi kerak bo'ladi. Kodni faqat maktab ichida (sinfda, doskada)
+e'lon qiling.
+
+### 2.3 Havola va QR kodni olish
+
+Maktablar jadvalidagi har bir qatorda amallar bor:
+
+- **"Havolani nusxalash"** — maktabning shaxsiy havolasini buferga oladi
+  (`https://16shaxsiyat.uz/t/<maktab-kodi>` ko'rinishida). "Havola nusxalandi" xabari chiqadi.
+- **"QR kodni ko'rish"** — **"QR kod"** oynasi ochiladi. Unda:
+  - **"Havola"** — matn ko'rinishidagi havola;
+  - **"PNG yuklab olish"** — QR kodni rasm sifatida saqlaydi;
+  - **"Chop etish"** — chop etish oynasini ochadi.
+
+### 2.4 Havolani maktabga qanday yetkazish
+
+1. **Mas'ul shaxsni aniqlang** — direktor o'rinbosari yoki maktab psixologi. Havolani
+   shaxsan unga yuboring, umumiy guruhga tashlamang.
+2. **QR kodni chop eting** va sinf doskasiga, koridorga yoki e'lon taxtasiga osing —
+   o'quvchi telefon kamerasi bilan ochadi, havolani terib o'tirmaydi.
+3. **Kirish kodi bo'lsa**, uni havoladan **alohida** kanal orqali ayting (masalan, sinfda
+   og'zaki). Ikkalasini bitta xabarda yubormang — aks holda himoyaning ma'nosi qolmaydi.
+4. **Nima qilish kerakligini tushuntiring:** o'quvchi telefon yoki kompyuterda ochadi,
+   qisqa anketani to'ldiradi, keyin savollarga javob beradi. Javoblar avtomatik saqlanadi,
+   internet uzilsa ham yo'qolmaydi.
+5. **9-bo'limdagi qisqa varaqani** maktab mas'uliga yuboring — unda hamma narsa
+   yozilgan.
+
+### 2.5 Maktab bo'yicha boshqa amallar
+
+- **"Tahrirlash"** — ma'lumotlarni o'zgartirish.
+- **"Faollashtirish" / "Nofaol qilish"** — maktabni vaqtincha yopish yoki ochish.
+  Nofaol maktabda havolani ochgan o'quvchi **"Test vaqtincha yopilgan"** xabarini ko'radi.
+- **"Havolani yangilash"** — ochilgan oynada ogohlantirish chiqadi: *"Eski havola darhol
+  ishlamay qoladi. Maktabga yangi havolani yuborishni unutmang."* Faqat havola tashqariga
+  chiqib ketgan bo'lsa ishlating va yangisini maktabga qayta yuboring.
+- **"O'chirish"** — maktabda hali o'quvchi bo'lmagandagina ishlaydi. Aks holda
+  *"Bu maktabda o'quvchilar bor"* xatosi chiqadi — bunday holda maktabni shunchaki
+  **"Nofaol qilish"** yetarli.
+
+### 2.6 Maktab sahifasi
+
+Jadvaldagi maktab nomini bosing (yoki **"Maktabni ochish"**) — alohida sahifa ochiladi:
+
+- **"Ishtirok statistikasi"** — "Ro'yxatdan o'tgan", "Testni yakunlagan",
+  "Yakunlash ulushi", "Jarayonda", "Oxirgi topshirilgan".
+- **"Maktab ma'lumotlari"** — barcha kiritilgan maydonlar, shu jumladan "Havola".
+- **"O'quvchilar"** → **"Shu maktab o'quvchilarini ko'rish"** tugmasi.
+
+### 2.7 Boshqaruv paneli (umumiy holat)
+
+Chap menyu → **"Boshqaruv paneli"**. Yuqorida sana filtri: **"Sanadan"**, **"Sanagacha"**,
+**"Oxirgi 7 kun"**, **"Oxirgi 30 kun"**, **"Filtrni tozalash"**.
+
+Kartochkalar: **"Maktablar"**, **"O'quvchilar"**, **"Yakunlangan sessiyalar"**,
+**"Tahlil navbatida"**, **"E'tibor talab qiladi"** (oxirgisi bosilsa, e'tibor talab
+qiladigan o'quvchilar ro'yxatiga o'tkazadi).
+
+Pastda: **"Oxirgi 30 kun"** (Yangi o'quvchilar, Yakunlangan, O'rtacha davomiylik,
+O'rtacha ishonchlilik, Tashlab ketish darajasi), **"Voronka: havoladan tahlilgacha"**
+(Havola ochilgan → Ro'yxatdan o'tgan → Boshlagan → Yakunlagan → Tahlil tayyor),
+**"Maktablar kesimi"** jadvali, **"Shaxsiyat tiplari taqsimoti"**,
+**"Aktivlik darajalari"**, **"Kasb qiziqishlari (Holland) — eng ko'p uchraydiganlar"**
+va **"So'nggi sessiyalar"**.
+
+Voronka eng foydali vosita: qaysi bosqichda o'quvchilar tushib qolayotganini ko'rsatadi.
+Masalan, "Havola ochilgan" katta, "Ro'yxatdan o'tgan" kichik bo'lsa — anketa yoki kirish
+kodi to'sqinlik qilyapti; "Boshlagan" katta, "Yakunlagan" kichik bo'lsa — test juda uzun.
 
 ---
 
-## 4. O'quvchilar ro'yxati
+## 3. Dasturlar
+
+Chap menyu → **"Dasturlar"**.
+
+### 3.1 Dastur nima
+
+**Dastur** — bu maktabga beriladigan **anketalar to'plami** va ularning tartibi.
+Masalan: "9-sinf profil dasturi" = shaxsiyat testi + kasb qiziqishlari + aktivlik anketasi.
+
+O'quvchi alohida testni emas, **butun dasturni** topshiradi. Shuning uchun maktabga
+havola berishdan oldin unga dastur biriktirilgan (yoki ommaviy dastur mavjud) bo'lishi kerak.
+
+Jadvaldagi ustunlar: **"Nomi"**, **"Kodi"**, **"Turi"**, **"Ko'rinishi"**,
+**"Testlar soni"**, **"Holat"**, **"Faollik"**.
+
+- **"Turi"**: **"Tizim"** (tayyor, tarkibi himoyalangan) yoki **"Mening"** (siz yaratgan).
+- **"Holat"**: **"Qoralama"** → **"Nashr etilgan"** → **"Arxiv"**.
+- **"Faollik"**: **"Faol"** / **"Nofaol"**.
+
+### 3.2 Ommaviy va Biriktirilgan — farqi
+
+Dastur formasidagi **"Ko'rinishi"** maydoni. Dasturda buning izohi shunday yozilgan:
+*"Ommaviy — barcha maktabda; Biriktirilgan — faqat tanlangan maktablarda"*.
+
+| Ko'rinishi | Kim ko'radi | Qachon ishlatiladi |
+|-----------|-------------|--------------------|
+| **"Ommaviy"** | **Barcha** maktab — biriktirish shart emas | Standart dastur; hamma maktab bir xil to'plamni topshiradi |
+| **"Biriktirilgan"** | Faqat siz biriktirgan maktablar | Bitta maktab uchun maxsus to'plam, sinov yoki tadqiqot dasturi |
+
+Ehtiyot bo'ling: **"Ommaviy"** dasturni nashr qilishingiz bilanoq u **barcha** maktabda
+paydo bo'ladi. Sinov uchun mo'ljallangan dasturni **"Biriktirilgan"** qilib qo'ying.
+
+### 3.3 ⚠️ O'quvchi bir nechta dastur bo'lsa TANLAYDI
+
+Bu eng ko'p chalkashlik tug'diradigan joy, shuning uchun alohida ta'kidlanadi.
+
+Maktab havolasini ochgan o'quvchi ko'radigan narsa — **shu maktabga tegishli dasturlar
+soniga** bog'liq:
+
+| Maktabga tegishli dasturlar soni | O'quvchi nima ko'radi |
+|----------------------------------|------------------------|
+| **0 ta** | **"Test hali tayyor emas"** — *"Bu maktab uchun test hali tayyorlanmagan, maktabingizga murojaat qiling."* |
+| **1 ta** | To'g'ridan-to'g'ri test boshlash sahifasi. Tanlov so'ralmaydi |
+| **2 va undan ko'p** | **"Dasturni tanlang"** ekrani — har bir dastur alohida karta ko'rinishida (nomi, tavsifi, "N ta test · M ta savol · ~K daqiqa"). O'quvchi **o'zi** birini tanlaydi va shundan keyin davom etadi |
+
+**Buning oqibati:** agar bitta maktabda bir nechta dastur ko'rinsa, sizda barcha o'quvchi
+bir xil to'plamni topshirishiga **kafolat yo'q** — kimdir bittasini, kimdir boshqasini
+tanlaydi va natijalarni bir-biriga solishtirib bo'lmaydi.
+
+**Shuning uchun:** bir maktabda bir vaqtda **faqat bitta** dastur ko'rinib turishiga
+ishonch hosil qiling. Buning uchun:
+- ortiqcha dasturlarni **"Nofaollashtirish"** yoki **"Arxivlash"**;
+- yoki ularni **"Biriktirilgan"** qilib, faqat kerakli maktablarga bog'lash.
+
+Ataylab tanlov bermoqchi bo'lsangiz (masalan, qisqa va to'liq variant) — bu ham to'g'ri
+ishlatilishi, lekin bunda maktabga oldindan qaysi birini tanlash kerakligini aytib qo'ying.
+
+### 3.4 Yangi dastur yaratish
+
+1. **"Yangi dastur"** tugmasi. Formada:
+   - **"Dastur kodi"** — faqat lotin katta harflari, raqam, `_` va `-` (masalan `PROFILE_9`).
+     **Kod yaratilgandan keyin o'zgartirilmaydi.**
+   - **"Nomi"**, **"Tavsifi"** — o'quvchi tanlov ekranida shularni o'qiydi, tushunarli yozing.
+   - **"Tartib raqami"** — ro'yxatdagi joyi.
+   - **"Ko'rinishi"** — 3.2-bo'limga qarang.
+2. **"Yaratish"**.
+3. Ochilgan dastur sahifasidagi **"Testlar"** bo'limida **"Test qo'shish"** tugmasini
+   bosing, kerakli anketani qidirib toping va **"Qo'shish"**ni bosing.
+4. Tartibni **"Yuqoriga ko'chirish"** / **"Pastga ko'chirish"** tugmalari bilan
+   o'zgartiring — o'quvchi aynan shu tartibda topshiradi. Ortiqchasini
+   **"Olib tashlash"** bilan chiqarib tashlang.
+
+Dastur sarlavhasi ostida "N ta savol · ~M daqiqa" yig'indisi ko'rinadi. Agar dasturda
+yetuklik va aktivlik hisoblanadigan testlar bo'lmasa, ogohlantirish chiqadi:
+*"Bu dasturda yetuklik va aktivlik indekslari hisoblanmaydi, AI hisoboti qisqartirilgan
+bo'ladi."*
+
+### 3.5 Nashr qilish
+
+**"Nashr qilish"** tugmasi — dastur **"Qoralama"**dan **"Nashr etilgan"** holatiga o'tadi.
+Faqat shundan keyin o'quvchilar uni ko'radi.
+
+- Dasturda **kamida bitta test** bo'lishi shart, aks holda:
+  *"Kamida bitta test biriktirilmasa dasturni nashr qilib bo'lmaydi"*.
+- Umumiy vaqt uzun bo'lsa ogohlantirish chiqadi:
+  *"Jami vaqt N daqiqa — sessiya juda uzun, o'quvchilar tashlab ketishi mumkin"*.
+  Bu taqiq emas, lekin jiddiy qabul qiling: uzun test tashlab ketishni oshiradi va
+  ishonchlilikni tushiradi.
+
+**"Arxivlash"** — dastur o'quvchilarga ko'rinmay qoladi; eski natijalar saqlanib qoladi.
+Bu amalni **bekor qilib bo'lmaydi**.
+
+### 3.6 Dasturni maktabga biriktirish
+
+Dastur sahifasidagi **"Biriktirilgan maktablar"** bo'limi:
+
+1. **"Maktab qidirish"** maydoniga maktab nomini yozing.
+2. Topilgan maktab yonidagi **"Biriktirish"**ni bosing.
+3. Biriktirilgan maktablar ro'yxat ko'rinishida chiqadi; olib tashlash uchun maktab
+   yonidagi olib tashlash belgisini bosing.
+
+Hech qanday dasturi yo'q maktab **"Dastursiz"** belgisi bilan ko'rinadi — bunday maktab
+havolasini ochgan o'quvchi "Test hali tayyor emas" xabarini oladi.
+
+**"Tizim"** dasturlarining tarkibini o'zgartirib bo'lmaydi
+(*"Tizim dasturining tarkibi (testlar) himoyalangan — o'zgartirilmaydi"*), lekin
+maktablarga biriktirish/olib tashlash mumkin.
+
+---
+
+## 4. Savollar va anketalar (Testlar katalogi)
+
+Chap menyu → **"Testlar katalogi"**. Sahifa ikki bo'limga bo'lingan:
+
+- **"Tizim metodikalari"** — platforma bilan birga keladigan ilmiy metodikalar.
+- **"Mening testlarim"** — siz yaratgan yoki yuklagan anketalar.
+
+Har bir kartada: nomi, **"Faol"/"Nofaol"** belgisi, **"Ballanadi"** yoki
+**"So'rovnoma"** belgisi va "N ta savol · ~M daqiqa".
+
+### 4.1 Tizim metodikasini tahrirlash — nima mumkin, nima mumkin emas
+
+Tizim metodikasini ochsangiz, sahifada shu izoh turadi:
+
+> *"Bu tizim metodikasi. Nomi, tavsifi va savol matnlarini tahrirlash mumkin; shkala,
+> yo'nalish va og'irlik qulflangan, savol qo'shib yoki o'chirib bo'lmaydi — ular ballash
+> formulalariga bog'liq. Metodikaning o'zini o'zgartirmoqchi bo'lsangiz, "Nusxa olish"
+> bilan erkin tahrirlanadigan nusxa yarating."*
+
+| ✅ O'zgartirsa bo'ladi | ❌ Qulflangan |
+|----------------------|--------------|
+| Anketaning **nomi** va **tavsifi** | Savolning **shkalasi** |
+| **Savol matni** (o'zbekcha, ruscha, inglizcha) | Savolning **yo'nalishi** ("To'g'ri" / "Teskari") |
+| **Taxminiy vaqt**, **bir sahifadagi savollar soni**, aralashtirish | Savolning **og'irligi** |
+| **Katalogdagi tartib raqami** | Savol **qo'shish** va **o'chirish** |
+| **Faollashtirish / Faollikni to'xtatish**, **Arxivlash** | **O'chirish** (tugma umuman ko'rinmaydi) |
+
+### 4.2 Nega aynan shular qulflangan
+
+Sabab bitta: **ball shu uch narsaga tayanadi.**
+
+Har bir savol biror **shkalaga** (masalan "Ekstraversiya") ball qo'shadi. **Yo'nalish**
+javobni qanday sanashni aytadi: "To'g'ri" savolda yuqori javob shkalani oshiradi,
+"Teskari" savolda esa qiymat aylantiriladi (5 → 1). **Og'irlik** esa savolning ulushini
+belgilaydi.
+
+Agar bir savolning shkalasini almashtirsangiz yoki savol qo'shsangiz:
+
+- **eski natijalar buziladi** — kechagi o'quvchining bali boshqa formula bilan
+  hisoblangan bo'ladi va bugungi bilan solishtirib bo'lmaydi;
+- **metodika ilmiyligini yo'qotadi** — bu testlar ma'lum savollar to'plami bilan
+  tekshirilgan; savol qo'shilishi bilan tekshiruv natijasi kuchini yo'qotadi;
+- **AI tahlil ham noto'g'ri chiqadi** — u ballarga tayanadi.
+
+**Savol matnini** o'zgartirishga esa ruxsat bor: matnni tushunarliroq qilish yoki
+imlo xatosini tuzatish ballni o'zgartirmaydi.
+
+> **Nashr etilgan anketani tahrirlasangiz** qo'shimcha ogohlantirish chiqadi:
+> *"Bu anketa nashr etilgan. Savol matnini o'zgartirsangiz, u hozir test yechayotgan
+> o'quvchilarga ham darhol ko'rinadi. Ballar o'zgarmaydi — hisoblash shkala va og'irlikka
+> tayanadi, ular bu yerda o'zgartirilmaydi."* Shuning uchun matnni tahrirlashni test
+> yechilmayotgan vaqtda qiling.
+
+**Metodikaning o'zini o'zgartirmoqchi bo'lsangiz** — **"Nusxa olish"** tugmasini bosing.
+Ochilgan oynada yangi kod bering (katta lotin harflari, raqam, `-` va `_`, 20 belgigacha).
+Nusxa **"Qoralama"** holatida yaratiladi va unda **hamma narsa tahrirlanadi**.
+
+### 4.3 O'z anketangizni yaratish
+
+O'z anketangizni yaratishning ikki yo'li bor:
+
+**A) Tayyor metodikadan nusxa olish** — yuqoridagi **"Nusxa olish"**. Eng oson yo'l.
+
+**B) JSON fayldan yuklash** — **"Test yuklash"** tugmasi:
+
+1. Ochilgan **"Test yuklash"** oynasida faylni tanlang yoki shu yerga tashlang
+   (faqat `.json`).
+2. Fayl to'g'ri bo'lsa, savollar soni va taxminiy vaqt ko'rsatiladi va
+   **"Fayl to'g'ri — yuklashga tayyor"** yozuvi chiqadi. Xato bo'lsa —
+   **"Topilgan xatolar (N)"** ro'yxati chiqadi, ularni tuzatib qayta urinib ko'ring.
+3. **"Yuklash"** — anketa **"Qoralama"** holatida yaratiladi.
+
+Fayl tuzilishini metodolog yoki texnik mutaxassis tayyorlaydi.
+
+**Anketani to'ldirish** (o'z anketangizda, Qoralama holatida):
+
+1. **"Tahrirlash"** — **"Anketa ma'lumotlarini tahrirlash"** oynasi: **"Nomi"**,
+   **"Tavsifi"**, **"Katalogdagi tartib raqami"**, **"Taxminiy vaqt (daqiqa)"**,
+   **"Bir sahifadagi savollar soni"**, **"Savollar tartibi aralashtirilsin"**.
+2. **"Shkalalar"** bo'limi → **"Shkala qo'shish"**. Har bir shkala — o'lchanadigan bitta
+   sifat (masalan "Stressga chidamlilik"). Maydonlari: **"Shkala kodi"** (katta lotin
+   harflari), **"Nomi"**, **"Tavsifi"**, **"Tartib raqami"** va **"Talqin oraliqlari"**
+   (4.4-bo'lim).
+3. **"Savollar"** bo'limi → **"Savol qo'shish"**. Maydonlari: **"Savol kodi"**,
+   **"Savol turi"** (Likert (5 ball), Likert (7 ball), Ha / Yo'q, Bitta variant,
+   Majburiy tanlov), **"Matni (o'zbekcha)"** va ixtiyoriy ruscha/inglizcha matn,
+   **"Tartib raqami"**, shkala, yo'nalish, og'irlik, **"Savol faol"**,
+   **"Javob berish majburiy"**.
+
+> **"Shkalalar"** bo'limi **faqat o'z anketalaringizda** ko'rinadi — tizim metodikasida
+> u umuman ko'rsatilmaydi.
+
+### 4.4 Talqin oraliqlari — qat'iy qoida
+
+**Talqin oraliqlari** — bu 0 dan 100 gacha bo'lgan ballni odam tushunadigan darajaga
+aylantirish jadvali. Masalan: 0–33 "Past", 34–66 "O'rtacha", 67–100 "Yuqori".
+
+Shkala oynasidagi **"Talqin oraliqlari"** bo'limida qoida shunday yozilgan:
+
+> *"Chegaralar butun son bo'lsin; "gacha" qiymati oraliqqa kiradi; keyingi oraliq
+> oldingisidan roppa-rosa 1 ga katta sondan boshlanadi; birinchisi 0 dan boshlanib,
+> oxirgisi 100 da tugaydi."*
+
+Ya'ni to'rt shart:
+
+1. **Butun son** — 33.5 kabi kasrli chegara mumkin emas.
+2. **Bo'shliqsiz** — har bir ball biror oraliqqa tushishi shart.
+3. **Ustma-ust tushmasin** — bitta ball ikki oraliqqa tegishli bo'lmasin.
+4. **0 dan 100 gacha to'liq qoplansin.**
+
+Har bir qatorda: **"Dan"**, **"Gacha"**, **"Daraja nomi"**. Qator qo'shish —
+**"Oraliq qo'shish"**.
+
+**Eng oson yo'l:** **"Nechta oraliq"** maydoniga sonni yozib, **"Teng bo'lish"** tugmasini
+bosing — tizim 0–100 ni o'zi teng bo'lib beradi (*"3 → 0–33 / 34–66 / 67–100"*).
+
+Xato qilsangiz, aniq xabar chiqadi:
+
+| Xabar | Nima qilish kerak |
+|-------|-------------------|
+| *"Oraliq chegaralari butun son bo'lishi shart..."* | Kasrli sonni olib tashlang |
+| *"Oraliqning boshlanishi tugashidan katta..."* | "Dan" ≤ "Gacha" bo'lsin |
+| *"Oraliqlar 0 dan boshlanib 100 da tugashi shart"* | Birinchi qator 0 dan, oxirgisi 100 gacha |
+| *"Oraliqlar orasida bo'shliq bor..."* | Keyingi oraliqni oldingisidan +1 dan boshlang |
+| *"Oraliqlar ustma-ust tushadi..."* | Keyingisini +1 dan boshlang, bir xil sondan emas |
+| *"Har bir oraliqqa daraja nomini kiriting..."* | Har qatorga nom yozing |
+
+Shkalalar ro'yxatida oraliqlar to'ldirilmagan shkala yonida
+*"Talqin oraliqlari belgilanmagan — nashrdan oldin qo'shing"* yozuvi turadi.
+
+### 4.5 Anketani nashr qilish
+
+**"Nashr qilish"** tugmasi faqat **"Qoralama"** holatidagi anketada ko'rinadi.
+Ochilgan oynada izoh bor:
+
+> *"Nashr etilgan anketa faqat YANGI o'quvchi sessiyalariga qo'shiladi. Nashrdan oldin
+> tizim anketani tekshiradi."*
+
+Shart bo'lmasa, **"Nashrga to'sqinlik qilayotgan N ta muammo"** ro'yxati chiqadi. Eng
+ko'p uchraydiganlari:
+
+- *"Anketada kamida bitta faol savol bo'lishi kerak."*
+- *"Anketada kamida bitta shkala bo'lishi kerak."*
+- *"Savolga shkala biriktirilmagan."*
+- Shkalada talqin oraliqlari to'liq emas (4.4-bo'lim).
+
+Muammolarni tuzatib **"Qayta urinish"**ni bosing.
+
+**Nashr etilgandan keyin** anketa dasturga qo'shilishi mumkin (3.4-bo'lim). Anketaning
+o'zi dasturga qo'shilmasa, o'quvchi uni **hech qachon ko'rmaydi**.
+
+**Boshqa amallar:** **"Faollashtirish" / "Faollikni to'xtatish"**, **"Arxivlash"**
+(*"Arxivlangan anketa yangi sessiyalarga qo'shilmaydi. Eski natijalar saqlanib qoladi"*),
+**"O'chirish"** (*"faqat hech qaysi sessiyada ishlatilmagan"* o'z anketalaringizda).
+
+---
+
+## 5. Natijalar
+
+### 5.1 O'quvchilar ro'yxati
 
 Chap menyu → **"O'quvchilar"**.
 
-📷 *[Skrinshot: O'quvchilar jadvali, filtrlar]*
+**Filtrlar:** **"Qidiruv"** (F.I.Sh. yoki telefon bo'yicha), **"Maktab"**, **"Sinf"**,
+**"Holat"**, **"Shaxsiyat tipi"**, **"Aktivlik darajasi"**,
+**"Faqat e'tibor talab qiladiganlar"**, **"Sanadan"**, **"Sanagacha"**.
+Tanlangan filtrlar pastda alohida belgilar ko'rinishida chiqadi; birini olib tashlash yoki
+**"Hammasini tozalash"** mumkin.
 
-Jadval har bir o'quvchi bo'yicha qisqacha ma'lumot beradi: **F.I.Sh.**, **Maktab**,
-**Sinf**, **Holat**, **Shaxsiyat tipi**, **Yetuklik**, **Aktivlik**, **Ishonchlilik**,
-**Sana**.
+**Jadval ustunlari:** **"F.I.Sh."**, **"Maktab"**, **"Sinf"**, **"Holat"**, **"Tip"**,
+**"Yetuklik"**, **"Aktivlik"**, **"Ishonchlilik"**, **"Sana"**.
 
-**Filtrlar** (jadval ustida): qidiruv (ism/telefon bo'yicha), maktab, sinf, holat,
-shaxsiyat tipi, aktivlik darajasi, "faqat e'tibor talab qiladiganlar", sana oralig'i.
-Tanlangan filtrlar pastda "chip" sifatida ko'rinadi — har birini alohida yoki
-**"Hammasini tozalash"** bilan bekor qilish mumkin.
+**"Holat"** qiymatlari: Qoralama · Davom etmoqda · Yakunlangan · Tahlil qilinmoqda ·
+Tahlil qilingan · Tahlil muvaffaqiyatsiz · Tashlab ketilgan.
 
-**"Excel'ga eksport"** tugmasi — joriy filtrlarga mos o'quvchilar ro'yxatini jadval
-fayl (`.xlsx`) sifatida yuklab beradi.
+**"Aktivlik"** darajalari: Passiv · Kam faol · O'rtacha faol · Faol · Juda faol.
 
-Qatorni bosish o'sha o'quvchining **individual profiliga** o'tkazadi (5-bo'lim).
+Qatorni bosish o'quvchi profilini ochadi.
 
-**Ustunlar ma'nosi (oddiy tilda):**
-- **Ishonchlilik** — o'quvchi javoblari qanchalik "diqqat bilan" berilganini ko'rsatadi
-  (masalan, hamma savolga bir xil javob bergan yoki juda tez javob bergan bo'lsa,
-  "Shubhali"/"Ishonchsiz" belgisi qo'yiladi — natijaga to'liq ishonmaslik kerak
-  bo'lishi mumkin).
-- **Yetuklik** — psixologik yetuklik ko'rsatkichi (0–100 oraliqda).
-- **Aktivlik** — o'quvchining o'quv/ijtimoiy faolligi darajasi (Passiv → Juda faol).
+### 5.2 Ishonchlilik indeksi — nimani anglatadi
 
----
+**Ishonchlilik** — o'quvchi savollarga qanchalik diqqat bilan javob berganini o'lchaydigan
+0–100 ballik ko'rsatkich. Bu **o'quvchining bahosi emas** — bu **natijaning bahosi**.
 
-## 5. O'quvchi profili (individual profil)
+Ball 100 dan boshlanadi va quyidagi belgilar uchun kamayadi:
 
-O'quvchilar jadvalidan istalgan qatorni bosing.
+| Belgi | Nimani bildiradi |
+|-------|------------------|
+| Juda tez javoblar (savolga 1 soniyadan kam) | O'quvchi savolni o'qimagan |
+| Ketma-ket 12 va undan ortiq bir xil javob | Tugmani ketma-ket bosib chiqqan |
+| Ma'noviy qarama-qarshi savollarga bir xil javob | Javoblar izchil emas |
+| Barcha savollarga bir xil javob | Test to'ldirilmagan hisoblanadi |
+| Butun sessiya 6 daqiqadan qisqa | Jiddiy o'ylab javob berilmagan |
 
-📷 *[Skrinshot: O'quvchi profili sahifasi — yuqori qism]*
+Natijada uch daraja chiqadi:
 
-Sahifa yuqorisida asosiy amallar:
+| Ball | Belgi | Ma'nosi |
+|------|-------|---------|
+| 70 va yuqori | **"Ishonchli"** | *"Javoblar izchil — natija ishonchli."* |
+| 40–69 | **"Shubhali"** | *"Ba'zi javoblarda shubha bor — natijani ehtiyot bilan talqin qiling."* |
+| 40 dan past | **"Ishonchsiz"** | *"Javoblar juda tez yoki bir xil berilgan — natija ishonchsiz bo'lishi mumkin."* |
 
-- **"PDF yuklab olish"** — to'liq hisobotni PDF fayl sifatida yuklab beradi (maktabga
-  yoki ota-onaga berish uchun qulay).
-- **"Qayta tahlil"** — agar AI hisobot qoniqarli chiqmagan yoki boshqa AI provider
-  bilan qayta tekshirish kerak bo'lsa, yangi tahlil buyurtma qilinadi. Ochilgan oynada
-  provayderni tanlab, **"Boshlash"**ni bosing. Eski hisobot yangisi tayyor bo'lguncha
-  ko'rinishda qoladi.
-- **"Boshqa amallar"** ostida: **"Xom javoblar"** (o'quvchi har savolga qanday javob
-  berganini, qancha vaqt sarflaganini ko'rsatadi — audit uchun) va **"O'chirish"**
-  (o'quvchi va uning barcha natijalarini butunlay o'chiradi — bekor qilib bo'lmaydi).
+**Past bo'lsa nima qilish kerak:**
 
-**"Yig'ma ko'rsatkichlar"** — 4 ta kartochka:
-- **Shaxsiyat tipi** (16 tipdan biri),
-- **Yetuklik indeksi**,
-- **Aktivlik indeksi**,
-- **Kasb qiziqishlari** (Holland kodi — masalan, "IRA" — qaysi kasb yo'nalishlari
-  o'quvchiga ko'proq mos kelishini ko'rsatadi).
+1. **Natijani ota-onaga yoki o'quvchiga bermang.** Ayniqsa "Ishonchsiz" bo'lsa — bu
+   natija o'quvchi haqida hech narsa aytmaydi.
+2. **"Xom javoblar"ni oching** (profil sahifasida, **"Boshqa amallar"** ostida) va
+   **"Vaqt"** ustuniga qarang. Agar deyarli hamma javob bir necha yuz millisekundda
+   berilgan bo'lsa — o'quvchi shunchaki bosib chiqqan.
+3. **Sababini aniqlang.** Odatda uchtadan biri: test dars oxirida shoshib topshirilgan;
+   o'quvchi maqsadini tushunmagan ("baho qo'yiladi" deb o'ylagan); dastur juda uzun
+   bo'lgani uchun charchagan.
+4. **Qayta topshirtiring.** O'quvchiga bu baho emasligini, to'g'ri-noto'g'ri javob
+   yo'qligini va natija o'ziga foyda qilishini tushuntiring. Tinch vaqt va yetarli
+   muddat bering.
+5. **Bir maktabda ko'p "Ishonchsiz" chiqsa** — muammo o'quvchilarda emas, tashkil
+   qilishda. Dasturni qisqartiring yoki testni boshqa vaqtga ko'chiring.
 
-📷 *[Skrinshot: Diagrammalar bo'limi]*
+"Ishonchsiz" o'quvchilar ro'yxatda **"E'tibor talab qiladi"** belgisi bilan ko'rinadi va
+ularni **"Faqat e'tibor talab qiladiganlar"** filtri bilan ajratib olish mumkin.
+Profil sahifasida AI hisobot tepasida qizil ogohlantirish chiqadi:
+*"Javoblar juda tez berilgan, natija ishonchsiz bo'lishi mumkin. Qayta topshirish
+tavsiya etiladi."*
 
-**"Diagrammalar"** — har test bo'yicha vizual grafik (16 tip o'qlari, 5 omil radar
-diagrammasi, kasb qiziqishlari, aktivlik va motivatsiya).
+### 5.3 O'quvchi profili
 
-📷 *[Skrinshot: "AI tahlil" bo'limi]*
+Ro'yxatdan istalgan o'quvchini bosing.
 
-**"AI tahlil"** — sun'iy intellekt tomonidan yozilgan to'liq matnli hisobot (kuchli
-tomonlar, tavsiya etiladigan yo'nalishlar va h.k.). Agar tahlil hali tayyorlanayotgan
-bo'lsa — "Tahlil tayyorlanmoqda" xabari ko'rinadi (odatda ~1 daqiqa, sahifa o'zi
-yangilanadi). **"Tarix"** tugmasi — oldingi AI tahlillarni (agar bir necha marta qayta
-tahlil qilingan bo'lsa) ko'rish imkonini beradi.
+**Yuqori qismdagi amallar:**
 
-Pastda **"Sessiyalar tarixi"** — o'quvchi bir necha marta test topshirgan bo'lsa (masalan,
-bir yildan keyin qayta), barcha urinishlar shu yerda ko'rinadi.
+- **"PDF yuklab olish"** — to'liq hisobot PDF fayl sifatida yuklanadi.
+- **"Qayta tahlil"** — ochilgan oynada AI **"Provider"**ini tanlab **"Boshlash"**ni
+  bosing. Izohda: *"Tanlangan AI provider bilan yangi tahlil boshlanadi. Joriy hisobot
+  tahlil yakunlanguncha ko'rinishda qoladi."* Agar hech qanday provider sozlanmagan
+  bo'lsa: *"Faol AI provider topilmadi. Avval AI sozlamalarida provider ulang."*
+- **"Boshqa amallar"** ostida:
+  - **"Xom javoblar"** — *"Savol, javob va vaqt bo'yicha audit ma'lumoti."*
+    Test bloki bo'yicha: Savol · Javob · Vaqt · Tahrirlar.
+  - **"O'chirish"** — *"Bu amalni ortga qaytarib bo'lmaydi. O'quvchi va uning barcha
+    natijalari o'chiriladi."*
 
----
+**"Yig'ma ko'rsatkichlar"** — 4 ta kartochka: **"Shaxsiyat tipi"**,
+**"Yetuklik indeksi"**, **"Aktivlik indeksi"**, **"Kasb qiziqishlari"**.
+Natija hali bo'lmasa — *"Hali natija yo'q"*.
 
-## 6. Dastur (test to'plami) biriktirish
+**"Diagrammalar"**: **"16 tip o'qlari"**, **"Shaxsiyatning 5 omili"**,
+**"Kasb qiziqishlari"**, **"Aktivlik va motivatsiya"**. Topshirilmagan blok uchun
+*"Bu testning natijasi hali mavjud emas"*.
 
-Chap menyu → **"Dasturlar"**. Dastur — bu maktabga biriktiriladigan testlar to'plami
-(masalan, standart 4 blok yoki qisqartirilgan variant).
+**"AI tahlil"** — 6-bo'limga qarang.
 
-📷 *[Skrinshot: Dasturlar ro'yxati]*
+**"Sessiyalar tarixi"** — o'quvchi bir necha marta topshirgan bo'lsa, barcha urinishlar
+(Boshlangan · Yakunlangan · Davomiyligi · Ishonchlilik · Holat).
 
-- **"Tizim"** dasturlari — tayyor, o'zgartirib bo'lmaydigan standart to'plamlar.
-- **"Mening"** dasturlarim — siz yaratgan, moslashtirilgan to'plamlar.
+### 5.4 Eksport (Excel va PDF)
 
-### 6.1 Yangi dastur yaratish va unga test qo'shish
+**Excel:** **"O'quvchilar"** sahifasidagi **"Excel'ga eksport"** tugmasi. **Joriy
+filtrlarga mos** o'quvchilar `.xlsx` fayl sifatida yuklanadi (`oquvchilar-eksport-SANA.xlsx`).
+Ya'ni avval filtrni sozlang, keyin eksport qiling — aks holda hamma o'quvchi tushadi.
 
-1. **"Yangi dastur"** → kod (masalan `PROFILE_9`), nomi, tavsifi, ko'rinishi
-   ("Ommaviy" — barcha maktabda ko'rinadi, yoki "Biriktirilgan" — faqat tanlangan
-   maktablarda) kiritiladi → **"Yaratish"**.
-2. Dastur ochilgan sahifada **"Testlar"** bo'limida **"Test qo'shish"** tugmasi bilan
-   kerakli testlarni (masalan, 16 tipli shaxsiyat modeli, RIASEC) tanlab qo'shing.
-   Testlarni **"Yuqoriga"/"Pastga"** tugmalari bilan tartiblash mumkin.
-3. Dastur tayyor bo'lgach **"Nashr qilish"** tugmasini bosing — shundan keyingina u
-   maktablarga biriktirilishi mumkin bo'ladi. (Kamida bitta test bo'lishi shart;
-   umumiy vaqt juda uzun bo'lsa, tizim ogohlantiradi.)
+**PDF:** o'quvchi profilidagi **"PDF yuklab olish"** — bitta o'quvchining to'liq hisoboti
+(`hisobot-....pdf`). Maktabga yoki ota-onaga berish uchun mo'ljallangan.
 
-### 6.2 Dasturni maktabga biriktirish
-
-Dastur sahifasida **"Biriktirilgan maktablar"** bo'limi:
-
-📷 *[Skrinshot: Dasturga maktab biriktirish paneli]*
-
-1. Qidiruv maydoniga maktab nomini yozing.
-2. Ro'yxatdan maktabni tanlab **"Biriktirish"**ni bosing.
-3. Endi shu maktab havolasidan kirgan o'quvchilar aynan shu dasturdagi testlarni
-   ko'radi. Biriktirilgan maktabni ro'yxatdan olib tashlash — maktab nomi yonidagi
-   olib tashlash belgisi orqali.
-
-**Eslatma:** tizim dasturlarining tarkibi (qaysi testlar borligi) himoyalangan —
-o'zgartirib bo'lmaydi, faqat maktabga biriktirish/olib tashlash mumkin.
+> Eksport qilingan fayllarda **haqiqiy ism va telefon** bo'ladi. Ularni umumiy papkaga
+> qo'ymang, guruhga tashlamang — 7-bo'limga qarang. Har bir Excel eksporti
+> **"Audit jurnali"**ga *"O'quvchilar ro'yxati eksport qilindi"* deb yoziladi.
 
 ---
 
-## 7. Test yuklash (testlar katalogi)
+## 6. AI tahlili
 
-Chap menyu → **"Testlar katalogi"**.
+Chap menyu → **"AI sozlamalari"**.
 
-📷 *[Skrinshot: Testlar katalogi — "Tizim metodikalari" va "Mening testlarim"]*
+### 6.1 Provayder kalitini kiritish
 
-- **"Tizim metodikalari"** — tayyor, o'zgartirib bo'lmaydigan 4 asosiy test
-  (savollari/shkalasi himoyalangan — faqat ko'rish uchun ochiladi).
-- **"Mening testlarim"** — siz JSON fayldan yuklagan qo'shimcha testlar.
+Sahifada uchta provayder kartasi bor: **"Gemini"**, **"OpenAI"**, **"Anthropic"**.
+Ularning hech biri kalitsiz ishlamaydi. Kalit sozlanmagan bo'lsa, sahifa tepasida
+qizil ogohlantirish turadi:
+*"AI tahlil ishlamaydi — kamida bitta provayder sozlanishi kerak."*
 
-### Yangi test yuklash
+Har bir kartada:
 
-1. **"Test yuklash"** tugmasini bosing.
-2. Ochilgan oynada tayyor JSON faylni tanlang (yoki shu yerga tashlang). Fayl tuzilishi
-   metodolog/dasturchi tomonidan tayyorlanadi (`code`, `nameUz`, savollar ro'yxati va
-   h.k. — aniq format uchun `docs/03-psixologik-metodikalar.md`ga qarang).
-3. Fayl to'g'ri bo'lsa, tizim savollar sonini va taxminiy davomiylikni ko'rsatadi
-   ("Fayl to'g'ri — yuklashga tayyor"). Xato bo'lsa, aniq xatolar ro'yxati chiqadi —
-   ularni tuzatib qayta urinib ko'ring.
-4. **"Yuklash"** — test **"Qoralama"** holatida yaratiladi (hali hech qayerda
-   ishlatilmaydi). Uni dasturga qo'shish uchun avval kerakli dasturda **"Test
-   qo'shish"** orqali biriktiring (6-bo'lim).
+- **"API kaliti"** — kalit kiritilgan bo'lsa yashiringan ko'rinishda turadi.
+  Almashtirish uchun **"O'zgartirish"**ni bosing va yangi kalitni
+  **"Yangi API kalitini kiriting"** maydoniga yozing. Saqlashdan oldin tasdiqlash
+  so'raladi: *"Yangi kalit saqlangach eskisi darhol ishlamay qoladi."*
+  - *"Kalit shifrlangan holda saqlanadi va boshqa hech qayerda to'liq ko'rsatilmaydi"* —
+    ya'ni kiritganingizdan keyin kalitni tizimdan qayta o'qib bo'lmaydi. Kalitni o'zingiz
+    ham xavfsiz joyda saqlang.
+  - Maydonni **bo'sh qoldirsangiz mavjud kalit o'zgarmaydi** — bu ataylab shunday
+    qilingan, kalitni tasodifan o'chirib qo'ymaslik uchun.
+- **"Model nomi"** — tavsiya etilgan model ko'rsatiladi, lekin majburiy emas: istalgan
+  model nomini yozishingiz mumkin.
+- **"Maksimal token soni"** va **"Temperature"** — javob uzunligi va erkinligi.
+  Bilmasangiz tegmang.
+- **"Faol (tahlilda ishlatiladi)"** — belgilanmagan provayder umuman ishlatilmaydi.
+- **"Default qilish"** — bu provayder birinchi navbatda ishlatiladi. Tasdiqlash oynasida
+  ogohlantirish bor: *"Bu ishlab chiqarishda AI xarajati va javob vaqtiga ta'sir qiladi."*
+- **"Aloqani tekshirish"** — kalit haqiqatan ishlayotganini tekshiradi. Muvaffaqiyatli
+  bo'lsa "Ishlayapti · N ms" deb chiqadi. **Kalit kiritgandan keyin har doim shu tugmani
+  bosing** — aks holda xato faqat birinchi o'quvchi test topshirganda ma'lum bo'ladi.
+
+Sahifa pastida yana ikki bo'lim bor: **"Foydalanish statistikasi"** (Chaqiruvlar (joriy oy),
+Kirish tokenlari, Chiqish tokenlari, Taxminiy xarajat) va **"Promptlar"** (AI'ga
+yuboriladigan ko'rsatma matnlari — **"Ko'rish"** tugmasi bilan o'qish mumkin,
+bu yerda tahrirlanmaydi).
+
+### 6.2 Fallback zanjiri nima
+
+**"Fallback tartibi"** bo'limi. Izohi shunday:
+
+> *"Birinchi provayder ishlamasa (kalit xato, limit tugagan, javob bermadi), tizim
+> ro'yxatdagi keyingi provayderga o'tadi."*
+
+Oddiy qilib aytganda — bu **zaxira reja**. Tizim avval birinchi provayderga murojaat
+qiladi; u javob bermasa yoki xato qaytarsa, o'zi ikkinchisiga, keyin uchinchisiga
+o'tadi. Superadmin aralashuvi shart emas.
+
+Tartibni **"Yuqoriga ko'chirish"** / **"Pastga ko'chirish"** tugmalari bilan
+o'zgartirasiz.
+
+**Nima uchun kerak:** AI xizmatlari vaqti-vaqti bilan ishlamay qoladi yoki oylik limit
+tugaydi. Zanjir bo'lmasa, o'sha kuni topshirgan hamma o'quvchi hisobotsiz qoladi.
+
+**Amaliy maslahat:** kamida **ikkita** provayderga kalit kiriting va ikkalasini ham
+**"Faol"** qiling. Bitta provayder — bu bitta nosozlik nuqtasi.
+
+### 6.3 ⚠️ "Avtomatik shablon hisobot" belgisi
+
+Agar **zanjirdagi barcha** provayder ishlamasa, tizim o'quvchini hisobotsiz qoldirmaydi —
+u **shablon** asosida matn tayyorlaydi. Bunday hisobot profil sahifasida sariq
+**"Avtomatik shablon hisobot"** belgisi bilan chiqadi va yonida izoh turadi:
+
+> *"Bu matnni AI yozmagan: barcha AI provayderlari javob bermagani uchun tizim avtomatik
+> shablon hisobot tayyorladi. Uni shaxsiy tahlil sifatida o'qimang — AI sozlamalarini
+> tekshirib, tahlilni qayta ishga tushiring."*
+
+**Buni tushunish juda muhim.** Shablon hisobot — bu **oldindan yozilgan matnlarni**
+o'quvchining tipi va ball darajalari bo'yicha yig'ib qo'yilgan natija. U:
+
+- **shaxsiy emas** — bir xil tipdagi barcha o'quvchi deyarli bir xil matnni oladi;
+- o'quvchining **kombinatsiyasini** hisobga olmaydi — masalan, yuqori qiziqish past
+  motivatsiya bilan qanday bog'lanishini aytmaydi;
+- ota-onaga yoki o'quvchiga **shaxsiy tahlil sifatida berilmasligi kerak**.
+
+**Ko'rsangiz nima qilish kerak:**
+
+1. **"AI sozlamalari"**ga o'ting va har bir provayderda **"Aloqani tekshirish"**ni bosing.
+2. Muammoni toping — odatda kalit muddati tugagan, oylik limit tugagan yoki model nomi
+   noto'g'ri yozilgan.
+3. Tuzatgandan keyin o'quvchi profilida **"Qayta tahlil"** tugmasini bosing va haqiqiy
+   provayderni tanlang.
+4. Shu davrda ko'p o'quvchi shablon hisobot olgan bo'lsa, ularning hammasini qayta
+   ishga tushiring.
+
+**Boshqa belgi — "Moderatsiya qilingan hisobot"** (to'q sariq):
+
+> *"Bu javobda taqiqlangan atama ikkinchi urinishda ham topilgan, shuning uchun u
+> "moderatsiya qilindi" belgisi bilan saqlangan. Matnni o'quvchiga yoki ota-onaga
+> ko'rsatishdan oldin albatta ko'zdan kechiring va zarur bo'lsa tahlilni qayta ishga
+> tushiring."*
+
+Ya'ni AI matnida tashxisga o'xshash yoki salbiy yorliq bo'lgan so'z topilgan.
+Bunday hisobotni **albatta o'zingiz o'qib chiqing** va ko'rsatishdan oldin baholang.
+
+### 6.4 Tahlil qanday kechadi
+
+O'quvchi testni yakunlashi bilan tahlil **navbatga** qo'yiladi va fonda bajariladi.
+Profil sahifasida holat ko'rinadi:
+
+- **"Tahlil tayyorlanmoqda"** — *"Odatda 1 daqiqa vaqt ketadi. Sahifa avtomatik
+  yangilanadi."*
+- **"Tahlil muvaffaqiyatsiz"** — *"AI tahlil yakunlanmadi. Boshqa provider bilan qayta
+  urinib ko'ring."* → **"Qayta urinish"** tugmasi.
+- *"Bu sessiya uchun AI tahlil hali mavjud emas."*
+
+**"Tarix"** tugmasi — **"AI tahlillar tarixi"**ni ochadi (Navbatda / Ishlamoqda /
+Tahlil qilingan / Muvaffaqiyatsiz). Bir necha marta qayta tahlil qilingan bo'lsa,
+eskilarini shu yerdan ko'rish mumkin.
+
+Hisobot bo'limlari: Umumiy xulosa · Shaxsiyat portreti · Kuchli tomonlar · O'sish
+zonalari · O'quv uslubi · Motivatsiya · Aktivlik · Kasb yo'nalishlari · Tavsiyalar
+(O'quvchiga / O'qituvchiga / Ota-onaga).
 
 ---
 
-## 8. Sozlamalar (parol va 2FA)
+## 7. Maxfiylik va mas'uliyat
 
-Chap menyu → **"Sozlamalar"**.
+### 7.1 AI'ga shaxsiy ma'lumot yuborilmaydi
 
-📷 *[Skrinshot: Sozlamalar sahifasi]*
+Tizim AI provayderga **hech qanday shaxsni aniqlaydigan ma'lumot yubormaydi.**
 
-### 8.1 Parolni o'zgartirish
+| ❌ Yuborilmaydi | ✅ Yuboriladi |
+|----------------|--------------|
+| Ism, familiya, otasining ismi | Yoshi (masalan: 16) |
+| Telefon raqami (o'zi va ota-onasi) | Sinfi (masalan: 9) |
+| Elektron pochta | Jinsi |
+| Aniq tug'ilgan sana | Test ballari va daraja nomlari |
+| Maktab nomi, viloyat, tuman | Ishonchlilik ko'rsatkichi |
 
-**"Joriy parol"**, **"Yangi parol"**, **"Yangi parolni tasdiqlang"** maydonlarini
-to'ldirib **"Saqlash"**ni bosing. Yangi parol kamida 10 belgi, kamida bitta harf va
-bitta raqamdan iborat bo'lishi shart.
+Ya'ni AI uchun bu "16 yoshli, 9-sinf o'quvchisi, quyidagi ballar bilan" — kim ekanini
+u bilmaydi. Ism va telefon **faqat sizning boshqaruv panelingizda** saqlanadi.
 
-### 8.2 Ikki bosqichli autentifikatsiya (2FA) — tavsiya etiladi
+Bu qoida siz yaratgan anketalarga ham tegishli: ularning ballari yuboriladi, matnli
+javoblar va shaxsiy ma'lumot yuborilmaydi. **Shu sababli o'z anketangizga ism, telefon
+yoki manzil so'raydigan savol qo'shmang.**
 
-2FA hisobingizni parol o'g'irlansa ham himoya qiladi (kiruvchi kod telefoningizda
-bo'ladi).
+### 7.2 Natija tashxis emas
 
-1. **"Yoqish"** tugmasini bosing.
-2. Ekranda chiqqan QR kodni (yoki "Maxfiy kalit"ni qo'lda) autentifikatsiya ilovangizga
-   (Google Authenticator, Authy va h.k.) qo'shing.
-3. Ilova ko'rsatgan 6 xonali kodni kiritib tasdiqlang.
-4. Tizim bir martalik **"Zaxira kodlar"** ro'yxatini ko'rsatadi — **ularni xavfsiz
-   joyda saqlang** (masalan, qog'ozga yozib seyfda). Telefon yo'qolsa, shu kodlar
-   orqali kirish mumkin bo'ladi.
+Bu eng muhim mas'uliyat chegarasi.
 
-2FA'ni o'chirish uchun **"O'chirish"** → joriy parolingizni tasdiqlang.
+- Shaxsiyat testi, 5 omil anketasi, kasb qiziqishlari va aktivlik anketasi —
+  **o'zini o'zi baholash** vositalari. Ular o'quvchi o'zi haqida nima deb o'ylashini
+  o'lchaydi, kasallikni yoki qobiliyatni emas.
+- AI'ga tashxis qo'yish **qat'iy taqiqlangan**: "depressiya", "ADHD", "autizm" kabi
+  atamalar promptda taqiqlangan va javob qo'shimcha filtrdan o'tkaziladi. Shunga qaramay
+  bironta shubhali atama o'tib ketsa, hisobot **"Moderatsiya qilingan hisobot"** belgisi
+  bilan saqlanadi (6.3-bo'lim).
+- **Natija taqdirni belgilamaydi.** "Kasb qiziqishlari" — bu qaysi yo'nalish hozir
+  qiziqroq tuyulayotganini ko'rsatadi, o'quvchi kim bo'lishi kerakligini emas.
+  O'smirda bu ko'rsatkichlar bir yilda sezilarli o'zgaradi.
+- **Natijani yorliqqa aylantirmang.** O'quvchini uning tipi bilan atash, sinfda e'lon
+  qilish, sinflarga ajratish uchun ishlatish — zarar keltiradi.
+- Agar tahlilda tashvishli narsa ko'rsangiz (masalan o'ta past motivatsiya, ijtimoiy
+  yakkalanish belgilari) — bu **suhbat boshlash uchun sabab**, xulosa emas. Malakali
+  psixolog bilan ishlang.
+
+### 7.3 Ma'lumotni kim ko'radi
+
+| Kim | Nimani ko'radi |
+|-----|----------------|
+| **Superadmin** | Hammasini: ism, telefon, ballar, AI tahlil, xom javoblar |
+| **Maktab mas'uli** | Boshqaruv paneliga **kira olmaydi**. Faqat siz unga bergan narsani ko'radi (masalan PDF hisobot) |
+| **O'quvchi** | Testni yakunlagach faqat qisqartirilgan natija: **"Kuchli tomonlaring"** va **"Senga mos yo'nalishlar"**. To'liq hisobot, ballar va boshqalarning natijasi ko'rsatilmaydi |
+| **Ota-ona** | Tizimda kirish huquqi yo'q. Siz uzatgan narsanigina biladi |
+| **AI provayder** | Faqat 7.1-jadvaldagi anonim ma'lumot |
+
+O'quvchi test oxirida ko'radigan xabar: *"Natijalar maktab psixologiga yuboriladi."*
+Ro'yxatdan o'tishda u rozilik belgisini qo'yadi:
+*"Ma'lumotlarim ta'lim maqsadida ishlatilishiga roziman"*.
+
+**Sizning mas'uliyatingiz:**
+
+- Hisobni **boshqa hech kim bilan bo'lishmang.** Ikkinchi odamga kerak bo'lsa, texnik
+  mutaxassisdan unga alohida hisob so'rang.
+- **2FA'ni yoqing** (1.3-bo'lim). Sizning parolingiz — butun maktab o'quvchilarining
+  shaxsiy ma'lumotiga kalit.
+- **Eksport fayllarini nazorat qiling.** `.xlsx` va `.pdf` fayllarda haqiqiy ism va
+  telefon bor. Umumiy kompyuterda qoldirmang, kerak bo'lmasa o'chirib tashlang.
+- **Barcha muhim amal yozib boriladi.** **"Audit jurnali"**da kim, qachon, nima
+  qilgani ko'rinadi: tizimga kirish, parol o'zgarishi, maktab o'chirilishi, havola
+  yangilanishi, AI kalitining almashtirilishi, o'quvchining o'chirilishi,
+  o'quvchilar ro'yxatining eksport qilinishi va boshqalar. Filtrlar:
+  **"Harakat turi"**, **"Obyekt turi"**, **"Sanadan"**, **"Sanagacha"**;
+  har bir yozuv uchun **"Batafsil"** tugmasi bilan o'zgarishlarni ko'rish mumkin.
 
 ---
 
-## 9. Tez orada qo'shiladigan bo'limlar
+## 8. Muammolar va yechimlar
 
-Quyidagi menyu bandlari boshqaruv panelida ko'rinadi, lekin hozircha **qurilish
-jarayonida** ("Bu sahifa hali qurilmoqda" xabari chiqadi):
+### 8.1 O'quvchi tomonidagi muammolar
 
-| Bo'lim | Nima uchun kerak bo'ladi |
-|--------|---------------------------|
-| **Sessiyalar** | Barcha test sessiyalarini (yakunlangan, davom etayotgan, muvaffaqiyatsiz) bitta ro'yxatda ko'rish va filtrlash — hozircha bu ma'lumotlar Boshqaruv paneli va O'quvchilar orqali qisman ko'rinadi |
-| **AI sozlamalari** | Gemini/OpenAI/Anthropic kalitlarini kiritish, qaysi provayder standart ekanini tanlash, ulanishni sinash. Hozircha bu sozlamalar to'g'ridan-to'g'ri serverdagi ma'lumotlar bazasiga (texnik mutaxassis yordamida) kiritiladi |
-| **Audit jurnali** | Kim, qachon, qaysi amalni bajarganini (login, o'chirish, sozlama o'zgartirish) ko'rish — xavfsizlik nazorati uchun |
+| O'quvchi ko'rayotgan xabar | Sabab | Nima qilish kerak |
+|---------------------------|-------|-------------------|
+| **"Havola ishlamayapti"** — *"Havola ishlamayapti, maktabingizdan yangisini so'rang."* | Havola noto'g'ri ko'chirilgan yoki **"Havolani yangilash"** bilan almashtirilgan | **"Maktablar"**dan **"Havolani nusxalash"** bilan joriy havolani oling va qayta yuboring |
+| **"Test vaqtincha yopilgan"** | Maktab **"Nofaol"** holatda | Maktab qatorida **"Faollashtirish"** |
+| **"Test hali tayyor emas"** — *"Bu maktab uchun test hali tayyorlanmagan..."* | Maktabga hech qanday dastur tegishli emas | **"Dasturlar"**dan nashr etilgan dasturni maktabga **"Biriktirish"** yoki ommaviy dasturni nashr qilish (3.2, 3.6) |
+| **"Sen allaqachon testni topshirgansan..."** | Bu o'quvchi allaqachon ro'yxatdan o'tgan | To'g'ri xatti-harakat. Qayta topshirish kerak bo'lsa, muammoni tekshiring |
+| **"Juda ko'p urinish bo'ldi..."** | Kunlik limit tugagan yoki juda tez-tez urinilgan | Maktab **"Tahrirlash"** → **"Kunlik ro'yxatdan o'tish limiti"**ni oshiring (2.2) |
+| **"Sessiya muddati tugagan..."** | O'quvchi juda uzoq tanaffus qilgan | Qaytadan boshlashi kerak |
+| Internet uzildi | — | Muammo emas: *"Internet yo'q — javoblaring saqlanmoqda, ulanish tiklanganda yuboriladi"*. Sahifani yopmasin |
 
-Bu bo'limlar tayyor bo'lgach, shu qo'llanmaga yangi bo'lim sifatida qo'shiladi.
+### 8.2 Sizning tomondagi muammolar
+
+| Holat | Nima qilish kerak |
+|-------|-------------------|
+| **Kira olmayapman: "Login yoki parol noto'g'ri"** | Katta/kichik harfga e'tibor bering. 5 marta xato — 15 daqiqa blok |
+| **"Hisob 15 daqiqaga bloklandi"** | 15 daqiqa kuting, shoshib qayta urinmang |
+| **Telefonim yo'qoldi, 2FA kodi yo'q** | **Zaxira kodlardan** birini "Tasdiqlash kodi (2FA)" maydoniga kiriting. Kodlar ham yo'q bo'lsa — faqat texnik mutaxassis yordam bera oladi (1.3) |
+| **Maktabni o'chira olmayapman** | *"Bu maktabda o'quvchilar bor"*. Maktabni **"Nofaol qilish"** yetarli |
+| **AI tahlil "tayyorlanmoqda"da qotib qoldi** | Bir necha daqiqa kuting. O'zgarmasa **"Qayta tahlil"**. Undan oldin **"AI sozlamalari"**da **"Aloqani tekshirish"** |
+| **"Avtomatik shablon hisobot"** belgisi chiqdi | 6.3-bo'lim — bu AI matni emas |
+| **"Faol AI provider topilmadi"** | **"AI sozlamalari"**da kamida bitta provayderga kalit kiriting va **"Faol"** qiling (6.1) |
+| **Dasturni nashr qila olmayapman** | *"Kamida bitta test biriktirilmasa..."* — **"Test qo'shish"** (3.4) |
+| **Anketani nashr qila olmayapman** | **"Nashrga to'sqinlik qilayotgan..."** ro'yxatiga qarang; ko'pincha talqin oraliqlari to'liq emas (4.4) |
+| **Tizim testida savol qo'sha olmayapman** | Bu ataylab: 4.1 va 4.2. **"Nusxa olish"** bilan nusxa yarating |
+| **"Eksport hali mavjud emas"** | Eksport xizmati javob bermayapti — birozdan keyin qayta urining, davom etsa texnik mutaxassisga murojaat qiling |
+| **"Yozuv bir vaqtda boshqa joyda o'zgartirildi"** | Sahifani yangilab, amalni qaytadan bajaring |
+| **"Server bilan bog'lanib bo'lmadi"** | Internet aloqasini tekshiring |
+
+### 8.3 Boshqa muammolar
+
+Yuqoridagi ro'yxatda yo'q muammo bo'lsa — texnik mutaxassisga murojaat qiling.
+Ular uchun hujjatlar: [`README.md`](../README.md) va
+[`13-deploy-va-infratuzilma.md`](13-deploy-va-infratuzilma.md).
+
+Murojaat qilishdan oldin quyidagilarni yozib oling: qaysi sahifada bo'ldi, qanday
+xabar chiqdi (aynan matnini), qachon va nima qilayotgan edingiz.
+
+### 8.4 Hali mavjud bo'lmagan imkoniyatlar
+
+Quyidagilar hozircha **yo'q**. Ular haqida so'ralsa, "hali qurilmagan" deng.
+
+| Nima | Holat |
+|------|-------|
+| **"Sessiyalar"** bo'limi (chap menyuda ko'rinadi) | **Hali mavjud emas.** Ochilsa *"Bu sahifa hali qurilmoqda"* chiqadi. Boshqaruv panelidagi **"Tahlil navbatida"** kartochkasini bosish ham shu qurilmagan sahifaga olib boradi. Sessiyalar haqidagi ma'lumot hozircha **"O'quvchilar"** ro'yxati va o'quvchi profilidagi **"Sessiyalar tarixi"** orqali ko'riladi |
+| **Maktab mas'uli uchun alohida login** | **Hali mavjud emas** va MVP rejasida ham yo'q. Bitta rol — superadmin |
+| **2FA yoqishda QR kod rasmi** | **Hali mavjud emas.** Faqat matn ko'rinishidagi **"Maxfiy kalit"** beriladi, ilovaga qo'lda kiritiladi (1.3) |
+| **Zaxira kodlarni qayta ko'rish yoki qayta yaratish** | **Hali mavjud emas.** Kodlar faqat bir marta ko'rsatiladi (1.3) |
+| **Promptlarni boshqaruv panelidan tahrirlash** | **Hali mavjud emas.** **"AI sozlamalari" → "Promptlar"** faqat **"Ko'rish"** uchun |
+| **AI hisobotini qo'lda tahrirlash** | **Hali mavjud emas.** Faqat **"Qayta tahlil"** bilan qayta yaratish mumkin |
+| **Bir necha o'quvchining PDF hisobotini birdaniga yuklash** | **Hali mavjud emas.** PDF har bir o'quvchi profilidan alohida yuklanadi |
+| **O'quvchini boshqa maktabga ko'chirish** | **Hali mavjud emas** |
+| **Ekran skrinshotlari bu qo'llanmada** | **Hali mavjud emas.** Matnli tavsif ekranga to'liq mos keladi |
 
 ---
 
-## 10. Muammo yuzaga kelsa
+## 9. Maktab mas'uli uchun qisqa varaqa
 
-- **Havola ishlamayapti** ("Havola ishlamayapti, maktabingizdan yangisini so'rang" xabari
-  o'quvchiga chiqsa) — maktab **"Nofaol"** holatda emasligini va havola oxirgi marta
-  **"Havolani yangilash"** bilan almashtirilmaganini tekshiring (3-bo'lim).
-- **O'quvchi "test vaqtincha yopilgan" degan xabar ko'rmoqda** — maktab holatini
-  **"Faollashtirish"**ga o'zgartiring.
-- **AI tahlil uzoq vaqt "tayyorlanmoqda" holatida qolib ketsa** — bir necha daqiqadan
-  so'ng ham o'zgarmasa, o'quvchi profilida **"Qayta urinish"** tugmasini bosing yoki
-  texnik mutaxassisga murojaat qiling.
-- **Boshqa texnik muammolar** — texnik mutaxassisga murojaat qiling; ular uchun
-  batafsil qo'llanma [`README.md`](../README.md) va [`docs/13-deploy-va-infratuzilma.md`](13-deploy-va-infratuzilma.md)da.
+> Bu bo'limni maktab mas'uliga alohida yuborish mumkin.
+
+**Sizga nima berildi:** maktabingizga tegishli **shaxsiy havola** (`.../t/...` ko'rinishida)
+va, ehtimol, uning **QR kodi**. Balki qo'shimcha **6 xonali kirish kodi** ham berilgan.
+
+**Sizning ishingiz — 5 qadam:**
+
+1. **Havolani o'quvchilarga yetkazing.** QR kodni chop etib sinf doskasiga yoki e'lon
+   taxtasiga osing — o'quvchi telefon kamerasi bilan ochadi. Havolani sinf guruhiga
+   yuborish ham mumkin.
+2. **Kirish kodi berilgan bo'lsa**, uni **og'zaki**, sinfda ayting. Havola bilan bitta
+   xabarda yubormang.
+3. **O'quvchilarga tushuntiring:**
+   - Bu **baho emas**. Tizimda shunday yozilgan: *"Bu test baho emas, shuning uchun
+     tashvishlanma"* va *"Bu yerda to'g'ri yoki noto'g'ri javob yo'q — faqat senga xos
+     javoblar bor."*
+   - Shoshmasin — **diqqat bilan** javob bergan o'quvchining natijasi foydali bo'ladi.
+     Tez-tez bosib chiqilgan javoblarni tizim sezadi va bunday natija hisobga olinmaydi.
+   - Test bir necha blokdan iborat; **bir o'tirishda tugatish shart emas**, keyinroq
+     davom ettirsa bo'ladi (**"Keyinroq davom ettiraman"** tugmasi bor).
+   - **Internet uzilsa javoblar yo'qolmaydi** — sahifani yopmasin, ulanish tiklanganda
+     o'zi yuboriladi.
+4. **Sharoit yarating:** tinch xona, yetarli vaqt (~20–40 daqiqa, dasturga qarab),
+   zaryadlangan telefon yoki kompyuter. Dars oxirining oxirgi 5 daqiqasida
+   **topshirtirmang** — natija ishonchsiz chiqadi.
+5. **Bir necha dastur ko'rinsa** — o'quvchiga **qaysi birini** tanlash kerakligini
+   oldindan ayting, aks holda har kim boshqasini tanlaydi.
+
+**O'quvchi nima ko'radi:** havolani ochadi → qisqa anketa (F.I.Sh., tug'ilgan sana,
+jinsi, sinf, telefon; ota-ona telefoni va email ixtiyoriy) → rozilik belgisi →
+**"Testni boshlash"** → savollar bloklari → oxirida qisqacha natija
+("Kuchli tomonlaring" va "Senga mos yo'nalishlar").
+
+**Nima sizga ko'rinmaydi:** to'liq natijalar, ballar va tahlil **faqat platforma
+mas'uliga (psixologga)** ko'rinadi. Sizda boshqaruv paneliga kirish huquqi yo'q.
+Natijalar kerak bo'lsa, platforma mas'uliga murojaat qiling — u har bir o'quvchi uchun
+PDF hisobot tayyorlab bera oladi.
+
+**Muammo chiqsa:**
+
+| O'quvchi ko'rgan xabar | Nima qilish |
+|------------------------|-------------|
+| *"Havola ishlamayapti..."* | Platforma mas'ulidan yangi havola so'rang |
+| *"Test vaqtincha yopilgan"* | Platforma mas'uliga xabar bering — maktab nofaol qilingan |
+| *"Bu maktab uchun test hali tayyorlanmagan..."* | Platforma mas'uliga xabar bering — dastur biriktirilmagan |
+| *"Juda ko'p urinish bo'ldi..."* | Kunlik limit tugagan. Ertaga davom ettiring yoki limitni oshirishni so'rang |
+| *"Sen allaqachon testni topshirgansan..."* | O'quvchi allaqachon topshirgan. Qayta kerak bo'lsa, platforma mas'uliga murojaat qiling |
+
+---
+
+## Ilova: chap menyudagi bo'limlar
+
+| Menyu bandi | Qaysi bo'limda tavsiflangan |
+|-------------|------------------------------|
+| **"Boshqaruv paneli"** | 2.7 |
+| **"Maktablar"** | 2 |
+| **"O'quvchilar"** | 5.1, 5.4 |
+| **"Sessiyalar"** | ⚠️ hali qurilmagan — 8.4 |
+| **"Testlar katalogi"** | 4 |
+| **"Dasturlar"** | 3 |
+| **"AI sozlamalari"** | 6 |
+| **"Audit jurnali"** | 7.3 |
+| **"Sozlamalar"** | 1.2, 1.3 |

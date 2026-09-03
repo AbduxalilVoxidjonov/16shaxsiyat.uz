@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +10,9 @@ import { useToast } from '@/shared/ui/useToast';
 import { useCreateCatalogScale, useUpdateCatalogScale } from '../api/useCatalogScales';
 import { useCatalogErrorMessage } from '../lib/useCatalogErrorMessage';
 import { createScaleFormSchema, type ScaleFormValues } from '../model/scaleFormSchema';
-import type { CatalogScaleItem } from '../model/types';
+import { areBandsSavable } from '../model/interpretationBands';
+import type { CatalogScaleItem, InterpretationBand } from '../model/types';
+import { InterpretationBandsEditor } from './InterpretationBandsEditor';
 
 export interface ScaleDialogProps {
   open: boolean;
@@ -31,9 +33,15 @@ const EMPTY_VALUES: ScaleFormValues = {
 
 /**
  * Shkala yaratish/tahrirlash — faqat `Custom` testlarda ko'rsatiladi.
- * `interpretationBands` UI'da tahrirlanmaydi, lekin tahrirlashda mavjud bandlar
- * o'zgarishsiz qaytariladi (backend ularni `?? []` bilan to'liq almashtiradi —
- * `api/useCatalogScales.ts` izohiga qarang).
+ *
+ * Talqin oraliqlari (`interpretationBands`) shu yerda TAHRIRLANADI
+ * ({@link InterpretationBandsEditor}). Ular react-hook-form emas, oddiy `useState` da
+ * saqlanadi: massiv ichidagi son/matn maydonlarini RHF `useFieldArray` bilan boshqarish bu
+ * yerda hech qanday foyda bermaydi (zod sxemasi qatorlar orasidagi bog'liqlikni — bo'shliq,
+ * ustma-ustlik — baribir alohida tekshiradi), holat esa soddaroq bo'ladi.
+ *
+ * Oraliqlar buzilgan bo'lsa SAQLASH BLOKLANADI (`areBandsSavable`) — backend `PUT` ni qabul
+ * qilardi va xato faqat nashrda chiqardi (`docs/03` §6.3).
  */
 export function ScaleDialog({ open, testId, scale, onClose }: ScaleDialogProps) {
   const { t } = useTranslation();
@@ -43,6 +51,13 @@ export function ScaleDialog({ open, testId, scale, onClose }: ScaleDialogProps) 
 
   const createScale = useCreateCatalogScale(testId);
   const updateScale = useUpdateCatalogScale(testId);
+
+  // Oraliqlar boshlang'ich holati MOUNT paytida olinadi (`useEffect` + `setState` emas):
+  // oyna har ochilishda qayta mount bo'ladi (`ScalesSection` uni shartli render qiladi va
+  // `key` bilan ajratadi), shu sabab effekt orqali sinxronlash kerak emas.
+  const [bands, setBands] = useState<InterpretationBand[]>(() =>
+    scale ? scale.interpretationBands.map((band) => ({ ...band })) : [],
+  );
 
   const {
     register,
@@ -68,7 +83,12 @@ export function ScaleDialog({ open, testId, scale, onClose }: ScaleDialogProps) 
     );
   }, [open, scale, reset]);
 
+  const bandsSavable = areBandsSavable(bands);
+
   const onSubmit = handleSubmit(async (values) => {
+    if (!bandsSavable) {
+      return;
+    }
     try {
       if (scale) {
         await updateScale.mutateAsync({
@@ -77,7 +97,7 @@ export function ScaleDialog({ open, testId, scale, onClose }: ScaleDialogProps) 
             nameUz: values.nameUz,
             descriptionUz: values.descriptionUz ? values.descriptionUz : null,
             displayOrder: values.displayOrder,
-            interpretationBands: scale.interpretationBands,
+            interpretationBands: bands,
           },
         });
         toast.show({ variant: 'success', title: t('catalog.scaleForm.editSuccess') });
@@ -87,7 +107,7 @@ export function ScaleDialog({ open, testId, scale, onClose }: ScaleDialogProps) 
           nameUz: values.nameUz,
           descriptionUz: values.descriptionUz ? values.descriptionUz : null,
           displayOrder: values.displayOrder,
-          interpretationBands: [],
+          interpretationBands: bands,
         });
         toast.show({ variant: 'success', title: t('catalog.scaleForm.createSuccess') });
       }
@@ -103,13 +123,14 @@ export function ScaleDialog({ open, testId, scale, onClose }: ScaleDialogProps) 
     <Dialog
       open={open}
       onClose={onClose}
+      className="max-w-2xl"
       title={isEdit ? t('catalog.scaleForm.editTitle') : t('catalog.scaleForm.createTitle')}
       footer={
         <>
           <Button variant="outline" onClick={onClose} disabled={isMutating}>
             {t('common.cancel')}
           </Button>
-          <Button type="submit" form={FORM_ID} isLoading={isMutating}>
+          <Button type="submit" form={FORM_ID} isLoading={isMutating} disabled={!bandsSavable}>
             {t('common.save')}
           </Button>
         </>
@@ -153,13 +174,7 @@ export function ScaleDialog({ open, testId, scale, onClose }: ScaleDialogProps) 
           error={errors.displayOrder?.message}
           {...register('displayOrder', { valueAsNumber: true })}
         />
-        {isEdit && scale.interpretationBands.length > 0 && (
-          <p className="rounded-lg bg-neutral-50 p-3 text-sm text-neutral-600">
-            {t('catalog.scaleForm.bandsPreserved', {
-              count: scale.interpretationBands.length,
-            })}
-          </p>
-        )}
+        <InterpretationBandsEditor bands={bands} onChange={setBands} disabled={isMutating} />
       </form>
     </Dialog>
   );

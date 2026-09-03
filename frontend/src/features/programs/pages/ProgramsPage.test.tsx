@@ -5,7 +5,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
 import ProgramsPage from './ProgramsPage';
+import { jsonResponse, pagedResponse, problemResponse, type Schemas } from '@/test/apiMock';
 
+/** `GET /api/admin/programs` qatori — backend `AdminProgramListItemDto`. */
 const PROGRAM_1 = {
   id: 'program-1',
   code: 'PERSONALITY_PROFILE',
@@ -17,26 +19,29 @@ const PROGRAM_1 = {
   isSystem: true,
   displayOrder: 1,
   testCount: 4,
-};
+} satisfies Schemas['AdminProgramListItemDto'];
 
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
-function listResponse(items: unknown[] = [PROGRAM_1]) {
-  return {
-    items,
-    page: 1,
-    pageSize: 20,
-    totalCount: items.length,
-    totalPages: 1,
-    hasNext: false,
-    hasPrevious: false,
-  };
-}
+/**
+ * `POST /api/admin/programs` javobi — backend `AdminProgramDetailDto` (ro'yxat qatori EMAS:
+ * `testCount` yo'q, o'rniga `tests`/`assignedSchoolIds`/`descriptionUz` bor). Ilgari mock
+ * ro'yxat qatorini yoyib yuborardi va `testCount` ortiqcha maydoni sezilmay qolardi.
+ */
+const CREATED_PROGRAM = {
+  id: 'program-2',
+  code: 'NEW',
+  nameUz: 'Yangi dastur',
+  descriptionUz: null,
+  kind: 'Custom',
+  visibility: 'Public',
+  status: 'Draft',
+  isActive: true,
+  isSystem: false,
+  displayOrder: 1,
+  tests: [],
+  assignedSchoolIds: [],
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-01-01T00:00:00Z',
+} satisfies Schemas['AdminProgramDetailDto'];
 
 function mockFetch() {
   const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
@@ -44,29 +49,12 @@ function mockFetch() {
     const method = init?.method ?? 'GET';
 
     if (url.includes('/api/admin/programs') && method === 'GET') {
-      return Promise.resolve(jsonResponse(listResponse()));
+      return Promise.resolve(pagedResponse<'AdminProgramListItemDto'>([PROGRAM_1]));
     }
     if (url.includes('/api/admin/programs') && method === 'POST') {
-      return Promise.resolve(
-        jsonResponse(
-          {
-            ...PROGRAM_1,
-            id: 'program-2',
-            code: 'NEW',
-            nameUz: 'Yangi dastur',
-            kind: 'Custom',
-            isSystem: false,
-            status: 'Draft',
-            tests: [],
-            assignedSchoolIds: [],
-            createdAt: '2026-01-01T00:00:00Z',
-            updatedAt: '2026-01-01T00:00:00Z',
-          },
-          201,
-        ),
-      );
+      return Promise.resolve(jsonResponse<'AdminProgramDetailDto'>(CREATED_PROGRAM, 201));
     }
-    return Promise.resolve(jsonResponse({}, 404));
+    return Promise.resolve(problemResponse('NOT_FOUND', 404));
   });
   vi.stubGlobal('fetch', fetchMock);
   return fetchMock;

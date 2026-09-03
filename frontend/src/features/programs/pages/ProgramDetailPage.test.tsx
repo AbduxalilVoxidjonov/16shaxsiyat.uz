@@ -4,15 +4,16 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
 import ProgramDetailPage from './ProgramDetailPage';
+import { jsonResponse, problemResponse, type Schemas } from '@/test/apiMock';
 
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
-function programDetail(overrides: Record<string, unknown> = {}) {
+/**
+ * `GET /api/admin/programs/{id}` javobi — backend `AdminProgramDetailDto` shakli;
+ * `overrides` ham shu sxema bilan cheklangan, shuning uchun testda yozilgan har qanday
+ * maydon nomi backend shartnomasiga qarshi tekshiriladi.
+ */
+function programDetail(
+  overrides: Partial<Schemas['AdminProgramDetailDto']> = {},
+): Schemas['AdminProgramDetailDto'] {
   return {
     id: 'program-1',
     code: 'CUSTOM_1',
@@ -32,14 +33,14 @@ function programDetail(overrides: Record<string, unknown> = {}) {
   };
 }
 
-function mockFetch(detail: unknown) {
+function mockFetch(detail: Schemas['AdminProgramDetailDto']) {
   const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
     const url = String(input);
     if (url.includes('/api/admin/programs/program-1')) {
-      return Promise.resolve(jsonResponse(detail));
+      return Promise.resolve(jsonResponse<'AdminProgramDetailDto'>(detail));
     }
     // Katalog test variantlari (`useCatalogTestOptionsQuery`) — backend hali yo'q, 404 kutiladi.
-    return Promise.resolve(jsonResponse({ code: 'NOT_FOUND', status: 404 }, 404));
+    return Promise.resolve(problemResponse('NOT_FOUND', 404));
   });
   vi.stubGlobal('fetch', fetchMock);
   return fetchMock;

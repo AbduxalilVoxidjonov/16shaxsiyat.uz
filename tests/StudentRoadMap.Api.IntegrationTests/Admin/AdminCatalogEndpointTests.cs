@@ -79,6 +79,26 @@ public sealed class AdminCatalogEndpointTests : IClassFixture<PublicApiTestFacto
         body.Kind.Should().Be("Custom");
         body.IsSystem.Should().BeFalse();
         body.ScoringMode.Should().Be("Scored");
+        // `displayOrder` javobda qaytadi — `PUT /tests/{id}` uni majburiy talab qilgani uchun
+        // admin UI joriy tartibni bilishi shart (aks holda har saqlashda tartib buziladi).
+        body.DisplayOrder.Should().Be(5);
+    }
+
+    [Fact]
+    public async Task GetTestById_DetalJavob_DisplayOrderQaytaradi()
+    {
+        using var client = await AuthenticatedClientAsync("catalog-detail-order-admin");
+        var created = await client.PostAsJsonAsync(
+            "/api/admin/catalog/tests",
+            new { code = "ORDER-1", nameUz = "Tartib anketasi", estimatedMinutes = 5, displayOrder = 7 },
+            TestJson.Options);
+        var test = await created.Content.ReadFromJsonAsync<CatalogTestDetailDto>(TestJson.Options);
+
+        var response = await client.GetAsync(new Uri($"/api/admin/catalog/tests/{test!.Id}", UriKind.Relative));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<CatalogTestDetailDto>(TestJson.Options);
+        body!.DisplayOrder.Should().Be(7);
     }
 
     [Fact]

@@ -199,13 +199,22 @@ internal static class TestDataFactory
     /// bilan) integratsiya darajasida sinash uchun (`prompts/12` QA tuzatmasi) — `SUM`
     /// strategiyasi bu maqsadga yaramaydi, chunki `InterpretationBands` talab qiladi
     /// (`TestScale` entity hali P33'da yo'q), `RIASEC` esa bandssiz ishlaydi.
+    ///
+    /// <para>
+    /// `kind` — sukut bo'yicha `Custom`, ya'ni anketa `RIASEC` STRATEGIYASI bilan ballansa ham
+    /// shaxsiyat batareyasiga KIRMAYDI (`PersonalityBattery.Includes`: `Standard` + `Scored`).
+    /// Admin javobidagi `results.RIASEC` bloki to'lishi kerak bo'lgan testlar `TestKind.Standard`
+    /// uzatadi — 2026-09-03 dan buyon bu blok metodika KODI emas, ROL bo'yicha to'ldiriladi
+    /// (`StudentProfileMapping.BuildTestResultsAsync`).
+    /// </para>
     /// </summary>
     public static async Task<TestDefinition> CreatePublishedRiasecShapedTestWithOptionalExtrasAsync(
         AppDbContext db,
         DateTimeOffset now,
         string code,
         int displayOrder,
-        int extraOptionalCount = 2)
+        int extraOptionalCount = 2,
+        TestKind kind = TestKind.Custom)
     {
         var testId = Guid.NewGuid();
         var test = TestDefinition.Create(
@@ -216,6 +225,7 @@ internal static class TestDataFactory
             estimatedMinutes: 5,
             scoringStrategyCode: "RIASEC",
             now: now,
+            kind: kind,
             pageSize: 60);
 
         var types = new[] { "R", "I", "ART", "SOC", "ENT", "CONV" };
@@ -321,10 +331,11 @@ internal static class TestDataFactory
     /// <summary>
     /// `CreatePublishedRiasecShapedTestWithOptionalExtrasAsync` bilan bir xil (6 tip × 8 savol,
     /// `RIASEC` strategiyasi — `SUM` dan farqli, `InterpretationBands` talab qilmaydi), lekin
-    /// standart dasturga AVTOMATIK biriktirilmaydi. `code` ixtiyoriy — masalan `"BIG5"` berilsa,
-    /// `CompleteSessionCommandHandler.ApplyMaturityIndexIfPossible`ning `TestCode == "BIG5"`
-    /// tekshiruvini (haqiqiy BIG5 shkalasiz) ishga tushirish uchun ishlatiladi
-    /// (`PublicBig5WithoutActivityEndpointTests`).
+    /// standart dasturga AVTOMATIK biriktirilmaydi. Yaratilgan anketa `Custom` — ya'ni `code`
+    /// sifatida `"BIG5"`/`"MBTI16"` berilsa, "kodi batareyaniki, o'zi batareya emas" degan
+    /// CHALG'ITUVCHI holat quriladi (`PublicBig5WithoutActivityEndpointTests`,
+    /// `PublicBatteryRoleEndpointTests`). Batareya roli KOD bilan emas,
+    /// `PersonalityBattery.RoleOf` bilan aniqlanadi.
     /// </summary>
     public static async Task<TestDefinition> CreateStandaloneRiasecShapedTestAsync(
         AppDbContext db, DateTimeOffset now, string code, int displayOrder)
@@ -354,6 +365,132 @@ internal static class TestDataFactory
 
         return test;
     }
+
+    /// <summary>
+    /// SEED bilan bir xil shaklda (`TestDefinition.CreateSystemPublished`) ilmiy metodika —
+    /// `Kind = Standard`, `IsSystem = true`, `ScoringMode = Scored`, darhol `Published`. Ya'ni
+    /// `PersonalityBattery` mezoniga TUSHADIGAN yagona haqiqiy shakl (haqiqiy MBTI16/BIG5/
+    /// RIASEC/ACTIVITY xuddi shu fabrika orqali seed qilinadi). Standart dasturga AVTOMATIK
+    /// biriktirilmaydi — `CreateProgramAsync` bilan aniq dasturga qo'shiladi.
+    /// </summary>
+    public static async Task<TestDefinition> CreateStandaloneSystemTestAsync(
+        AppDbContext db,
+        DateTimeOffset now,
+        string code,
+        int displayOrder,
+        int questionCount = 2,
+        string scoringStrategyCode = "SUM")
+    {
+        var testId = Guid.NewGuid();
+        var questions = new List<Question>(questionCount);
+
+        for (var i = 1; i <= questionCount; i++)
+        {
+            questions.Add(Question.Create(
+                Guid.NewGuid(),
+                testId,
+                $"{code}-Q{i:00}",
+                i,
+                $"{code} savoli {i}",
+                QuestionType.Likert5,
+                "GEN",
+                scaleDirection: 1,
+                weight: 1.0m,
+                isRequired: true,
+                isSystem: true));
+        }
+
+        var test = TestDefinition.CreateSystemPublished(
+            testId,
+            code,
+            $"{code} nomi",
+            descriptionUz: null,
+            displayOrder,
+            estimatedMinutes: 5,
+            shuffleQuestions: false,
+            pageSize: 10,
+            scoringStrategyCode,
+            questions,
+            now);
+
+        db.TestDefinitions.Add(test);
+        await db.SaveChangesAsync();
+
+        return test;
+    }
+
+    /// <summary>
+    /// SEED shaklidagi ilmiy metodika (`Kind = Standard`, `IsSystem`, `Scored`, `Published`),
+    /// lekin savollari HAQIQIY scoring uchun yetarli shkalalar bilan quriladi va strategiya kodi
+    /// ANIQ beriladi — ya'ni metodika KODI bilan strategiya kodi ATAYLAB har xil bo'lishi mumkin
+    /// (masalan `PERS-BAT-1` kodli anketa `MBTI16` strategiyasi bilan). Aynan shu holat
+    /// `PersonalityBattery.RoleOf` (rol strategiyadan keladi, koddan emas) qoidasini sinaydi.
+    /// </summary>
+    /// <param name="scales">`(shkala kodi, savollar soni)` — masalan MBTI16 uchun `EI`/`SN`/`TF`/`JP`.</param>
+    public static async Task<TestDefinition> CreateStandaloneSystemScoredTestAsync(
+        AppDbContext db,
+        DateTimeOffset now,
+        string code,
+        int displayOrder,
+        string scoringStrategyCode,
+        IReadOnlyList<(string Scale, int Count)> scales,
+        int pageSize = 10)
+    {
+        var testId = Guid.NewGuid();
+        var questions = new List<Question>();
+        var order = 1;
+
+        foreach (var (scale, count) in scales)
+        {
+            for (var i = 1; i <= count; i++)
+            {
+                questions.Add(Question.Create(
+                    Guid.NewGuid(),
+                    testId,
+                    $"{code}-{scale}-{i:00}",
+                    order++,
+                    $"{code} {scale} savoli {i}",
+                    QuestionType.Likert5,
+                    scale,
+                    scaleDirection: 1,
+                    weight: 1.0m,
+                    isRequired: true,
+                    isSystem: true));
+            }
+        }
+
+        var test = TestDefinition.CreateSystemPublished(
+            testId,
+            code,
+            $"{code} nomi",
+            descriptionUz: null,
+            displayOrder,
+            estimatedMinutes: 5,
+            shuffleQuestions: false,
+            pageSize,
+            scoringStrategyCode,
+            questions,
+            now);
+
+        db.TestDefinitions.Add(test);
+        await db.SaveChangesAsync();
+
+        return test;
+    }
+
+    /// <summary>`MBTI16` strategiyasi uchun yetarli shkala tarkibi (`EI`/`SN`/`TF`/`JP`) — savol soniga cheklov yo'q (`docs/03` §2.2).</summary>
+    public static Task<TestDefinition> CreateStandaloneSystemMbtiShapedTestAsync(
+        AppDbContext db, DateTimeOffset now, string code, int displayOrder) =>
+        CreateStandaloneSystemScoredTestAsync(
+            db, now, code, displayOrder, "MBTI16", [("EI", 2), ("SN", 2), ("TF", 2), ("JP", 2)]);
+
+    /// <summary>`RIASEC` strategiyasi uchun majburiy tarkib — 6 tip × 8 savol (`docs/03` §4.1).</summary>
+    public static Task<TestDefinition> CreateStandaloneSystemRiasecShapedTestAsync(
+        AppDbContext db, DateTimeOffset now, string code, int displayOrder) =>
+        CreateStandaloneSystemScoredTestAsync(
+            db, now, code, displayOrder, "RIASEC",
+            [("R", 8), ("I", 8), ("ART", 8), ("SOC", 8), ("ENT", 8), ("CONV", 8)],
+            pageSize: 60);
 
     /// <summary>
     /// Yangi (`Custom`, nashr qilingan, `Public` — `visibility` bilan o'zgartiriladi) dastur —

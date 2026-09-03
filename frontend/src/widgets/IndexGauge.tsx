@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { PolarAngleAxis, RadialBar, RadialBarChart, ResponsiveContainer } from 'recharts';
 import { usePrefersReducedMotion } from '@/shared/hooks/usePrefersReducedMotion';
 import { cn } from '@/shared/lib/cn';
+import { VisuallyHidden } from '@/shared/ui/VisuallyHidden';
 
 export interface IndexGaugeProps {
   /** 0–100 — masalan `MaturityIndex` yoki `ActivityIndex` (docs/03, 3.3/5.2-bo'lim). */
@@ -67,23 +68,25 @@ export function IndexGauge({ value, label, levelText, className }: IndexGaugePro
       </div>
 
       {/* Ekran o'quvchisi uchun yashirin jadval alternativi — docs/11, 4-bo'lim. */}
-      <table className="sr-only" data-testid="index-gauge-table">
-        <caption>{ariaLabel}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{t('widgets.indexGauge.tableLabelColumn')}</th>
-            <th scope="col">{t('widgets.indexGauge.tableValueColumn')}</th>
-            <th scope="col">{t('widgets.indexGauge.tableLevelColumn')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>{label}</td>
-            <td>{clamped.toFixed(1)}</td>
-            <td>{levelText}</td>
-          </tr>
-        </tbody>
-      </table>
+      <VisuallyHidden>
+        <table data-testid="index-gauge-table">
+          <caption>{ariaLabel}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{t('widgets.indexGauge.tableLabelColumn')}</th>
+              <th scope="col">{t('widgets.indexGauge.tableValueColumn')}</th>
+              <th scope="col">{t('widgets.indexGauge.tableLevelColumn')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{label}</td>
+              <td>{clamped.toFixed(1)}</td>
+              <td>{levelText}</td>
+            </tr>
+          </tbody>
+        </table>
+      </VisuallyHidden>
     </div>
   );
 }

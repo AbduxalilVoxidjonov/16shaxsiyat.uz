@@ -75,6 +75,28 @@ dialog:modal {
   max-height: calc(100dvh - 2rem);
 }
 
+/*
+  ISTISNO — ekran chetiga yopishadigan drawer (mobil admin navigatsiyasi, `AdminLayout`).
+  Yuqoridagi umumiy qoida O'ZGARMAYDI (egasining qarori: har qanday oyna markazda), lekin
+  brauzerning `dialog` uslubida `inset-inline-start: 0` bilan BIRGA `inset-inline-end: 0`
+  ham turadi: eni belgilangan oyna "over-constrained" bo'ladi va `margin: auto` uni
+  markazga suradi. Shu sabab Tailwind ning `left-0` (yoki `m-0`) klassi yetarli emas —
+  `margin: auto` spetsifiklik bo'yicha ustun chiqadi va drawer markazga tushadi; gorizontal
+  scroll bo'lgan sahifada esa ekran chetidan chiqib ketib, havolalari umuman bosilmaydi
+  (P30-8).
+
+  Yechim — umumiy qoidani o'chirish EMAS, balki undan KUCHLIROQ selektor (`dialog:modal`
+  ustiga bitta klass) bilan faqat shu bitta oyna uchun bekor qilish. `margin-inline-end:
+  auto` qolgan bo'shliqni o'ngga beradi → oyna chapga yopishadi; RTL da ham to'g'ri
+  ishlaydi. Boshqa barcha oynalar (`shared/ui/Dialog.tsx`) markazda qolaveradi.
+*/
+dialog:modal.dialog-drawer-start {
+  margin: 0;
+  margin-inline-end: auto;
+  /* Drawer to'liq balandlikda (`h-dvh`) ochiladi — umumiy `max-height` cheklovi tegmasin. */
+  max-height: 100dvh;
+}
+
 
 @layer base {
   html {

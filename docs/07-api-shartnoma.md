@@ -30,9 +30,18 @@ Maktab havolasi to'g'riligini tekshirish va boshlanish ekranini to'ldirish.
     { "code": "ACTIVITY", "name": "Aktivlik va motivatsiya", "questionCount": 32, "estimatedMinutes": 5, "order": 4 }
   ],
   "totalEstimatedMinutes": 31,
-  "consentText": "…"
+  "consentText": "…",
+  "programs": [
+    { "code": "PERSONALITY_PROFILE", "nameUz": "Shaxsiyat profili", "descriptionUz": "…",
+      "testCount": 4, "questionCount": 190, "estimatedMinutes": 31, "hasPersonalityBattery": true },
+    { "code": "CAREER_SURVEY", "nameUz": "Kasb so'rovnomasi", "descriptionUz": null,
+      "testCount": 1, "questionCount": 20, "estimatedMinutes": 5, "hasPersonalityBattery": false }
+  ]
 }
 ```
+`programs[]` — maktab uchun mavjud dasturlar (`Visibility = Public` yoki biriktirilgan;
+bir nechta bo'lsa o'quvchi tanlaydi, `code` → `POST /sessions` `programCode`).
+
 **404** `NOT_FOUND` · **410** `SCHOOL_INACTIVE`
 
 ---
@@ -97,10 +106,29 @@ Qoidalar:
     { "code": "RIASEC", "status": "Locked",    "answered": 0,  "total": 48, "order": 3 },
     { "code": "ACTIVITY","status":"Locked",    "answered": 0,  "total": 32, "order": 4 }
   ],
-  "progressPercent": 41
+  "progressPercent": 41,
+  "hasPersonalityBattery": true
 }
 ```
 **410** `SESSION_EXPIRED`
+
+#### `hasPersonalityBattery` (bool) — 1.1 va 1.3 da
+
+Ushbu sessiyaning dasturida (1.1 da — ushbu dasturda) **ilmiy shaxsiyat batareyasi** bormi.
+`false` bo'lsa shaxsiyat tipi HECH QACHON hisoblanmaydi — mijoz natija ekranini taklif
+qilmasligi va shaxsiyat widget'larini render qilmasligi kerak (1.9 dagi kabi "tip aniqlanmadi"
+holati; **bo'sh diagramma yoki `0` ball KO'RSATILMAYDI** — `docs/06` qarorlar jurnali,
+2026-09-02: "ma'lumot yo'q" `0` bilan almashtirilmaydi).
+
+Bayroq **domen qoidasi** bilan hisoblanadi — `Domain.Catalog.PersonalityBattery`:
+
+> anketa `Kind = Standard` (ilmiy metodika, seed'dan keladi) **va** `ScoringMode = Scored`
+> bo'lsa batareyaga kiradi; dastur/sessiyada bunday anketa kamida bittasi bo'lsa bayroq `true`.
+
+Mijoz bu savolga **metodika kodi bo'yicha javob bermasligi kerak.** `"MBTI16"` kabi kodni
+qidirish ikki holatda jimgina buziladi: (1) `Custom` dastur boshqa kodli metodika ishlatsa;
+(2) kod o'zgarsa/versiyalansa. Ikkala javobda ham bayroq bir xil qoidadan hisoblanadi, ya'ni
+ular hech qachon bir-biriga zid bo'lmaydi.
 
 ---
 
@@ -185,6 +213,12 @@ O'quvchiga **qisqartirilgan** natija (superadmin sozlamasi yoqilgan bo'lsa).
 ```
 > Bu javobda **hech qachon** aktivlik darajasi, `NeedsAttention` bayrog'i, xom ballar yoki
 > to'liq AI hisobot bo'lmaydi.
+
+Dasturda shaxsiyat batareyasi bo'lmasa (1.3 dagi `hasPersonalityBattery: false`) tip
+hisoblanmaydi: `personalityType` **bo'sh qator** qaytadi. Mijoz buni "tip aniqlanmadi"
+holati sifatida ko'rsatadi va tip kartasini render qilmaydi — bo'sh karta yoki `0` ball
+KO'RSATILMAYDI. Mijoz bu holatni bayroq bo'yicha OLDINDAN biladi (bo'sh qatorga tayanish —
+ikkinchi himoya qatlami, birinchisi emas).
 
 **202** — tahlil hali tayyor emas · **403** — o'quvchiga ko'rsatish o'chirilgan
 
@@ -289,27 +323,170 @@ personalityType, maturityIndex, activityLevel, needsAttention, reliabilityFlag, 
     },
     "aiAnalysis": {
       "id":"…","status":"Succeeded","provider":"Gemini","model":"…","promptVersion":"v1.0",
-      "createdAt":"…","summary":"…","personalityPortrait":"…",
-      "strengths":["…"],"growthAreas":["…"],"learningStyle":"…","motivationProfile":"…",
-      "activityAssessment":"…","careerSuggestions":[{"field":"…","why":"…","nextSteps":["…"]}],
-      "studentRecommendations":["…"],"teacherNotes":"…","parentNotes":"…",
-      "attentionFlags":[],"disclaimer":"…"
+      "createdAt":"…","isFallbackReport":false,"isModerated":false,"errorMessage":null,
+      "summary":"…","personalityPortrait":"…",
+      "strengths":[{"title":"…","description":"…","evidence":"…"}],
+      "growthAreas":[{"title":"…","description":"…","actionStep":"…"}],
+      "learningStyle":"…","motivationProfile":"…","activityAssessment":"…",
+      "careerSuggestions":[{"field":"…","why":"…","exampleProfessions":["…"],"nextSteps":["…"]}],
+      "studentRecommendations":["…"],"teacherNotes":["…"],"parentNotes":["…"],
+      "attentionFlags":[{"code":"LOW_MOTIVATION","message":"…","severity":"attention"}],
+      "reliabilityNote":null,"disclaimer":"…"
     },
     "aiHistory": [ { "id":"…","provider":"OpenAi","createdAt":"…","status":"Succeeded","isCurrent":false } ]
   }
 }
 ```
 
+#### `latestAssessment.results` — KALIT NOMLARI (shartnoma)
+
+> **Bu bo'lim normativ.** Ilgari yozilmagan edi va backend bilan frontend ajralib ketgan edi
+> (2026-09-03 tekshiruvi: backend `results.mbti16` chiqarardi, frontend `results.MBTI16` o'qirdi;
+> RIASEC'da esa backend `types.A` chiqarardi, frontend `types.ART` o'qirdi). Natijada o'quvchi
+> profilida shaxsiyat va kasb qiziqishlari bo'limlari **jimgina bo'sh yoki buzuq** chiqardi.
+
+**1. `results` kalitlari — `TestDefinition.Code` bilan HARFMA-HARF bir xil:**
+
+| Kalit | Tip | Izoh |
+|-------|-----|------|
+| `MBTI16` | `{resultCode, typeName, axes, borderlineAxes}` | camelCase (`mbti16`) EMAS |
+| `BIG5` | `{factors, stabilityPct, maturityIndex, maturityLevel}` | |
+| `RIASEC` | `{resultCode, types, differentiation, consistency, careerFields}` | |
+| `ACTIVITY` | `{scales, activityIndex, activityLevel, needsAttention}` | |
+
+Har biri **ixtiyoriy**: o'quvchi yechmagan blok kaliti javobda umuman bo'lmaydi (`null` emas).
+API'ning qolgan barcha maydonlari camelCase, lekin bu TO'RTTASI — kod qiymatlari, shuning uchun
+katta harfda qoladi (backend'da `[JsonPropertyName]` bilan qat'iylashtirilgan).
+
+**2. Ichki lug'atlarning kalitlari — shkala kodlari, o'zgarmaydi:**
+
+| Lug'at | Kalitlar |
+|--------|----------|
+| `MBTI16.axes` | `EI`, `SN`, `TF`, `JP` |
+| `BIG5.factors` | `O`, `C`, `E`, `A`, `N` |
+| `ACTIVITY.scales` | `MOT`, `SELF`, `SOCA`, `ENG` |
+| **`RIASEC.types`** | **`R`, `I`, `A`, `S`, `E`, `C`** — Holland harflari |
+
+**3. `RIASEC.types` kalitlari — Holland harflari, bazadagi `scale` kodlari EMAS.**
+`docs/03` §4.1 da bazadagi `Scale` qiymatlari `R, I, ART, SOC, ENT, CONV` (Big Five'ning
+`A`/`S`/`E`/`C` bilan to'qnashmasligi uchun), lekin **API'da har doim bitta harfli xalqaro
+Holland mnemonikasi** (`R I A S E C`) qaytadi. Ikki sabab:
+
+1. `scale` qiymati ommaviy/natija API'siga hech qachon chiqmaydi (`CLAUDE.md` 9-band);
+2. `resultCode` (Holland kodi, masalan `"IRA"`) aynan shu harflardan iborat — mijoz kod
+   harflarini `types` kalitlari bilan to'g'ridan-to'g'ri solishtira olishi kerak.
+
+O'girish backend'da bir joyda: `StudentProfileMapping.RiasecScaleToLetter`
+(`ART→A`, `SOC→S`, `ENT→E`, `CONV→C`). Saqlangan `jsonb` (`test_results.normalized_scores_json`)
+**o'zgarmaydi** — u yerda `scale` kodlari qoladi, migratsiya kerak emas.
+
+> Bu kalitlar shartnoma: o'zgarishi mijoz uchun **buzuvchi** (breaking). Tekshiradigan testlar —
+> `tests/StudentRoadMap.Application.Tests/Admin/Students/AdminTestResultsJsonKeysTests.cs` va
+> `frontend/src/features/students/pages/StudentProfileResultKeys.test.tsx`.
+
+
+> **`aiAnalysis` shakli — haqiqat manbai `docs/09-ai-analiz-moduli.md` 5-bo'lim JSON sxemasi.**
+> AI aynan o'sha sxema bo'yicha javob beradi (`AiAnalysis.ResponseJson`da xom holda saqlanadi)
+> va post-filtr ham shunga tayanadi, shuning uchun DTO undan CHEKINMAYDI:
+>
+> | Maydon | Tip | Izoh |
+> |--------|-----|------|
+> | `summary`, `personalityPortrait` | `string?` | Sxemadagi bir xil nomli matnlar |
+> | `strengths[]` | `{title, description?, evidence?}` | Satrlar massivi EMAS (`docs/09` §5) |
+> | `growthAreas[]` | `{title, description?, actionStep?}` | |
+> | `learningStyle`, `motivationProfile`, `activityAssessment` | `string?` | |
+> | `careerSuggestions[]` | `{field, why, exampleProfessions[], nextSteps[]}` | Massivlar hech qachon `null` emas — bo'sh `[]` |
+> | `studentRecommendations`, `teacherNotes`, `parentNotes` | `string[]` | `teacherNotes`/`parentNotes` — MASSIV (bitta satr emas) |
+> | `attentionFlags[]` | `{code?, message, severity}` | `severity`: `info` \| `attention` \| `high` |
+> | `reliabilityNote`, `disclaimer` | `string?` | **Hisobotning cheklovlari** — UI'da hech qachon yashirilmaydi (`docs/09` 4.2, 13-talab va "ISHONCHLILIK" bandi) |
+>
+> Ma'lumot bo'lmasa maydon `null` yoki bo'sh massiv bo'ladi — bo'sh satr (`""`) HECH QACHON
+> qaytarilmaydi. `description`/`evidence`/`actionStep`/`code` — sxemada majburiy, lekin zaxira
+> (shablon) hisobotda va AI modulidan oldin yaratilgan eski yozuvlarda `null` bo'lishi mumkin,
+> chunki `AiAnalysis` ustunlari (`strengths_json` va h.k.) faqat YASSILANGAN satr nusxasini
+> saqlaydi. UI bunday bo'limlarni bo'sh karta sifatida emas, umuman render qilmasligi kerak.
+
+> **`isModerated`** (`docs/09` 6-bo'lim, 3-band) — `true` bo'lsa taqiqlangan atama IKKINCHI
+> urinishda ham topilgan va javob "moderatsiya qilindi" belgisi bilan saqlangan
+> (`attentionFlags` ichida `MODERATION_REQUIRED`, `severity: "high"`). Bu matn post-filtrdan
+> TOZA holda o'tmagan — admin UI uni jimgina oddiy tahlil sifatida ko'rsatmasligi SHART
+> (`CLAUDE.md` 6-qoida: "AI tashxis qo'ymaydi"), ochiq ogohlantirish chiqadi.
+
+> **`isFallbackReport`** — `true` bo'lsa matnni AI YOZMAGAN: fallback zanjiridagi barcha
+> provayder yiqilgach tizim avtomatik **shablon hisobot** yozgan (`docs/09` 11-bo'lim,
+> `AiAnalysis.CreateFallbackReport`, `model: "template"`). Admin UI buni haqiqiy AI tahlilidan
+> aniq ajratib ko'rsatishi SHART ("Avtomatik shablon hisobot" belgisi) — aks holda superadmin
+> shablon matnni AI tahlili deb o'qiydi. Bunday yozuvlar `GET /api/admin/ai/usage`
+> statistikasiga ham kirmaydi (token sarflanmagan).
+
 ### 3.3 Sessiyalar
 | Metod | Yo'l | Izoh |
 |-------|------|------|
 | GET | `/api/admin/assessments?schoolId=&status=&from=&to=&page=&pageSize=` | Ro'yxat |
-| GET | `/api/admin/assessments/{id}` | To'liq detal (yuqoridagi `latestAssessment` shakli) |
+| GET | `/api/admin/assessments/{id}` | To'liq detal (`latestAssessment` yadrosi + sessiya sarlavhasi + `tests[]`) |
 | GET | `/api/admin/assessments/{id}/answers?testCode=` | Xom javoblar (audit uchun) |
 | POST | `/api/admin/assessments/{id}/rerun-analysis` | `{ "provider": "Anthropic", "promptVersion": "v1.1" }` → 202 |
 | POST | `/api/admin/assessments/{id}/recalculate-scores` | Scoring versiyasi o'zgargan bo'lsa |
 | GET | `/api/admin/assessments/{id}/report.pdf` | PDF hisobot |
 | DELETE | `/api/admin/assessments/{id}` | Soft delete |
+
+**`GET /api/admin/assessments` — ro'yxat elementi** (`AdminAssessmentListItemDto`)
+```json
+{ "id": "…", "studentId": "…", "studentName": "Nortoyev Aziz Shukurovich",
+  "schoolId": "…", "schoolName": "12-son maktab", "status": "Analyzed",
+  "startedAt": "2026-08-30T09:00:00Z", "completedAt": "2026-08-30T09:29:00Z",
+  "durationMinutes": 29, "reliabilityScore": 85.5, "reliabilityFlag": "Reliable",
+  "programId": "…", "programName": "Shaxsiyat profili" }
+```
+
+**`GET /api/admin/assessments/{id}` — javob** (`AdminAssessmentDetailDto`)
+```json
+{ "id": "…",
+  "results": { "MBTI16": { … }, "BIG5": { … }, "RIASEC": { … }, "ACTIVITY": { … } },
+  "aiAnalysis": { … }, "aiHistory": [ … ],
+
+  "status": "Analyzed",
+  "startedAt": "2026-08-30T09:00:00Z", "completedAt": "2026-08-30T09:29:00Z",
+  "durationMinutes": 29, "reliabilityScore": 85.5, "reliabilityFlag": "Reliable",
+  "student": { "id": "…", "fullName": "Nortoyev Aziz Shukurovich" },
+  "school":  { "id": "…", "name": "12-son maktab" },
+  "program": { "id": "…", "nameUz": "Shaxsiyat profili" },
+  "tests": [
+    { "testDefinitionId": "…", "testCode": "MBTI16", "nameUz": "Shaxsiyat tipi",
+      "scoringMode": "Scored", "status": "Completed",
+      "questionCount": 60, "answeredCount": 60 },
+    { "testDefinitionId": "…", "testCode": "STRESS", "nameUz": "Stress so'rovnomasi",
+      "scoringMode": "Survey", "status": "NotStarted",
+      "questionCount": 8, "answeredCount": 0 }
+  ] }
+```
+
+> **Birinchi to'rt maydon** (`id`, `results`, `aiAnalysis`, `aiHistory`) — 3.2-bo'limdagi
+> `latestAssessment` bilan HARFMA-HARF bir xil, shu jumladan `results` kalitlari KATTA harfda
+> (`MBTI16`/`BIG5`/`RIASEC`/`ACTIVITY`). Qolganlari — sessiyaning o'z "sarlavhasi": ular
+> qo'shilgunga qadar (2026-09-03) admin detal sahifasi holat/vaqt/o'quvchi/maktabni faqat
+> ro'yxatdan kelgan navigatsiya holatidan olardi, ya'ni havola NUSXALAB ochilganda sahifa
+> yarim bo'sh qolardi.
+
+> **`tests[]`** — sessiyaga biriktirilgan HAR bir test bloki (`assessment_tests`), `displayOrder`
+> bo'yicha. `results` faqat 4 ta TIZIM blokini biladi, dastur esa `Custom` va `Survey`
+> anketalarni ham o'z ichiga oladi — ular admin ekranida faqat shu ro'yxat orqali ko'rinadi.
+> `scoringMode: "Survey"` — anketa **ballanmaydi** (`docs/06` 8-bo'lim, 2026-09-02 qarori):
+> uning natijasi `results`da hech qachon bo'lmaydi va UI uni "0 ball" emas, "Ballanmaydi
+> (so'rovnoma)" deb ko'rsatadi. `questionCount`/`answeredCount` — SESSIYA snapshoti
+> (`AssessmentTest.TotalCount`/`AnsweredCount`), katalogdagi joriy savol soni emas.
+> Maydon nomi `testCode` (`code` emas) — `GET /answers?testCode=` va `AdminAssessmentAnswerDto`
+> bilan bir xil atama. `scale`/`scaleDirection` bu yerda ham YO'Q (`CLAUDE.md` 9-band).
+
+> **Ma'lumot yo'q ≠ nol** (`docs/06` qarorlar jurnali, 2026-09-02): yakunlanmagan sessiyada
+> `completedAt` va `durationMinutes` — `null`; ishonchlilik hisoblanmagan bo'lsa
+> `reliabilityScore`/`reliabilityFlag` — `null`. `student`/`school`/`program` bog'liq yozuv
+> topilmasa (masalan o'quvchi soft-delete qilingan) — `null`, bo'sh satrli soxta obyekt EMAS.
+> Ro'yxatdagi `programName` ham shu qoidaga bo'ysunadi.
+
+> Bu kalitlarni tekshiradigan testlar (XOM JSON ustidan — `ReadFromJsonAsync<Dto>` kalit
+> farqini ko'rmaydi, 2026-09-03 qarori): `tests/StudentRoadMap.Api.IntegrationTests/Admin/
+> AdminAssessmentsGetByIdEndpointTests.cs` va `…/AdminAssessmentsListEndpointTests.cs`.
 
 ### 3.4 Test katalogi va anketa konstruktori
 
@@ -363,6 +540,20 @@ personalityType, maturityIndex, activityLevel, needsAttention, reliabilityFlag, 
 ```
 **201** → `{ "id": "…", "status": "Draft", "kind": "Custom", "scoringStrategy": "SUM" }`
 
+**`GET /api/admin/catalog/tests/{id}` — javob (batafsil)**
+```json
+{ "id": "…", "code": "STRESS", "nameUz": "Stressga chidamlilik anketasi",
+  "kind": "Custom", "isSystem": false, "status": "Draft", "isActive": true,
+  "scoringMode": "Scored", "questionCount": 8, "scaleCount": 2,
+  "estimatedMinutes": 6, "version": 1, "usedInProgramCount": 0,
+  "descriptionUz": "…", "pageSize": 10, "shuffleQuestions": false, "displayOrder": 5 }
+```
+
+> `displayOrder` ATAYLAB detal javobida ham bor: `PUT /tests/{id}` uni **majburiy** talab qiladi,
+> shu sabab uni qaytarmaslik admin UI'ni "joriy tartibni bilmayman" holatiga tushirar va har
+> saqlashda tartibni tasodifiy qiymatga o'zgartirar edi. Ro'yxat javobida (`GET /tests`) yo'q —
+> u yerda tartib qatorlar ketma-ketligida ko'rinadi.
+
 **`POST .../publish` — 400 (validatsiya yiqilganda)**
 ```json
 { "code": "TEST_NOT_PUBLISHABLE", "status": 400,
@@ -386,6 +577,58 @@ personalityType, maturityIndex, activityLevel, needsAttention, reliabilityFlag, 
 | POST | `/api/admin/ai/providers/{provider}/set-default` | |
 | GET | `/api/admin/ai/prompts` · POST `/api/admin/ai/prompts` | Prompt shablon versiyalari |
 | GET | `/api/admin/ai/usage?from=&to=` | Token va taxminiy xarajat statistikasi |
+
+> **`{provider}` — enum NOMI, `{id}` EMAS.** `Gemini` / `OpenAi` / `Anthropic`
+> (`AiProviderConfig.Provider` ustida `ux_ai_provider_kind` unique indeksi bor, shu sabab
+> provider turi tabiiy identifikator). Marshrut registrga sezgir emas; raqamli qiymat
+> (`1`/`2`/`3`) ham qabul qilinadi, lekin **nom ishlatiladi**.
+
+**`GET /api/admin/ai/providers` → `AdminAiProviderDto[]`** (jonli javob, 2026-09-02):
+
+```json
+[{
+  "provider": "Gemini", "displayName": "Google Gemini", "model": "gemini-2.0-flash",
+  "baseUrl": null, "maxOutputTokens": 4096, "temperature": 0.40,
+  "isDefault": true, "isActive": true, "fallbackOrder": 1,
+  "maskedApiKey": "AIza••••••cdef",
+  "lastCheckedAt": "2026-09-02T18:25:30.878472+00:00", "lastCheckStatus": "Auth"
+}]
+```
+
+- **Kalit hech qachon to'liq qaytmaydi** — faqat birinchi/oxirgi 4 belgi (`ApiKeyMasker`);
+  kalit kiritilmagan bo'lsa `maskedApiKey: null`.
+- Faqat DB'da mavjud (kamida bir marta `PUT` qilingan) provayderlar qaytadi.
+- `lastCheckStatus` — `"ok"` yoki `AiErrorKind` nomi (`Auth`, `RateLimit`, `ModelNotFound`, …).
+
+**`PUT /api/admin/ai/providers/{provider}`** — upsert. Tana: `{ apiKey?, model,
+maxOutputTokens, temperature, isActive, fallbackOrder, baseUrl? }` → `AdminAiProviderDto`.
+
+- `apiKey` bo'sh/yo'q bo'lsa **mavjud kalit saqlanib qoladi**.
+- `baseUrl` bunday emas: to'liq `PUT` semantikasi — yuborilmasa mavjud qiymat **`null` ga
+  yoziladi**. Klient joriy qiymatni qaytarib yuborishi shart.
+- Kalit kiritilmagan providerni `isActive: true` qilish → `400 VALIDATION_ERROR`.
+
+**`POST /api/admin/ai/providers/{provider}/test`** → `{ ok, latencyMs, message }`.
+Muvaffaqiyatsiz tekshiruv **HTTP xatosi emas** — `200` + `ok:false`. `message` — provayderning
+xom javobi EMAS, `AiErrorKind` bo'yicha oldindan yozilgan o'zbekcha matn (kalit noto'g'ri /
+kvota tugagan / model topilmadi / tarmoq / …), shu sabab unda API kaliti bo'lishi mumkin emas.
+Provayder umuman sozlanmagan bo'lsa → `404 NOT_FOUND`.
+
+**`POST /api/admin/ai/providers/{provider}/set-default`** → `AdminAiProviderDto`.
+Faqat faol va kaliti bor provider → aks holda `400 VALIDATION_ERROR`; sozlanmagan → `404`.
+
+**`GET /api/admin/ai/prompts` → `AdminPromptTemplateDto[]`**:
+`{ id, key, version, systemText, userText, jsonSchema, isActive, createdAt }` —
+`version` **matn** (`"v1.0"`), raqam emas.
+
+**`GET /api/admin/ai/usage?from=&to=` → `AdminAiUsageDto`**:
+
+```json
+{ "totalCalls": 0, "inputTokens": 0, "outputTokens": 0, "estimatedCostUsd": null, "byProvider": [] }
+```
+
+Javobda `from`/`to` **qaytmaydi** (faqat so'rov parametri), token maydonlarida `total`
+prefiksi yo'q. Zaxira shablon hisobotlar (`IsFallbackReport = true`) statistikaga kirmaydi.
 
 ### 3.6 Dashboard va audit
 

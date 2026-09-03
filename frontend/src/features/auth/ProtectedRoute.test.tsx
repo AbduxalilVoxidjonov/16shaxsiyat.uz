@@ -5,13 +5,27 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { ProtectedRoute } from './ProtectedRoute';
 import { useAuthStore } from './store/authStore';
 import { setAdminAccessToken } from '@/shared/api/adminClient';
+import { jsonResponse, problemResponse, type Schemas } from '@/test/apiMock';
 
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
+/** `GET /api/auth/me` javobi — backend `AdminUserDto` (`email`/`role` majburiy). */
+const ADMIN_USER = {
+  id: 'u1',
+  username: 'admin',
+  email: 'admin@16shaxsiyat.uz',
+  fullName: 'Bosh administrator',
+  role: 'SuperAdmin',
+  totpEnabled: false,
+} satisfies Schemas['AdminUserDto'];
+
+/**
+ * `POST /api/auth/refresh` javobi — backend `RefreshResult(AccessToken, ExpiresIn)`.
+ * Mock ilgari faqat `{accessToken}` qaytarardi; `expiresIn` majburiy maydoni tushib
+ * qolgani tiplanmagan mock tufayli sezilmagan edi.
+ */
+const REFRESH_RESULT = {
+  accessToken: 'restored-token',
+  expiresIn: 1800,
+} satisfies Schemas['RefreshResult'];
 
 function renderProtected(initialPath = '/admin/students') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -47,7 +61,7 @@ describe('ProtectedRoute', () => {
   });
 
   it("token yo'q va refresh cookie ham yaroqsiz bo'lsa `?returnUrl=` bilan login'ga yo'naltiradi", async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ code: 'UNAUTHORIZED' }, 401)));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(problemResponse('UNAUTHORIZED', 401)));
 
     renderProtected('/admin/students');
 
@@ -72,15 +86,15 @@ describe('ProtectedRoute', () => {
       const headers = new Headers(init?.headers);
 
       if (url.endsWith('/api/auth/refresh')) {
-        return Promise.resolve(jsonResponse({ accessToken: 'restored-token' }));
+        return Promise.resolve(jsonResponse<'RefreshResult'>(REFRESH_RESULT));
       }
       if (url.endsWith('/api/auth/me')) {
         // Birinchi urinishda token yo'q — 401; `adminClient` avtomatik refresh qilib qayta
         // yuboradi, shu safar `Authorization: Bearer restored-token` bilan keladi.
         if (headers.get('Authorization') === 'Bearer restored-token') {
-          return Promise.resolve(jsonResponse({ id: 'u1', username: 'admin' }));
+          return Promise.resolve(jsonResponse<'AdminUserDto'>(ADMIN_USER));
         }
-        return Promise.resolve(jsonResponse({ code: 'UNAUTHORIZED' }, 401));
+        return Promise.resolve(problemResponse('UNAUTHORIZED', 401));
       }
       throw new Error(`Kutilmagan so'rov: ${url}`);
     });
@@ -92,7 +106,7 @@ describe('ProtectedRoute', () => {
     await waitFor(() => {
       expect(useAuthStore.getState().accessToken).toBe('restored-token');
     });
-    expect(useAuthStore.getState().user).toEqual({ id: 'u1', username: 'admin' });
+    expect(useAuthStore.getState().user).toEqual(ADMIN_USER);
   });
 
   // REGRESSIYA (2026-09-02, egasining xabari): API bir lahzaga javob bermasa — konteyner

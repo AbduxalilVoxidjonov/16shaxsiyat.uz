@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using StudentRoadMap.Api.Extensions;
 using StudentRoadMap.Application.Common.Models;
 using StudentRoadMap.Domain.Common;
 using ApplicationValidationException = StudentRoadMap.Application.Common.Exceptions.ValidationException;
@@ -90,6 +91,21 @@ public sealed class ExceptionHandlingMiddleware : IExceptionHandler
                 ProblemCodes.HttpStatusByCode.GetValueOrDefault(domain.Code, ProblemCodes.DefaultDomainErrorStatus),
                 domain.Code,
                 domain.Message,
+                null),
+            // Kestrel/model-binding transport xatosi: so'rov tanasi juda katta (413), tana
+            // to'satdan uzilgan yoki so'rov qatori buzuq (400). ILGARI bularning HAMMASI
+            // pastdagi `_ =>` shoxiga tushib `500 INTERNAL_ERROR` bo'lardi — ya'ni mijozning
+            // xatosi server nosozligi sifatida ko'rsatilardi (P31 topilmasi). Istisno XABARI
+            // ataylab ishlatilmaydi (u ichki chegara qiymatlarini oshkor qiladi, masalan
+            // "The max request body size is 30000000 bytes") — o'rniga o'zbekcha umumiy matn.
+            BadHttpRequestException badRequest => (
+                badRequest.StatusCode,
+                badRequest.StatusCode == StatusCodes.Status413PayloadTooLarge
+                    ? ProblemDetailsSetup.PayloadTooLarge
+                    : ProblemCodes.ValidationError,
+                badRequest.StatusCode == StatusCodes.Status413PayloadTooLarge
+                    ? "So'rov hajmi ruxsat etilgan chegaradan katta."
+                    : "So'rov noto'g'ri shakllantirilgan.",
                 null),
             _ => (500, ProblemCodes.InternalError, "Kutilmagan xatolik yuz berdi.", null),
         };

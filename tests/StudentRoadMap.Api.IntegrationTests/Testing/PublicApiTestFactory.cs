@@ -12,16 +12,33 @@ namespace StudentRoadMap.Api.IntegrationTests.Testing;
 /// <summary>
 /// Ommaviy sessiya API (`prompts/10`) integratsiya testlari uchun host. Docker/PostgreSQL
 /// bu muhitda yo'q — `AppDbContext`ning Npgsql ro'yxatidan o'tkazilishi olib tashlanib,
-/// **SQLite in-memory** bilan almashtiriladi (`SqliteAppDbContextFactory` — `Infrastructure.Tests`
-/// — bilan bir xil naqsh). Ulanish butun factory umri davomida ochiq turadi (aks holda
-/// in-memory baza yo'qoladi).
+/// **SQLite in-memory** bilan almashtiriladi. Baza NOMLANGAN va `Cache=Shared` rejimida:
+/// har bir DI scope O'Z `SqliteConnection`ini ochadi, lekin hammasi BITTA in-memory bazaga
+/// tegishli bo'ladi. Baza faqat unga ochiq ulanish borgacha yashaydi — shu sabab factory
+/// umri davomida bitta "tirik ushlab turuvchi" (`_keepAliveConnection`) ulanish ochiq turadi.
+///
+/// <para>
+/// ⚠️ **Nega bitta umumiy `SqliteConnection` EMAS** (2026-09-03, beqaror test tuzatildi):
+/// ilgari barcha scope'lar BITTA `SqliteConnection` obyektini baham ko'rardi. Har yangi
+/// `AppDbContext` uchun EF Core `SqliteRelationalConnection` yaratadi, u esa konstruktorida
+/// `SqliteConnection.CreateFunction(...)` chaqirib ulanishning ICHKI (concurrent bo'lmagan)
+/// `Dictionary`siga yozadi. Bu xostda haqiqiy `AnalysisWorkerBackgroundService` ishlaydi va
+/// har 2 soniyada o'z scope'ini ochadi — test oqimi bilan AYNI PAYTDA. Ikki oqim bitta
+/// `SqliteConnection`ni o'zgartirganda `ObjectDisposedException`,
+/// "non-concurrent collections must have exclusive access" yoki
+/// "SQLite Error 5: unable to delete/modify user-function due to active statements"
+/// tasodifiy chiqardi (`AiAnalysisBackgroundPipelineTests` va vaqti-vaqti bilan admin
+/// endpoint testlari). `Microsoft.Data.Sqlite` bitta ulanish uchun THREAD-SAFE EMAS —
+/// yechim: har scope o'z ulanishiga ega bo'lsin.
+/// </para>
 ///
 /// `sealed` EMAS — `ForwardedHeadersTests` `App:KnownProxies`ni boshqacha qiymat bilan sinash
 /// uchun `AdditionalConfiguration`ni override qiladi (pastga qarang).
 /// </summary>
 public class PublicApiTestFactory : WebApplicationFactory<Program>, Xunit.IAsyncLifetime
 {
-    private SqliteConnection? _connection;
+    /// <summary>Faqat in-memory bazani "tirik" ushlab turish uchun — hech qanday so'rov shu ulanishda bajarilmaydi.</summary>
+    private SqliteConnection? _keepAliveConnection;
 
     /// <summary>Subklasslar bazaviy konfiguratsiya ustiga qo'shimcha/bekor qiluvchi qiymat berishi mumkin.</summary>
     protected virtual IReadOnlyDictionary<string, string?> AdditionalConfiguration { get; } =
@@ -75,11 +92,22 @@ public class PublicApiTestFactory : WebApplicationFactory<Program>, Xunit.IAsync
 
             services.RemoveAll<AppDbContext>();
 
-            _connection = new SqliteConnection("DataSource=:memory:");
-            _connection.Open();
+            // Har factory uchun ALOHIDA nomlangan in-memory baza (testlar parallel ishlaydi).
+            // `Default Timeout` — bir vaqtda yozayotgan fon ishchisi va test oqimi
+            // to'qnashganda `SQLITE_BUSY/LOCKED`da darhol yiqilmasdan qayta urinish uchun.
+            var connectionString = new SqliteConnectionStringBuilder
+            {
+                DataSource = $"srm-tests-{Guid.NewGuid():N}",
+                Mode = SqliteOpenMode.Memory,
+                Cache = SqliteCacheMode.Shared,
+                DefaultTimeout = 30,
+            }.ToString();
+
+            _keepAliveConnection = new SqliteConnection(connectionString);
+            _keepAliveConnection.Open();
 
             services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlite(_connection).UseSnakeCaseNamingConvention());
+                options.UseSqlite(connectionString).UseSnakeCaseNamingConvention());
         });
     }
 
@@ -94,13 +122,19 @@ public class PublicApiTestFactory : WebApplicationFactory<Program>, Xunit.IAsync
         await db.Database.EnsureCreatedAsync();
     }
 
+    /// <summary>
+    /// AVVAL xost to'xtatiladi (`base.DisposeAsync` — `IHost.StopAsync` fon xizmatlarining
+    /// joriy siklini kutadi), KEYIN baza yopiladi. Teskari tartibda ishlayotgan
+    /// `AnalysisWorkerBackgroundService` yopilgan bazaga so'rov yuborib qolishi mumkin edi.
+    /// </summary>
     public new async Task DisposeAsync()
     {
-        if (_connection is not null)
-        {
-            await _connection.DisposeAsync();
-        }
-
         await base.DisposeAsync();
+
+        if (_keepAliveConnection is not null)
+        {
+            await _keepAliveConnection.DisposeAsync();
+            _keepAliveConnection = null;
+        }
     }
 }

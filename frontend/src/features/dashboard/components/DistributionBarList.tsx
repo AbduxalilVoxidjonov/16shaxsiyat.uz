@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { VisuallyHidden } from '@/shared/ui/VisuallyHidden';
 
 export interface DistributionBarRow {
   key: string;
@@ -80,23 +81,25 @@ export function DistributionBarList({
         })}
       </div>
 
-      <table className="sr-only" data-testid={`${testId}-table`}>
-        <caption>{tableCaption}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{labelColumnHeader}</th>
-            <th scope="col">{countColumnHeader}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.key}>
-              <td>{row.label}</td>
-              <td>{row.count}</td>
+      <VisuallyHidden>
+        <table data-testid={`${testId}-table`}>
+          <caption>{tableCaption}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{labelColumnHeader}</th>
+              <th scope="col">{countColumnHeader}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.key}>
+                <td>{row.label}</td>
+                <td>{row.count}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </VisuallyHidden>
     </div>
   );
 }

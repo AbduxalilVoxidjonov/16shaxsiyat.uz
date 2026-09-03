@@ -20,6 +20,8 @@ function toUpdatePayload(config: AiProviderConfigDto, fallbackOrder: number): Up
     temperature: config.temperature,
     isActive: config.isActive,
     fallbackOrder,
+    // `baseUrl` — `apiKey`dan farqli, yuborilmasa backend uni O'CHIRADI (`UpdateSettings`).
+    baseUrl: config.baseUrl,
   };
 }
 

@@ -126,7 +126,11 @@ function MobileSidebarDrawer({ open, onClose }: { open: boolean; onClose: () => 
       ref={ref}
       onClick={handleBackdropClick}
       onCancel={onClose}
-      className="fixed top-0 left-0 m-0 h-dvh w-72 max-w-[80vw] border-0 bg-white p-0 shadow-lg backdrop:bg-neutral-900/40 md:hidden"
+      // `dialog-drawer-start` — `index.css` dagi nomlangan istisno: umumiy
+      // `dialog:modal { margin: auto }` qoidasi (barcha oyna markazda) shu bitta oynada
+      // bekor qilinadi va drawer ekranning chap chetiga yopishadi. Tailwind ning `m-0`
+      // klassi buni qila olmaydi — spetsifiklik bo'yicha `dialog:modal` dan past (P30-8).
+      className="dialog-drawer-start fixed top-0 left-0 h-dvh w-72 max-w-[80vw] border-0 bg-white p-0 shadow-lg backdrop:bg-neutral-900/40 md:hidden"
     >
       <div className="flex items-center justify-between px-4 py-4">
         <span className="text-lg font-semibold text-neutral-900">{t('app.name')}</span>

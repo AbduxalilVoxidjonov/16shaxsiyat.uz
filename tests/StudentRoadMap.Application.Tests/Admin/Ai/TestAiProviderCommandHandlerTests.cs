@@ -80,6 +80,9 @@ public sealed class TestAiProviderCommandHandlerTests
     [InlineData(AiErrorKind.Timeout, "javob bermadi")]
     [InlineData(AiErrorKind.Server, "javob bermadi")]
     [InlineData(AiErrorKind.BadRequest, "So'rov shakli")]
+    [InlineData(AiErrorKind.ModelNotFound, "Model topilmadi")]
+    [InlineData(AiErrorKind.Network, "ulanib bo'lmadi")]
+    [InlineData(AiErrorKind.Schema, "shakldagi javob")]
     public async Task Handle_ProviderUnhealthy_ReturnsKindSpecificUzbekMessage(AiErrorKind kind, string expectedSubstring)
     {
         // Provayderning xom xabari ATAYLAB sirni o'z ichiga oladi — handler buni QATIYAN ishlatmasligi kerak.
@@ -101,6 +104,9 @@ public sealed class TestAiProviderCommandHandlerTests
     [InlineData(AiErrorKind.Server)]
     [InlineData(AiErrorKind.BadRequest)]
     [InlineData(AiErrorKind.Unknown)]
+    [InlineData(AiErrorKind.ModelNotFound)]
+    [InlineData(AiErrorKind.Network)]
+    [InlineData(AiErrorKind.Schema)]
     public async Task Handle_ProviderUnhealthy_MessageNeverContainsRawProviderTextOrKey(AiErrorKind kind)
     {
         var provider = new FakeAiAnalysisProvider(AiProvider.Anthropic, new AiHealthResult(false, $"leaked key fragment: {SecretApiKey}", kind));
@@ -110,6 +116,25 @@ public sealed class TestAiProviderCommandHandlerTests
 
         result.Value.Message.Should().NotContain(SecretApiKey);
         result.Value.Message.Should().NotContain("leaked key fragment");
+    }
+
+    /// <summary>
+    /// Yangi `AiErrorKind` qo'shilib, unga xabar yozilmasa — bu test yiqiladi (barcha turlar
+    /// uchun bo'sh bo'lmagan, xom matndan farqli xabar bo'lishi kafolatlanadi).
+    /// </summary>
+    [Fact]
+    public async Task Handle_EveryErrorKind_ProducesNonEmptySafeMessage()
+    {
+        foreach (var kind in Enum.GetValues<AiErrorKind>().Where(k => k != AiErrorKind.None))
+        {
+            var provider = new FakeAiAnalysisProvider(AiProvider.Gemini, new AiHealthResult(false, $"raw {SecretApiKey}", kind));
+            var handler = CreateHandler(provider);
+
+            var result = await handler.Handle(new TestAiProviderCommand(AiProvider.Gemini, Guid.NewGuid()), CancellationToken.None);
+
+            result.Value.Message.Should().NotBeNullOrWhiteSpace($"'{kind}' uchun xabar yozilishi kerak");
+            result.Value.Message.Should().NotContain(SecretApiKey);
+        }
     }
 
     [Fact]

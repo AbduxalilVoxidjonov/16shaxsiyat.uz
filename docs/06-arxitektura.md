@@ -235,6 +235,25 @@ Barcha xatolar `application/problem+json`:
 | `RATE_LIMITED` | 429 | Limit oshdi |
 | `AI_PROVIDER_ERROR` | 502 | Provider javob bermadi |
 | `INTERNAL_ERROR` | 500 | Kutilmagan |
+| `METHOD_NOT_ALLOWED` | 405 | Marshrut bor, HTTP metodi qo'llab-quvvatlanmaydi (P31) |
+| `PAYLOAD_TOO_LARGE` | 413 | So'rov tanasi server chegarasidan katta (P31) |
+| `UNSUPPORTED_MEDIA_TYPE` | 415 | `Content-Type` qo'llab-quvvatlanmaydi (P31) |
+
+> **`429` javobi.** `Retry-After` sarlavhasi (butun sekund) MAJBURIY, va bir xil qiymat
+> `ProblemDetails` tanasida `retryAfterSeconds` maydoni sifatida takrorlanadi — sarlavhani
+> o'qiy olmaydigan klient uchun. Qiymat siyosat oynasidan olinadi (`RateLimitSetup`).
+
+> **`code` qayerdan keladi (P31).** To'rt manba, ular bir-birining ustidan yozmaydi:
+> `ExceptionHandlingMiddleware` (istisnolar), `ControllerResultExtensions` (`Result` xatolari),
+> autentifikatsiya handlerlari (401/403/410), `ModelStateProblemDetailsSetup` (model-binding va
+> JSON o'qish bosqichi — buzuq tana, noto'g'ri tur, yo'q maydon → doim `VALIDATION_ERROR`).
+> Hech biriga yetib bormagan TRANSPORT javoblariga (404/405/415…) `ProblemDetailsSetup`ning
+> `CustomizeProblemDetails` zaxira xaritasi kod qo'yadi. Ya'ni `code` maydoni HAR javobda bor.
+
+> **Xato javobida ichki tafsilot bo'lmaydi.** Stack trace, SQL matni, fayl yo'li, CLR tip
+> nomi va JSON parser holati (`Path: $.grade | LineNumber: … | BytePositionInLine: …`) mijozga
+> CHIQARILMAYDI. Buning uchun `Mvc.JsonOptions.AllowInputFormatterExceptionMessages = false`
+> va `ModelError.Exception` mavjud bo'lgan holatlarda umumiy o'zbekcha xabar ishlatiladi.
 
 ---
 
@@ -320,3 +339,13 @@ Barcha xatolar `application/problem+json`:
 | 2026-09-02 | Fon refresh'i `authStore.accessToken` ni ham yangilaydi (`setOnAdminTokenRefreshed`) | PM | `performRefresh` faqat `adminClient` ichidagi modul o'zgaruvchisini yangilardi; React qatlami eski tokenni ko'rib turardi — ikki manba bir-biriga zid bo'lish xavfi |
 | 2026-09-02 | `Button`: `disabled={disabled \|\| isLoading}` (`??` emas) | PM | `??` bilan chaqiruvchi aniq `disabled={false}` bergan joyda yuklanayotgan tugma ochiq qolardi. Audit jurnalida 176 ms farq bilan ikkita `Auth.LoginSucceeded` — bitta ikki marta bosishdan ikkita login. Mavjud test ushlay olmasdi, chunki `disabled` ni umuman bermasdi |
 | 2026-09-02 | `db` host porti `DB_PORT` bilan sozlanadi, standarti **5433** | PM | Shu mashinada boshqa loyihaning Postgres'i 5432 ni egallagan va butun stek "port is already allocated" bilan ko'tarilmay qolgan edi |
+| 2026-09-03 | Batareya natijasining **roli** (`PersonalityBatteryRole`) metodika kodi emas, `ScoringStrategyCode` bo'yicha aniqlanadi | PM | Natijaning ma'nosini uni hisoblagan **algoritm** belgilaydi, anketa kodi emas. Ilgari `TestCode == "MBTI16"` solishtiruvi ishlatilardi va `MBTI16` KODLI `Custom` anketa haqiqiy batareya o'rniga ishlatilib ketardi — testda isbotlangan: `personalityType` "INTJ" o'rniga "ESFP" chiqardi, `LastPersonalityType` ga 3 harfli Holland kodi ("RIA") yozilardi, `MaturityIndex` esa sessiyani `409` bilan yiqitardi |
+| 2026-09-03 | `latestAssessment.results` kalitlari — `MBTI16`/`BIG5`/`RIASEC`/`ACTIVITY` (katta harf), `TestDefinition.Code` bilan bir xil | PM | Backend sukut camelCase bilan `mbti16` yuborardi, frontend `MBTI16` kutardi — profil bo'limlari **jimgina bo'sh** chiqardi. `docs/07` §3.2 misoli allaqachon katta harfda edi, ya'ni shartnoma frontend tomonda edi. `[JsonPropertyName]` bilan qulflandi |
+| 2026-09-03 | RIASEC `types` kalitlari — bitta harfli mnemonika (`R I A S E C`) | PM | Frontend `ART/SOC/ENT/CONV` kutardi — bular bazadagi `scale` kodlari va ular API'ga **hech qachon chiqmaydi** (`CLAUDE.md` 9-band). `types['ART']` `undefined` bo'lib `toFixed` da `TypeError` berardi. `resultCode` ("IRA") ham shu harflardan iborat, ya'ni kalitlar u bilan solishtiriladi |
+| 2026-09-03 | Integratsiya testlarida javob **xom JSON** sifatida ham tekshiriladi, faqat `ReadFromJsonAsync<Dto>()` bilan emas | PM | `ReadFromJsonAsync<Dto>()` kalit nomidagi farqni **ko'rmaydi** — u DTO ga bog'laydi. Yuqoridagi ikkala kalit xatosi aynan shuning uchun omon qolgan edi |
+| 2026-09-03 | Sinov muhitida har DI scope **o'z `SqliteConnection`ini** ochadi (nomlangan `Mode=Memory;Cache=Shared` + keep-alive ulanish); `DisposeAsync` da avval xost to'xtatiladi, keyin baza yopiladi | PM | Barcha scope'lar bitta `SqliteConnection` obyektini ulashardi, `Microsoft.Data.Sqlite` esa bitta ulanish uchun thread-safe emas: `SqliteRelationalConnection` konstruktori `CreateFunction` bilan concurrent bo'lmagan `Dictionary` ga yozadi. Fon xizmati o'z scope'ini ochganda poyga yuzaga kelardi. Beqarorlik bitta testga emas, **butun integratsiya to'plamiga** tegishli edi. 52 yurish bilan tasdiqlangan |
+| 2026-09-03 | Post-filtrdan toza o'tmagan AI matni `isModerated` bayrog'i bilan **belgilanadi** va UI ogohlantirish ko'rsatadi | PM | Taqiqlangan atama ikkinchi urinishda ham chiqsa javob saqlanadi (`Moderated`), lekin belgi faqat ustunda qolardi va ekranga **belgisiz** chiqardi — `CLAUDE.md` 6-qoidasi ("AI tashxis qo'ymaydi") uchun jiddiy |
+| 2026-09-03 | Frontend backend DTO'larini **qo'lda yozmaydi** — `shared/api/schema.d.ts` dan re-export qiladi; test mock'lari `satisfies components['schemas'][...]` bilan tiplanadi | PM | Bir kunda **oltita** shartnoma nomuvofiqligi topildi (`mbti16`↔`MBTI16`, RIASEC `A`↔`ART`, `backupCodes`↔`recoveryCodes`, `currentPassword`↔`password`, AI `baseUrl` yuborilmasligi, AI hisobotining 5 bo'limi). Hammasining sababi bitta: qo'lda takrorlangan tip va **tiplanmagan mock**. Mock backenddan uzilib qolsa test yashil qolaveradi va frontendning o'z taxminini tasdiqlaydi — 2FA testi aynan shunday "yashil" edi, jonli tizimda esa oyna yiqilardi |
+| 2026-09-03 | `admin_users.concurrency_stamp` dan doimiy ustun DEFAULT'i olib tashlanadi (yangi migratsiya) | PM (migratsiya sinovi topilmasi) | EF `AddColumn(..., defaultValue: Guid.Empty)` ni bir martalik backfill emas, **doimiy DEFAULT** qilib chiqargan. Qiymatsiz `INSERT` jimgina nol-GUID yozadi — optimistik konkurentlik tokeni vazifasini bajarmaydi. Sinov bazasi `EnsureCreated()` bilan qurilgani uchun testlar buni ko'ra olmasdi |
+| 2026-09-03 | Migratsiya yo'li Testcontainers bilan haqiqiy Postgres'da sinaladi (`tests/StudentRoadMap.Migrations.Tests`), jumladan **oraliq migratsiya nuqtasidan backfill** ssenariysi | PM | Barcha integratsiya testlari `EnsureCreated()` ishlatadi, ya'ni migratsiyalarni **umuman bajarmaydi**. P34 da aynan shu sabab bloklovchi xato testlardan o'tib ketgan va uni faqat QA qo'lda topgan edi. Docker yo'q muhitda testlar jimgina o'tmaydi: `Skip` sabab bilan, CI'da esa `SRM_REQUIRE_DOCKER=1` bilan yiqiladi |
+| 2026-09-03 | Solution'ga yangi loyiha qo'shilsa, `docker/Dockerfile.api` dagi `COPY *.csproj` ro'yxatiga ham qator qo'shiladi | PM | `dotnet restore StudentRoadMap.sln` solution'dagi har bir `csproj` ni talab qiladi; bittasi yetishmasa `MSB3202` bilan yiqiladi va **API obrazi umuman yig'ilmaydi**. 2026-09-03 da deploy shu sabab to'liq bloklangan edi |

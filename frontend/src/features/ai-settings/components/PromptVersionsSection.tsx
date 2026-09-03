@@ -40,12 +40,12 @@ export function PromptVersionsSection() {
         <ul className="flex flex-col gap-2">
           {promptsQuery.data.map((prompt) => (
             <li
-              key={`${prompt.key}-${String(prompt.version)}`}
+              key={prompt.id}
               className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 p-3"
             >
               <div>
                 <p className="text-sm font-medium text-neutral-900">
-                  {prompt.key} · v{prompt.version}
+                  {prompt.key} · {prompt.version}
                   {prompt.isActive && (
                     <Badge variant="success" className="ml-2">
                       {t('aiSettings.prompts.activeBadge')}

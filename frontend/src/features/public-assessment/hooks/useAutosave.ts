@@ -32,8 +32,21 @@ export interface UseAutosaveResult {
   status: AutosaveStatus;
   /** Javobni darhol mahalliy keshga yozadi (UI hech qachon kutmaydi) va yuborishni navbatga qo'yadi. */
   setAnswer: (questionId: string, value: number, durationMs: number) => void;
-  /** Darhol yuborishga urinadi (debounce/interval'ni kutmasdan) — natijani kutmaydi, xato bloklamaydi. */
-  flush: () => void;
+  /**
+   * Navbatni darhol yuborishga urinadi (debounce/interval'ni kutmasdan) va **yuborish
+   * YAKUNLANGANDA** hal bo'ladigan promise qaytaradi:
+   *
+   * - `true` — chaqirilgan paytda navbatda bo'lgan BARCHA javoblar serverga yetib bordi
+   *   (yoki navbat allaqachon bo'sh edi);
+   * - `false` — yetib bormadi (tarmoq xatosi, oflayn, `410`). Javoblar `pending: true`
+   *   holida navbatda qoladi va keyingi urinishda qayta yuboriladi — YO'QOLMAYDI.
+   *
+   * Chaqiruvchi shu natijaga qarab davom etadi: `POST .../complete` faqat `true` bo'lganda
+   * yuboriladi (aks holda backend `400 VALIDATION_ERROR unansweredCount` qaytaradi — P30-2).
+   * Ketma-ket chaqiruvlar zanjirlanadi: agar oldingi yuborish hali tugamagan bo'lsa, yangi
+   * chaqiruv uni kutadi va shundan keyin qolgan navbatni yuboradi.
+   */
+  flush: () => Promise<boolean>;
 }
 
 /**
@@ -51,38 +64,40 @@ export interface UseAutosaveResult {
  *
  * Eslatma (React Compiler purity): render vaqtida hisoblanadigan qiymatlar (`localValues`,
  * `status`) haqiqiy `useState`dan olinadi (render davomida `ref.current` o'qish/yozish
- * taqiqlangan). `storeRef` faqat effekt/callback'lar ichida (interval, `beforeunload`/
- * `visibilitychange`, `flush`) ishlatiladi — bular render EMAS, shu sabab xavfsiz; u alohida
- * effekt orqali `store` holatiga sinxronlanadi.
+ * taqiqlangan). `storeRef` — navbatning HAQIQIY manbai; u faqat effekt/callback'lar ichida
+ * (`updateStore`, interval, `beforeunload`/`visibilitychange`, `flush`) o'qiladi va yoziladi —
+ * bular render EMAS, shu sabab xavfsiz. `store` holati esa uning render uchun ko'zgusi.
+ * (Ilgari `storeRef` alohida effekt orqali sinxronlanardi — bu bir render kechikish berardi va
+ * `flush()` eng oxirgi javobni ko'rmasligi mumkin edi.)
  */
 export function useAutosave({ testCode, onSessionExpired }: UseAutosaveOptions): UseAutosaveResult {
   const isOnline = useOnline();
   const [store, setStore] = useState<AnswerStore>(() => readAnswerStore());
   const storeRef = useRef<AnswerStore>(store);
-  const sendingRef = useRef(false);
   const [isSending, setIsSending] = useState(false);
   const debounceRef = useRef<number | null>(null);
   const onSessionExpiredRef = useRef(onSessionExpired);
-
-  useEffect(() => {
-    storeRef.current = store;
-  }, [store]);
 
   useEffect(() => {
     onSessionExpiredRef.current = onSessionExpired;
   }, [onSessionExpired]);
 
   const updateStore = useCallback((updater: (prev: AnswerStore) => AnswerStore) => {
-    setStore((prev) => {
-      const next = updater(prev);
-      writeAnswerStore(next);
-      return next;
-    });
+    // `setStore` funksional yangilagichi EMAS: navbat `storeRef`da sinxron yangilanishi shart,
+    // aks holda o'sha hodisadan keyin darhol chaqirilgan `flush()` eski navbatni ko'radi.
+    const next = updater(storeRef.current);
+    storeRef.current = next;
+    writeAnswerStore(next);
+    setStore(next);
   }, []);
 
+  /** Bitta test bloki navbatini yuboradi. `true` — serverga yetib bordi. */
   const flushGroup = useCallback(
-    async (groupTestCode: string, items: readonly { questionId: string; value: number; durationMs: number }[]) => {
-      if (items.length === 0) return;
+    async (
+      groupTestCode: string,
+      items: readonly { questionId: string; value: number; durationMs: number }[],
+    ): Promise<boolean> => {
+      if (items.length === 0) return true;
       try {
         // `items` — `StoredAnswer[]` (`testCode`/`pending` maydonlari bilan, `answerQueue.ts`),
         // backend shartnomasi (`SaveAnswersRequest`) esa faqat `questionId`/`value`/`durationMs`
@@ -97,31 +112,48 @@ export function useAutosave({ testCode, onSessionExpired }: UseAutosaveOptions):
             items.map((item) => item.questionId),
           ),
         );
+        return true;
       } catch (error) {
         if (error instanceof AppError && error.status === 410) {
           onSessionExpiredRef.current?.();
-          return;
+          return false;
         }
         // Boshqa xatolar — yozuv `pending: true` holida navbatda qoladi, keyingi
         // debounce/interval/online chaqiruvida qayta uriniladi (foydalanuvchi bloklanmaydi).
+        return false;
       }
     },
     [updateStore],
   );
 
-  const flush = useCallback(() => {
-    if (sendingRef.current) return;
-    if (!navigator.onLine) return;
-    const groups = pendingByTestCode(storeRef.current);
-    const entries = Object.entries(groups);
-    if (entries.length === 0) return;
-    sendingRef.current = true;
+  /** Bitta yuborish sikli — chaqirilgan paytdagi butun navbatni yuboradi. Hech qachon `throw` qilmaydi. */
+  const runFlush = useCallback(async (): Promise<boolean> => {
+    const entries = Object.entries(pendingByTestCode(storeRef.current));
+    if (entries.length === 0) return true; // navbat bo'sh — hammasi allaqachon saqlangan
+    if (!navigator.onLine) return false; // oflayn — navbat joyida qoladi, `online` hodisasida yuboriladi
     setIsSending(true);
-    void Promise.all(entries.map(([code, items]) => flushGroup(code, items))).finally(() => {
-      sendingRef.current = false;
+    try {
+      const results = await Promise.all(entries.map(([code, items]) => flushGroup(code, items)));
+      return results.every(Boolean);
+    } finally {
       setIsSending(false);
-    });
+    }
   }, [flushGroup]);
+
+  // Yuborishlar ZANJIRI: bir vaqtda faqat bitta sikl ishlaydi (ilgari `sendingRef` bilan
+  // ikkinchi chaqiruv shunchaki TASHLAB YUBORILARDI — chaqiruvchi "yuborildi" deb o'ylardi,
+  // aslida oxirgi javoblar navbatda qolardi). Endi ikkinchi chaqiruv birinchisini KUTADI va
+  // shundan keyin qolgan navbatni (shu jumladan orada qo'shilgan yangi javoblarni) yuboradi.
+  const flushChainRef = useRef<Promise<void>>(Promise.resolve());
+
+  const flush = useCallback((): Promise<boolean> => {
+    const result = flushChainRef.current.then(runFlush);
+    flushChainRef.current = result.then(
+      () => undefined,
+      () => undefined,
+    );
+    return result;
+  }, [runFlush]);
 
   const setAnswer = useCallback(
     (questionId: string, value: number, durationMs: number) => {
@@ -131,7 +163,7 @@ export function useAutosave({ testCode, onSessionExpired }: UseAutosaveOptions):
       }
       debounceRef.current = window.setTimeout(() => {
         debounceRef.current = null;
-        flush();
+        void flush();
       }, DEBOUNCE_MS);
     },
     [testCode, updateStore, flush],
@@ -139,7 +171,9 @@ export function useAutosave({ testCode, onSessionExpired }: UseAutosaveOptions):
 
   // Har 10 soniyada — docs/10, 4.2-bo'lim.
   useEffect(() => {
-    const interval = window.setInterval(flush, PERIODIC_FLUSH_MS);
+    const interval = window.setInterval(() => {
+      void flush();
+    }, PERIODIC_FLUSH_MS);
     return () => window.clearInterval(interval);
   }, [flush]);
 
@@ -149,7 +183,7 @@ export function useAutosave({ testCode, onSessionExpired }: UseAutosaveOptions):
       if (debounceRef.current !== null) {
         window.clearTimeout(debounceRef.current);
       }
-      flush();
+      void flush();
     };
   }, [flush]);
 
@@ -157,7 +191,7 @@ export function useAutosave({ testCode, onSessionExpired }: UseAutosaveOptions):
   const wasOnlineRef = useRef(isOnline);
   useEffect(() => {
     if (!wasOnlineRef.current && isOnline) {
-      flush();
+      void flush();
     }
     wasOnlineRef.current = isOnline;
   }, [isOnline, flush]);

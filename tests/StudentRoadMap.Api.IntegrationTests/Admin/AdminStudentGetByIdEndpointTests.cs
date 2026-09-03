@@ -73,7 +73,11 @@ public sealed class AdminStudentGetByIdEndpointTests : IClassFixture<PublicApiTe
         var now = DateTimeOffset.UtcNow;
 
         var school = await TestDataFactory.CreateSchoolAsync(db, now, "students-getbyid-a", TestDataFactory.NewAccessToken("students-getbyid-a"));
-        var mbtiTest = await TestDataFactory.CreatePublishedTestAsync(db, now, "GBI-MBTI", 1, questionCount: 1);
+        // ⚠️ HAQIQIY batareya anketasi (`Standard` + `Scored` + `MBTI16` STRATEGIYASI), lekin
+        // kodi ATAYLAB `MBTI16` EMAS — `GBI-MBTI`. `results.MBTI16` bloki 2026-09-03 dan buyon
+        // metodika KODI emas, batareya ROLI bo'yicha to'ldiriladi (`StudentProfileMapping`).
+        var mbtiTest = await TestDataFactory.CreateStandaloneSystemTestAsync(
+            db, now, "GBI-MBTI", 1, questionCount: 1, scoringStrategyCode: "MBTI16");
 
         var phone = PhoneNumber.Create("+998901234567").Value;
         var student = Student.Create(Guid.NewGuid(), school.Id, "Nortoyeva Kamola Shukurovna", new DateOnly(2009, 6, 12), Gender.Female, 8, phone, now, now);
@@ -95,7 +99,7 @@ public sealed class AdminStudentGetByIdEndpointTests : IClassFixture<PublicApiTe
         var normalizedScores = """{"EI":28.3,"SN":71.6,"TF":33.3,"JP":64.1}""";
         var levels = """{"EI":"I","SN":"N","TF":"T","JP":"J"}""";
         var testResult = TestResult.Create(
-            Guid.NewGuid(), assessmentTest.Id, assessment.Id, "MBTI16", "{}", normalizedScores,
+            Guid.NewGuid(), assessmentTest.Id, assessment.Id, mbtiTest.Code, "{}", normalizedScores,
             scoringVersion: 1, testVersion: 1, computedAt: now, resultCode: "INTJ", levelsJson: levels, flagsJson: "[]");
 
         db.Assessments.Add(assessment);
@@ -123,6 +127,18 @@ public sealed class AdminStudentGetByIdEndpointTests : IClassFixture<PublicApiTe
         // `CLAUDE.md` 9-band: `scale`/`scaleDirection` o'quvchi profilida HECH QACHON bo'lmaydi.
         var raw = await client.GetStringAsync(new Uri($"/api/admin/students/{student.Id}", UriKind.Relative));
         raw.Should().NotContain("scaleDirection");
-        JsonDocument.Parse(raw); // yaroqli JSON ekanligini tasdiqlaydi.
+        using var rawDocument = JsonDocument.Parse(raw); // yaroqli JSON ekanligini tasdiqlaydi.
+
+        // `docs/07` 3.2 "KALIT NOMLARI": `results` kalitlari — `MBTI16`/`BIG5`/`RIASEC`/`ACTIVITY`
+        // (`AdminTestResultsDto` dagi `JsonPropertyName` bilan qulflangan). Anketa KODI boshqacha
+        // (`GBI-MBTI`) bo'lishi mumkin — kalit batareya ROLIDAN kelib chiqadi.
+        // `ReadFromJsonAsync<AdminStudentProfileDto>` kalitni o'zi qayta bog'laydi va bu farqni
+        // KO'RMAYDI — shu sabab xom JSON ustidan tekshiriladi (2026-09-03 tekshiruvi).
+        var rawResults = rawDocument.RootElement
+            .GetProperty("latestAssessment")
+            .GetProperty("results");
+        rawResults.TryGetProperty("MBTI16", out _).Should().BeTrue(
+            "shartnoma kaliti — `MBTI16` (anketa KODI `GBI-MBTI` bo'lsa ham: kalit rolga bog'liq, kodga emas)");
+        rawResults.TryGetProperty("mbti16", out _).Should().BeFalse("camelCase kalit shartnomani buzadi");
     }
 }

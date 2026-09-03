@@ -28,6 +28,12 @@ public sealed record PublicTestCatalogItemDto(
 /// <summary>
 /// Maktab uchun mavjud bitta dastur — `docs/06` 8-bo'lim, `prompts/34` C8-band. O'quvchi kirishda
 /// (bir nechtasi bo'lsa) shulardan bittasini tanlaydi (`code` — `POST /sessions` `programCode`ga).
+///
+/// `HasPersonalityBattery` — bu dasturda ilmiy shaxsiyat batareyasi (`Standard` + `Scored`
+/// metodika) bormi. `false` bo'lsa dastur tugagach shaxsiyat tipi hisoblanmaydi. Mezon —
+/// `Domain.Catalog.PersonalityBattery` (metodika KODI bo'yicha qidiruv EMAS). Sessiya
+/// darajasidagi ayni shu bayroq `GetSessionStateResult.hasPersonalityBattery` da qaytadi —
+/// ikkalasi BIR XIL domen qoidasidan hisoblanadi.
 /// </summary>
 public sealed record PublicProgramSummaryDto(
     string Code,
@@ -35,4 +41,5 @@ public sealed record PublicProgramSummaryDto(
     string? DescriptionUz,
     int TestCount,
     int QuestionCount,
-    int EstimatedMinutes);
+    int EstimatedMinutes,
+    bool HasPersonalityBattery);

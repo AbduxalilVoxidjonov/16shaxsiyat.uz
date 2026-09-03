@@ -1,16 +1,19 @@
 using MediatR;
-using StudentRoadMap.Application.Admin.Students;
 using StudentRoadMap.Domain.Common;
 
 namespace StudentRoadMap.Application.Admin.Assessments.GetById;
 
 /// <summary>
-/// `GET /api/admin/assessments/{id}` — `docs/07-api-shartnoma.md` 3.3-bo'lim: "To'liq detal
-/// (yuqoridagi `latestAssessment` shakli)". Bu ibora ANIQ — javob shakli 3.2-bo'limdagi
-/// `latestAssessment` bilan BIR XIL (`{id, results, aiAnalysis, aiHistory}`,
-/// `AdminLatestAssessmentDto`, `Admin.Students`da mavjud) — shu sabab bu yerda YANGI DTO
-/// yaratilmaydi, mavjudi qayta ishlatiladi (`prompts/15` "AVVAL O'QI": "3.3 — javob shakllari
-/// aynan"). `Id` — shu SESSIYAning o'zi (`AdminStudentProfileDto.LatestAssessment`dagi kabi
-/// "eng oxirgi" emas — bu yerda `assessmentId` to'g'ridan-to'g'ri berilgan).
+/// `GET /api/admin/assessments/{id}` — `docs/07-api-shartnoma.md` 3.3-bo'lim.
+///
+/// <para>
+/// Javob shakli — <see cref="AdminAssessmentDetailDto"/>: `latestAssessment` (3.2-bo'lim,
+/// `AdminLatestAssessmentDto`) ning `{id, results, aiAnalysis, aiHistory}` yadrosi HARFMA-HARF
+/// saqlanadi, ustiga sessiyaning o'z "sarlavhasi" (holat, vaqtlar, ishonchlilik, o'quvchi,
+/// maktab, dastur) va `tests[]` qo'shiladi (2026-09-03). Bungacha bu yerda `AdminLatestAssessmentDto`
+/// qayta ishlatilardi — natijada detal sahifasi to'g'ridan-to'g'ri havola bilan ochilganda
+/// yarim bo'sh qolardi (sarlavha ma'lumoti faqat ro'yxatdan navigatsiya holati orqali kelardi).
+/// `AdminLatestAssessmentDto`ning O'ZI o'zgarmadi — u o'quvchi profilida (3.2) ishlatilishda davom etadi.
+/// </para>
 /// </summary>
-public sealed record GetAssessmentByIdQuery(Guid Id) : IRequest<Result<AdminLatestAssessmentDto>>;
+public sealed record GetAssessmentByIdQuery(Guid Id) : IRequest<Result<AdminAssessmentDetailDto>>;

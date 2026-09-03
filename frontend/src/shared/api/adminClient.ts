@@ -1,5 +1,6 @@
 import { apiRequest, type RequestOptions } from './client';
 import { AppError } from './AppError';
+import type { components } from './schema';
 
 /**
  * Superadmin access tokeni — **faqat xotirada** (modul o'zgaruvchisi), `localStorage`ga
@@ -35,11 +36,19 @@ export function setOnAdminTokenRefreshed(handler: ((token: string) => void) | nu
   onTokenRefreshed = handler;
 }
 
-interface RefreshResponse {
-  accessToken: string;
-  refreshToken?: string;
-  expiresIn?: number;
-}
+/**
+ * `POST /api/auth/refresh` javobi — backend `RefreshResult` dan re-export
+ * (`features/auth/model/types.ts` dagi `RefreshResponse` bilan AYNAN bir xil manba; bu yerda
+ * to'g'ridan-to'g'ri sxemadan olinadi, chunki `shared/` qatlami `features/` ni import
+ * qilmaydi — `docs/10` 2-bo'lim).
+ *
+ * Ilgari bu yerda qo'lda yozilgan nusxa bor edi va u ikki joyda shartnomadan farq qilardi:
+ * - `refreshToken?: string` — backend uni HECH QACHON tanada yubormaydi (`httpOnly` cookie,
+ *   `docs/08` 2-bo'lim); o'lik va adashtiruvchi maydon edi;
+ * - `expiresIn?: number` — backendda MAJBURIY (`RefreshResult.ExpiresIn`), bu yerda esa
+ *   ixtiyoriy deb e'lon qilingan edi.
+ */
+type RefreshResponse = components['schemas']['RefreshResult'];
 
 /**
  * Parallel so'rovlarning barchasi bitta refresh chaqiruvini ulashishi uchun mutex.

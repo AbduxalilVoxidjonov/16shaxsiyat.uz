@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, useSearchParams } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
+import { pagedResponse, problemResponse, typedResponse, type Schemas } from '@/test/apiMock';
 import StudentsPage from './StudentsPage';
 
 const STUDENT_1 = {
@@ -20,7 +21,7 @@ const STUDENT_1 = {
   needsAttention: true,
   reliabilityFlag: 'Reliable',
   lastAssessmentAt: '2026-08-30T10:00:00Z',
-};
+} satisfies Schemas['AdminStudentListItemDto'];
 
 const STUDENT_2 = {
   id: 'student-2',
@@ -36,36 +37,29 @@ const STUDENT_2 = {
   needsAttention: false,
   reliabilityFlag: null,
   lastAssessmentAt: null,
-};
+} satisfies Schemas['AdminStudentListItemDto'];
 
+/**
+ * `GET /api/admin/schools` — maktab kombobox'i uchun. Kombobox faqat `name`/`region`/`district`
+ * ni o'qiydi (`SchoolOption`), lekin mock backendning TO'LIQ `AdminSchoolListItemDto` qatorini
+ * qaytaradi: mock backend shartnomasidan uzilmasligi uchun tor proyeksiya emas, haqiqiy javob
+ * shakli ishlatiladi.
+ */
 const SCHOOL_OPTION = {
   id: 'school-1',
   name: '12-son maktab',
   region: "Farg'ona",
   district: "Qo'qon",
-};
-
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
-function pagedResponse(items: unknown[]) {
-  return {
-    items,
-    page: 1,
-    pageSize: 20,
-    totalCount: items.length,
-    totalPages: 1,
-    hasNext: false,
-    hasPrevious: false,
-  };
-}
+  slug: '12-maktab-qokon',
+  publicUrl: 'https://16shaxsiyat.uz/t/12-maktab-qokon?k=abc123token',
+  isActive: true,
+  studentCount: 42,
+  completedCount: 17,
+  lastActivityAt: '2026-08-30T10:00:00Z',
+} satisfies Schemas['AdminSchoolListItemDto'];
 
 interface FetchMockOptions {
-  students?: unknown[];
+  students?: Schemas['AdminStudentListItemDto'][];
   studentsErrorStatus?: number;
   exportResponse?: () => Response | Promise<Response>;
 }
@@ -95,22 +89,25 @@ function mockFetch(options: FetchMockOptions = {}) {
     }
     if (url.includes('/api/admin/students')) {
       if (options.studentsErrorStatus) {
-        return Promise.resolve(
-          jsonResponse(
-            { code: 'INTERNAL_ERROR', title: 'Xato', status: options.studentsErrorStatus },
-            options.studentsErrorStatus,
-          ),
-        );
+        return Promise.resolve(problemResponse('INTERNAL_ERROR', options.studentsErrorStatus));
       }
       return Promise.resolve(
-        jsonResponse(pagedResponse(options.students ?? [STUDENT_1, STUDENT_2])),
+        pagedResponse<'AdminStudentListItemDto'>(options.students ?? [STUDENT_1, STUDENT_2]),
       );
     }
     if (url.includes('/api/admin/schools/school-1')) {
-      return Promise.resolve(jsonResponse({ id: 'school-1', name: SCHOOL_OPTION.name }));
+      // `useSchoolNameQuery` ataylab TOR proyeksiya o'qiydi (`{id, name}`) — backend bu yerda
+      // to'liq `AdminSchoolDetailDto` qaytaradi, lekin chuqur havoladagi kombobox uchun faqat
+      // nom kerak. Shu sabab sxema tipi emas, mijoz kutgan aniq shakl ko'rsatiladi.
+      return Promise.resolve(
+        typedResponse<{ id: string; name: string }>({
+          id: 'school-1',
+          name: SCHOOL_OPTION.name,
+        }),
+      );
     }
     if (url.includes('/api/admin/schools')) {
-      return Promise.resolve(jsonResponse(pagedResponse([SCHOOL_OPTION])));
+      return Promise.resolve(pagedResponse<'AdminSchoolListItemDto'>([SCHOOL_OPTION]));
     }
     return Promise.reject(new Error(`unexpected fetch: ${url}`));
   });

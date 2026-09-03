@@ -29,7 +29,10 @@ describe('AxisBar', () => {
     render(<AxisBar axisCode="TF" pct={33.3} letter="T" borderline={false} />);
     const table = screen.getByRole('table', { hidden: true });
     expect(table).toBeInTheDocument();
-    expect(table.className).toContain('sr-only');
+    // Jadval `sr-only` O'RAM ichida (`VisuallyHidden`) — `sr-only` ni jadvalning
+    // O'ZIGA berib bo'lmaydi: u holda jadval eni sahifadan chiqib ketadi (P30-5,
+    // izohi `shared/ui/VisuallyHidden.tsx` da).
+    expect(table.parentElement?.className).toContain('sr-only');
   });
 
   it('diapazondan tashqari (manfiy/100dan katta) qiymatlarni kesib qo\'yadi', () => {

@@ -1,11 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { jsonResponse, problemResponse, typedResponse } from '@/test/apiMock';
 import { adminRequest, setAdminAccessToken, setOnAdminSessionExpired } from './adminClient';
 
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
+/**
+ * `GET /api/admin/students` ning HAQIQIY javobi — `AdminStudentListItemDtoPagedResult`
+ * (`pagedResponse<'AdminStudentListItemDto'>`). Bu yerda ataylab MINIMAL joy egallovchi tana
+ * ishlatiladi: sinaladigan narsa — `401` → bitta refresh (mutex) → qayta yuborish zanjiri,
+ * javob DTO'si emas; to'liq sahifalangan tana testni faqat shovqinliroq qilardi.
+ */
+interface StudentsListStub {
+  items: never[];
 }
 
 describe('adminRequest', () => {
@@ -29,15 +33,15 @@ describe('adminRequest', () => {
 
       if (url.endsWith('/api/auth/refresh')) {
         refreshCalls += 1;
-        return jsonResponse({ accessToken: 'new-token' });
+        return jsonResponse<'RefreshResult'>({ accessToken: 'new-token', expiresIn: 900 });
       }
 
       if (url.endsWith('/api/admin/students')) {
         if (headers.get('Authorization') === 'Bearer old-token') {
-          return jsonResponse({ code: 'UNAUTHORIZED', status: 401 }, 401);
+          return problemResponse('UNAUTHORIZED', 401);
         }
         expect(headers.get('Authorization')).toBe('Bearer new-token');
-        return jsonResponse({ items: [] });
+        return typedResponse<StudentsListStub>({ items: [] });
       }
 
       throw new Error(`Kutilmagan so'rov: ${url}`);
@@ -60,7 +64,7 @@ describe('adminRequest', () => {
     const onExpired = vi.fn();
     setOnAdminSessionExpired(onExpired);
 
-    const mockFetch = vi.fn(async () => jsonResponse({ code: 'UNAUTHORIZED' }, 401));
+    const mockFetch = vi.fn(async () => problemResponse('UNAUTHORIZED', 401));
     vi.stubGlobal('fetch', mockFetch);
 
     await expect(adminRequest('/api/admin/students')).rejects.toMatchObject({ status: 401 });

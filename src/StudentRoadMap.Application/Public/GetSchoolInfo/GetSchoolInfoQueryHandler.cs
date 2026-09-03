@@ -161,7 +161,10 @@ internal sealed class GetSchoolInfoQueryHandler : IRequestHandler<GetSchoolInfoQ
                 program.DescriptionUz,
                 TestCount: programTestDefinitions.Count,
                 QuestionCount: questionCount,
-                EstimatedMinutes: programTestDefinitions.Sum(t => t.EstimatedMinutes)));
+                EstimatedMinutes: programTestDefinitions.Sum(t => t.EstimatedMinutes),
+                // `docs/06` 8-bo'lim: dasturda ilmiy batareya BO'LMASLIGI mumkin — mezon
+                // `PersonalityBattery` domen qoidasida, bu yerda kod ro'yxati YO'Q.
+                HasPersonalityBattery: PersonalityBattery.ContainedIn(programTestDefinitions)));
         }
 
         return programs;

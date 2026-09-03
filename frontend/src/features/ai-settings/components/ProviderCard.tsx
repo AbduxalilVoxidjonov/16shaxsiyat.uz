@@ -81,6 +81,9 @@ export function ProviderCard({ provider, config }: ProviderCardProps) {
           temperature: values.temperature,
           isActive: values.isActive,
           fallbackOrder: config?.fallbackOrder ?? 100,
+          // `PUT` to'liq almashtirish: `baseUrl` yuborilmasa backend uni `null` qilib yozadi.
+          // Karta formasida bu maydon yo'q, shu sabab joriy qiymat aynan qaytariladi.
+          baseUrl: config?.baseUrl ?? null,
         },
       });
       toast.show({ variant: 'success', title: t('aiSettings.provider.saveSuccess') });

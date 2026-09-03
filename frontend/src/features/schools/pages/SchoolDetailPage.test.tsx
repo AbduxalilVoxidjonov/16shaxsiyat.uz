@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
 import { ROUTE_PATTERNS } from '@/shared/config/routes';
+import { jsonResponse, problemResponse } from '@/test/apiMock';
 import SchoolDetailPage from './SchoolDetailPage';
 import type { SchoolDetailDto, SchoolStatsDto } from '../model/types';
 
@@ -33,13 +34,9 @@ const BASE_DETAIL: SchoolDetailDto = {
   },
 };
 
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
+/**
+ * `jsonResponse<'AdminSchoolDetailDto'>` — mock tanasi sxemadan tekshiriladi (`docs/10` §6.4).
+ */
 function mockFetch(stats?: Partial<SchoolStatsDto>, status = 200) {
   const detail: SchoolDetailDto = { ...BASE_DETAIL, stats: { ...BASE_DETAIL.stats, ...stats } };
   const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
@@ -47,8 +44,8 @@ function mockFetch(stats?: Partial<SchoolStatsDto>, status = 200) {
     if (url.includes('/api/admin/schools/school-1')) {
       return Promise.resolve(
         status === 200
-          ? jsonResponse(detail)
-          : jsonResponse({ code: 'NOT_FOUND', title: 'Topilmadi', status }, status),
+          ? jsonResponse<'AdminSchoolDetailDto'>(detail)
+          : problemResponse('NOT_FOUND', status),
       );
     }
     return Promise.reject(new Error(`unexpected fetch: ${url}`));

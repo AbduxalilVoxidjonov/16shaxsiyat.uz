@@ -9,6 +9,7 @@ using StudentRoadMap.Application.Admin.Assessments;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Identity.Login;
 using StudentRoadMap.Application.Public.StartSession;
+using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Students;
 using StudentRoadMap.Infrastructure.Persistence;
 
@@ -34,9 +35,12 @@ namespace StudentRoadMap.Api.IntegrationTests.Admin;
 /// FAQAT mustahkamlaydi (o'rnini o'zgartirmaydi) — natija kodi ham bir xil qoladi.
 ///
 /// `AdminAssessmentsRecalculateScoresEndpointTests`dan ALOHIDA sinf — ikkalasi ham
-/// `TestDefinition.Code = "RIASEC"` talab qiladi (`StudentProfileMapping` bu kodni qattiq
-/// kodlangan holda qidiradi — `results.riasec`ni to'ldirish uchun), bitta DB'da
-/// (`ux_test_definitions_code`) ikkalasi bo'lolmaydi — shu sabab alohida `IClassFixture`.
+/// `TestDefinition.Code = "RIASEC"` talab qiladi (ommaviy oqim yo'llari — `/api/public/sessions/
+/// tests/RIASEC/...`), bitta DB'da (`ux_test_definitions_code`) ikkalasi bo'lolmaydi — shu sabab
+/// alohida `IClassFixture`. Anketa `TestKind.Standard` bilan yaratiladi: `results.RIASEC` bloki
+/// 2026-09-03 dan buyon metodika KODI emas, batareya ROLI bo'yicha to'ldiriladi
+/// (`StudentProfileMapping.BuildTestResultsAsync`), rol esa `Standard` + `Scored` + `RIASEC`
+/// strategiyasini talab qiladi.
 /// </summary>
 public sealed class AdminAssessmentsRecalculateScoresChangedFlagEndpointTests : IClassFixture<PublicApiTestFactory>
 {
@@ -76,7 +80,7 @@ public sealed class AdminAssessmentsRecalculateScoresChangedFlagEndpointTests : 
         var now = DateTimeOffset.UtcNow;
         var accessToken = TestDataFactory.NewAccessToken("recalc-changed");
         var school = await TestDataFactory.CreateSchoolAsync(db, now, "maktab-recalc-changed", accessToken);
-        var testDefinition = await TestDataFactory.CreatePublishedRiasecShapedTestWithOptionalExtrasAsync(db, now, "RIASEC", 1, extraOptionalCount: 0);
+        var testDefinition = await TestDataFactory.CreatePublishedRiasecShapedTestWithOptionalExtrasAsync(db, now, "RIASEC", 1, extraOptionalCount: 0, kind: TestKind.Standard);
 
         using var publicClient = _factory.CreateClient();
         var startCommand = new StartSessionCommand(

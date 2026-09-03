@@ -86,6 +86,14 @@ internal sealed class ListAssessmentsQueryHandler : IRequestHandler<ListAssessme
             cancellationToken).ConfigureAwait(false);
         var schoolNameById = schools.ToDictionary(s => s.Id, s => s.Name);
 
+        // Dastur nomi (2026-09-03) — o'quvchi/maktab nomi bilan BIR XIL naqsh: sahifadagi
+        // (≤100) UNIKAL `programId`lar bo'yicha BITTA batch so'rov, sikl ichida emas.
+        var programIds = pageAssessments.Select(a => a.ProgramId).Distinct().ToList();
+        var programs = await _executor.ToListAsync(
+            _context.AsNoTracking(_context.AssessmentPrograms).Where(p => programIds.Contains(p.Id)).Select(p => new { p.Id, p.NameUz }),
+            cancellationToken).ConfigureAwait(false);
+        var programNameById = programs.ToDictionary(p => p.Id, p => p.NameUz);
+
         var items = pageAssessments
             .Select(a => new AdminAssessmentListItemDto(
                 a.Id,
@@ -98,7 +106,10 @@ internal sealed class ListAssessmentsQueryHandler : IRequestHandler<ListAssessme
                 a.CompletedAt,
                 a.TotalDurationSeconds.HasValue ? a.TotalDurationSeconds.Value / 60 : null,
                 a.ReliabilityScore,
-                a.ReliabilityFlag?.ToString()))
+                a.ReliabilityFlag?.ToString(),
+                a.ProgramId,
+                // Dastur yozuvi topilmasa `null` — soxta nom yoki bo'sh satr EMAS.
+                programNameById.GetValueOrDefault(a.ProgramId)))
             .ToList();
 
         return Result.Success(PagedResult<AdminAssessmentListItemDto>.Create(items, page, pageSize, totalCount));

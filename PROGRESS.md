@@ -35,7 +35,7 @@
 | P15 | Sessiya va dashboard API | backend-dotnet | ✅ | — | QA: FAIL→PASS · kesh bloklovchisi tuzatildi |
 | P16 | AI abstraksiya va prompt | ai-integration | ✅ | — | maxfiylik testi majburiy · validator 5 bosqich |
 | P17 | 3 provider (Gemini/OpenAI/Anthropic) | ai-integration | ✅ | — | 709 test · **jonli kalit bilan sinalmagan** |
-| P18 | Fon navbati, fallback | ai-integration | ⬜ | — | |
+| P18 | Fon navbati, fallback, AI config API | ai-integration | ✅ | — | `analysis_jobs` + `BackgroundService` · navbat commit'dan keyin (P18-R1) |
 | P19 | Frontend skeleti | frontend-react | ✅ | — | QA: PASS · 18 test · Vite qoldiqlari tozalandi |
 | P20 | Ommaviy UI: landing va anketa | frontend-react | ✅ | — | QA: PASS · 63 test · 390px vizual tekshiruv qoldi |
 | P21 | Ommaviy UI: test oqimi, autosave | frontend-react | ✅ | — | QA: PASS · 127 test · javob yo'qolmasligi qulflangan |
@@ -47,16 +47,17 @@
 | P27 | Excel va PDF eksport | backend-dotnet | ✅ | — | Filtr `AdminStudentFilterBuilder` bilan ro'yxat bilan birlashtirildi · 500 qatorli oqim |
 | P28 | AI sozlamalari UI | frontend-react | ✅ | — | DTO shakllari P18 bilan solishtirilishi kerak |
 | P29 | Katalog va audit UI | frontend-react | ✅ | — | frontend 313 test |
-| P30 | E2E testlar | qa-reviewer | ⬜ | — | |
-| P31 | Xavfsizlik va mustahkamlash | qa-reviewer | ⬜ | — | |
+| P30 | E2E testlar | qa-reviewer | ✅ | — | Playwright 18/18 · 390px+1440px · axe · 9 ta haqiqiy xato topdi |
+| P31 | Xavfsizlik va mustahkamlash | qa-reviewer | ✅ | — | `ProblemDetails` yagona shakl · `Retry-After` · CSP jonli tekshirilgan · IDOR qo'riqchisi |
 | P32 | Docker, CI/CD, yakuniy hujjat | backend-dotnet | ✅ | — | CI 5 job · backup/restore sinaldi · CD ochiq (remote yo'q) |
-| P33 | Anketa konstruktori | backend + frontend | ⬜ | — | P29 dan keyin |
 | P34 | Dastur modeli va biriktirish | backend-dotnet | ✅ | — | QA: FAIL→PASS · migratsiya backfill tuzatildi |
 | P35 | Admin: savollar, dasturlar, biriktirish | frontend-react | ✅ | — | Dasturlar ishlaydi; katalog P37 ni kutadi |
 | P36 | Ommaviy: dastur tanlash, so'rovnoma | frontend-react | ✅ | — | Bitta dasturda oqim o'zgarmadi (regressiya testi) |
 | P37 | Katalog CRUD (backend) | backend-dotnet | ✅ | — | backend **752 test** · BR-8 uch darajada · talqin oraliqlari butun son qoidasi |
 | P39 | Login sessiyasi barqarorligi | frontend-react | ✅ | — | **Egasi topgan bloklovchi** · vaqtinchalik xato sessiyani o'chirmaydi |
-| P38 | Katalog: tizim testini tahrirlash UI | frontend-react | 🔄 | — | **Yangi (egasi so'radi)** · ko'rish+tahrirlash, o'chirish yo'q |
+| P33 | Anketa konstruktori | frontend + backend | ✅ | — | Talqin oraliqlari muharriri · `issues[]` ro'yxati · `displayOrder` |
+| P40 | AI UI ↔ API shartnomasi | frontend + backend | ✅ | — | `baseUrl` jimgina o'chishi tuzatildi · shablon hisobot belgisi |
+| P38 | Katalog: tizim testini tahrirlash UI | frontend-react | ✅ | — | **Egasi so'radi** · ko'rish+tahrirlash, o'chirish yo'q |
 
 ---
 
@@ -351,4 +352,8 @@
 | QA topgan 5 ta zaif savol (cross-loading): `MB-Q58` (SN↔JP), `B5-Q36` (O↔E), `B5-Q49` (A↔ish uslubi), `AC-Q15` (SOCA↔SELF), va `MB-Q01`≈`AC-Q27` deyarli bir xil misol | Omillar orasida ortiqcha korrelyatsiya; ball biroz aniqroq bo'lishi mumkin edi | Bloklovchi emas (professional testlarda ham uchraydi). Pilotdan keyin real ma'lumot bilan qayta ko'riladi — `docs/14` 5-bo'lim |
 | EF Core 9.x paketlari net10.0 loyihada (Npgsql EF10 provayderi yo'q) | P03 da runtime muammosi bo'lishi mumkin | P03 boshida DbContext bilan haqiqiy so'rov sinab ko'riladi; provayder chiqqach yangilanadi |
 | `/health` va `/health/ready` hozir bir xil (bog'liqlik tekshiruvi yo'q) | Orkestrator noto'g'ri "ready" deb o'ylashi mumkin | P03 da DB health check qo'shilib, `tag` bo'yicha ajratiladi |
+| `frontend/src/shared/api/schema.d.ts` eskirgan — `generate:api` P13 dan beri ishga tushirilmagan | Qo'lda yozilgan tiplar bilan haqiqiy shartnoma ajralib ketishi mumkin (P40 aynan 5 ta nomuvofiqlikni topdi) | API ko'tarilgan holda `npm run generate:api` va qo'lda yozilgan DTO'larni re-export'ga almashtirish. **P30 dan oldin** |
+| `AssessmentDetailPage` hali `PlaceholderPage` | Sessiya darajasidagi AI belgisi va tafsilotlari ko'rinmaydi (faqat o'quvchi profilida) | Alohida kichik vazifa |
+| `npx prettier --check` 79 ta eski faylda ogohlantiradi; `npm run lint` formatni tekshirmaydi | Formatlash bir xil emas, diff shovqini | CI ga `prettier --check` qo'shilsa, avval butun repo bir marta formatlanadi |
+| `locales/ru/common.json` bo'sh | Ruscha tarjima yo'q (MVP da o'zbekcha yetarli) | Egasi so'raganda |
 | Push qilinmaydi (egasining qarori) — PR oqimi ishlamaydi | Ko'rikni faqat `qa-reviewer` beradi, tashqi review yo'q | Repo: `AbduxalilVoxidjonov/shaxsiyat`. Egasi aytganda `origin` qayta qo'shilib, barcha branch birdan push qilinadi |

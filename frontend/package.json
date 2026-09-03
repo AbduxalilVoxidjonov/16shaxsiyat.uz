@@ -14,7 +14,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "generate:api": "openapi-typescript ${API_URL:-http://localhost:5402}/swagger/v1/swagger.json -o src/shared/api/schema.d.ts"
+    "generate:api": "openapi-typescript ${API_URL:-http://localhost:5402}/swagger/v1/swagger.json -o src/shared/api/schema.d.ts",
+    "e2e:build": "vite build --outDir e2e/.tmp/dist --emptyOutDir",
+    "e2e:serve": "node e2e/support/preview-server.mjs",
+    "test:e2e:typecheck": "tsc -p e2e/tsconfig.json --noEmit"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -33,6 +36,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^9.39.1",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/vite": "^4.3.3",

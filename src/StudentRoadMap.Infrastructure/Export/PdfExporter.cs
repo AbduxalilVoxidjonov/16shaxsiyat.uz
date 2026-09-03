@@ -414,13 +414,22 @@ internal sealed class PdfExporter : IPdfExporter
 
             AddParagraphIfPresent(column, "Umumiy xulosa", ai.Summary);
             AddParagraphIfPresent(column, "Shaxsiyat portreti", ai.PersonalityPortrait);
-            AddBulletsIfPresent(column, "Kuchli tomonlar", ai.Strengths);
-            AddBulletsIfPresent(column, "O'sish yo'nalishlari", ai.GrowthAreas);
+            AddBulletsIfPresent(column, "Kuchli tomonlar", ai.Strengths
+                .Select(s => JoinParts(s.Title, s.Description, s.Evidence)).ToList());
+            AddBulletsIfPresent(column, "O'sish yo'nalishlari", ai.GrowthAreas
+                .Select(g => JoinParts(g.Title, g.Description, g.ActionStep)).ToList());
+            AddParagraphIfPresent(column, "O'quv uslubi", ai.LearningStyle);
+            AddParagraphIfPresent(column, "Motivatsiya profili", ai.MotivationProfile);
+            AddParagraphIfPresent(column, "Aktivlik baholovi", ai.ActivityAssessment);
             AddCareerSuggestionsIfPresent(column, ai.CareerSuggestions);
             AddBulletsIfPresent(column, "O'quvchiga tavsiyalar", ai.StudentRecommendations);
-            AddParagraphIfPresent(column, "O'qituvchiga izoh", ai.TeacherNotes);
-            AddParagraphIfPresent(column, "Ota-onaga izoh", ai.ParentNotes);
+            AddBulletsIfPresent(column, "O'qituvchiga izoh", ai.TeacherNotes);
+            AddBulletsIfPresent(column, "Ota-onaga izoh", ai.ParentNotes);
             AddAttentionFlagsIfPresent(column, ai.AttentionFlags);
+            // `docs/09` 4.2 (13-talab) va "ISHONCHLILIK" bandi: hisobotning cheklovlari
+            // hujjatda ham YASHIRILMAYDI.
+            AddParagraphIfPresent(column, "Ishonchlilik izohi", ai.ReliabilityNote);
+            AddParagraphIfPresent(column, "AI eslatmasi", ai.Disclaimer);
         });
     }
 
@@ -465,6 +474,11 @@ internal sealed class PdfExporter : IPdfExporter
                 column.Item().Text(suggestion.Why).Style(BodyStyle);
             }
 
+            if (suggestion.ExampleProfessions.Count > 0)
+            {
+                column.Item().Text(string.Join(" · ", suggestion.ExampleProfessions)).Style(SmallMutedStyle);
+            }
+
             foreach (var step in suggestion.NextSteps)
             {
                 column.Item().Text($"  →  {step}").Style(SmallMutedStyle);
@@ -472,7 +486,7 @@ internal sealed class PdfExporter : IPdfExporter
         }
     }
 
-    private static void AddAttentionFlagsIfPresent(ColumnDescriptor column, IReadOnlyList<string> flags)
+    private static void AddAttentionFlagsIfPresent(ColumnDescriptor column, IReadOnlyList<AdminAiAttentionFlagDto> flags)
     {
         if (flags.Count == 0)
         {
@@ -484,10 +498,14 @@ internal sealed class PdfExporter : IPdfExporter
             col.Item().Text("Diqqat talab qiladigan holatlar").Style(WarningHeadingStyle);
             foreach (var flag in flags)
             {
-                col.Item().Text($"•  {flag}").Style(WarningTextStyle);
+                col.Item().Text($"•  [{flag.Severity}] {flag.Message}").Style(WarningTextStyle);
             }
         });
     }
+
+    /// <summary>`docs/09` 5-bo'lim obyekt maydonlarini (`title`/`description`/`evidence`) bitta o'qiladigan qatorga birlashtiradi.</summary>
+    private static string JoinParts(params string?[] parts) =>
+        string.Join(" — ", parts.Where(p => !string.IsNullOrWhiteSpace(p)));
 
     // ---------------------------------------------------------------- oxirgi sahifa: disclaimer
 

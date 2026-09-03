@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 import { usePrefersReducedMotion } from '@/shared/hooks/usePrefersReducedMotion';
 import { classifyBigFiveLevel } from './personalityRadarLevel';
+import { VisuallyHidden } from '@/shared/ui/VisuallyHidden';
 
 export interface PersonalityRadarFactor {
   pct: number;
@@ -127,25 +128,27 @@ export function PersonalityRadar({
         ))}
       </dl>
 
-      <table className="sr-only" data-testid="personality-radar-table">
-        <caption>{ariaLabel}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{t('widgets.personalityRadar.tableFactorColumn')}</th>
-            <th scope="col">{t('widgets.personalityRadar.tableValueColumn')}</th>
-            <th scope="col">{t('widgets.personalityRadar.tableLevelColumn')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {factors.map((factor) => (
-            <tr key={factor.key}>
-              <td>{factor.label}</td>
-              <td>{factor.pct.toFixed(1)}%</td>
-              <td>{factor.level}</td>
+      <VisuallyHidden>
+        <table data-testid="personality-radar-table">
+          <caption>{ariaLabel}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{t('widgets.personalityRadar.tableFactorColumn')}</th>
+              <th scope="col">{t('widgets.personalityRadar.tableValueColumn')}</th>
+              <th scope="col">{t('widgets.personalityRadar.tableLevelColumn')}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {factors.map((factor) => (
+              <tr key={factor.key}>
+                <td>{factor.label}</td>
+                <td>{factor.pct.toFixed(1)}%</td>
+                <td>{factor.level}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </VisuallyHidden>
     </div>
   );
 }

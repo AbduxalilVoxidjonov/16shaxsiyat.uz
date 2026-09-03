@@ -3,16 +3,9 @@ import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
+import { jsonResponse, problemResponse, type Schemas } from '@/test/apiMock';
 import StudentResultPage from './StudentResultPage';
 import { useSessionStore } from '../store/sessionStore';
-
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
-}
-
-function problemResponse(code: string, status: number): Response {
-  return jsonResponse({ code, title: 'Xato', status, type: `https://studentroadmap/errors/${code}` }, status);
-}
 
 const RESULT_BODY = {
   personalityType: 'INTJ',
@@ -21,7 +14,7 @@ const RESULT_BODY = {
   topStrengths: ['Tahliliy fikrlash', 'Mustaqillik', "Maqsadga yo'nalganlik"],
   careerFields: ['Muhandislik', 'IT', 'Ilmiy tadqiqot'],
   note: 'Bu natija tashxis emas — hozirgi holatingiz surati.',
-};
+} satisfies Schemas['GetStudentResultResult'];
 
 function seedSession() {
   useSessionStore.getState().setSession('sess-token-1', 'demo-school', 'assessment-1');
@@ -62,7 +55,9 @@ describe('StudentResultPage', () => {
 
   it("200 kelsa tip kartasi, 3 kuchli tomon, 3 yo'nalish va disclaimer ko'rsatadi — aktivlik/bayroq/xom ball YO'Q", async () => {
     seedSession();
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(RESULT_BODY)));
+    // Bitta javob BARCHA so'rovlarga qaytadi (`/sessions/me` ham) — bu testda sessiya holati
+    // ahamiyatsiz: `hasPersonalityBattery` `undefined` bo'lgani uchun sahifa natijani ko'rsatadi.
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse<'GetStudentResultResult'>(RESULT_BODY)));
 
     renderPage();
 
@@ -117,7 +112,7 @@ describe('StudentResultPage', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(
-        jsonResponse({
+        jsonResponse<'GetStudentResultResult'>({
           personalityType: '',
           typeName: '',
           shortDescription: '',
@@ -132,5 +127,51 @@ describe('StudentResultPage', () => {
 
     expect(await screen.findByText("Bu dastur uchun natija yo'q")).toBeInTheDocument();
     expect(screen.queryByText('0')).not.toBeInTheDocument();
+  });
+  // ⚠️ REGRESSIYA (`prompts/36`): "batareya bormi" savoliga backend BAYROQ bilan javob beradi
+  // (`GET /sessions/me` → `hasPersonalityBattery`). Bayroq `false` bo'lsa, natija endpointi
+  // (eski sessiya keshi, boshqa dastur, xato scoring) TIP QAYTARGAN taqdirda ham shaxsiyat
+  // widget'lari RENDER QILINMAYDI — "ma'lumot yo'q" holati "0"/bo'sh karta bilan
+  // almashtirilmaydi (`docs/06` qarorlar jurnali, 2026-09-02).
+  it("bayroq `false` bo'lsa tip kartasi/kuchli tomonlar render qilinmaydi — tushunarli holat ko'rsatiladi", async () => {
+    seedSession();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes('/sessions/me')) {
+          return Promise.resolve(
+            jsonResponse<'GetSessionStateResult'>({
+              assessmentId: 'assessment-1',
+              status: 'Analyzed',
+              student: { firstNameShort: 'Sardor', grade: 9 },
+              expiresAt: '2026-09-10T00:00:00Z',
+              currentTestCode: null,
+              tests: [
+                {
+                  code: 'MBTI16',
+                  name: '16 tipli shaxsiyat modeli',
+                  status: 'Completed',
+                  answered: 60,
+                  total: 60,
+                  order: 1,
+                  estimatedMinutes: 9,
+                },
+              ],
+              progressPercent: 100,
+              hasPersonalityBattery: false,
+            }),
+          );
+        }
+        return Promise.resolve(jsonResponse<'GetStudentResultResult'>(RESULT_BODY));
+      }),
+    );
+
+    renderPage();
+
+    expect(await screen.findByText("Bu dastur uchun natija yo'q")).toBeInTheDocument();
+    expect(screen.queryByText('INTJ')).not.toBeInTheDocument();
+    expect(screen.queryByText('Loyihachi')).not.toBeInTheDocument();
+    expect(screen.queryByText('Tahliliy fikrlash')).not.toBeInTheDocument();
   });
 });

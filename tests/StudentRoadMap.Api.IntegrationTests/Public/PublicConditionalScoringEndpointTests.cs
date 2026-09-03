@@ -110,6 +110,8 @@ public sealed class PublicSurveyOnlySessionEndpointTests : IClassFixture<PublicA
 /// <summary>
 /// Faqat "BIG5" kodli test bo'lgan dasturda `MaturityIndex` `null` qoladi (`ACTIVITY` yo'q —
 /// `CompleteSessionCommandHandler.ApplyMaturityIndexIfPossible` ikkalasi ham talab qiladi).
+/// 2026-09-03 dan keyin bu yerda IKKI sabab bir vaqtda ishlaydi: anketa `Custom` (batareya roli
+/// yo'q, `PersonalityBattery.RoleOf`) va sessiyada `Activity` rolidagi natija ham yo'q.
 /// </summary>
 public sealed class PublicBig5WithoutActivityEndpointTests : IClassFixture<PublicApiTestFactory>
 {
@@ -129,10 +131,11 @@ public sealed class PublicBig5WithoutActivityEndpointTests : IClassFixture<Publi
         var accessToken = TestDataFactory.NewAccessToken("big5-only1");
         var school = await TestDataFactory.CreateSchoolAsync(db, now, "maktab-big5-only1", accessToken);
 
-        // `ApplyMaturityIndexIfPossible` faqat `TestCode == "BIG5"` bo'lganda ishga tushadi —
-        // haqiqiy shkala tarkibi (bu yerda `RIASEC` shaklidagi, `SUM` emas — `InterpretationBands`
-        // talab qilmaydi) ahamiyatsiz, chunki `ACTIVITY` yo'qligi sabab funksiya BIRINCHI
-        // tekshiruvdan (ikkalasi ham mavjudmi) qaytadi.
+        // ⚠️ Anketa kodi `BIG5`, lekin u `Custom` — ya'ni `PersonalityBattery.RoleOf` bo'yicha
+        // batareya roli YO'Q (2026-09-03 tuzatishi; ilgari `TestCode == "BIG5"` satri bilan
+        // topilardi). Haqiqiy shkala tarkibi (bu yerda `RIASEC` shaklidagi, `SUM` emas —
+        // `InterpretationBands` talab qilmaydi) ahamiyatsiz: `MaturityIndex` baribir
+        // hisoblanmaydi (`ACTIVITY` roli ham yo'q).
         var big5Test = await TestDataFactory.CreateStandaloneRiasecShapedTestAsync(db, now, "BIG5", 1);
         await TestDataFactory.CreateProgramAsync(db, now, "BIG5-ONLY-PROG1", [(big5Test.Id, 1)]);
 

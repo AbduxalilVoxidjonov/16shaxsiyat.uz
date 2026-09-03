@@ -4,19 +4,21 @@ namespace StudentRoadMap.Infrastructure.Jobs;
 
 /// <summary>
 /// Validatsiyadan o'tgan AI javobi (`docs/09-ai-analiz-moduli.md` 5-bo'lim JSON sxemasi)ni
-/// `AiAnalysis.Succeed(...)` kutayotgan maydonlarga o'giradi.
+/// `AiAnalysis.Succeed(...)` kutayotgan USTUN qiymatlariga o'giradi.
 /// <para>
-/// ⚠️ **Muhim moslik eslatmasi** (P18 hisobotida PM'ga alohida qayd etilgan): `docs/09` §5
-/// sxemasida `strengths`/`growthAreas`/`attentionFlags` — OBYEKTLAR massivi va
-/// `teacherNotes`/`parentNotes` — STRING massivi. Lekin `AiAnalysis.TeacherNotes`/`ParentNotes`
-/// ustunlari `text` (bitta satr) va admin javobini yig'uvchi mavjud kod
-/// (`Application.Admin.Students.StudentProfileMapping.BuildAiAnalysis`, boshqa agent hududi,
-/// P14/P15 da yozilgan) `StrengthsJson`/`GrowthAreasJson`/`AttentionFlagsJson`ni
-/// `IReadOnlyList&lt;string&gt;` (`DeserializeStringList`) deb kutadi va `TeacherNotes`/`ParentNotes`ni
-/// TO'G'RIDAN-TO'G'RI satr sifatida oladi (massiv deb parse QILMAYDI). Bu klass shu MAVJUD
-/// shartnomaga mos keladi — sxemaning obyekt/massiv maydonlarini o'qishga tushunarli satrlarga
-/// yassilaydi. To'liq (bironta yo'qotishsiz) ma'lumot baribir `AiAnalysis.ResponseJson`da xom
-/// holda saqlanadi.
+/// **Ustunlar — ikkilamchi nusxa.** `docs/09` §5 sxemasida `strengths`/`growthAreas`/
+/// `attentionFlags` — OBYEKTLAR massivi, `teacherNotes`/`parentNotes` — STRING massivi;
+/// `AiAnalysis` ustunlari esa (`docs/05` 2-bo'lim DDL) `text`/`jsonb` satr ro'yxati. Bu klass
+/// aynan shu ustun shakliga yassilaydi — ro'yxatlarda/hisobotlarda tez o'qish uchun.
+/// TO'LIQ (yo'qotishsiz) javob `AiAnalysis.ResponseJson`da xom holda saqlanadi va admin
+/// hisoboti (`Application.Admin.Students.AiAnalysisContent`) AYNAN o'shani o'qiydi — shu sabab
+/// bu yerdagi yassilanish admin ekranida hech narsani kamaytirmaydi (2026-09-02 moslashtirish;
+/// ilgari DTO faqat shu ustunlarni qaytarardi va sxemaning yarmi admindan yashirin qolardi).
+/// </para>
+/// <para>
+/// ⚠️ `AttentionFlagsJson` shakli (`List&lt;string&gt;`) `AnalysisOrchestrator.AppendModerationFlag`
+/// bilan bog'liq: moderatsiya belgisi (`docs/09` 6-bo'lim, 3-band) shu ro'yxatga qo'shiladi.
+/// Shaklni o'zgartirsangiz o'sha metodni ham yangilang.
 /// </para>
 /// </summary>
 internal static class AiAnalysisResponseMapper
@@ -84,7 +86,7 @@ internal static class AiAnalysisResponseMapper
             JsonSerializer.Serialize(attentionFlags, SerializerOptions));
     }
 
-    /// <summary>`Application.Admin.Students.AdminCareerSuggestionDto(Field, Why, NextSteps)` bilan mos — schema maydonlari ustidan to'g'ridan-to'g'ri o'tkaziladi.</summary>
+    /// <summary>`Application.Admin.Students.AdminCareerSuggestionDto(Field, Why, ExampleProfessions, NextSteps)` bilan mos — sxema maydonlari ustidan to'g'ridan-to'g'ri o'tkaziladi.</summary>
     private static string MapCareerSuggestions(JsonElement root)
     {
         if (!root.TryGetProperty("careerSuggestions", out var array) || array.ValueKind != JsonValueKind.Array)
@@ -99,6 +101,8 @@ internal static class AiAnalysisResponseMapper
             {
                 field = GetString(el, "field") ?? string.Empty,
                 why = GetString(el, "why") ?? string.Empty,
+                // `docs/09` §5da ixtiyoriy maydon — ilgari bu yerda tushib qolar edi.
+                exampleProfessions = MapStringArray(el, "exampleProfessions"),
                 nextSteps = MapStringArray(el, "nextSteps"),
             });
         }

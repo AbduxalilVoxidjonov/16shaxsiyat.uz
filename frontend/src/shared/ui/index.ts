@@ -17,3 +17,4 @@ export * from './Textarea';
 export * from './Toast';
 export * from './toastContext';
 export * from './useToast';
+export * from './VisuallyHidden';

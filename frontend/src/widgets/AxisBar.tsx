@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/shared/lib/cn';
+import { VisuallyHidden } from '@/shared/ui/VisuallyHidden';
 
 /** 16 tipli model o'qlari — docs/03-psixologik-metodikalar.md, 2.2-bo'lim. */
 export type AxisCode = 'EI' | 'SN' | 'TF' | 'JP';
@@ -84,23 +85,25 @@ export function AxisBar({ axisCode, pct, letter, borderline, className }: AxisBa
       </div>
 
       {/* Ekran o'quvchisi uchun jadval alternativi — docs/11, 4-bo'lim. */}
-      <table className="sr-only">
-        <caption>{ariaLabel}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{zeroLabel}</th>
-            <th scope="col">{hundredLabel}</th>
-            <th scope="col">{t('widgets.axisBar.resultColumn')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>{(100 - clamped).toFixed(1)}%</td>
-            <td>{clamped.toFixed(1)}%</td>
-            <td>{letter}</td>
-          </tr>
-        </tbody>
-      </table>
+      <VisuallyHidden>
+        <table>
+          <caption>{ariaLabel}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{zeroLabel}</th>
+              <th scope="col">{hundredLabel}</th>
+              <th scope="col">{t('widgets.axisBar.resultColumn')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{(100 - clamped).toFixed(1)}%</td>
+              <td>{clamped.toFixed(1)}%</td>
+              <td>{letter}</td>
+            </tr>
+          </tbody>
+        </table>
+      </VisuallyHidden>
     </div>
   );
 }

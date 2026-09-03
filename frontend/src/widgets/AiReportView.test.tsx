@@ -15,6 +15,7 @@ const FULL_SECTIONS: AiReportSections = {
   teacherNotes: ["O'qituvchi eslatmasi"],
   parentNotes: ['Ota-ona eslatmasi'],
   attentionFlags: [{ code: 'LOW_MOTIVATION', message: 'Motivatsiya past', severity: 'attention' }],
+  reliabilityNote: 'Javoblar tez berilgan — natijani ehtiyot bilan talqin qiling.',
   disclaimer: 'Bu tahlil tashxis emas.',
 };
 
@@ -25,6 +26,39 @@ describe('AiReportView', () => {
     expect(screen.getByText('Tahliliy fikrlash')).toBeInTheDocument();
     expect(screen.getByText('Motivatsiya past')).toBeInTheDocument();
     expect(screen.getByText('Bu tahlil tashxis emas.')).toBeInTheDocument();
+    // docs/09: `learningStyle`/`motivationProfile`/`activityAssessment` ilgari DTO'da umuman
+    // yo'q edi — endi ular ham ekranga chiqadi.
+    expect(screen.getByText("O'quv uslubi matni")).toBeInTheDocument();
+    expect(screen.getByText('Motivatsiya matni')).toBeInTheDocument();
+    expect(screen.getByText('Aktivlik matni')).toBeInTheDocument();
+  });
+
+  it("cheklovlar (reliabilityNote va disclaimer) hech qachon yashirilmaydi", () => {
+    render(<AiReportView sections={FULL_SECTIONS} />);
+    expect(
+      screen.getByText(/Javoblar tez berilgan — natijani ehtiyot bilan talqin qiling\./),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Bu tahlil tashxis emas\./)).toBeInTheDocument();
+  });
+
+  it("faqat cheklov matni bo'lsa ham 'bo'sh' holatiga tushmaydi", () => {
+    render(<AiReportView sections={{ disclaimer: 'Bu tahlil tashxis emas.' }} />);
+    expect(screen.queryByText('AI hisobot hali mavjud emas.')).not.toBeInTheDocument();
+    expect(screen.getByText(/Bu tahlil tashxis emas\./)).toBeInTheDocument();
+  });
+
+  it("to'ldirilmagan maydonlar (description/evidence/actionStep null) bo'sh qator chiqarmaydi", () => {
+    const { container } = render(
+      <AiReportView
+        sections={{
+          strengths: [{ title: 'Faqat sarlavha', description: null, evidence: null }],
+          growthAreas: [{ title: "Faqat o'sish sarlavhasi", description: null, actionStep: null }],
+        }}
+      />,
+    );
+    expect(screen.getByText('Faqat sarlavha')).toBeInTheDocument();
+    expect(screen.queryByText('Keyingi qadam:')).not.toBeInTheDocument();
+    expect(container.querySelectorAll('p')).toHaveLength(2);
   });
 
   it("bo'sh obyekt bilan yiqilmaydi va bo'sh holat matnini ko'rsatadi", () => {
