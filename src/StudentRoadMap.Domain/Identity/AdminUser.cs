@@ -11,6 +11,15 @@ public sealed class AdminUser : Entity
     public const int MaxFailedLoginAttempts = 5;
     public static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
 
+    /// <summary>
+    /// Tasdiqlanmagan TOTP o'rnatish (enrollment) sirining amal qilish muddati. Foydalanuvchi
+    /// `POST /api/auth/totp/enable` dan keyin shu vaqt ichida autentifikator ilovasidagi kodni
+    /// `POST /api/auth/totp/confirm` ga yuborishi kerak — aks holda kutish holatidagi sir
+    /// yaroqsiz bo'ladi va jarayon boshidan boshlanadi (yarim qolgan o'rnatish DB'da abadiy
+    /// osilib qolmasin).
+    /// </summary>
+    public static readonly TimeSpan PendingTotpEnrollmentLifetime = TimeSpan.FromMinutes(10);
+
     public string Username { get; private set; } = null!;
 
     public string Email { get; private set; } = null!;
@@ -26,6 +35,17 @@ public sealed class AdminUser : Entity
     public string? TotpSecretEncrypted { get; private set; }
 
     public bool TotpEnabled { get; private set; }
+
+    /// <summary>
+    /// Tasdiqlanmagan (kutish holatidagi) TOTP siri — shifrlangan. `TotpSecretEncrypted` dan
+    /// ATAYIN ajratilgan: foydalanuvchi autentifikator ilovasi to'g'ri kod berayotganini
+    /// isbotlamaguncha 2FA YOQILMAYDI (`TotpEnabled` `false` qoladi), aks holda noto'g'ri
+    /// o'rnatishdan keyin hisob keyingi kirishda butunlay bloklanib qolardi.
+    /// </summary>
+    public string? PendingTotpSecretEncrypted { get; private set; }
+
+    /// <summary>Kutish holatidagi sir qachon yaratilgani — muddat (<see cref="PendingTotpEnrollmentLifetime"/>) shundan hisoblanadi.</summary>
+    public DateTimeOffset? PendingTotpCreatedAt { get; private set; }
 
     /// <summary>
     /// TOTP qayta ishlatishga qarshi himoya (`docs/13-auth-va-jwt.md` MAXSUS DIQQAT 5-band:
@@ -129,15 +149,74 @@ public sealed class AdminUser : Entity
         UpdatedAt = now;
     }
 
-    public void EnableTotp(string totpSecretEncrypted, DateTimeOffset now)
+    /// <summary>
+    /// TOTP o'rnatishning BIRINCHI bosqichi: yangi sirni KUTISH holatida saqlaydi. 2FA hali
+    /// yoqilmaydi — `TotpEnabled` `false` qoladi va login oqimi o'zgarmaydi. Takroriy chaqiruv
+    /// oldingi tasdiqlanmagan sirni almashtiradi (foydalanuvchi QR'ni qayta so'raganda).
+    /// </summary>
+    public void BeginTotpEnrollment(string totpSecretEncrypted, DateTimeOffset now)
     {
         if (string.IsNullOrWhiteSpace(totpSecretEncrypted))
         {
             throw new ArgumentException("TOTP siri bo'sh bo'lishi mumkin emas.", nameof(totpSecretEncrypted));
         }
 
-        TotpSecretEncrypted = totpSecretEncrypted;
+        if (TotpEnabled)
+        {
+            throw new DomainException("TOTP_ALREADY_ENABLED", "TOTP allaqachon yoqilgan.");
+        }
+
+        PendingTotpSecretEncrypted = totpSecretEncrypted;
+        PendingTotpCreatedAt = now;
+        UpdatedAt = now;
+    }
+
+    /// <summary>Kutish holatidagi sir mavjud va muddati o'tmaganmi.</summary>
+    public bool HasValidPendingTotpEnrollment(DateTimeOffset now) =>
+        PendingTotpSecretEncrypted is not null &&
+        PendingTotpCreatedAt is not null &&
+        now < PendingTotpCreatedAt.Value.Add(PendingTotpEnrollmentLifetime);
+
+    /// <summary>Kutish holatidagi sir bor, lekin muddati o'tgan (mijozga aniq xato ko'rsatish uchun).</summary>
+    public bool HasExpiredPendingTotpEnrollment(DateTimeOffset now) =>
+        PendingTotpSecretEncrypted is not null && !HasValidPendingTotpEnrollment(now);
+
+    /// <summary>
+    /// TOTP o'rnatishning IKKINCHI bosqichi: kutish holatidagi sir asosiy sirga ko'chiriladi
+    /// va 2FA YOQILADI. Chaqiruvchi buni faqat ilovadan kelgan kod tekshiruvdan o'tgandan
+    /// KEYIN chaqiradi (`ITotpService.TryValidate`) — domen kod tekshirmaydi (`CLAUDE.md`
+    /// 2-qoidasi: kriptografiya `Infrastructure`da).
+    /// </summary>
+    public void ConfirmTotpEnrollment(DateTimeOffset now)
+    {
+        if (TotpEnabled)
+        {
+            throw new DomainException("TOTP_ALREADY_ENABLED", "TOTP allaqachon yoqilgan.");
+        }
+
+        if (PendingTotpSecretEncrypted is null)
+        {
+            throw new DomainException("TOTP_ENROLLMENT_NOT_STARTED", "TOTP o'rnatish boshlanmagan.");
+        }
+
+        if (!HasValidPendingTotpEnrollment(now))
+        {
+            throw new DomainException("TOTP_ENROLLMENT_EXPIRED", "TOTP o'rnatish muddati tugagan.");
+        }
+
+        TotpSecretEncrypted = PendingTotpSecretEncrypted;
         TotpEnabled = true;
+        TotpLastUsedStep = null;
+        PendingTotpSecretEncrypted = null;
+        PendingTotpCreatedAt = null;
+        UpdatedAt = now;
+    }
+
+    /// <summary>Tasdiqlanmagan o'rnatishni bekor qiladi (kutish holatidagi sirni tozalaydi).</summary>
+    public void CancelTotpEnrollment(DateTimeOffset now)
+    {
+        PendingTotpSecretEncrypted = null;
+        PendingTotpCreatedAt = null;
         UpdatedAt = now;
     }
 
@@ -146,6 +225,8 @@ public sealed class AdminUser : Entity
         TotpSecretEncrypted = null;
         TotpEnabled = false;
         TotpLastUsedStep = null;
+        PendingTotpSecretEncrypted = null;
+        PendingTotpCreatedAt = null;
         UpdatedAt = now;
     }
 

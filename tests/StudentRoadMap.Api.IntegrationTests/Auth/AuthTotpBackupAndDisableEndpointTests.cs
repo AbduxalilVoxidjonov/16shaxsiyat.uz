@@ -26,8 +26,8 @@ public sealed class AuthTotpBackupAndDisableEndpointTests : IClassFixture<Public
         await TotpTestSupport.SeedAdminAsync(_factory, username);
         using var client = _factory.CreateClient();
         var login = await TotpTestSupport.LoginWithoutTotpAsync(client, username);
-        var enableResult = await TotpTestSupport.EnableTotpAsync(client, login.AccessToken);
-        var backupCode = enableResult.BackupCodes[0];
+        var (_, confirm) = await TotpTestSupport.EnrollTotpAsync(client, login.AccessToken);
+        var backupCode = confirm.BackupCodes[0];
 
         var firstResponse = await client.PostAsJsonAsync(
             "/api/auth/login",
@@ -49,7 +49,7 @@ public sealed class AuthTotpBackupAndDisableEndpointTests : IClassFixture<Public
         await TotpTestSupport.SeedAdminAsync(_factory, username);
         using var client = _factory.CreateClient();
         var login = await TotpTestSupport.LoginWithoutTotpAsync(client, username);
-        await TotpTestSupport.EnableTotpAsync(client, login.AccessToken);
+        await TotpTestSupport.EnrollTotpAsync(client, login.AccessToken);
 
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.AccessToken);
         var disableResponse = await client.PostAsJsonAsync(
@@ -74,7 +74,7 @@ public sealed class AuthTotpBackupAndDisableEndpointTests : IClassFixture<Public
         await TotpTestSupport.SeedAdminAsync(_factory, username);
         using var client = _factory.CreateClient();
         var login = await TotpTestSupport.LoginWithoutTotpAsync(client, username);
-        await TotpTestSupport.EnableTotpAsync(client, login.AccessToken);
+        await TotpTestSupport.EnrollTotpAsync(client, login.AccessToken);
 
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", login.AccessToken);
         var response = await client.PostAsJsonAsync(

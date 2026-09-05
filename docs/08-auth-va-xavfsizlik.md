@@ -34,6 +34,24 @@ Minimal talab: 10 belgi, harf+raqam. Parol o'zgarganda barcha refresh tokenlar b
 **TOTP (2FA, ixtiyoriy):** RFC 6238, 30 s oyna ±1, sekret AES-256-GCM bilan shifrlangan.
 Yoqilganda 8 ta bir martalik zaxira kod beriladi (xeshlangan holda saqlanadi).
 
+**O'rnatish ikki bosqichli (P46):**
+
+1. `POST /api/auth/totp/enable` — yangi sekret generatsiya qilinadi va `admin_users.
+   pending_totp_secret_encrypted` ga (shifrlangan) yoziladi. `totp_enabled` **`false` qoladi**,
+   login oqimi o'zgarmaydi. Javobda `otpauthUri` ning QR kodi (xom base64 PNG) va sirning
+   o'zi (qo'lda kiritish uchun) qaytadi. Kutish holatidagi sir **10 daqiqa** amal qiladi
+   (`AdminUser.PendingTotpEnrollmentLifetime`); takroriy `enable` uni almashtiradi.
+2. `POST /api/auth/totp/confirm` — foydalanuvchi ilovadagi 6 xonali kodni yuboradi. Kod
+   kutish holatidagi sirga mos kelsagina sekret asosiy maydonga ko'chadi, `totp_enabled`
+   `true` bo'ladi va 8 ta zaxira kod generatsiya qilinib javobda **bir marta** ko'rsatiladi.
+   Tasdiqlashda ishlatilgan vaqt qadami `totp_last_used_step` ga yoziladi — xuddi shu kod
+   bilan darhol login qilib bo'lmaydi.
+
+Sabab: tasdiqlashsiz yoqish — hisobni bloklab qo'yish yo'li. Agar autentifikator ilovasi
+noto'g'ri sozlangan bo'lsa (yoki sir qo'lda xato ko'chirilgan bo'lsa), foydalanuvchi keyingi
+kirishda hech qachon to'g'ri kod bera olmaydi. Sekret hech qachon logga yoki `AuditLog` ga
+yozilmaydi — audit faqat `Auth.TotpEnrollmentStarted` / `Auth.TotpEnabled` faktini qayd etadi.
+
 ---
 
 ## 3. Maktab havolasi
@@ -174,7 +192,8 @@ faqat Production muhitida).
 
 ## 8. Audit qilinadigan harakatlar
 
-`Auth.LoginSucceeded`, `Auth.LoginFailed`, `Auth.PasswordChanged`, `Auth.TotpEnabled`,
+`Auth.LoginSucceeded`, `Auth.LoginFailed`, `Auth.PasswordChanged`, `Auth.TotpEnrollmentStarted`
+(P46 — 2FA o'rnatish boshlandi, hali yoqilmagan), `Auth.TotpEnabled`,
 `Auth.TotpDisabled` (P13 da qo'shildi — 2FA o'chirilishi yoqilishidan ko'ra muhimroq hodisa,
 chunki u himoyani pasaytiradi),
 `Security.RefreshReuse`, `School.Created/Updated/Deleted`, `School.LinkRegenerated`,

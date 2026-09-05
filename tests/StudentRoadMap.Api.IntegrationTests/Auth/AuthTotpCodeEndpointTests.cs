@@ -26,10 +26,10 @@ public sealed class AuthTotpCodeEndpointTests : IClassFixture<PublicApiTestFacto
         await TotpTestSupport.SeedAdminAsync(_factory, username);
         using var client = _factory.CreateClient();
         var login = await TotpTestSupport.LoginWithoutTotpAsync(client, username);
-        var enableResult = await TotpTestSupport.EnableTotpAsync(client, login.AccessToken);
+        var (enable, _) = await TotpTestSupport.EnrollTotpAsync(client, login.AccessToken);
 
-        var now = DateTimeOffset.UtcNow;
-        var code = TotpTestHelper.ComputeCode(enableResult.Secret, now);
+        // Tasdiqlashda ishlatilgan qadam allaqachon qayd etilgan — login uchun keyingi qadam kodi.
+        var code = TotpTestSupport.NextLoginCode(enable.Secret);
 
         var firstResponse = await client.PostAsJsonAsync(
             "/api/auth/login",
@@ -52,7 +52,7 @@ public sealed class AuthTotpCodeEndpointTests : IClassFixture<PublicApiTestFacto
         await TotpTestSupport.SeedAdminAsync(_factory, username);
         using var client = _factory.CreateClient();
         var login = await TotpTestSupport.LoginWithoutTotpAsync(client, username);
-        await TotpTestSupport.EnableTotpAsync(client, login.AccessToken);
+        await TotpTestSupport.EnrollTotpAsync(client, login.AccessToken);
 
         var response = await client.PostAsJsonAsync(
             "/api/auth/login",

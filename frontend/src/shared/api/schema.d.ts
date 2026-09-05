@@ -2908,6 +2908,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/totp/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ConfirmTotpRequest"];
+                    "text/json": components["schemas"]["ConfirmTotpRequest"];
+                    "application/*+json": components["schemas"]["ConfirmTotpRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ConfirmTotpResult"];
+                        "application/json": components["schemas"]["ConfirmTotpResult"];
+                        "text/json": components["schemas"]["ConfirmTotpResult"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/totp/disable": {
         parameters: {
             query?: never;
@@ -5252,6 +5322,12 @@ export interface components {
             nextTestCode?: string | null;
             allTestsCompleted: boolean;
         };
+        ConfirmTotpRequest: {
+            code: string;
+        };
+        ConfirmTotpResult: {
+            backupCodes: string[];
+        };
         CreateCatalogTestRequest: {
             code: string;
             nameUz: string;
@@ -5324,7 +5400,9 @@ export interface components {
         EnableTotpResult: {
             secret: string;
             otpauthUri: string;
-            backupCodes: string[];
+            qrCodePngBase64: string;
+            /** Format: date-time */
+            expiresAt: string;
         };
         /** @enum {string} */
         Gender: "Unspecified" | "Male" | "Female";

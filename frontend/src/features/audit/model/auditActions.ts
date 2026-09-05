@@ -21,6 +21,10 @@ export const AUDIT_ACTION_OPTIONS: readonly AuditActionOption[] = [
   { value: 'Auth.LoginSucceeded', labelKey: 'audit.actionLabels.AuthLoginSucceeded' },
   { value: 'Auth.LoginFailed', labelKey: 'audit.actionLabels.AuthLoginFailed' },
   { value: 'Auth.PasswordChanged', labelKey: 'audit.actionLabels.AuthPasswordChanged' },
+  {
+    value: 'Auth.TotpEnrollmentStarted',
+    labelKey: 'audit.actionLabels.AuthTotpEnrollmentStarted',
+  },
   { value: 'Auth.TotpEnabled', labelKey: 'audit.actionLabels.AuthTotpEnabled' },
   { value: 'Auth.TotpDisabled', labelKey: 'audit.actionLabels.AuthTotpDisabled' },
   { value: 'Security.RefreshReuse', labelKey: 'audit.actionLabels.SecurityRefreshReuse' },

@@ -1,4 +1,5 @@
 using FluentAssertions;
+using StudentRoadMap.Domain.Common;
 using StudentRoadMap.Domain.Identity;
 
 namespace StudentRoadMap.Domain.Tests.Identity;
@@ -106,22 +107,117 @@ public sealed class AdminUserTests
         admin.TotpLastUsedStep.Should().Be(12345);
     }
 
+    // --- TOTP o'rnatishning ikki bosqichli oqimi (P46): `Begin...` 2FA'ni YOQMAYDI,
+    // `Confirm...` esa faqat muddati o'tmagan kutish holatidan yoqadi. ---
+
     [Fact]
-    public void EnableTotp_SetsSecretAndEnabledFlag()
+    public void BeginTotpEnrollment_KutishHolatigaYozadi_LekinTotpniYoqmaydi()
     {
         var admin = CreateAdminUser();
 
-        admin.EnableTotp("encrypted-secret", Now);
+        admin.BeginTotpEnrollment("encrypted-secret", Now);
 
-        admin.TotpEnabled.Should().BeTrue();
-        admin.TotpSecretEncrypted.Should().Be("encrypted-secret");
+        admin.TotpEnabled.Should().BeFalse("tasdiqlanmaguncha 2FA yoqilmasligi kerak");
+        admin.TotpSecretEncrypted.Should().BeNull();
+        admin.PendingTotpSecretEncrypted.Should().Be("encrypted-secret");
+        admin.PendingTotpCreatedAt.Should().Be(Now);
+        admin.HasValidPendingTotpEnrollment(Now).Should().BeTrue();
     }
 
     [Fact]
-    public void DisableTotp_ClearsSecretEnabledFlagAndLastUsedStep()
+    public void BeginTotpEnrollment_BoshSirBilan_ArgumentExceptionTashlaydi()
     {
         var admin = CreateAdminUser();
-        admin.EnableTotp("encrypted-secret", Now);
+
+        var act = () => admin.BeginTotpEnrollment("  ", Now);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void BeginTotpEnrollment_QaytaChaqirilganda_OldingiSirniAlmashtiradi()
+    {
+        var admin = CreateAdminUser();
+        admin.BeginTotpEnrollment("first-secret", Now);
+
+        admin.BeginTotpEnrollment("second-secret", Now.AddMinutes(2));
+
+        admin.PendingTotpSecretEncrypted.Should().Be("second-secret");
+        admin.PendingTotpCreatedAt.Should().Be(Now.AddMinutes(2));
+    }
+
+    [Fact]
+    public void BeginTotpEnrollment_TotpYoqilganda_DomainExceptionTashlaydi()
+    {
+        var admin = CreateAdminUser();
+        admin.BeginTotpEnrollment("encrypted-secret", Now);
+        admin.ConfirmTotpEnrollment(Now.AddSeconds(30));
+
+        var act = () => admin.BeginTotpEnrollment("another-secret", Now.AddMinutes(1));
+
+        act.Should().Throw<DomainException>().Which.Code.Should().Be("TOTP_ALREADY_ENABLED");
+    }
+
+    [Fact]
+    public void ConfirmTotpEnrollment_KutishHolatidagiSirniAsosiyGaKochiradi_VaYoqadi()
+    {
+        var admin = CreateAdminUser();
+        admin.BeginTotpEnrollment("encrypted-secret", Now);
+
+        admin.ConfirmTotpEnrollment(Now.AddMinutes(1));
+
+        admin.TotpEnabled.Should().BeTrue();
+        admin.TotpSecretEncrypted.Should().Be("encrypted-secret");
+        admin.PendingTotpSecretEncrypted.Should().BeNull();
+        admin.PendingTotpCreatedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public void ConfirmTotpEnrollment_OrnatishBoshlanmagan_DomainExceptionTashlaydi()
+    {
+        var admin = CreateAdminUser();
+
+        var act = () => admin.ConfirmTotpEnrollment(Now);
+
+        act.Should().Throw<DomainException>().Which.Code.Should().Be("TOTP_ENROLLMENT_NOT_STARTED");
+    }
+
+    [Fact]
+    public void ConfirmTotpEnrollment_MuddatiOtganda_DomainExceptionTashlaydi()
+    {
+        var admin = CreateAdminUser();
+        admin.BeginTotpEnrollment("encrypted-secret", Now);
+        var afterExpiry = Now.Add(AdminUser.PendingTotpEnrollmentLifetime).AddSeconds(1);
+
+        admin.HasValidPendingTotpEnrollment(afterExpiry).Should().BeFalse();
+        admin.HasExpiredPendingTotpEnrollment(afterExpiry).Should().BeTrue();
+
+        var act = () => admin.ConfirmTotpEnrollment(afterExpiry);
+
+        act.Should().Throw<DomainException>().Which.Code.Should().Be("TOTP_ENROLLMENT_EXPIRED");
+        admin.TotpEnabled.Should().BeFalse();
+    }
+
+    [Fact]
+    public void CancelTotpEnrollment_KutishHolatiniTozalaydi()
+    {
+        var admin = CreateAdminUser();
+        admin.BeginTotpEnrollment("encrypted-secret", Now);
+
+        admin.CancelTotpEnrollment(Now.AddMinutes(1));
+
+        admin.PendingTotpSecretEncrypted.Should().BeNull();
+        admin.PendingTotpCreatedAt.Should().BeNull();
+        admin.HasValidPendingTotpEnrollment(Now.AddMinutes(1)).Should().BeFalse();
+        admin.HasExpiredPendingTotpEnrollment(Now.AddMinutes(1)).Should().BeFalse();
+    }
+
+    [Fact]
+    public void DisableTotp_ClearsSecretEnabledFlagLastUsedStepAndPendingEnrollment()
+    {
+        var admin = CreateAdminUser();
+        admin.BeginTotpEnrollment("encrypted-secret", Now);
+        admin.ConfirmTotpEnrollment(Now);
         admin.RegisterTotpStepUsed(999, Now);
 
         admin.DisableTotp(Now.AddMinutes(1));
@@ -129,5 +225,7 @@ public sealed class AdminUserTests
         admin.TotpEnabled.Should().BeFalse();
         admin.TotpSecretEncrypted.Should().BeNull();
         admin.TotpLastUsedStep.Should().BeNull();
+        admin.PendingTotpSecretEncrypted.Should().BeNull();
+        admin.PendingTotpCreatedAt.Should().BeNull();
     }
 }

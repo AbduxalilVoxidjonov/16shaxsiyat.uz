@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using MediatR;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
@@ -7,9 +6,15 @@ using StudentRoadMap.Domain.Identity;
 
 namespace StudentRoadMap.Application.Identity.EnableTotp;
 
+/// <summary>
+/// O'rnatishning 1-bosqichi. **2FA bu yerda YOQILMAYDI** — sir faqat kutish holatiga yoziladi.
+/// Ilgari bu handler `user.EnableTotp(...)` ni darhol chaqirar edi: agar foydalanuvchi 32
+/// belgili sirni qo'lda xato ko'chirsa (QR yo'q edi), 2FA server tomonda yoqilib qolar va
+/// keyingi kirishda hisob butunlay bloklanardi. Endi ilova to'g'ri kod berayotgani
+/// isbotlanmaguncha login oqimi o'zgarmaydi.
+/// </summary>
 internal sealed class EnableTotpCommandHandler : IRequestHandler<EnableTotpCommand, Result<EnableTotpResult>>
 {
-    private const int BackupCodeCount = 8;
     private const string IssuerName = "Shaxsiyat";
 
     private readonly IAppDbContext _context;
@@ -17,7 +22,7 @@ internal sealed class EnableTotpCommandHandler : IRequestHandler<EnableTotpComma
     private readonly IDateTime _dateTime;
     private readonly IEncryptionService _encryptionService;
     private readonly ITotpService _totpService;
-    private readonly IPasswordHasher _passwordHasher;
+    private readonly IQrCodeGenerator _qrCodeGenerator;
 
     public EnableTotpCommandHandler(
         IAppDbContext context,
@@ -25,14 +30,14 @@ internal sealed class EnableTotpCommandHandler : IRequestHandler<EnableTotpComma
         IDateTime dateTime,
         IEncryptionService encryptionService,
         ITotpService totpService,
-        IPasswordHasher passwordHasher)
+        IQrCodeGenerator qrCodeGenerator)
     {
         _context = context;
         _executor = executor;
         _dateTime = dateTime;
         _encryptionService = encryptionService;
         _totpService = totpService;
-        _passwordHasher = passwordHasher;
+        _qrCodeGenerator = qrCodeGenerator;
     }
 
     public async Task<Result<EnableTotpResult>> Handle(EnableTotpCommand request, CancellationToken cancellationToken)
@@ -54,26 +59,22 @@ internal sealed class EnableTotpCommandHandler : IRequestHandler<EnableTotpComma
         }
 
         var secret = _totpService.GenerateSecret();
-        user.EnableTotp(_encryptionService.Encrypt(secret), now);
 
-        var backupCodes = new List<string>(BackupCodeCount);
-        for (var i = 0; i < BackupCodeCount; i++)
-        {
-            var code = GenerateBackupCode();
-            backupCodes.Add(code);
-            _context.Add(AdminTotpBackupCode.Create(Guid.NewGuid(), user.Id, _passwordHasher.Hash(code), now));
-        }
+        // Takroriy chaqiruv oldingi tasdiqlanmagan sirni almashtiradi — foydalanuvchi QR'ni
+        // qayta so'raganda eski, yarim skanerlangan sir qolib ketmasin.
+        user.BeginTotpEnrollment(_encryptionService.Encrypt(secret), now);
 
-        _context.Add(AuditLog.Create(AuditActions.AuthTotpEnabled, now, user.Id));
+        // Sir hech qachon audit logga yozilmaydi — faqat "o'rnatish boshlandi" fakti.
+        _context.Add(AuditLog.Create(AuditActions.AuthTotpEnrollmentStarted, now, user.Id));
 
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         var otpauthUri = _totpService.BuildOtpauthUri(secret, user.Username, IssuerName);
 
-        return Result.Success(new EnableTotpResult(secret, otpauthUri, backupCodes));
+        return Result.Success(new EnableTotpResult(
+            secret,
+            otpauthUri,
+            _qrCodeGenerator.GeneratePngBase64(otpauthUri),
+            now.Add(AdminUser.PendingTotpEnrollmentLifetime)));
     }
-
-    /// <summary>8 xonali raqamli zaxira kod — kiritish oson, `RandomNumberGenerator` bilan kriptografik tasodifiy.</summary>
-    private static string GenerateBackupCode() =>
-        RandomNumberGenerator.GetInt32(0, 100_000_000).ToString("D8", System.Globalization.CultureInfo.InvariantCulture);
 }

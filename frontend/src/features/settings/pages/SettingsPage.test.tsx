@@ -36,17 +36,38 @@ const ME_TOTP_OFF = {
 const ME_TOTP_ON = { ...ME_TOTP_OFF, totpEnabled: true } satisfies Schemas['AdminUserDto'];
 
 /**
- * `POST /api/auth/totp/enable` javobi — backend `EnableTotpResult(Secret, OtpauthUri, BackupCodes)`
- * bilan **aynan bir xil** shakl (`shared/api/schema.d.ts` → `components['schemas']['EnableTotpResult']`).
- * Ilgari bu mock frontendning o'z taxminini (`otpauthUrl`/`recoveryCodes`) takrorlar edi va shu
- * sababli haqiqiy yiqilishni ushlamagan — mock backend shartnomasidan uzilib qolmasligi shart.
- * Endi shakl `jsonResponse<'EnableTotpResult'>` orqali `tsc` da tekshiriladi.
+ * 1x1 shaffof PNG (base64) — backend `qrCodePngBase64` XOM base64 PNG qaytaradi (`data:`
+ * prefiksisiz), UI esa prefiksni o'zi qo'shadi. Testda haqiqiy QR shart emas: muhimi —
+ * `<img src="data:image/png;base64,...">` render bo'lishi (`dangerouslySetInnerHTML` YO'Q).
+ */
+const QR_PNG_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+/**
+ * `POST /api/auth/totp/enable` javobi — backend `EnableTotpResult(Secret, OtpauthUri,
+ * QrCodePngBase64, ExpiresAt)` bilan **aynan bir xil** shakl (`shared/api/schema.d.ts` →
+ * `components['schemas']['EnableTotpResult']`). Ilgari bu mock frontendning o'z taxminini
+ * (`otpauthUrl`/`recoveryCodes`) takrorlar edi va shu sababli haqiqiy yiqilishni ushlamagan —
+ * mock backend shartnomasidan uzilib qolmasligi shart. Endi shakl
+ * `jsonResponse<'EnableTotpResult'>` orqali `tsc` da tekshiriladi.
+ *
+ * **Diqqat:** bu javobda `backupCodes` YO'Q — ular `totp/confirm` javobida keladi, chunki
+ * tasdiqlanmagan o'rnatish uchun kod yozib qo'yilmaydi (docs/08 2-bo'lim).
  */
 const TOTP_ENABLE_RESULT = {
   secret: 'JBSWY3DPEHPK3PXP',
   otpauthUri: 'otpauth://totp/Shaxsiyat:admin?secret=JBSWY3DPEHPK3PXP&issuer=Shaxsiyat',
-  backupCodes: [...BACKUP_CODES],
+  qrCodePngBase64: QR_PNG_BASE64,
+  expiresAt: '2026-01-15T10:10:00+00:00',
 } satisfies Schemas['EnableTotpResult'];
+
+/** `POST /api/auth/totp/confirm` javobi — 2FA aynan shu bosqichda yoqiladi. */
+const TOTP_CONFIRM_RESULT = {
+  backupCodes: [...BACKUP_CODES],
+} satisfies Schemas['ConfirmTotpResult'];
+
+/** Ilovadagi 6 xonali kod — testda ixtiyoriy, backend mock qilingan. */
+const VALID_TOTP_CODE = '123456';
 
 /**
  * `POST /api/auth/totp/disable` so'rov tanasi — backend `DisableTotpRequest(CurrentPassword)`.
@@ -57,14 +78,32 @@ const DISABLE_TOTP_BODY = {
   currentPassword: 'Sup3rSecret1',
 } satisfies Schemas['DisableTotpRequest'];
 
-function totpEnableFetchMock() {
+/**
+ * Ikki bosqichli oqim uchun mock. `confirm` javobi testdan beriladi — muvaffaqiyat
+ * (`ConfirmTotpResult`) yoki `ProblemDetails` (noto'g'ri kod, muddati o'tgan o'rnatish).
+ * Tasdiqlangandan keyin `GET /api/auth/me` `totpEnabled: true` qaytaradi — haqiqiy serverdagi
+ * kabi.
+ */
+function totpFlowFetchMock(confirmResponse: Response = jsonResponse<'ConfirmTotpResult'>(TOTP_CONFIRM_RESULT)) {
+  let confirmed = false;
   return vi.fn().mockImplementation((input: RequestInfo | URL) => {
     const url = String(input);
     if (url.endsWith('/api/auth/totp/enable')) {
       return Promise.resolve(jsonResponse<'EnableTotpResult'>(TOTP_ENABLE_RESULT));
     }
-    return Promise.resolve(jsonResponse<'AdminUserDto'>(ME_TOTP_OFF));
+    if (url.endsWith('/api/auth/totp/confirm')) {
+      if (confirmResponse.ok) confirmed = true;
+      return Promise.resolve(confirmResponse.clone());
+    }
+    return Promise.resolve(jsonResponse<'AdminUserDto'>(confirmed ? ME_TOTP_ON : ME_TOTP_OFF));
   });
+}
+
+/** "Yoqish" → QR paneli ochilishini kutadi. */
+async function startTotpSetup(user: ReturnType<typeof userEvent.setup>) {
+  await screen.findByText('Yoqilmagan');
+  await user.click(screen.getByRole('button', { name: 'Yoqish' }));
+  return screen.findByAltText('2FA sozlash uchun QR kod');
 }
 
 function renderSettings() {
@@ -141,28 +180,110 @@ describe('SettingsPage', () => {
     expect(await screen.findByText('Parollar mos emas.')).toBeInTheDocument();
   });
 
-  it("2FA yoqilganda maxfiy kalit va zaxira kodlar dialog oynasida ko'rsatiladi", async () => {
-    vi.stubGlobal('fetch', totpEnableFetchMock());
+  it("'Yoqish' bosilganda QR kod, maxfiy kalit va tasdiqlash formasi ko'rsatiladi", async () => {
+    vi.stubGlobal('fetch', totpFlowFetchMock());
     const user = userEvent.setup();
 
     renderSettings();
-    await screen.findByText('Yoqilmagan');
+    const qr = await startTotpSetup(user);
 
-    await user.click(screen.getByRole('button', { name: 'Yoqish' }));
+    // QR — xom base64 PNG dan qurilgan `data:` URL (backend `qrCodePngBase64`).
+    expect(qr).toHaveAttribute('src', `data:image/png;base64,${QR_PNG_BASE64}`);
+    // Skaner ishlamasa — kalitni qo'lda kiritish yo'li.
+    expect(screen.getByText('JBSWY3DPEHPK3PXP')).toBeInTheDocument();
+    expect(screen.getByLabelText('Tasdiqlash kodi')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Tasdiqlash' })).toBeInTheDocument();
+  });
 
-    expect(await screen.findByText('JBSWY3DPEHPK3PXP')).toBeInTheDocument();
-    expect(screen.getByText(BACKUP_CODES[0])).toBeInTheDocument();
+  it("'Yoqish' 2FA ni hali yoqmaydi — holat 'Yoqilmagan' bo'lib qoladi", async () => {
+    vi.stubGlobal('fetch', totpFlowFetchMock());
+    const user = userEvent.setup();
+
+    renderSettings();
+    await startTotpSetup(user);
+
+    expect(screen.getByText('Yoqilmagan')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        ' hali YOQILMAGAN — tasdiqlashni tugatmaguningizcha kirish avvalgidek ishlaydi.',
+        { exact: false },
+      ),
+    ).toBeInTheDocument();
+    // Zaxira kodlar bu bosqichda umuman kelmaydi.
+    expect(screen.queryByText(BACKUP_CODES[0])).not.toBeInTheDocument();
+  });
+
+  it('6 xonali bo\'lmagan kod serverga umuman yuborilmaydi', async () => {
+    const fetchMock = totpFlowFetchMock();
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+
+    renderSettings();
+    await startTotpSetup(user);
+
+    await user.type(screen.getByLabelText('Tasdiqlash kodi'), '123');
+    await user.click(screen.getByRole('button', { name: 'Tasdiqlash' }));
+
+    expect(await screen.findByText('6 xonali kodni kiriting.')).toBeInTheDocument();
+    expect(
+      fetchMock.mock.calls.filter(([input]) => String(input).endsWith('/api/auth/totp/confirm')),
+    ).toHaveLength(0);
+  });
+
+  it("noto'g'ri kodda TOTP_CODE_INVALID xatosi maydon ostida ko'rsatiladi", async () => {
+    vi.stubGlobal('fetch', totpFlowFetchMock(problemResponse('TOTP_CODE_INVALID', 400)));
+    const user = userEvent.setup();
+
+    renderSettings();
+    await startTotpSetup(user);
+
+    await user.type(screen.getByLabelText('Tasdiqlash kodi'), '000000');
+    await user.click(screen.getByRole('button', { name: 'Tasdiqlash' }));
+
+    expect(await screen.findByText(/Kod noto'g'ri/)).toBeInTheDocument();
+    // Panel ochiq qoladi — foydalanuvchi qayta urinadi.
+    expect(screen.getByAltText('2FA sozlash uchun QR kod')).toBeInTheDocument();
+  });
+
+  it("muddati o'tgan o'rnatishda panel yopiladi va qaytadan boshlash so'raladi", async () => {
+    vi.stubGlobal('fetch', totpFlowFetchMock(problemResponse('TOTP_ENROLLMENT_EXPIRED', 409)));
+    const user = userEvent.setup();
+
+    renderSettings();
+    await startTotpSetup(user);
+
+    await user.type(screen.getByLabelText('Tasdiqlash kodi'), VALID_TOTP_CODE);
+    await user.click(screen.getByRole('button', { name: 'Tasdiqlash' }));
+
+    expect(await screen.findByText(/Sozlash muddati tugadi/)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByAltText('2FA sozlash uchun QR kod')).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole('button', { name: 'Yoqish' })).toBeInTheDocument();
+  });
+
+  it("to'g'ri kod bilan tasdiqlangach zaxira kodlar dialog oynasida ko'rsatiladi", async () => {
+    vi.stubGlobal('fetch', totpFlowFetchMock());
+    const user = userEvent.setup();
+
+    renderSettings();
+    await startTotpSetup(user);
+
+    await user.type(screen.getByLabelText('Tasdiqlash kodi'), VALID_TOTP_CODE);
+    await user.click(screen.getByRole('button', { name: 'Tasdiqlash' }));
+
+    expect(await screen.findByText(BACKUP_CODES[0])).toBeInTheDocument();
     expect(screen.getByText(BACKUP_CODES[7])).toBeInTheDocument();
   });
 
   it("zaxira kodlar backend javobining haqiqiy shakli bilan to'liq (8 ta) render bo'ladi", async () => {
-    vi.stubGlobal('fetch', totpEnableFetchMock());
+    vi.stubGlobal('fetch', totpFlowFetchMock());
     const user = userEvent.setup();
 
     renderSettings();
-    await screen.findByText('Yoqilmagan');
-
-    await user.click(screen.getByRole('button', { name: 'Yoqish' }));
+    await startTotpSetup(user);
+    await user.type(screen.getByLabelText('Tasdiqlash kodi'), VALID_TOTP_CODE);
+    await user.click(screen.getByRole('button', { name: 'Tasdiqlash' }));
 
     const list = await screen.findByRole('list', {
       name: /Zaxira kodlar/,
@@ -177,12 +298,13 @@ describe('SettingsPage', () => {
   });
 
   it('zaxira kodlar saqlangani tasdiqlanmaguncha dialog yopilmaydi', async () => {
-    vi.stubGlobal('fetch', totpEnableFetchMock());
+    vi.stubGlobal('fetch', totpFlowFetchMock());
     const user = userEvent.setup();
 
     renderSettings();
-    await screen.findByText('Yoqilmagan');
-    await user.click(screen.getByRole('button', { name: 'Yoqish' }));
+    await startTotpSetup(user);
+    await user.type(screen.getByLabelText('Tasdiqlash kodi'), VALID_TOTP_CODE);
+    await user.click(screen.getByRole('button', { name: 'Tasdiqlash' }));
     await screen.findByText(BACKUP_CODES[0]);
 
     // Yopish tugmasi (`Dialog`ning X'i) — 2FA server tomonda allaqachon yoqilgan,

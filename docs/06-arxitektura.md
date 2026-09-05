@@ -223,6 +223,9 @@ Barcha xatolar `application/problem+json`:
 | `TOTP_REQUIRED` | 401 | Foydalanuvchida 2FA yoqilgan, `totpCode` kerak (P13) |
 | `TOTP_ALREADY_ENABLED` | 409 | 2FA allaqachon yoqilgan (P13) |
 | `TOTP_NOT_ENABLED` | 409 | 2FA yoqilmagan, o'chirib bo'lmaydi (P13) |
+| `TOTP_ENROLLMENT_NOT_STARTED` | 409 | `totp/confirm` chaqirildi, lekin kutish holatidagi sir yo'q — avval `totp/enable` (P46) |
+| `TOTP_ENROLLMENT_EXPIRED` | 409 | Kutish holatidagi sirning 10 daqiqalik muddati o'tgan — QR qayta olinadi (P46) |
+| `TOTP_CODE_INVALID` | 400 | `totp/confirm` ga yuborilgan 6 xonali kod sirga mos kelmadi (P46) |
 
 > **`ProblemDetails` qo'shimcha maydonlari.** `Error` tipida ixtiyoriy `Extensions` lug'ati bor;
 > u `ProblemDetails.Extensions` ga ko'chiriladi. Shu orqali xato bilan birga kontekst yuboriladi —

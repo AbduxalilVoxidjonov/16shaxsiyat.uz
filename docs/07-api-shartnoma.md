@@ -283,10 +283,21 @@ ikkinchi himoya qatlami, birinchisi emas).
 | POST | `/api/auth/logout` | Refresh tokenni bekor qiladi va cookie'ni tozalaydi |
 | GET | `/api/auth/me` | Joriy foydalanuvchi |
 | POST | `/api/auth/change-password` | `{currentPassword, newPassword}` |
-| POST | `/api/auth/totp/enable` | 2FA yoqadi → `{secret, otpauthUri, backupCodes[8]}` (zaxira kodlar **faqat shu javobda bir marta** ko'rsatiladi) |
+| POST | `/api/auth/totp/enable` | 2FA o'rnatishni **boshlaydi** (hali yoqmaydi) → `{secret, otpauthUri, qrCodePngBase64, expiresAt}`; sir 10 daqiqa kutish holatida turadi |
+| POST | `/api/auth/totp/confirm` | Tana: `{code}` (6 xonali) → `{backupCodes[8]}`. **2FA aynan shu yerda yoqiladi**; zaxira kodlar **faqat shu javobda bir marta** ko'rsatiladi |
 | POST | `/api/auth/totp/disable` | 2FA o'chiradi; tana: `{currentPassword}` — o'g'irlangan sessiya 2FA ni o'chira olmasligi uchun (P13) |
 
 5 marta xato parol → 15 daqiqa blok (`LockedUntil`). Login urinishlari `AuditLog` da.
+
+> **2FA ikki bosqichli o'rnatish (P46 da tuzatildi).** Avval `totp/enable` 2FA'ni DARHOL
+> yoqar edi va QR kod umuman qaytmasdi — foydalanuvchi 32 belgili sirni qo'lda ko'chirishga
+> majbur bo'lar, xato qilsa keyingi kirishda hisob butunlay bloklanardi. Endi:
+> `enable` sirni faqat **kutish holatida** saqlaydi (`TotpEnabled` `false` qoladi) va
+> `otpauthUri` ning QR kodini xom base64 PNG sifatida qaytaradi (maktab QR bilan bir xil
+> format); 2FA esa `confirm` ga ilovadan olingan to'g'ri kod kelgandagina yoqiladi.
+> Tasdiqlanmagan sir 10 daqiqadan keyin yaroqsiz bo'ladi yoki yangi `enable` uni almashtiradi.
+> Zaxira kodlar ham `confirm` javobida beriladi — tasdiqlanmagan o'rnatish DB'da xeshlangan
+> kod qoldirmasligi uchun.
 
 > **Eslatma (P19 da tuzatildi):** avval bu jadvalda `refreshToken` javob tanasida va so'rov
 > tanasida ko'rsatilgan edi — bu `docs/08` bilan ziddiyatda edi (u yerda refresh token

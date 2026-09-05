@@ -16,18 +16,40 @@ import type { components } from '@/shared/api/schema';
 export type ChangePasswordRequest = components['schemas']['ChangePasswordRequest'];
 
 /**
- * `POST /api/auth/totp/enable` javobi — backend `EnableTotpResult(Secret, OtpauthUri, BackupCodes)`.
- * `backupCodes` — 8 ta bir martalik kod, **faqat shu javobda bir marta** ko'rsatiladi
- * (docs/07 2-bo'lim, docs/08 2-bo'lim).
+ * `POST /api/auth/totp/enable` javobi — o'rnatishning 1-bosqichi
+ * (`EnableTotpResult(Secret, OtpauthUri, QrCodePngBase64, ExpiresAt)`). Bu bosqichda 2FA
+ * HALI YOQILMAGAN: `qrCodePngBase64` ni skanerlab, `POST /api/auth/totp/confirm` ga 6 xonali
+ * kod yuborilishi kerak (docs/07 2-bo'lim, docs/08 2-bo'lim).
+ *
+ * `qrCodePngBase64` — maktab QR kodi (`AdminSchoolDetailDto.qrCodeBase64`) bilan bir xil
+ * format: XOM base64 PNG, `data:` prefiksisiz (prefiksni UI qo'shadi).
  */
 export type TotpEnableResponse = components['schemas']['EnableTotpResult'];
+
+/** `POST /api/auth/totp/confirm` so'rovi — `{code}`, ilovadagi joriy 6 xonali kod. */
+export type TotpConfirmRequest = components['schemas']['ConfirmTotpRequest'];
+
+/**
+ * `POST /api/auth/totp/confirm` javobi. 2FA aynan shu chaqiruvdan keyin yoqiladi;
+ * `backupCodes` — 8 ta bir martalik kod, **faqat shu javobda bir marta** ko'rsatiladi.
+ */
+export type TotpConfirmResponse = components['schemas']['ConfirmTotpResult'];
 
 /** `POST /api/auth/totp/disable` so'rovi — backend maydon nomi `currentPassword`. */
 export type TotpDisableRequest = components['schemas']['DisableTotpRequest'];
 
 export const SETTINGS_ERROR_CODES = {
   currentPasswordInvalid: 'CURRENT_PASSWORD_INVALID',
+  /** `totp/confirm`: kod kutish holatidagi sirga mos kelmadi (400). */
+  totpCodeInvalid: 'TOTP_CODE_INVALID',
+  /** `totp/confirm`: kutish holatidagi sirning 10 daqiqalik muddati o'tgan (409). */
+  totpEnrollmentExpired: 'TOTP_ENROLLMENT_EXPIRED',
+  /** `totp/confirm`: `enable` umuman chaqirilmagan yoki kutish holati tozalangan (409). */
+  totpEnrollmentNotStarted: 'TOTP_ENROLLMENT_NOT_STARTED',
 } as const;
 
-/** Backend `EnableTotpCommandHandler.BackupCodeCount` — UI shu sonni kutadi (docs/08, 2-bo'lim). */
+/** Backend `ConfirmTotpCommandValidator` — aynan 6 xonali raqam kutadi. */
+export const TOTP_CODE_LENGTH = 6;
+
+/** Backend `ConfirmTotpCommandHandler.BackupCodeCount` — UI shu sonni kutadi (docs/08, 2-bo'lim). */
 export const TOTP_BACKUP_CODE_COUNT = 8;

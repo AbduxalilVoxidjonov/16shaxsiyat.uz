@@ -36,6 +36,10 @@ internal sealed class AdminUserConfiguration : IEntityTypeConfiguration<AdminUse
         builder.Property(u => u.IsActive).IsRequired().HasDefaultValue(true);
         builder.Property(u => u.TotpSecretEncrypted);
         builder.Property(u => u.TotpEnabled).IsRequired().HasDefaultValue(false);
+        // `docs/05`da yo'q — tasdiqlash bosqichi (P46) uchun qo'shildi: `enable` chaqiruvida
+        // sir KUTISH holatida saqlanadi, `confirm` da (kod tekshirilgach) asosiy sirga ko'chadi.
+        builder.Property(u => u.PendingTotpSecretEncrypted);
+        builder.Property(u => u.PendingTotpCreatedAt);
         // `docs/05`da yo'q — P13 TOTP qayta ishlatishga qarshi himoya uchun qo'shildi (hisobotga qarang).
         builder.Property(u => u.TotpLastUsedStep);
         builder.Property(u => u.FailedLoginCount).IsRequired().HasDefaultValue(0);

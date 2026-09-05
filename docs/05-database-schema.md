@@ -455,6 +455,16 @@ alter table admin_users add column totp_last_used_step bigint null;
 alter table admin_users add column concurrency_stamp uuid not null;  -- DEFAULT yo'q!
 ```
 
+### P46 da qo'shilgan (migratsiya `AddPendingTotpEnrollment`)
+
+```sql
+-- 2FA o'rnatishning tasdiqlash bosqichi: sir avval KUTISH holatiga yoziladi va faqat
+-- ilovadagi kod tekshirilgach `totp_secret_encrypted` ga ko'chadi (`docs/08` 2-bo'lim).
+-- Faqat qo'shimcha, nullable ustunlar — destruktiv o'zgarish yo'q.
+alter table admin_users add column pending_totp_secret_encrypted text null;
+alter table admin_users add column pending_totp_created_at timestamptz null;
+```
+
 > **Qoida (`defaultValue` tuzog'i):** mavjud jadvalga `NOT NULL` ustun qo'shganda EF Core
 > `migrationBuilder.AddColumn(..., defaultValue: X)` yozadi va buni **bir martalik backfill
 > emas, ustunning DOIMIY `DEFAULT`i** sifatida chiqaradi. Bu `bool`/`int`/enum bayroqlari

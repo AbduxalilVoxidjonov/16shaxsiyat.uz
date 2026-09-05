@@ -67,6 +67,29 @@ public static class ProblemCodes
     /// <summary>TOTP yoqilmagan hisobda `DisableTotp` chaqirilganda. `docs/06`da (409).</summary>
     public const string TotpNotEnabled = "TOTP_NOT_ENABLED";
 
+    // --- P46 (2FA tasdiqlash bosqichi) — `POST /api/auth/totp/confirm`. `docs/06` 6-bo'lim
+    // jadvaliga qo'shildi. ---
+
+    /// <summary>
+    /// `confirm` chaqirildi, lekin kutish holatidagi sir yo'q — `enable` umuman chaqirilmagan
+    /// (yoki `DisableTotp`/yangi `enable` uni tozalagan). Mijoz jarayonni boshidan boshlashi
+    /// kerak (409).
+    /// </summary>
+    public const string TotpEnrollmentNotStarted = "TOTP_ENROLLMENT_NOT_STARTED";
+
+    /// <summary>
+    /// Kutish holatidagi sir bor, lekin `AdminUser.PendingTotpEnrollmentLifetime` (10 daqiqa)
+    /// muddati o'tgan — QR qayta so'ralishi kerak (409).
+    /// </summary>
+    public const string TotpEnrollmentExpired = "TOTP_ENROLLMENT_EXPIRED";
+
+    /// <summary>
+    /// `confirm` ga yuborilgan 6 xonali kod kutish holatidagi sirga mos kelmadi (400). Login
+    /// oqimidagi `UNAUTHORIZED` dan farqli — bu yerda foydalanuvchi ALLAQACHON autentifikatsiyadan
+    /// o'tgan, faqat ilova soati/skaner xato bo'lishi mumkin.
+    /// </summary>
+    public const string TotpCodeInvalid = "TOTP_CODE_INVALID";
+
     /// <summary>
     /// Optimistik konkurentlik ziddiyati (`ConcurrencyConflictException`) — ikki bir vaqtdagi
     /// so'rov bir xil yozuvni o'zgartirmoqchi bo'lganda (masalan, bitta TOTP kodi bilan ikki
@@ -140,6 +163,9 @@ public static class ProblemCodes
         [TotpRequired] = StatusCodes.Status401Unauthorized,
         [TotpAlreadyEnabled] = StatusCodes.Status409Conflict,
         [TotpNotEnabled] = StatusCodes.Status409Conflict,
+        [TotpEnrollmentNotStarted] = StatusCodes.Status409Conflict,
+        [TotpEnrollmentExpired] = StatusCodes.Status409Conflict,
+        [TotpCodeInvalid] = StatusCodes.Status400BadRequest,
         [ConcurrencyConflict] = StatusCodes.Status409Conflict,
         [UniqueConstraintConflict] = StatusCodes.Status409Conflict,
         [SchoolHasStudents] = StatusCodes.Status409Conflict,

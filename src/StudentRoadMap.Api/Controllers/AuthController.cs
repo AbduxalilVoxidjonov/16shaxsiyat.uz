@@ -8,6 +8,7 @@ using StudentRoadMap.Api.Contracts.Auth;
 using StudentRoadMap.Api.Extensions;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Identity.ChangePassword;
+using StudentRoadMap.Application.Identity.ConfirmTotp;
 using StudentRoadMap.Application.Identity.DisableTotp;
 using StudentRoadMap.Application.Identity.EnableTotp;
 using StudentRoadMap.Application.Identity.Login;
@@ -138,6 +139,24 @@ public sealed class AuthController : ControllerBase
     public async Task<ActionResult<EnableTotpResult>> EnableTotp(CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new EnableTotpCommand(RequireAdminUserId()), cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>
+    /// `POST /api/auth/totp/confirm` — `docs/07` 2-bo'lim. O'rnatishning ikkinchi bosqichi:
+    /// ilovadagi 6 xonali kod tekshiriladi va faqat shundan keyin 2FA yoqiladi.
+    /// </summary>
+    [HttpPost("totp/confirm")]
+    [Authorize(Policy = JwtAuthenticationSetup.SuperAdminPolicy)]
+    [EnableRateLimiting(RateLimitSetup.AdminApi)]
+    [ProducesResponseType(typeof(ConfirmTotpResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
+    public async Task<ActionResult<ConfirmTotpResult>> ConfirmTotp([FromBody] ConfirmTotpRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(request.ToCommand(RequireAdminUserId()), cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
     }

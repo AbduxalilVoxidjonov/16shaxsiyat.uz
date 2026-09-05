@@ -11,6 +11,13 @@ public static class AuditActions
     public const string AuthLoginSucceeded = "Auth.LoginSucceeded";
     public const string AuthLoginFailed = "Auth.LoginFailed";
     public const string AuthPasswordChanged = "Auth.PasswordChanged";
+    /// <summary>
+    /// `POST /api/auth/totp/enable` — o'rnatish BOSHLANDI (sir kutish holatida saqlandi).
+    /// P46da qo'shildi: `Auth.TotpEnabled` endi faqat `confirm` muvaffaqiyatli tugaganda,
+    /// ya'ni 2FA HAQIQATDAN yoqilganda yoziladi. Sirning o'zi hech qachon yozilmaydi.
+    /// </summary>
+    public const string AuthTotpEnrollmentStarted = "Auth.TotpEnrollmentStarted";
+
     public const string AuthTotpEnabled = "Auth.TotpEnabled";
     public const string AuthTotpDisabled = "Auth.TotpDisabled";
     public const string SecurityRefreshReuse = "Security.RefreshReuse";

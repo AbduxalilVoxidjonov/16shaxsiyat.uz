@@ -252,7 +252,10 @@ va shkala o'zgartirish `DomainException` beradi (BR-8).
 ### 2.10 `AdminUser`, `RefreshToken`, `AuditLog`
 
 **AdminUser:** `Id`, `Username` (unikal), `Email`, `PasswordHash`, `Role` (`SuperAdmin`),
-`FullName`, `IsActive`, `TotpSecretEncrypted?`, `TotpEnabled`, `LastLoginAt`, `FailedLoginCount`, `LockedUntil?`.
+`FullName`, `IsActive`, `TotpSecretEncrypted?`, `TotpEnabled`, `LastLoginAt`, `FailedLoginCount`, `LockedUntil?`,
+`PendingTotpSecretEncrypted?`, `PendingTotpCreatedAt?` (P46 — tasdiqlanmagan 2FA o'rnatishi: sir
+`BeginTotpEnrollment` bilan kutish holatiga yoziladi va faqat `ConfirmTotpEnrollment` da
+asosiy maydonga ko'chib, `TotpEnabled` `true` bo'ladi; muddati 10 daqiqa).
 
 **RefreshToken:** `Id`, `AdminUserId`, `TokenHash`, `ExpiresAt`, `RevokedAt?`, `CreatedByIpHash`.
 
