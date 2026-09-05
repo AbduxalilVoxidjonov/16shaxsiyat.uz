@@ -11,6 +11,7 @@ using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Common;
 using StudentRoadMap.Domain.Identity;
 using StudentRoadMap.Domain.Jobs;
+using StudentRoadMap.Domain.PublicUsers;
 using StudentRoadMap.Domain.Schools;
 using StudentRoadMap.Domain.Students;
 
@@ -82,6 +83,10 @@ public sealed class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<AnalysisJob> AnalysisJobs => Set<AnalysisJob>();
 
+    public DbSet<PublicUser> PublicUsers => Set<PublicUser>();
+
+    public DbSet<PublicRefreshToken> PublicRefreshTokens => Set<PublicRefreshToken>();
+
     // --- IAppDbContext: DbSet<T> emas, IQueryable<T> (PM qarori) ---------------------------
     IQueryable<School> IAppDbContext.Schools => Schools;
 
@@ -132,6 +137,10 @@ public sealed class AppDbContext : DbContext, IAppDbContext
     IQueryable<SchoolLinkView> IAppDbContext.SchoolLinkViews => SchoolLinkViews;
 
     IQueryable<AnalysisJob> IAppDbContext.AnalysisJobs => AnalysisJobs;
+
+    IQueryable<PublicUser> IAppDbContext.PublicUsers => PublicUsers;
+
+    IQueryable<PublicRefreshToken> IAppDbContext.PublicRefreshTokens => PublicRefreshTokens;
 
     IQueryable<TEntity> IAppDbContext.AsNoTracking<TEntity>(IQueryable<TEntity> query) => query.AsNoTracking();
 
@@ -236,6 +245,12 @@ public sealed class AppDbContext : DbContext, IAppDbContext
         modelBuilder.Entity<School>().HasQueryFilter(s => !s.IsDeleted);
         modelBuilder.Entity<Student>().HasQueryFilter(s => !s.IsDeleted);
         modelBuilder.Entity<Assessment>().HasQueryFilter(a => !a.IsDeleted);
+
+        // `PublicUser` da `is_deleted` ustuni YO'Q — o'chirilganlik `deleted_at`ning
+        // to'ldirilganligi bilan aniqlanadi (`PublicUser.DeletedAt` izohi). O'chirilgan
+        // (anonimlashtirilgan) akkaunt hech qanday oddiy so'rovda ko'rinmaydi; admin
+        // statistikasi kerak bo'lsa `IgnoreQueryFilters` orqali olinadi.
+        modelBuilder.Entity<PublicUser>().HasQueryFilter(u => u.DeletedAt == null);
 
         // Faqat SINOV muhitida (SQLite — Docker/PostgreSQL yo'q joyda `PublicApiTestFactory`/
         // `SqliteAppDbContextFactory` ishlatadi): EF Core'ning SQLite provayderi

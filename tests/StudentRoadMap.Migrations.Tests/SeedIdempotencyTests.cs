@@ -17,6 +17,7 @@ public sealed class SeedIdempotencyTests(MigrationsPostgresFixture fixture)
     /// <summary>Seed ta'sir qiladigan barcha jadvallar — dublikat shu yerda ushlanadi.</summary>
     private static readonly string[] CountedTables =
     [
+        "schools",
         "test_definitions",
         "questions",
         "answer_options",
@@ -37,6 +38,8 @@ public sealed class SeedIdempotencyTests(MigrationsPostgresFixture fixture)
     /// </summary>
     private static readonly string[] MustBePopulatedTables =
     [
+        // P47: seed YAGONA ommaviy makonni (`SchoolKind.PublicSpace`) yaratadi.
+        "schools",
         "test_definitions",
         "questions",
         "assessment_programs",

@@ -35,7 +35,25 @@ public sealed class Assessment : AggregateRoot
     /// </summary>
     public Guid ProgramId { get; private set; }
 
+    /// <summary>
+    /// ⚠️ ESKI (ochiq matnli) sessiya tokeni. Ikki bosqichli migratsiya (`CLAUDE.md` 7-qoida)
+    /// ning BIRINCHI bosqichida hali saqlanadi — hozirgi `SessionTokenAuthenticationHandler`
+    /// aynan shu ustun bo'yicha qidiradi. IKKINCHI bosqichda (keyingi agent: autentifikatsiya
+    /// handleri va `StartSession` rezyume yo'li <see cref="SessionTokenHash"/> ga o'tgach)
+    /// ustun alohida migratsiya bilan O'CHIRILADI. YANGI kod bu maydonni ISHLATMASIN.
+    /// </summary>
     public string SessionToken { get; private set; } = null!;
+
+    /// <summary>
+    /// Sessiya tokenining SHA-256 xeshi (<see cref="TokenHash"/>) — refresh tokenlar bilan
+    /// bir xil himoya darajasi. Ilgari sessiya tokeni bazada OCHIQ saqlanardi: DB nusxasi
+    /// sizib chiqsa barcha faol sessiyalar bevosita ochilardi.
+    ///
+    /// `Create`/`RotateSessionToken` xom tokendan O'ZI hisoblaydi — chaqiruvchi qatlam
+    /// ikkalasini sinxron ushlab turishi shart emas, ya'ni "xesh yozilmay qolgan" holat
+    /// domen darajasida imkonsiz.
+    /// </summary>
+    public string SessionTokenHash { get; private set; } = null!;
 
     public AssessmentStatus Status { get; private set; }
 
@@ -87,6 +105,7 @@ public sealed class Assessment : AggregateRoot
         StudentId = studentId;
         SchoolId = schoolId;
         SessionToken = sessionToken;
+        SessionTokenHash = TokenHash.Compute(sessionToken);
         LanguageCode = languageCode;
         ProgramId = programId;
         Status = AssessmentStatus.Draft;
@@ -288,6 +307,30 @@ public sealed class Assessment : AggregateRoot
     public void MarkDeleted(DateTimeOffset now)
     {
         IsDeleted = true;
+        UpdatedAt = now;
+    }
+
+    /// <summary>
+    /// Sessiya tokenini almashtiradi (rotatsiya). Xesh saqlanadigan bo'lgach xom tokenni
+    /// bazadan QAYTA O'QIB bo'lmaydi — shu sabab mavjud sessiyani davom ettirish
+    /// ("resumed") oqimi eski tokenni qaytara olmaydi va YANGI token berishi kerak.
+    /// Bu ayni paytda xavfsizroq ham: har rezyumeda token yangilanadi, eskisi o'ladi.
+    /// Yakunlangan/tashlab ketilgan sessiyaga yangi token berilmaydi.
+    /// </summary>
+    public void RotateSessionToken(string newSessionToken, DateTimeOffset now)
+    {
+        if (string.IsNullOrWhiteSpace(newSessionToken))
+        {
+            throw new ArgumentException("Sessiya tokeni bo'sh bo'lishi mumkin emas.", nameof(newSessionToken));
+        }
+
+        if (Status is not (AssessmentStatus.Draft or AssessmentStatus.InProgress))
+        {
+            throw new DomainException("ASSESSMENT_INVALID_TRANSITION", $"Sessiya '{Status}' holatida yangi token ololmaydi.");
+        }
+
+        SessionToken = newSessionToken;
+        SessionTokenHash = TokenHash.Compute(newSessionToken);
         UpdatedAt = now;
     }
 

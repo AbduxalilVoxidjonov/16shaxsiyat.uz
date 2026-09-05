@@ -8,6 +8,7 @@ using StudentRoadMap.Domain.Assessments;
 using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Identity;
 using StudentRoadMap.Domain.Jobs;
+using StudentRoadMap.Domain.PublicUsers;
 using StudentRoadMap.Domain.Schools;
 using StudentRoadMap.Domain.Students;
 
@@ -143,6 +144,10 @@ public sealed class GetSchoolInfoQueryHandlerTests
         public IQueryable<TestScale> TestScales => Enumerable.Empty<TestScale>().AsQueryable();
 
         public IQueryable<AnalysisJob> AnalysisJobs => Enumerable.Empty<AnalysisJob>().AsQueryable();
+
+        public IQueryable<PublicUser> PublicUsers => Enumerable.Empty<PublicUser>().AsQueryable();
+
+        public IQueryable<PublicRefreshToken> PublicRefreshTokens => Enumerable.Empty<PublicRefreshToken>().AsQueryable();
 
         public IQueryable<AssessmentProgram> AssessmentPrograms => _programs.AsQueryable();
 

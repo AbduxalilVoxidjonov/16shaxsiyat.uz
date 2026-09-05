@@ -9,6 +9,7 @@ using StudentRoadMap.Domain.Assessments;
 using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Identity;
 using StudentRoadMap.Domain.Jobs;
+using StudentRoadMap.Domain.PublicUsers;
 using StudentRoadMap.Domain.Schools;
 using StudentRoadMap.Domain.Students;
 
@@ -88,6 +89,10 @@ public sealed class TransactionBehaviorTests
         public IQueryable<TestScale> TestScales => throw Unsupported();
 
         public IQueryable<AnalysisJob> AnalysisJobs => throw Unsupported();
+
+        public IQueryable<PublicUser> PublicUsers => throw Unsupported();
+
+        public IQueryable<PublicRefreshToken> PublicRefreshTokens => throw Unsupported();
 
         public IQueryable<AssessmentProgram> AssessmentPrograms => throw Unsupported();
 

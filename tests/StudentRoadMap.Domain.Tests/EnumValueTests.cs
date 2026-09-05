@@ -4,6 +4,7 @@ using StudentRoadMap.Domain.Assessments;
 using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Identity;
 using StudentRoadMap.Domain.Jobs;
+using StudentRoadMap.Domain.Schools;
 using StudentRoadMap.Domain.Students;
 
 namespace StudentRoadMap.Domain.Tests;
@@ -30,6 +31,12 @@ public sealed class EnumValueTests
     [InlineData(TestStatus.InProgress, 1)]
     [InlineData(TestStatus.Completed, 2)]
     public void TestStatus_MatchesDatabaseSchema(TestStatus value, int expected) =>
+        ((int)value).Should().Be(expected);
+
+    [Theory]
+    [InlineData(SchoolKind.School, 1)]
+    [InlineData(SchoolKind.PublicSpace, 2)]
+    public void SchoolKind_MatchesDatabaseSchema(SchoolKind value, int expected) =>
         ((int)value).Should().Be(expected);
 
     [Theory]

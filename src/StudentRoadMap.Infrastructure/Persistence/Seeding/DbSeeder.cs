@@ -7,7 +7,9 @@ using StudentRoadMap.Application.Seeding;
 using StudentRoadMap.Domain.Ai;
 using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Identity;
+using StudentRoadMap.Domain.Schools;
 using StudentRoadMap.Infrastructure.Ai;
+using StudentRoadMap.Infrastructure.Identity;
 
 namespace StudentRoadMap.Infrastructure.Persistence.Seeding;
 
@@ -32,6 +34,20 @@ public sealed class DbSeeder
     public static readonly Guid SystemPersonalityProfileProgramId = Guid.Parse("00000000-0000-0000-0000-000000000001");
 
     public const string SystemPersonalityProfileProgramCode = "PERSONALITY_PROFILE";
+
+    /// <summary>
+    /// YAGONA ommaviy makonning (`SchoolKind.PublicSpace`) deterministik identifikatori —
+    /// `SystemPersonalityProfileProgramId` bilan bir xil sabab: seeder bir necha muhitda
+    /// (migrate → seed konteynerlari) mustaqil ishga tushadi, `Guid.NewGuid()` bo'lsa har
+    /// muhitda boshqa ID paydo bo'lardi va "bitta makon" invarianti mantiqiy darajada
+    /// buzilardi (DB indeksi buni to'xtatardi, lekin seed xato bilan yiqilardi).
+    /// </summary>
+    public static readonly Guid PublicSpaceSchoolId = Guid.Parse("00000000-0000-0000-0000-000000000002");
+
+    /// <summary>Barqaror slug — ommaviy havola (`/ommaviy`) hech qachon o'zgarmaydi.</summary>
+    public const string PublicSpaceSlug = "ommaviy";
+
+    public const string PublicSpaceName = "Ommaviy makon";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -82,6 +98,7 @@ public sealed class DbSeeder
         {
             await SeedTestDefinitionsAsync(cancellationToken).ConfigureAwait(false);
             await SeedSystemProgramAsync(cancellationToken).ConfigureAwait(false);
+            await SeedPublicSpaceAsync(cancellationToken).ConfigureAwait(false);
             await SeedTypeCatalogAsync(cancellationToken).ConfigureAwait(false);
             await SeedCareerMapAsync(cancellationToken).ConfigureAwait(false);
             await SeedPromptTemplatesAsync(cancellationToken).ConfigureAwait(false);
@@ -299,6 +316,50 @@ public sealed class DbSeeder
         {
             _logger.LogInformation("{Count} ta eski sessiya '{Code}' tizim dasturiga bog'landi.", updatedRows, SystemPersonalityProfileProgramCode);
         }
+    }
+
+    /// <summary>
+    /// Ommaviy makon (`SchoolKind.PublicSpace`) — Telegram orqali kirgan tashqi
+    /// foydalanuvchilarning `Student`/`Assessment` yozuvlari shu makonga tegishli bo'ladi
+    /// (`SchoolKind` izohi: nima uchun `SchoolId` nullable qilinmadi).
+    ///
+    /// **Idempotent:** yozuv `Id` bo'yicha topilsa hech narsa o'zgartirilmaydi — jumladan
+    /// `AccessToken` ham QAYTA GENERATSIYA QILINMAYDI (aks holda har seedda mavjud ommaviy
+    /// havolalar o'lardi) va `ShowResultToStudent` ham (superadmin uni panelda o'zgartirgan
+    /// bo'lishi mumkin). Global query filtri (`!IsDeleted`) chetlab o'tiladi: makonni
+    /// o'chirib bo'lmaydi, lekin qo'lda SQL bilan `is_deleted = true` qilingan noodatiy
+    /// bazada seed IKKINCHI makon yaratib, `ux_schools_public_space` ni buzmasligi kerak.
+    ///
+    /// `AccessToken` seed vaqtida TASODIFIY generatsiya qilinadi (kodda qattiq yozilgan
+    /// qiymat yo'q — `CLAUDE.md` 4-qoida): ommaviy oqim slug+token juftligiga tayanadi va
+    /// token oldindan bilinadigan bo'lsa maktab havolalari bilan bir xil xavfsizlik
+    /// modelidan chetga chiqardi.
+    /// </summary>
+    private async Task SeedPublicSpaceAsync(CancellationToken cancellationToken)
+    {
+        var existing = await _dbContext.Schools
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(s => s.Id == PublicSpaceSchoolId || s.Kind == SchoolKind.PublicSpace, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (existing is not null)
+        {
+            _logger.LogInformation("Ommaviy makon allaqachon mavjud: {Slug} — o'zgartirilmadi.", existing.Slug.Value);
+            return;
+        }
+
+        var publicSpace = School.CreatePublicSpace(
+            PublicSpaceSchoolId,
+            PublicSpaceName,
+            SchoolSlug.FromExisting(PublicSpaceSlug),
+            accessToken: new TokenGenerator().GenerateUrlSafeToken(32),
+            now: _dateTime.UtcNow,
+            notes: "Tizim yozuvi: Telegram orqali kirgan tashqi foydalanuvchilar shu makonga tegishli. O'chirilmaydi.");
+
+        _dbContext.Schools.Add(publicSpace);
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        _logger.LogInformation("Ommaviy makon yaratildi: {Slug}.", PublicSpaceSlug);
     }
 
     private async Task SeedTypeCatalogAsync(CancellationToken cancellationToken)

@@ -9,6 +9,9 @@ namespace StudentRoadMap.Domain.Schools;
 /// </summary>
 public sealed class School : AggregateRoot
 {
+    /// <summary>Ommaviy makonning kunlik ro'yxatdan o'tish limiti — maktabnikidan ancha katta.</summary>
+    public const int DefaultPublicSpaceRegistrationLimit = 100_000;
+
     public string Name { get; private set; } = null!;
 
     public string Region { get; private set; } = null!;
@@ -23,6 +26,12 @@ public sealed class School : AggregateRoot
 
     public SchoolSlug Slug { get; private set; } = null!;
 
+    /// <summary>
+    /// Makon turi (`SchoolKind`). `School` — klassik maktab havolasi oqimi; `PublicSpace` —
+    /// Telegram orqali kirgan tashqi foydalanuvchilar makoni (bazada AYNAN BITTA).
+    /// </summary>
+    public SchoolKind Kind { get; private set; }
+
     public string AccessToken { get; private set; } = null!;
 
     public string? AccessCode { get; private set; }
@@ -30,6 +39,18 @@ public sealed class School : AggregateRoot
     public int DailyRegistrationLimit { get; private set; }
 
     public bool IsActive { get; private set; }
+
+    /// <summary>
+    /// O'quvchiga test natijasi ko'rsatiladimi. Ilgari bu GLOBAL sozlama edi
+    /// (`App:ShowResultToStudent`, standart `false`) — endi HAR MAKON O'ZI hal qiladi:
+    /// maktab natijani odatda psixolog orqali beradi (`false`), ommaviy makonda esa
+    /// foydalanuvchi o'z natijasini ko'rmasa mahsulotning ma'nosi yo'q (`true`).
+    /// Global sozlama BEKOR QILINMADI — u "avariya rubilnigi" (kill-switch) sifatida qoladi:
+    /// Application qatlami ikkalasini VA (`global && school`) bilan birlashtiradi, ya'ni
+    /// global `false` butun tizim bo'ylab yopib qo'yadi (huquqiy/insident holati uchun),
+    /// global `true` esa qarorni makonga topshiradi.
+    /// </summary>
+    public bool ShowResultToStudent { get; private set; }
 
     public string? Notes { get; private set; }
 
@@ -59,6 +80,8 @@ public sealed class School : AggregateRoot
         string? accessCode,
         int dailyRegistrationLimit,
         string? notes,
+        SchoolKind kind,
+        bool showResultToStudent,
         DateTimeOffset now)
         : base(id)
     {
@@ -73,6 +96,8 @@ public sealed class School : AggregateRoot
         AccessCode = accessCode;
         DailyRegistrationLimit = dailyRegistrationLimit;
         Notes = notes;
+        Kind = kind;
+        ShowResultToStudent = showResultToStudent;
         IsActive = true;
         CreatedAt = now;
         UpdatedAt = now;
@@ -131,8 +156,67 @@ public sealed class School : AggregateRoot
             accessCode,
             dailyRegistrationLimit,
             notes,
+            SchoolKind.School,
+            showResultToStudent: false,
             now);
     }
+
+    /// <summary>
+    /// YAGONA ommaviy makonni yaratadi (`SchoolKind.PublicSpace`). Faqat seeder chaqiradi
+    /// (`DbSeeder.SeedPublicSpaceAsync`, idempotent, barqaror slug `ommaviy`) — admin API
+    /// orqali ikkinchisini yaratib bo'lmaydi, chunki `Create` har doim `SchoolKind.School`
+    /// qaytaradi va DB'da `ux_schools_public_space` qisman unikal indeksi turadi.
+    ///
+    /// `ShowResultToStudent = true` — tashqi foydalanuvchi o'z natijasini ko'rmasa
+    /// shaxsiy kabinetning ma'nosi qolmaydi.
+    /// </summary>
+    public static School CreatePublicSpace(
+        Guid id,
+        string name,
+        SchoolSlug slug,
+        string accessToken,
+        DateTimeOffset now,
+        int dailyRegistrationLimit = DefaultPublicSpaceRegistrationLimit,
+        string? notes = null)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Makon nomi bo'sh bo'lishi mumkin emas.", nameof(name));
+        }
+
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            throw new ArgumentException("Havola tokeni bo'sh bo'lishi mumkin emas.", nameof(accessToken));
+        }
+
+        if (dailyRegistrationLimit <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(dailyRegistrationLimit), "Kunlik ro'yxatdan o'tish limiti musbat bo'lishi kerak.");
+        }
+
+        // `Region`/`District` maktab uchun majburiy ustunlar — ommaviy makonda geografiya
+        // ma'nosiz, shu sabab barqaror "Ommaviy" qiymati yoziladi (ustunni nullable qilish
+        // 5 ta EF konfiguratsiya + admin filtrlarini o'zgartirishni talab qilardi).
+        return new School(
+            id,
+            name,
+            region: "Ommaviy",
+            district: "Ommaviy",
+            schoolNumber: null,
+            contactPerson: null,
+            contactPhone: null,
+            slug,
+            accessToken,
+            accessCode: null,
+            dailyRegistrationLimit,
+            notes,
+            SchoolKind.PublicSpace,
+            showResultToStudent: true,
+            now);
+    }
+
+    /// <summary>Ommaviy makonmi — `Kind == SchoolKind.PublicSpace` uchun qisqartma.</summary>
+    public bool IsPublicSpace => Kind == SchoolKind.PublicSpace;
 
     /// <summary>Havolani qayta generatsiya qiladi — eski token darhol yaroqsiz bo'ladi.</summary>
     public void RegenerateAccessToken(string newAccessToken, DateTimeOffset now)
@@ -148,9 +232,15 @@ public sealed class School : AggregateRoot
         RaiseDomainEvent(new SchoolLinkRegeneratedEvent(Id, now));
     }
 
-    /// <summary>Maktabni faolsizlantiradi — ommaviy API `410 Gone` qaytaradi.</summary>
+    /// <summary>
+    /// Maktabni faolsizlantiradi — ommaviy API `410 Gone` qaytaradi. Ommaviy makonga
+    /// qo'llanmaydi: uni o'chirish butun ommaviy oqimni (va tashqi foydalanuvchilarning
+    /// kabinetini) jimgina o'ldirardi.
+    /// </summary>
     public void Deactivate(DateTimeOffset now)
     {
+        EnsureNotPublicSpace("Ommaviy makonni faolsizlantirib bo'lmaydi.");
+
         IsActive = false;
         UpdatedAt = now;
     }
@@ -214,6 +304,8 @@ public sealed class School : AggregateRoot
     /// </summary>
     public void MarkDeleted(DateTimeOffset now)
     {
+        EnsureNotPublicSpace("Ommaviy makonni o'chirib bo'lmaydi.");
+
         IsDeleted = true;
         DeletedAt = now;
         UpdatedAt = now;
@@ -224,5 +316,24 @@ public sealed class School : AggregateRoot
         IsDeleted = false;
         DeletedAt = null;
         UpdatedAt = now;
+    }
+
+    /// <summary>
+    /// Natijani o'quvchiga ko'rsatish bayrog'ini o'zgartiradi. `UpdateDetails` ga qo'shilmadi —
+    /// uning imzosi admin `UpdateSchool` oqimida ishlatiladi va o'zgarishi keyingi qatlamni
+    /// (handler/kontrakt) buzardi; bu bayroq esa mustaqil, alohida boshqariladigan sozlama.
+    /// </summary>
+    public void SetShowResultToStudent(bool showResultToStudent, DateTimeOffset now)
+    {
+        ShowResultToStudent = showResultToStudent;
+        UpdatedAt = now;
+    }
+
+    private void EnsureNotPublicSpace(string message)
+    {
+        if (Kind == SchoolKind.PublicSpace)
+        {
+            throw new DomainException("SCHOOL_PUBLIC_SPACE_PROTECTED", message);
+        }
     }
 }

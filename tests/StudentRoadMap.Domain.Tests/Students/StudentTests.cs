@@ -44,10 +44,12 @@ public sealed class StudentTests
         act.Should().Throw<ArgumentException>();
     }
 
+    // `0` bu ro'yxatdan CHIQARILDI — endi u `Student.NoGrade` (maktabda o'qimaydigan
+    // ommaviy foydalanuvchi), quyidagi alohida testda tekshiriladi.
     [Theory]
-    [InlineData(0)]
     [InlineData(12)]
     [InlineData(-1)]
+    [InlineData(100)]
     public void Create_WithGradeOutsideValidRange_ThrowsArgumentOutOfRangeException(int grade)
     {
         var act = () => CreateStudent(grade);

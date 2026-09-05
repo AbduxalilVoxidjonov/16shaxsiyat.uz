@@ -5,6 +5,7 @@ using StudentRoadMap.Domain.Assessments;
 using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Identity;
 using StudentRoadMap.Domain.Jobs;
+using StudentRoadMap.Domain.PublicUsers;
 using StudentRoadMap.Domain.Schools;
 using StudentRoadMap.Domain.Students;
 
@@ -88,6 +89,10 @@ internal sealed class FakeTypeCatalogAppDbContext : IAppDbContext
     public IQueryable<SchoolLinkView> SchoolLinkViews => throw NotUsed(nameof(SchoolLinkViews));
 
     public IQueryable<AnalysisJob> AnalysisJobs => throw NotUsed(nameof(AnalysisJobs));
+
+    public IQueryable<PublicUser> PublicUsers => throw NotUsed(nameof(PublicUsers));
+
+    public IQueryable<PublicRefreshToken> PublicRefreshTokens => throw NotUsed(nameof(PublicRefreshTokens));
 
     public IQueryable<TEntity> AsNoTracking<TEntity>(IQueryable<TEntity> query)
         where TEntity : class => query;

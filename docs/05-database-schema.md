@@ -37,7 +37,9 @@ CREATE TABLE schools (
     access_token              varchar(64)  NOT NULL,
     access_code               varchar(6),
     daily_registration_limit  int          NOT NULL DEFAULT 500,
+    kind                      smallint     NOT NULL,               -- P47: 1 School, 2 PublicSpace (DEFAULT yo'q)
     is_active                 boolean      NOT NULL DEFAULT true,
+    show_result_to_student    boolean      NOT NULL DEFAULT false, -- P47: ilgari global App:ShowResultToStudent
     notes                     varchar(1000),
     is_deleted                boolean      NOT NULL DEFAULT false,
     deleted_at                timestamptz,
@@ -48,6 +50,8 @@ CREATE UNIQUE INDEX ux_schools_slug        ON schools(slug) WHERE is_deleted = f
 CREATE UNIQUE INDEX ux_schools_token       ON schools(access_token);
 CREATE INDEX        ix_schools_region_dist ON schools(region, district);
 CREATE INDEX        ix_schools_name_trgm   ON schools USING gin (name gin_trgm_ops);
+-- P47: bazada AYNAN BITTA ommaviy makon (poyga holatiga qarshi yagona haqiqiy himoya).
+CREATE UNIQUE INDEX ux_schools_public_space ON schools(kind) WHERE kind = 2 AND is_deleted = false;
 
 -- ============ TEST CATALOG ============
 CREATE TABLE test_definitions (
@@ -139,16 +143,19 @@ CREATE INDEX ix_career_map_code ON career_map(holland_code, relevance_order);
 CREATE TABLE students (
     id                          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     school_id                   uuid NOT NULL REFERENCES schools(id),
+    public_user_id              uuid REFERENCES public_users(id),  -- P47: maktab oqimida NULL
     full_name                   varchar(200) NOT NULL,
     normalized_name             varchar(200) NOT NULL,
     birth_date                  date         NOT NULL,
     gender                      smallint     NOT NULL DEFAULT 0,
-    grade                       int          NOT NULL CHECK (grade BETWEEN 1 AND 11),
+    grade                       int          NOT NULL CHECK (grade BETWEEN 0 AND 11), -- P47: 0 = sinf yo'q (kattalar)
     class_letter                varchar(2),
     phone                       varchar(20)  NOT NULL,
     parent_phone                varchar(20),
     email                       varchar(150),
     consent_given_at            timestamptz  NOT NULL,
+    consent_version             varchar(30),                        -- P47: qabul qilingan rozilik matni versiyasi
+    parental_consent            boolean      NOT NULL DEFAULT false,-- P47: ota-ona/vasiy roziligi
     -- snapshot
     last_personality_type       varchar(4),
     last_maturity_index         numeric(5,2),
@@ -163,8 +170,13 @@ CREATE TABLE students (
     created_at                  timestamptz  NOT NULL DEFAULT now(),
     updated_at                  timestamptz  NOT NULL DEFAULT now()
 );
+-- P47: filtrga `public_user_id IS NULL` qo'shildi — F.I.Sh.+tug'ilgan sana unikalligi FAQAT
+-- maktab oqimiga tegishli; ommaviy makonda identifikator Telegram akkaunti.
 CREATE UNIQUE INDEX ux_students_identity ON students(school_id, normalized_name, birth_date)
-    WHERE is_deleted = false;
+    WHERE is_deleted = false AND public_user_id IS NULL;
+-- P47: bitta akkauntga bitta o'quvchi profili (90 kunlik oyna shu profil bo'yicha ishlaydi).
+CREATE UNIQUE INDEX ux_students_public_user ON students(public_user_id)
+    WHERE public_user_id IS NOT NULL AND is_deleted = false;
 CREATE INDEX ix_students_school_grade ON students(school_id, grade);
 CREATE INDEX ix_students_name_trgm    ON students USING gin (full_name gin_trgm_ops);
 CREATE INDEX ix_students_attention    ON students(needs_attention) WHERE needs_attention = true;
@@ -175,7 +187,8 @@ CREATE TABLE assessments (
     id                      uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     student_id              uuid NOT NULL REFERENCES students(id) ON DELETE CASCADE,
     school_id               uuid NOT NULL REFERENCES schools(id),
-    session_token           varchar(64)  NOT NULL,
+    session_token           varchar(64)  NOT NULL,               -- ⚠️ ochiq matn, P47 2-bosqichida o'chiriladi
+    session_token_hash      varchar(64)  NOT NULL,               -- P47: SHA-256 hex (DEFAULT yo'q)
     status                  smallint     NOT NULL DEFAULT 0,
     language_code           varchar(5)   NOT NULL DEFAULT 'uz',
     started_at              timestamptz  NOT NULL DEFAULT now(),
@@ -190,7 +203,8 @@ CREATE TABLE assessments (
     created_at              timestamptz  NOT NULL DEFAULT now(),
     updated_at              timestamptz  NOT NULL DEFAULT now()
 );
-CREATE UNIQUE INDEX ux_assessments_token   ON assessments(session_token);
+CREATE UNIQUE INDEX ux_assessments_token      ON assessments(session_token);
+CREATE UNIQUE INDEX ux_assessments_token_hash ON assessments(session_token_hash);
 CREATE INDEX ix_assessments_student        ON assessments(student_id, started_at DESC);
 CREATE INDEX ix_assessments_school_status  ON assessments(school_id, status);
 CREATE INDEX ix_assessments_status_started ON assessments(status, started_at DESC);
@@ -455,6 +469,71 @@ alter table admin_users add column totp_last_used_step bigint null;
 alter table admin_users add column concurrency_stamp uuid not null;  -- DEFAULT yo'q!
 ```
 
+### P47 da qo'shilgan — ommaviy makon va ommaviy foydalanuvchilar (migratsiya `AddPublicSpaceAndPublicUsers`)
+
+```sql
+-- ============ PUBLIC USERS ============
+CREATE TABLE public_users (
+    id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    telegram_id    bigint,                       -- yaratishda majburiy; o'chirishda NULL (anonimlashtirish)
+    username       varchar(64),
+    first_name     varchar(100),
+    last_name      varchar(100),
+    photo_url      varchar(500),
+    created_at     timestamptz NOT NULL DEFAULT now(),
+    updated_at     timestamptz NOT NULL DEFAULT now(),
+    last_login_at  timestamptz NOT NULL,
+    deleted_at     timestamptz                   -- yumshoq o'chirish (is_deleted ustuni YO'Q)
+);
+CREATE UNIQUE INDEX ux_public_users_telegram ON public_users(telegram_id) WHERE telegram_id IS NOT NULL;
+CREATE INDEX        ix_public_users_created  ON public_users(created_at DESC);
+
+CREATE TABLE public_refresh_tokens (
+    id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    public_user_id     uuid NOT NULL REFERENCES public_users(id) ON DELETE CASCADE,
+    token_hash         varchar(128) NOT NULL,    -- xom token HECH QACHON saqlanmaydi
+    expires_at         timestamptz  NOT NULL,
+    revoked_at         timestamptz,
+    created_by_ip_hash varchar(64),
+    created_at         timestamptz  NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX ux_public_refresh_tokens_hash ON public_refresh_tokens(token_hash);
+CREATE INDEX        ix_public_refresh_tokens_user ON public_refresh_tokens(public_user_id);
+```
+
+**Uch qadamli backfill (`DEFAULT` tuzog'idan qochish uchun — quyidagi qoidaga qarang):**
+
+```sql
+-- schools.kind
+alter table schools add column kind smallint null;
+update schools set kind = 1 where kind is null;      -- mavjud yozuvlar — haqiqiy maktab
+alter table schools alter column kind set not null;
+
+-- assessments.session_token_hash: mavjud FAOL sessiyalar buzilmaydi (xesh ochiq
+-- matnli tokendan bazaning O'ZIDA hisoblanadi; formula `Domain.Common.TokenHash.Compute`
+-- bilan bayt-ma-bayt bir xil).
+alter table assessments add column session_token_hash varchar(64) null;
+update assessments set session_token_hash = encode(sha256(convert_to(session_token, 'UTF8')), 'hex')
+    where session_token_hash is null;
+alter table assessments alter column session_token_hash set not null;
+```
+
+> **Ikki bosqichli destruktiv o'zgarish (`CLAUDE.md` 7-qoida):** ochiq matnli `session_token`
+> ustuni SHU migratsiyada o'chirilMAYDI — hozircha `SessionTokenAuthenticationHandler` va
+> `StartSession` rezyume yo'li aynan shu ustunga tayanadi. 2-bosqich: o'qish yo'li
+> `session_token_hash` ga ko'chiriladi (rezyumeda token ROTATSIYA qilinadi —
+> `Assessment.RotateSessionToken`, chunki xeshdan xom token qayta tiklanmaydi), so'ng alohida
+> migratsiya `session_token` va `ux_assessments_token` ni tashlaydi.
+
+**Ommaviy makon yozuvi migratsiyada emas, seederda:** `DbSeeder.SeedPublicSpaceAsync`,
+deterministik `id = 00000000-0000-0000-0000-000000000002`, `slug = 'ommaviy'`,
+`kind = 2`, `show_result_to_student = true`, `access_token` seed vaqtida tasodifiy
+generatsiya qilinadi (kodda qattiq yozilgan sir yo'q — `CLAUDE.md` 4-qoida). Idempotent:
+mavjud yozuv umuman o'zgartirilmaydi (token qayta generatsiya qilinsa mavjud ommaviy
+havolalar o'lardi).
+
+---
+
 ### P46 da qo'shilgan (migratsiya `AddPendingTotpEnrollment`)
 
 ```sql
@@ -491,6 +570,7 @@ alter table admin_users add column pending_totp_created_at timestamptz null;
 | `AiProvider` | 1 Gemini, 2 OpenAi, 3 Anthropic |
 | `AiAnalysisStatus` | 0 Pending, 1 Running, 2 Succeeded, 3 Failed |
 | `AdminRole` | 1 SuperAdmin, 2 SchoolAdmin (v2), 3 Psychologist (v2) |
+| `SchoolKind` | 1 School (maktab havolasi oqimi), 2 PublicSpace (ommaviy makon) — `schools.kind` |
 
 ---
 

@@ -79,6 +79,10 @@ public sealed class RerunAnalysisCommandHandlerTests
 
         public IQueryable<Domain.Jobs.AnalysisJob> AnalysisJobs => throw new NotSupportedException();
 
+        public IQueryable<Domain.PublicUsers.PublicUser> PublicUsers => throw new NotSupportedException();
+
+        public IQueryable<Domain.PublicUsers.PublicRefreshToken> PublicRefreshTokens => throw new NotSupportedException();
+
         public IQueryable<Domain.Catalog.AssessmentProgram> AssessmentPrograms => throw new NotSupportedException();
 
         public IQueryable<Domain.Catalog.ProgramTest> ProgramTests => throw new NotSupportedException();

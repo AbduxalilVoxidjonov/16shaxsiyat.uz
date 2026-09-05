@@ -5,6 +5,7 @@ using StudentRoadMap.Domain.Assessments;
 using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Identity;
 using StudentRoadMap.Domain.Jobs;
+using StudentRoadMap.Domain.PublicUsers;
 using StudentRoadMap.Domain.Schools;
 using StudentRoadMap.Domain.Students;
 
@@ -83,6 +84,10 @@ internal sealed class FakeStudentProfileAppDbContext : IAppDbContext
     public IQueryable<TestScale> TestScales => throw new NotSupportedException();
 
     public IQueryable<AnalysisJob> AnalysisJobs => throw new NotSupportedException();
+
+    public IQueryable<PublicUser> PublicUsers => throw new NotSupportedException();
+
+    public IQueryable<PublicRefreshToken> PublicRefreshTokens => throw new NotSupportedException();
 
     public IQueryable<AssessmentProgram> AssessmentPrograms => throw new NotSupportedException();
 

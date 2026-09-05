@@ -11,7 +11,33 @@ public sealed class Student : AggregateRoot
     public const int MinGrade = 1;
     public const int MaxGrade = 11;
 
+    /// <summary>
+    /// "Sinf yo'q" — maktabda o'qimaydigan ommaviy foydalanuvchi (talaba, kattalar) uchun
+    /// sentinel qiymat. `Grade` ni nullable qilish 21 ta ishchi kod faylini (admin filtr,
+    /// eksport, dashboard guruhlash) qayta yozishni talab qilardi; nol esa `1..11` oralig'iga
+    /// hech qachon tushmaydi va `ck_students_grade` cheklovi `0..11` ga kengaytirildi.
+    /// </summary>
+    public const int NoGrade = 0;
+
+    /// <summary>
+    /// Ro'yxatdan o'tish uchun ruxsat etilgan yosh oralig'i. Ilgari `StartSessionCommandValidator`
+    /// 6–20 ni talab qilardi — ya'ni kattalar umuman kira olmasdi. Ommaviy oqim ochilgach
+    /// yuqori chegara 99 ga ko'tarildi (quyi chegara o'zgarmadi: 6 yoshdan kichik bola
+    /// metodikalarning o'qish darajasiga mos kelmaydi). Validator (keyingi qatlam) AYNAN
+    /// shu ikki konstantaga tayanadi — sehrli raqam takrorlanmasin.
+    /// </summary>
+    public const int MinAge = 6;
+
+    public const int MaxAge = 99;
+
     public Guid SchoolId { get; private set; }
+
+    /// <summary>
+    /// Ommaviy foydalanuvchi akkaunti (`PublicUsers.PublicUser`) bilan bog'lanish — NULLABLE.
+    /// Maktab havolasi oqimida har doim `null` (u yerda akkaunt tushunchasi yo'q va oqim
+    /// O'ZGARMAYDI), ommaviy makonda esa har doim to'ldiriladi.
+    /// </summary>
+    public Guid? PublicUserId { get; private set; }
 
     public string FullName { get; private set; } = null!;
 
@@ -31,7 +57,32 @@ public sealed class Student : AggregateRoot
 
     public string? Email { get; private set; }
 
+    /// <summary>
+    /// Rozilik berilgan vaqt. Topshiriqdagi `ConsentAcceptedAt` uchun YANGI ustun qo'shilmadi —
+    /// bu maydon aynan o'sha ma'noni bildiradi (`docs/08` 5-bo'lim: "rozilik vaqti
+    /// `consent_given_at` da qayd etiladi") va ikkita bir xil ma'noli ustun chalkashlik
+    /// manbai bo'lardi.
+    /// </summary>
     public DateTimeOffset ConsentGivenAt { get; private set; }
+
+    /// <summary>
+    /// Qabul qilingan rozilik matnining versiyasi (masalan `2026-09-v1`). Rozilik matni
+    /// o'zgarganda kim qaysi tahrirga rozi bo'lganini isbotlash uchun — versiyasiz "rozilik
+    /// bor" yozuvining huquqiy qiymati past. Eski yozuvlarda `null` (matn hali
+    /// versiyalanmagan davr).
+    /// </summary>
+    public string? ConsentVersion { get; private set; }
+
+    /// <summary>
+    /// Voyaga yetmagan foydalanuvchi uchun ota-ona/vasiy roziligi olinganmi.
+    ///
+    /// Nima uchun `Assessment` da emas, `Student` da: rozilik SESSIYAGA emas, SHAXSGA
+    /// tegishli — bir foydalanuvchi yillar davomida bir necha marta test topshiradi, rozilik
+    /// esa bir marta beriladi (va `ConsentGivenAt`/`ConsentVersion` allaqachon shu yerda).
+    /// Maktab oqimida `false` bo'lib qoladi — u yerda rozilik maktab bilan tuzilgan
+    /// shartnoma orqali keladi (`docs/08` 5-bo'lim).
+    /// </summary>
+    public bool ParentalConsent { get; private set; }
 
     // --- Snapshot (StudentSnapshot, docs/04 2.2) ---
     public string? LastPersonalityType { get; private set; }
@@ -75,10 +126,14 @@ public sealed class Student : AggregateRoot
         PhoneNumber? parentPhone,
         string? email,
         DateTimeOffset consentGivenAt,
+        Guid? publicUserId,
+        string? consentVersion,
+        bool parentalConsent,
         DateTimeOffset now)
         : base(id)
     {
         SchoolId = schoolId;
+        PublicUserId = publicUserId;
         FullName = fullName;
         NormalizedName = NameNormalizer.Normalize(fullName);
         BirthDate = birthDate;
@@ -89,6 +144,8 @@ public sealed class Student : AggregateRoot
         ParentPhone = parentPhone;
         Email = email;
         ConsentGivenAt = consentGivenAt;
+        ConsentVersion = consentVersion;
+        ParentalConsent = parentalConsent;
         CompletedAssessmentCount = 0;
         NeedsAttention = false;
         CreatedAt = now;
@@ -107,16 +164,20 @@ public sealed class Student : AggregateRoot
         DateTimeOffset now,
         string? classLetter = null,
         PhoneNumber? parentPhone = null,
-        string? email = null)
+        string? email = null,
+        Guid? publicUserId = null,
+        string? consentVersion = null,
+        bool parentalConsent = false)
     {
         if (string.IsNullOrWhiteSpace(fullName))
         {
             throw new ArgumentException("F.I.Sh. bo'sh bo'lishi mumkin emas.", nameof(fullName));
         }
 
-        if (grade is < MinGrade or > MaxGrade)
+        // `NoGrade` (0) — maktabda o'qimaydigan ommaviy foydalanuvchi; qolgan qiymatlar 1..11.
+        if (grade != NoGrade && grade is < MinGrade or > MaxGrade)
         {
-            throw new ArgumentOutOfRangeException(nameof(grade), $"Sinf {MinGrade}..{MaxGrade} oralig'ida bo'lishi kerak.");
+            throw new ArgumentOutOfRangeException(nameof(grade), $"Sinf {MinGrade}..{MaxGrade} oralig'ida yoki {NoGrade} (sinf yo'q) bo'lishi kerak.");
         }
 
         if (consentGivenAt == default)
@@ -136,7 +197,67 @@ public sealed class Student : AggregateRoot
             parentPhone,
             email,
             consentGivenAt,
+            publicUserId,
+            consentVersion,
+            parentalConsent,
             now);
+    }
+
+    /// <summary>
+    /// To'liq yoshni hisoblaydi (tug'ilgan kun o'tganini hisobga oladi). Vaqt PARAMETR bilan
+    /// keladi — domen tizim soatiga murojaat qilmaydi (`CLAUDE.md` 2-qoida).
+    /// </summary>
+    public static int CalculateAge(DateOnly birthDate, DateOnly asOf)
+    {
+        var age = asOf.Year - birthDate.Year;
+        if (asOf < birthDate.AddYears(age))
+        {
+            age--;
+        }
+
+        return age;
+    }
+
+    /// <summary>Yosh <see cref="MinAge"/>..<see cref="MaxAge"/> oralig'idami — validator shu qoidaga tayanadi.</summary>
+    public static bool IsAgeAllowed(DateOnly birthDate, DateOnly asOf)
+    {
+        var age = CalculateAge(birthDate, asOf);
+        return age is >= MinAge and <= MaxAge;
+    }
+
+    /// <summary>
+    /// Mavjud (maktab oqimida yaratilgan) o'quvchi yozuvini ommaviy akkauntga bog'laydi —
+    /// "eski natijamni Telegram akkauntimga ulang" ssenariysi uchun. Allaqachon boshqa
+    /// akkauntga bog'langan yozuv qayta bog'lanmaydi (ma'lumot o'g'irlashning oldini olish).
+    /// </summary>
+    public void LinkToPublicUser(Guid publicUserId, DateTimeOffset now)
+    {
+        if (publicUserId == Guid.Empty)
+        {
+            throw new ArgumentException("Ommaviy foydalanuvchi identifikatori bo'sh bo'lishi mumkin emas.", nameof(publicUserId));
+        }
+
+        if (PublicUserId is not null && PublicUserId != publicUserId)
+        {
+            throw new DomainException("STUDENT_ALREADY_LINKED", "Bu o'quvchi yozuvi boshqa akkauntga bog'langan.");
+        }
+
+        PublicUserId = publicUserId;
+        UpdatedAt = now;
+    }
+
+    /// <summary>Roziliknomani yangilaydi (matn versiyasi o'zgarganda qayta so'raladi).</summary>
+    public void RecordConsent(DateTimeOffset consentGivenAt, string? consentVersion, bool parentalConsent, DateTimeOffset now)
+    {
+        if (consentGivenAt == default)
+        {
+            throw new ArgumentException("Rozilik vaqti ko'rsatilmasa rozilik yozilmaydi.", nameof(consentGivenAt));
+        }
+
+        ConsentGivenAt = consentGivenAt;
+        ConsentVersion = consentVersion;
+        ParentalConsent = parentalConsent;
+        UpdatedAt = now;
     }
 
     /// <summary>

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using StudentRoadMap.Domain.Assessments;
+using StudentRoadMap.Domain.Common;
 using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Schools;
 using StudentRoadMap.Domain.Students;
@@ -20,7 +21,14 @@ internal sealed class AssessmentConfiguration : IEntityTypeConfiguration<Assessm
         builder.Property(a => a.StudentId).IsRequired();
         builder.Property(a => a.SchoolId).IsRequired();
         builder.Property(a => a.ProgramId).IsRequired();
+        // ⚠️ Ikki bosqichli migratsiya (`CLAUDE.md` 7-qoida): `session_token` (ochiq matn)
+        // HOZIRCHA qoladi — `SessionTokenAuthenticationHandler` hali shu ustun bo'yicha
+        // qidiradi. Keyingi bosqichda handler `session_token_hash` ga o'tadi va ochiq
+        // matnli ustun ALOHIDA migratsiya bilan o'chiriladi.
         builder.Property(a => a.SessionToken).HasMaxLength(64).IsRequired();
+
+        // SHA-256 hex — har doim 64 belgi (`TokenHash.HexLength`).
+        builder.Property(a => a.SessionTokenHash).HasMaxLength(TokenHash.HexLength).IsRequired();
         builder.Property(a => a.Status).HasConversion<short>().IsRequired().HasDefaultValue(AssessmentStatus.Draft);
         builder.Property(a => a.LanguageCode).HasMaxLength(5).IsRequired().HasDefaultValue("uz");
         builder.Property(a => a.StartedAt).IsRequired().HasDefaultValueSql("now()");
@@ -65,6 +73,8 @@ internal sealed class AssessmentConfiguration : IEntityTypeConfiguration<Assessm
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(a => a.SessionToken).IsUnique().HasDatabaseName("ux_assessments_token");
+
+        builder.HasIndex(a => a.SessionTokenHash).IsUnique().HasDatabaseName("ux_assessments_token_hash");
 
         builder.HasIndex(a => a.ProgramId).HasDatabaseName("ix_assessments_program");
 

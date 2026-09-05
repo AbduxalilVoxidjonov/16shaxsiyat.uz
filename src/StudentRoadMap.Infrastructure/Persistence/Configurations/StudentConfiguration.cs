@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using StudentRoadMap.Domain.PublicUsers;
 using StudentRoadMap.Domain.Schools;
 using StudentRoadMap.Domain.Students;
 
@@ -10,12 +11,16 @@ internal sealed class StudentConfiguration : IEntityTypeConfiguration<Student>
 {
     public void Configure(EntityTypeBuilder<Student> builder)
     {
-        builder.ToTable("students", t => t.HasCheckConstraint("ck_students_grade", "grade BETWEEN 1 AND 11"));
+        // `0` — `Student.NoGrade` (maktabda o'qimaydigan ommaviy foydalanuvchi); `1..11` — sinf.
+        builder.ToTable("students", t => t.HasCheckConstraint("ck_students_grade", "grade BETWEEN 0 AND 11"));
 
         builder.HasKey(s => s.Id);
         builder.Property(s => s.Id).ValueGeneratedOnAdd().HasDefaultValueSql("gen_random_uuid()");
 
         builder.Property(s => s.SchoolId).IsRequired();
+
+        // Maktab oqimida `null`, ommaviy makonda — akkaunt identifikatori.
+        builder.Property(s => s.PublicUserId);
 
         builder.Property(s => s.FullName).HasMaxLength(200).IsRequired();
         builder.Property(s => s.NormalizedName).HasMaxLength(200).IsRequired();
@@ -37,6 +42,8 @@ internal sealed class StudentConfiguration : IEntityTypeConfiguration<Student>
 
         builder.Property(s => s.Email).HasMaxLength(150);
         builder.Property(s => s.ConsentGivenAt).IsRequired();
+        builder.Property(s => s.ConsentVersion).HasMaxLength(30);
+        builder.Property(s => s.ParentalConsent).IsRequired().HasDefaultValue(false);
 
         builder.Property(s => s.LastPersonalityType).HasMaxLength(4);
 
@@ -62,10 +69,33 @@ internal sealed class StudentConfiguration : IEntityTypeConfiguration<Student>
             .HasForeignKey(s => s.SchoolId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne<PublicUser>()
+            .WithMany()
+            .HasForeignKey(s => s.PublicUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // ⚠️ O'ZGARTIRILDI: filtrga `public_user_id IS NULL` qo'shildi.
+        //
+        // Sabab: ommaviy makonda BARCHA tashqi foydalanuvchi bitta `SchoolId` ostida turadi.
+        // Eski filtr bilan bir xil F.I.Sh. + tug'ilgan sanali IKKI XIL odam (butun mamlakat
+        // miqyosida — ehtimolligi nolga teng emas) bir-birini bloklab qo'yardi va ikkinchisi
+        // umuman ro'yxatdan o'ta olmasdi. Endi bu unikallik faqat MAKTAB oqimiga tegishli
+        // (u yerda F.I.Sh.+sana bitta maktab ichida haqiqatan ham identifikator) —
+        // maktab oqimi uchun xatti-harakat AYNAN o'zgarishsiz qoladi.
         builder.HasIndex(s => new { s.SchoolId, s.NormalizedName, s.BirthDate })
             .IsUnique()
-            .HasFilter("is_deleted = false")
+            .HasFilter("is_deleted = false AND public_user_id IS NULL")
             .HasDatabaseName("ux_students_identity");
+
+        // Ommaviy makonda identifikator — Telegram akkaunti, ism emas: bitta akkauntga
+        // BITTA o'quvchi profili (kabinet egasi), unga bir necha sessiya bog'lanadi.
+        // Shu sabab 90 kunlik qayta-topshirish oynasi (`StartSessionCommandHandler`) ommaviy
+        // oqimda `public_user_id` orqali topilgan profil bo'yicha ishlaydi — oyna qoidasi
+        // BUZILMAYDI, faqat o'quvchini topish kaliti almashadi.
+        builder.HasIndex(s => s.PublicUserId)
+            .IsUnique()
+            .HasFilter("public_user_id IS NOT NULL AND is_deleted = false")
+            .HasDatabaseName("ux_students_public_user");
 
         builder.HasIndex(s => new { s.SchoolId, s.Grade })
             .HasDatabaseName("ix_students_school_grade");

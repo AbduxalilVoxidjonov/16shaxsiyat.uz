@@ -3,6 +3,7 @@ using StudentRoadMap.Domain.Assessments;
 using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Identity;
 using StudentRoadMap.Domain.Jobs;
+using StudentRoadMap.Domain.PublicUsers;
 using StudentRoadMap.Domain.Schools;
 using StudentRoadMap.Domain.Students;
 
@@ -67,6 +68,15 @@ public interface IAppDbContext
 
     /// <summary>Fon navbatidagi AI tahlil vazifalari — P18 (`prompts/18`), `AnalysisJobQueue`/`AnalysisWorkerBackgroundService`.</summary>
     IQueryable<AnalysisJob> AnalysisJobs { get; }
+
+    /// <summary>
+    /// Ommaviy (Telegram orqali kiradigan) foydalanuvchilar — P47. Global filtr o'chirilgan
+    /// (anonimlashtirilgan) akkauntlarni yashiradi (`AppDbContext.OnModelCreating`).
+    /// </summary>
+    IQueryable<PublicUser> PublicUsers { get; }
+
+    /// <summary>Ommaviy foydalanuvchi refresh tokenlari (rotatsiya + qayta-ishlatishni aniqlash) — P47.</summary>
+    IQueryable<PublicRefreshToken> PublicRefreshTokens { get; }
 
     /// <summary>
     /// So'rovni kuzatilmaydigan (no-tracking) rejimga o'tkazadi — Query handler'lar uchun
