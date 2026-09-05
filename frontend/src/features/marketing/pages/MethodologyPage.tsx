@@ -196,18 +196,6 @@ export default function MethodologyPage() {
           ))}
         </ul>
 
-        <section
-          aria-labelledby="methodology-disclaimer-heading"
-          className="mt-14 rounded-4xl border border-terakota-200 bg-terakota-50 p-8 sm:p-10"
-        >
-          <h2 id="methodology-disclaimer-heading" className="font-display text-2xl font-extrabold">
-            {t('marketing.methodology.disclaimer.title')}
-          </h2>
-          <p className="mt-4 max-w-3xl text-[15px] leading-relaxed text-ink-soft">
-            {t('marketing.methodology.disclaimer.text')}
-          </p>
-        </section>
-
         <div className="mt-14 rounded-4xl border border-line bg-paper-deep p-10 text-center">
           <h2 className="font-display text-3xl font-extrabold">
             {t('marketing.methodology.cta.heading')}

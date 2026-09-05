@@ -68,9 +68,11 @@ describe('MethodologyPage (`/metodika`)', () => {
   it("AI ball hisoblamasligi va tashxis qo'ymasligi ochiq yozilgan (CLAUDE.md 5 va 6-qoida)", () => {
     renderPage();
 
+    // Sahifa oxiridagi alohida "Cheklovlar haqida ochiq gap" bloki egasining qaroriga
+    // ko'ra olib tashlandi (2026-09-05). AI bo'limidagi bu ikki sarlavha esa qoladi —
+    // CLAUDE.md 5 va 6-qoidalarini sahifada aynan shular qo'riqlaydi.
     expect(screen.getByRole('heading', { name: 'Ball hisoblamaydi' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: "Tashxis qo'ymaydi" })).toBeInTheDocument();
-    expect(screen.getByText(/tibbiy yoki psixiatrik tashxis o'rnini bosmaydi/)).toBeInTheDocument();
   });
 
   it("16 tip bo'limi sahifaga ulangan va har bir tip kartasi chiqadi", async () => {
