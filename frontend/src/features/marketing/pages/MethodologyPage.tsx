@@ -4,11 +4,12 @@ import { usePageTitle } from '@/shared/hooks/usePageTitle';
 import { Divider, GirihStar } from '@/shared/ui/brand';
 import { ROUTES } from '@/shared/config/routes';
 import { PageHero } from '../components/PageHero';
+import { TypeCatalogSection } from '../sections/TypeCatalogSection';
 
 /**
  * Metodika sahifasi (`/metodika`) — P45.
  *
- * Maqsad: platforma nimani o'lchashini, ballash qanday ishlashini, ishonchlilik qanday
+ * Maqsad: platforma nimani o'lchashini, ball berish qanday ishlashini, ishonchlilik qanday
  * tekshirilishini va AI qayerda ishlatilishini OCHIQ aytish. Ohang ataylab quruq va
  * va'dasiz: bu yerda "aniqlaymiz/bashorat qilamiz" degan da'vo yo'q, cheklovlar esa
  * sahifaning oxirida alohida blok bilan yozilgan (CLAUDE.md 6-qoida).
@@ -100,6 +101,13 @@ export default function MethodologyPage() {
             </li>
           ))}
         </ol>
+
+        <Divider className="mx-auto my-16 max-w-xs" />
+
+        {/* Uslub bloki natijasi shu 16 tipdan biriga to'g'ri keladi — shu sabab bo'lim
+            bloklar ta'rifidan KEYIN turadi (`prompts`/loyiha egasining talabi: ommaviy
+            sahifada 16 tipning har biri haqida ma'lumot bo'lishi kerak). */}
+        <TypeCatalogSection />
 
         <Divider className="mx-auto my-16 max-w-xs" />
 

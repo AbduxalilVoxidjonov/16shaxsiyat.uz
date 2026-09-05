@@ -41,3 +41,20 @@ public sealed record CachedQuestionDto(
 
 /// <summary>`SingleChoice`/`ForcedChoice` savollari uchun keshlangan variant (hozircha faqat uz — variant matni tilga bog'lanmagan, `AnswerOption`da Ru/En maydoni yo'q).</summary>
 public sealed record CachedAnswerOptionDto(Guid Id, string TextUz, int Value, int DisplayOrder);
+
+/// <summary>
+/// `type_catalog` yozuvining ommaviy (marketing) proyeksiyasi — `PublicCatalogCache.GetTypeCatalogAsync`
+/// orqali keshlanadi. Kontent butunlay `SeedData/type-catalog.json` dan keladi (loyihaning
+/// o'z o'zbekcha matni), shu sabab bu yerda hech qanday matn hardcode qilinmaydi.
+///
+/// O'quvchiga xos yoki maxfiy hech narsa yo'q — bu yozuv ochiq sahifada (`/metodika`) ko'rsatiladi,
+/// shu sabab uni sessiyaga bog'liq bo'lmagan umumiy keshda saqlash xavfsiz.
+/// </summary>
+public sealed record CachedTypeCatalogEntryDto(
+    string Code,
+    string Name,
+    string ShortDescription,
+    string LongDescription,
+    IReadOnlyList<string> Strengths,
+    IReadOnlyList<string> GrowthAreas,
+    IReadOnlyList<string> CareerHints);

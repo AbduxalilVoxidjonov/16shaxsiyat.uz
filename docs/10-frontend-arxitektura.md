@@ -104,6 +104,7 @@ frontend/
 |------|--------|--------|
 | `/` | **Marketing** (P45) | Bosh sahifa — M-1, §9.6 |
 | `/metodika` | Marketing | Metodika — M-2 |
+| `/metodika/:kod` | Marketing | Bitta shaxsiyat tipi (16 tipdan biri) — M-2.1 |
 | `/biz-haqimizda` | Marketing | Biz haqimizda — M-3 |
 | `/aloqa` | Marketing | Aloqa (forma YO'Q) — M-4 |
 | `/t/:slug` | Public | Maktab landing + testlar tavsifi |

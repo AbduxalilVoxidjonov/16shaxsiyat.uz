@@ -27,6 +27,15 @@ internal sealed class PublicCatalogCache
 
     private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(10);
 
+    /// <summary>
+    /// Shaxsiyat tiplari katalogi (`type_catalog`) uchun alohida, uzunroq TTL. Bu jadval FAQAT
+    /// seed (`DbSeeder.SeedTypeCatalogAsync`, `SeedData/type-catalog.json`) orqali o'zgaradi —
+    /// hech qanday admin yoki o'quvchi buyrug'i unga yozmaydi, shu sabab savol keshining
+    /// 10 daqiqasi bu yerda ortiqcha (har 10 daqiqada 16 qatorlik bir xil so'rov). Deploy/seed
+    /// paytida jarayon qayta ishga tushadi va xotiradagi kesh baribir bo'shaydi.
+    /// </summary>
+    private static readonly TimeSpan TypeCatalogCacheDuration = TimeSpan.FromHours(1);
+
     private readonly IAppDbContext _context;
     private readonly IAsyncQueryExecutor _executor;
     private readonly ICacheService _cache;
@@ -39,6 +48,9 @@ internal sealed class PublicCatalogCache
     }
 
     public static string TestDefinitionCacheKey(string testCode) => $"public-catalog:test-definition:{testCode}";
+
+    /// <summary>Tip katalogi butunligicha bitta yozuvda keshlanadi — 16 qator, tilga bog'liq emas (faqat o'zbekcha matn mavjud).</summary>
+    public static string TypeCatalogCacheKey() => "public-catalog:type-catalog";
 
     /// <summary>Kesh kaliti tilni o'z ichiga oladi — `NormalizeLanguage` bilan bir xil normalizatsiya.</summary>
     public static string QuestionsCacheKey(Guid testDefinitionId, string? languageCode) =>
@@ -122,6 +134,45 @@ internal sealed class PublicCatalogCache
             .ToList();
 
         _cache.Set(cacheKey, result, CacheDuration);
+        return result;
+    }
+
+    /// <summary>
+    /// Ommaviy `/metodika` sahifasi uchun shaxsiyat tiplari katalogi (`docs/07` 1.10-bo'lim).
+    /// Kod bo'yicha barqaror tartibda qaytadi — `type_catalog` da ko'rsatish tartibi ustuni YO'Q,
+    /// shu sabab yagona deterministik tartib `Code` bo'yicha alifbo tartibi (mijoz "oldingi/keyingi"
+    /// navigatsiyasini shu ketma-ketlikka tayanib quradi). Tiplar guruhlarga (masalan "tahlilchilar")
+    /// ATAYLAB bo'linmaydi — bu raqobatchi tasnifi (`CLAUDE.md` 6a-qoida).
+    ///
+    /// Kesh sessiyaga ham, tilga ham bog'liq emas: kontent ochiq marketing matni va faqat
+    /// o'zbekcha (`type-catalog.json` da `ru`/`en` maydonlari yo'q).
+    /// </summary>
+    public async Task<IReadOnlyList<CachedTypeCatalogEntryDto>> GetTypeCatalogAsync(CancellationToken cancellationToken)
+    {
+        var cacheKey = TypeCatalogCacheKey();
+        if (_cache.TryGet<IReadOnlyList<CachedTypeCatalogEntryDto>>(cacheKey, out var cached))
+        {
+            return cached;
+        }
+
+        var entries = await _executor.ToListAsync(
+            _context.AsNoTracking(_context.TypeCatalog).OrderBy(t => t.Code),
+            cancellationToken).ConfigureAwait(false);
+
+        IReadOnlyList<CachedTypeCatalogEntryDto> result = entries
+            .Select(t => new CachedTypeCatalogEntryDto(
+                t.Code,
+                t.NameUz,
+                t.ShortDescriptionUz,
+                t.LongDescriptionUz,
+                t.Strengths,
+                t.GrowthAreas,
+                t.CareerHints))
+            .ToList();
+
+        // Bo'sh natija ham keshlanadi: seed qilinmagan bazada bu 16 qatorli so'rovni har
+        // chaqiriqda takrorlashdan saqlaydi, jarayon qayta ishga tushganda esa baribir tozalanadi.
+        _cache.Set(cacheKey, result, TypeCatalogCacheDuration);
         return result;
     }
 

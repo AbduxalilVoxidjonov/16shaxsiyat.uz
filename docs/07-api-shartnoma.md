@@ -274,6 +274,41 @@ ikkinchi himoya qatlami, birinchisi emas).
 
 ---
 
+### 1.10 `GET /api/public/type-catalog`
+Ochiq tanishtiruv (marketing) kontenti — 16 ta shaxsiyat tipining tavsifi. **Autentifikatsiya
+YO'Q**: na `X-Session-Token`, na maktab havolasi kerak. Mijozda `/metodika` sahifasidagi
+tiplar bo'limi va `/metodika/:kod` sahifalari shu javobdan quriladi.
+
+**200**
+```json
+{
+  "types": [
+    {
+      "code": "ENFJ",
+      "name": "Ilhomlantiruvchi",
+      "shortDescription": "Odamlarni birlashtiradigan, ularning o'sishiga e'tibor qaratadigan yetakchi.",
+      "longDescription": "ENFJ — ...",
+      "strengths": ["..."],
+      "growthAreas": ["..."],
+      "careerHints": ["..."]
+    }
+  ]
+}
+```
+
+- Tartib — `code` bo'yicha alifbo tartibida (`type_catalog` da ko'rsatish tartibi ustuni yo'q;
+  mijozning "oldingi/keyingi tip" navigatsiyasi shu barqaror ketma-ketlikka tayanadi).
+- Matnning hammasi `SeedData/type-catalog.json` dan keladi (loyihaning o'z o'zbekcha kontenti,
+  `CLAUDE.md` 6a-qoida). Tiplar guruhlarga bo'linmaydi — guruh nomlari raqobatchi tasnifi.
+- Javobda **ball, shkala yoki yo'nalish yo'q** (`CLAUDE.md` 9-qoida) — kontent butunlay tavsifiy.
+- Baza seed qilinmagan bo'lsa `{"types": []}` qaytadi (xato emas) — mijoz "bo'sh holat" ko'rsatadi.
+- Kesh: `PublicCatalogCache` da 1 soat (jadval faqat seed orqali o'zgaradi).
+- Tezlik cheklovi: IP bo'yicha 60/daqiqa (1.1 bilan bir xil `PublicSchoolInfo` siyosati).
+
+**429** — limitdan oshdi
+
+---
+
 ## 2. Autentifikatsiya (superadmin)
 
 | Metod | Yo'l | Izoh |

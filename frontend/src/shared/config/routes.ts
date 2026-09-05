@@ -11,6 +11,12 @@ export const ROUTES = {
   marketing: {
     home: '/',
     methodology: '/metodika',
+    /**
+     * Bitta shaxsiyat tipining sahifasi (`/metodika/intj`) — `/metodika` dagi tiplar
+     * bo'limidan ochiladi. URL da kod kichik harfda (havolalar bir xil ko'rinishi uchun),
+     * sahifa esa katta harfga keltirib qidiradi.
+     */
+    type: (code: string) => `/metodika/${code.toLowerCase()}`,
     about: '/biz-haqimizda',
     contact: '/aloqa',
   },
@@ -46,6 +52,7 @@ export const ROUTE_PATTERNS = {
   marketing: {
     home: '/',
     methodology: '/metodika',
+    type: '/metodika/:kod',
     about: '/biz-haqimizda',
     contact: '/aloqa',
   },

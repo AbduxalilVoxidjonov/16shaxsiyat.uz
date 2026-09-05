@@ -1,17 +1,37 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
+import { jsonResponse } from '@/test/apiMock';
+import { TYPE_CATALOG_BODY } from '../test/typeCatalogFixture';
 import MethodologyPage from './MethodologyPage';
 
+/**
+ * Sahifada endi ma'lumot oluvchi bo'lim ham bor (16 tip — `TypeCatalogSection`), shu sabab
+ * `QueryClientProvider` va `fetch` mock'i kerak. Bo'limning O'Z xatti-harakati
+ * (`sections/TypeCatalogSection.test.tsx`) da alohida sinaladi — bu yerda faqat u sahifaga
+ * ULANGANI tekshiriladi.
+ */
 function renderPage() {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(jsonResponse<'GetTypeCatalogResult'>(TYPE_CATALOG_BODY)),
+  );
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <MemoryRouter>
-      <MethodologyPage />
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <MethodologyPage />
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 
 describe('MethodologyPage (`/metodika`)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("sarlavha va to'rtta blok ko'rsatiladi", () => {
     renderPage();
 
@@ -51,6 +71,24 @@ describe('MethodologyPage (`/metodika`)', () => {
     expect(screen.getByRole('heading', { name: 'Ball hisoblamaydi' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: "Tashxis qo'ymaydi" })).toBeInTheDocument();
     expect(screen.getByText(/tibbiy yoki psixiatrik tashxis o'rnini bosmaydi/)).toBeInTheDocument();
+  });
+
+  it("16 tip bo'limi sahifaga ulangan va har bir tip kartasi chiqadi", async () => {
+    renderPage();
+
+    // Sarlavha darhol chiziladi (yuklanish holatida ham), shu sabab kutish AYNAN karta
+    // havolasiga bog'lanadi — aks holda test skeleton holatida tekshirib qolardi.
+    expect(await screen.findByRole('link', { name: /INTJ/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 2, name: '16 ta shaxsiyat tipi' }),
+    ).toBeInTheDocument();
+
+    const section = screen.getByRole('region', { name: '16 ta shaxsiyat tipi' });
+    expect(within(section).getAllByRole('link')).toHaveLength(16);
+    expect(within(section).getByRole('link', { name: /INTJ/ })).toHaveAttribute(
+      'href',
+      '/metodika/intj',
+    );
   });
 
   it('aloqa sahifasiga yakuniy havola beradi', () => {

@@ -11,6 +11,7 @@ import NotFoundPage from './NotFoundPage';
 // Ommaviy tanishtiruv sahifalari (P45) — test oqimidan alohida, `MarketingLayout` ostida
 const MarketingHomePage = lazy(() => import('@/features/marketing/pages/HomePage'));
 const MethodologyPage = lazy(() => import('@/features/marketing/pages/MethodologyPage'));
+const TypeDetailPage = lazy(() => import('@/features/marketing/pages/TypeDetailPage'));
 const AboutPage = lazy(() => import('@/features/marketing/pages/AboutPage'));
 const ContactPage = lazy(() => import('@/features/marketing/pages/ContactPage'));
 
@@ -64,6 +65,7 @@ const router = createBrowserRouter([
     children: [
       { path: ROUTE_PATTERNS.marketing.home, element: withSuspense(MarketingHomePage) },
       { path: ROUTE_PATTERNS.marketing.methodology, element: withSuspense(MethodologyPage) },
+      { path: ROUTE_PATTERNS.marketing.type, element: withSuspense(TypeDetailPage) },
       { path: ROUTE_PATTERNS.marketing.about, element: withSuspense(AboutPage) },
       { path: ROUTE_PATTERNS.marketing.contact, element: withSuspense(ContactPage) },
     ],

@@ -173,6 +173,19 @@ beradi → savol-javob → yakuniy taklif.
   `Unreliable` tushunchalari, lekin bu yerda umumiy tushuntirish, individual natija emas).
 - AI tahlil qanday ishlashi (provayder-agnostik, shaxsiy ma'lumot yuborilmasligi — CLAUDE.md
   5-qoida) oddiy tilda tushuntiriladi.
+- **16 ta shaxsiyat tipi bo'limi** — har bir tip uchun bitta karta (kod + nom + qisqa tavsif),
+  karta M-2.1 sahifasiga olib boradi. Ma'lumot `GET /api/public/type-catalog` dan
+  (`docs/07` 1.10-bo'lim); yuklanish/xato/bo'sh holatlari ishlangan. Tiplar guruhlarga
+  BO'LINMAYDI va guruh nomlari ishlatilmaydi (`CLAUDE.md` 6a-qoida) — kartalar ohangi faqat
+  kodning birinchi harfiga qarab beriladi.
+
+### M-2.1 Shaxsiyat tipi (`/metodika/:kod`)
+- Girih emblema + kod, tip nomi va qisqa tavsif (hero); so'ng to'liq tavsif, kuchli tomonlar,
+  o'sish yo'nalishlari va kasb yo'nalishlari.
+- "Bu tavsif tashxis emas" eslatmasi majburiy (`CLAUDE.md` 6-qoida ruhida): tip qobiliyatni
+  yoki kelajakdagi muvaffaqiyatni o'lchamaydi, kasb yo'nalishlari — tavsiya, cheklov emas.
+- Alifbo tartibidagi ro'yxat bo'yicha oldingi/keyingi tipga navigatsiya; noma'lum kod uchun
+  "topilmadi" ekrani (barcha tiplar ro'yxatiga qaytish havolasi bilan).
 
 ### M-3 Biz haqimizda (`/biz-haqimizda`)
 - Missiya va yondashuv haqida qisqa matn (jamoa/rivojlanish tarixi emas — MVP bosqichida

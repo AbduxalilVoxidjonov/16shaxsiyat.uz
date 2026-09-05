@@ -3180,6 +3180,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/type-catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["GetTypeCatalogResult"];
+                        "application/json": components["schemas"]["GetTypeCatalogResult"];
+                        "text/json": components["schemas"]["GetTypeCatalogResult"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/public/schools/{slug}": {
         parameters: {
             query?: never;
@@ -5453,6 +5499,9 @@ export interface components {
             scaleLabels?: components["schemas"]["PublicScaleLabelDto"][] | null;
             questions: components["schemas"]["PublicQuestionDto"][];
         };
+        GetTypeCatalogResult: {
+            types: components["schemas"]["PublicTypeCatalogItemDto"][];
+        };
         ImportQuestionItemDto: {
             code: string;
             /** Format: int32 */
@@ -5567,6 +5616,15 @@ export interface components {
             order: number;
             /** Format: int32 */
             estimatedMinutes: number;
+        };
+        PublicTypeCatalogItemDto: {
+            code: string;
+            name: string;
+            shortDescription: string;
+            longDescription: string;
+            strengths: string[];
+            growthAreas: string[];
+            careerHints: string[];
         };
         RefreshResult: {
             accessToken: string;

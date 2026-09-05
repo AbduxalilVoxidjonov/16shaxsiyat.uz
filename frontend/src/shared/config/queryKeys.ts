@@ -14,4 +14,9 @@ export const QUERY_KEYS = {
     ['public', 'test-questions', testCode, page] as const,
   /** `docs/07` 1.9-bo'lim — `features/public-assessment/api/useStudentResult.ts`. */
   publicStudentResult: () => ['public', 'student-result'] as const,
+  /**
+   * `docs/07` 1.10-bo'lim — `features/marketing/api/useTypeCatalog.ts`. Parametrsiz: kontent
+   * hamma uchun bir xil (ochiq marketing kontenti, sessiyaga bog'liq emas).
+   */
+  publicTypeCatalog: () => ['public', 'type-catalog'] as const,
 } as const;

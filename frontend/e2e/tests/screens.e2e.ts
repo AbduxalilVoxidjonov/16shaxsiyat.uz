@@ -4,7 +4,13 @@ import { waitForAnimationsToSettle } from '../support/animation';
 import { expectNoConsoleErrors, expectNoHorizontalScroll } from '../support/layout';
 import { readAdminCredentials } from '../support/config';
 import { gotoAdminSection } from '../support/adminNav';
-import { UI, loginAsAdmin, openSchoolLink, registerStudent, uniqueStudentName } from '../support/flow';
+import {
+  UI,
+  loginAsAdmin,
+  openSchoolLink,
+  registerStudent,
+  uniqueStudentName,
+} from '../support/flow';
 import type { Page } from '@playwright/test';
 
 /**
@@ -36,14 +42,14 @@ async function checkScreen(page: Page, errors: string[], name: string): Promise<
 const MARKETING_SCREENS = [
   { path: '/', name: 'M-1 Bosh sahifa' },
   { path: '/metodika', name: 'M-2 Metodika' },
+  // Tip sahifasi (`/metodika/:kod`) — `/metodika` dagi 16 tip bo'limidan ochiladi. `INTJ`
+  // seed'dagi 16 koddan biri (`SeedData/type-catalog.json`), shu sabab ekran har doim to'la.
+  { path: '/metodika/intj', name: 'M-2.1 Tip sahifasi' },
   { path: '/biz-haqimizda', name: 'M-3 Biz haqimizda' },
   { path: '/aloqa', name: 'M-4 Aloqa' },
 ] as const;
 
-test('tanishtiruv ekranlari: qulaylik, tartib va konsol toza', async ({
-  page,
-  consoleErrors,
-}) => {
+test('tanishtiruv ekranlari: qulaylik, tartib va konsol toza', async ({ page, consoleErrors }) => {
   for (const screen of MARKETING_SCREENS) {
     await page.goto(screen.path);
     // Har sahifada aynan bitta `<h1>` — sahifa haqiqatan yuklanganini va sarlavha
@@ -51,6 +57,27 @@ test('tanishtiruv ekranlari: qulaylik, tartib va konsol toza', async ({
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
     await checkScreen(page, consoleErrors, screen.name);
   }
+});
+
+/**
+ * `/metodika` dagi 16 tip bo'limi HAQIQIY backend javobi bilan (`GET /api/public/type-catalog`,
+ * `docs/07` 1.10-bo'lim) to'ladimi va karta tip sahifasiga olib boradimi. Bu — vitest bilan
+ * qoplab bo'lmaydigan yagona joy: u yerda javob mock qilinadi, bu yerda esa seed qilingan
+ * baza (`SeedData/type-catalog.json`, 16 yozuv) va ommaviy endpoint zanjirining o'zi sinaladi.
+ */
+test('tanishtiruv: metodika sahifasida 16 tip kartasi va tip sahifasi ochiladi', async ({
+  page,
+}) => {
+  await page.goto('/metodika');
+
+  const section = page.getByRole('region', { name: '16 ta shaxsiyat tipi' });
+  await expect(section.getByRole('link')).toHaveCount(16);
+
+  await section.getByRole('link').first().click();
+
+  // Tip sahifasining kontenti — faqat tip TOPILGANDA chiziladi ("topilmadi" ekranida yo'q).
+  await expect(page.getByRole('heading', { name: 'Kuchli tomonlar' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: "Kasb yo'nalishlari" })).toBeVisible();
 });
 
 /** Mobil menyu — `lg` dan kichik ekranda ochiladi, havola bosilganda o'z-o'zidan yopiladi. */

@@ -135,3 +135,16 @@ export type CompleteSessionResponse = components['schemas']['CompleteSessionResu
 
 /** `GET /sessions/result` javobi — `docs/07` 1.9-bo'lim. Aktivlik ball/bayroq/xom ball YO'Q. */
 export type StudentResultResponse = components['schemas']['GetStudentResultResult'];
+
+/**
+ * Ommaviy tanishtiruv (marketing) kontenti — docs/07-api-shartnoma.md, 1.10-bo'lim.
+ * Sessiyaga bog'liq emas: `/metodika` sahifasidagi 16 tip bo'limi va `/metodika/:kod`
+ * sahifalari shu javobdan quriladi. Bu yerda ham qo'lda yozilgan DTO YO'Q — `schema.d.ts` dan
+ * re-export.
+ */
+
+/** `GET /api/public/type-catalog` javobi — `docs/07` 1.10-bo'lim. */
+export type PublicTypeCatalog = components['schemas']['GetTypeCatalogResult'];
+
+/** Bitta shaxsiyat tipining ochiq tavsifi (`type_catalog` yozuvi) — `docs/07` 1.10-bo'lim. */
+export type PublicTypeCatalogItem = components['schemas']['PublicTypeCatalogItemDto'];
