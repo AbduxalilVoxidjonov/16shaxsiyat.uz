@@ -1676,8 +1676,6 @@
       "description": "Shaxsiyat — maktablar uchun mo'ljallangan o'quvchi profili platformasi. Test javoblari ballanadi, ishonchlilik jihatidan tekshiriladi va maktab uchun tushunarli hisobotga aylantiriladi.",
       "sitemapHeading": "Sayt",
       "contactHeading": "Bog'lanish",
-      "emailValue": "salom@16shaxsiyat.uz",
-      "telegramLabel": "Telegram kanal",
       "ctaLabel": "Maktabingiz uchun so'rov",
       "disclaimerLabel": "Eslatma:",
       "disclaimer": "Platforma ta'limiy maqsadda ishlaydi va tibbiy yoki psixologik tashxis qo'ymaydi. Hisobot o'quvchini baholash yoki tanlab olish uchun rasmiy asos emas — u pedagog va psixolog uchun suhbat boshlash nuqtasi.",
@@ -1975,7 +1973,7 @@
       "title": "Biz haqimizda",
       "hero": {
         "eyebrow": "Loyiha haqida",
-        "heading": "Maktabga o'quvchini yaxshiroq tushunish uchun asbob",
+        "heading": "Maktabdagi o'quvchini yaxshiroq tushunish uchun ko'nikmalar",
         "lead": "Shaxsiyat — o'quvchi profilini yig'ish, ballash va tushunarli hisobotga aylantirish uchun qurilgan platforma."
       },
       "body": {
@@ -2022,13 +2020,15 @@
       "channels": {
         "email": {
           "title": "Elektron pochta",
-          "value": "salom@16shaxsiyat.uz",
           "text": "Maktablar uchun ulanish, hujjatlar va hamkorlik takliflari."
+        },
+        "phone": {
+          "title": "Telefon",
+          "text": "Ish kunlari 9:00–18:00. Telegram orqali ham yozishingiz mumkin."
         },
         "telegram": {
           "title": "Telegram",
-          "value": "@16shaxsiyat",
-          "text": "Yangilanishlar va qisqa savollar uchun tezkor kanal."
+          "text": "Tezkor savollar va yangilanishlar uchun."
         }
       },
       "topics": {

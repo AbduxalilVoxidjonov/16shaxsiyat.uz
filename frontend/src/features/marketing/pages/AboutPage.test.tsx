@@ -16,7 +16,7 @@ describe('AboutPage (`/biz-haqimizda`)', () => {
     renderPage();
 
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-      /Maktabga o'quvchini yaxshiroq tushunish uchun asbob/,
+      /Maktabdagi o'quvchini yaxshiroq tushunish uchun ko'nikmalar/,
     );
   });
 

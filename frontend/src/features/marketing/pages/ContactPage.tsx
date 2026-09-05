@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { CONTACT } from '@/shared/config/contact';
 import { usePageTitle } from '@/shared/hooks/usePageTitle';
 import { GirihStar } from '@/shared/ui/brand';
 import { PageHero } from '../components/PageHero';
@@ -11,10 +12,14 @@ import { PageHero } from '../components/PageHero';
  * kerak bo'lganda alohida vazifa sifatida (endpoint bilan birga) qo'shiladi.
  */
 
-/** Aloqa kanallari: kalit → havola manzili. Ko'rinadigan matn i18n dan keladi. */
+/**
+ * Aloqa kanallari. Manzil ham, ko'rinadigan qiymat ham `shared/config/contact` dan keladi —
+ * locale faylida faqat sarlavha va izoh matni qoladi (qiymat ikki joyda saqlanmasin).
+ */
 const CHANNELS = [
-  { key: 'email', href: 'mailto:salom@16shaxsiyat.uz', external: false },
-  { key: 'telegram', href: 'https://t.me/16shaxsiyat', external: true },
+  { key: 'email', ...CONTACT.email, external: false },
+  { key: 'phone', ...CONTACT.phone, external: false },
+  { key: 'telegram', ...CONTACT.telegram, external: true },
 ] as const;
 
 const TOPICS = ['pilot', 'methodology', 'report', 'technical'] as const;
@@ -49,8 +54,8 @@ export default function ContactPage() {
                   <span className="eyebrow block text-ink-soft">
                     {t(`marketing.contact.channels.${channel.key}.title`)}
                   </span>
-                  <span className="font-display mt-3 block text-xl font-extrabold text-firuza-700">
-                    {t(`marketing.contact.channels.${channel.key}.value`)}
+                  <span className="font-display mt-3 block text-xl font-extrabold break-words text-firuza-700">
+                    {channel.display}
                   </span>
                   <span className="mt-3 block text-[14px] leading-relaxed text-ink-soft">
                     {t(`marketing.contact.channels.${channel.key}.text`)}

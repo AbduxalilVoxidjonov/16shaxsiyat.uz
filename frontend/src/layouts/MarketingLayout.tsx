@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { GirihStar, Logo } from '@/shared/ui/brand';
+import { CONTACT } from '@/shared/config/contact';
 import { ROUTES } from '@/shared/config/routes';
 import { cn } from '@/shared/lib/cn';
 
@@ -27,8 +28,6 @@ const NAV_ITEMS = [
 
 /** Footer'dagi "Sayt" ustuni — bosh sahifa ham qo'shiladi. */
 const FOOTER_LINKS = [{ key: 'home', to: ROUTES.marketing.home }, ...NAV_ITEMS] as const;
-
-const TELEGRAM_URL = 'https://t.me/16shaxsiyat';
 
 const MOBILE_MENU_ID = 'marketing-mobile-menu';
 
@@ -171,7 +170,6 @@ function MarketingHeader() {
 
 function MarketingFooter() {
   const { t } = useTranslation();
-  const email = t('marketing.footer.emailValue');
 
   return (
     <footer className="relative mt-24 overflow-hidden border-t border-line bg-paper-deep">
@@ -219,17 +217,25 @@ function MarketingFooter() {
             </h2>
             <ul className="mt-4 space-y-2.5 text-[15px] text-ink-soft">
               <li>
-                <a href={`mailto:${email}`} className="transition-colors hover:text-firuza-700">
-                  {email}
+                <a
+                  href={CONTACT.email.href}
+                  className="transition-colors hover:text-firuza-700 break-words"
+                >
+                  {CONTACT.email.display}
+                </a>
+              </li>
+              <li>
+                <a href={CONTACT.phone.href} className="transition-colors hover:text-firuza-700">
+                  {CONTACT.phone.display}
                 </a>
               </li>
               <li>
                 <a
-                  href={TELEGRAM_URL}
+                  href={CONTACT.telegram.href}
                   rel="noreferrer"
                   className="transition-colors hover:text-firuza-700"
                 >
-                  {t('marketing.footer.telegramLabel')}
+                  {CONTACT.telegram.display}
                 </a>
               </li>
             </ul>

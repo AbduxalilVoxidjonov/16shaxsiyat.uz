@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
+import { CONTACT } from '@/shared/config/contact';
 import ContactPage from './ContactPage';
 
 function renderPage() {
@@ -18,12 +19,21 @@ describe('ContactPage (`/aloqa`)', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Bizga yozing');
   });
 
-  it('elektron pochta va Telegram kanallarini havola sifatida beradi', () => {
+  it('pochta, telefon va Telegram kanallarini havola sifatida beradi', () => {
     renderPage();
 
     const hrefs = screen.getAllByRole('link').map((link) => link.getAttribute('href'));
-    expect(hrefs).toContain('mailto:salom@16shaxsiyat.uz');
-    expect(hrefs).toContain('https://t.me/16shaxsiyat');
+    expect(hrefs).toContain(CONTACT.email.href);
+    expect(hrefs).toContain(CONTACT.phone.href);
+    expect(hrefs).toContain(CONTACT.telegram.href);
+  });
+
+  it("aloqa qiymatlari ko'rinadigan matn sifatida chiqadi", () => {
+    renderPage();
+
+    expect(screen.getByText(CONTACT.email.display)).toBeInTheDocument();
+    expect(screen.getByText(CONTACT.phone.display)).toBeInTheDocument();
+    expect(screen.getByText(CONTACT.telegram.display)).toBeInTheDocument();
   });
 
   it("ko'p yoziladigan mavzular ro'yxati ko'rsatiladi", () => {
