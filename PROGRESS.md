@@ -62,7 +62,13 @@
 | P43 | Savolma-savol javoblar va tahlili | backend + frontend | ✅ | — | Teskari tuzatilgan qiymat · ishonchlilik signallari |
 | P44 | AI tahlil tugmasi, avtomatik o'chirildi | backend + frontend | ✅ | — | Egasining qarori · `Ai__AutoAnalyzeOnCompletion=false` |
 | P38 | Katalog: tizim testini tahrirlash UI | frontend-react | ✅ | — | **Egasi so'radi** · ko'rish+tahrirlash, o'chirish yo'q |
-| P45 | Ommaviy dizayn ko'chirish (16shaxsiyat statik sayt → frontend) | frontend-react | ✅ | — | Marketing qatlami yangi (`/`, `/metodika`, `/biz-haqimizda`, `/aloqa`) · dizayn tizimi FAQAT qo'shimcha (eski tokenlar tegilmagan) · 527 test · branch `feat/P45-ommaviy-dizayn`, commit qilinmagan |
+| P45 | Ommaviy dizayn ko'chirish (16shaxsiyat statik sayt → frontend) | frontend-react | ✅ | — | Marketing qatlami yangi (`/`, `/metodika`, `/biz-haqimizda`, `/aloqa`) · dizayn tizimi FAQAT qo'shimcha (eski tokenlar tegilmagan) · E2E 22/22 · commit `15baf48` |
+| P46 | 2FA QR kod bilan va tasdiqlashdan keyin yoqiladi | backend + frontend | ✅ | — | `AdminUser.EnableTotp` OLIB TASHLANDI (tasdiqlashsiz yoqish hisobni bloklab qo'ygan edi) · kutish holati 10 daq · zaxira kodlar `confirm` da · migratsiya `AddPendingTotpEnrollment` · commit `d4328e5` |
+| P47 | 16 tip metodika sahifasida (ommaviy katalog endpointi) | backend + frontend | ✅ | — | Kontent YOZILMADI — `SeedData/type-catalog.json` dan · `GET /api/public/type-catalog`, kesh 1 soat · `/metodika/:kod` · 6a: guruhlarga bo'linmadi · commit `1204a36` |
+| P48 | Ommaviy makon va Telegram foydalanuvchisi (domen) | backend-dotnet | ✅ | — | `SchoolId` nullable QILINMADI (42 fayl) — o'rniga `School.Kind` + bitta "Ommaviy makon" yozuvi · `public_users`, `public_refresh_tokens` · sessiya tokeni SHA-256 ga o'tdi (mavjud sessiyalar buzilmadi) · yosh 6–99 · 1095 test · commit `8b035b6` |
+| P49 | Telegram kirish, kabinet va maktabsiz sessiya (API) | backend-dotnet | ✅ | — | `POST /api/auth/telegram` (HMAC-SHA256, doimiy vaqtda solishtirish, `auth_date` 24s) · `/api/me/*` · `StartSession` kengaytirilmadi, alohida command · ikki auditoriya qat'iy ajratilgan (test bilan qulflangan) · begona sessiya → `404` · 1179 test · commit `70b5d59` |
+| P50 | Telegram kirish va kabinet UI | frontend-react | ✅ | — | `/kirish`, `/kabinet`, `/kabinet/test`, `/kabinet/natijalar/:id` · access token FAQAT xotirada (XSS) · Telegram obyekti qayta yig'ilmaydi (imzo) · maktab oqimi tegilmagan · 608 test · commit `c155c59` |
+| P51 | Docker: seed `init` profiliga, obraz bir marta quriladi | backend-dotnet | ✅ | — | Egasining talabi · `up --build` 4 emas 2 obraz · `migrate` ATAYLAB avtomatik qoldi (API sxema eskirganini tekshirmaydi) · commit `b7d69c5` |
 
 ---
 
@@ -400,6 +406,10 @@
 
 | Risk / qarz | Ta'sir | Reja |
 |-------------|--------|------|
+| P50 dan beri `PUBLIC_SPACE_SLUG = 'ommaviy'` frontendda backend `DbSeeder.PublicSpaceSlug` konstantasining NUSXASI — backend uni javobda qaytarmaydi | Backend slug'ni o'zgartirsa frontend jimgina buziladi (test ushlamaydi, chunki ikkalasi ham qattiq yozilgan) | Backend `GET /api/public/...` javobida ommaviy makon slug'ini qaytarsin yoki shartnoma testi qo'shilsin |
+| P49/P50: ommaviy oqim uchun E2E (Playwright) hali yozilmagan — Telegram kirishini e2e'da taqlid qilish kerak | Kabinet va maktabsiz test oqimida regressiya vitest bilan ushlanmasligi mumkin (brauzer xatti-harakati, cookie, refresh) | Telegram javobini soxtalashtiruvchi test yordamchisi (bot tokeni test muhitida ma'lum) + `screens.e2e.ts` ga `/kirish`, `/kabinet` qo'shish |
+| P49: `DELETE /api/me` `public_users` ni anonimlashtiradi, lekin ommaviy makondagi `Student` yozuvidagi F.I.Sh./telefon qoladi (BR-1 takrorlanish mantig'iga kiradi) | "O'chirish huquqi" to'liq bajarilmagan — shaxsiy ma'lumot bazada qolaveradi | Egasining qarori kerak: `Student` PII ham anonimlashtirilsinmi va takrorlanishni aniqlash nima bilan almashtirilsin |
+| P49: ommaviy makonda 90 kunlik `DUPLICATE_ASSESSMENT` cheklovi maktabdagidek qoldirildi | B2C mahsulot uchun 90 kun uzun bo'lishi mumkin — foydalanuvchi qayta test topshira olmaydi | Egasining qarori: ommaviy makon uchun alohida (qisqaroq) oyna |
 | P45 (2026-09-05) dan beri IKKITA rang tizimi yonma-yon: eski `primary/success/warning/danger/neutral` (admin, `shared/ui`) va yangi `paper/ink/line/firuza/...` (ommaviy sahifalar) | Ikki manba — kelajakda admin va ommaviy ekranlar orasida vizual nomuvofiqlik yoki noto'g'ri tokenni ko'chirib qo'yish xavfi. `features/**`/`widgets/**`da eski tokenning 69+ ishlatilishi bor | Egasi so'raganda admin panelni ham yangi palitraga to'liq o'tkazish va eski tokenlarni `index.css`dan olib tashlash (`docs/10` §9.9) |
 | E2E (Playwright) P45 dizayn o'zgarishlari bilan hali ishga tushirilmagan | Yangi marketing ekranlari va o'zgargan `LikertQuestion` uchun regressiya qamrovi yo'q | Boshqa agentning parallel (2FA/QR) to'lqini tugagach, `feat/P45-ommaviy-dizayn` branch'i uchun alohida E2E/vizual tekshiruv |
 | Savol banklari (190 savol) sifati — real o'quvchida sinalmagan | Natija ishonchliligi | Pilotdan keyin matnlarni tuzatish (`docs/14` 5-bo'lim) |
