@@ -56,6 +56,44 @@ describe('HomePage (ommaviy bosh sahifa)', () => {
     expect(details).not.toHaveAttribute('open');
   });
 
+  it("hero'dagi uchta ishonch nuqtasi ochiladigan karta sifatida beriladi", () => {
+    renderPage();
+
+    const list = screen.getByRole('list', { name: 'Platforma qoidalari' });
+    const items = within(list).getAllByRole('listitem');
+    expect(items).toHaveLength(3);
+
+    // Har biri yopiq holatda ochiladi — sarlavha ko'rinadi, tushuntirish esa bosilgach.
+    for (const item of items) {
+      const details = item.querySelector('details');
+      expect(details).not.toBeNull();
+      expect(details).not.toHaveAttribute('open');
+    }
+
+    expect(
+      within(list).getByText('Ball berish qoidalari oldindan belgilangan'),
+    ).toBeInTheDocument();
+    expect(within(list).getByText('Hisobot tashxis emas')).toBeInTheDocument();
+  });
+
+  it('ishonch nuqtasi ochilganda tushuntirish matni bilan birga keladi', () => {
+    renderPage();
+
+    const list = screen.getByRole('list', { name: 'Platforma qoidalari' });
+    const details = within(list).getByText('Hisobot tashxis emas').closest('details');
+
+    expect(details).not.toBeNull();
+    // Matn markapda doim bor (`details` uni faqat vizual yashiradi) — mazmun
+    // skrinriderlar va qidiruv tizimlari uchun ham yo'qolmasligi kerak.
+    expect(details).toHaveTextContent(/suhbat boshlash nuqtasi/);
+  });
+
+  it('ommaviy matnda "ballash" ot shakli ishlatilmaydi (egasining atama qarori)', () => {
+    const { container } = renderPage();
+
+    expect(container.textContent ?? '').not.toMatch(/ballash/i);
+  });
+
   it("raqobatchi metodikasining atamalari sahifada YO'Q (CLAUDE.md 6a-qoida)", () => {
     const { container } = renderPage();
     const text = container.textContent ?? '';

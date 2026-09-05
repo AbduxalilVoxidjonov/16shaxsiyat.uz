@@ -1692,9 +1692,18 @@
         "secondaryCta": "Metodikani ko'rish",
         "trustListLabel": "Platforma qoidalari",
         "trust": {
-          "link": "Test faqat maktab havolasi orqali ochiladi",
-          "rules": "Ballash qoidalari oldindan belgilangan",
-          "noDiagnosis": "Hisobot tashxis emas"
+          "link": {
+            "title": "Faqat maktab havolasi orqali ochiladi",
+            "text": "Har bir maktab o'z havolasini oladi. Ochiq ro'yxatdan o'tish yo'q — o'quvchi testni o'zicha ocha olmaydi va natijalar faqat o'sha maktabga tegishli bo'lib qoladi."
+          },
+          "rules": {
+            "title": "Ball berish qoidalari oldindan belgilangan",
+            "text": "Formulalar oldindan yozilgan va hamma uchun bir xil — natija kim baholayotganiga bog'liq emas. AI ballarni o'zgartirmaydi, faqat tayyor ballarni izohlab beradi."
+          },
+          "noDiagnosis": {
+            "title": "Hisobot tashxis emas",
+            "text": "Bu tibbiy yoki psixologik tashxis emas va o'quvchini saralash uchun asos emas. Hisobot — pedagog va psixolog uchun suhbat boshlash nuqtasi."
+          }
         },
         "sample": {
           "eyebrow": "Namuna profil",
@@ -1969,12 +1978,45 @@
         "action": "Bog'lanish"
       }
     },
+    "types": {
+      "section": {
+        "eyebrow": "Tiplar",
+        "heading": "16 ta shaxsiyat tipi",
+        "lead": "Uslub bloki natijasi shu 16 tipdan biriga to'g'ri keladi. Har bir tip — qat'iy yorliq emas, hozirgi holatning qisqa surati; quyidagi kartani bosib to'liq tavsifni o'qing.",
+        "cardHint": "Batafsil",
+        "loading": "Tiplar yuklanmoqda…",
+        "errorTitle": "Tiplar ro'yxatini yuklab bo'lmadi",
+        "errorText": "Ulanishni tekshirib, qayta urinib ko'ring.",
+        "emptyTitle": "Tiplar ro'yxati hozircha bo'sh",
+        "emptyText": "Kontent tayyorlanmoqda — birozdan so'ng qayta kiring."
+      },
+      "detail": {
+        "eyebrow": "Shaxsiyat tipi",
+        "backToMethodology": "Metodikaga qaytish",
+        "allTypes": "Barcha tiplar",
+        "aboutHeading": "Tip haqida",
+        "strengthsHeading": "Kuchli tomonlar",
+        "growthHeading": "O'sish yo'nalishlari",
+        "careerHeading": "Kasb yo'nalishlari",
+        "navHeading": "Boshqa tiplar",
+        "previous": "Oldingi tip",
+        "next": "Keyingi tip",
+        "noteTitle": "Bu tavsif tashxis emas",
+        "noteText": "Tip — o'quvchining javoblariga asoslangan uslub surati. U qobiliyatni, bilim darajasini yoki kelajakdagi muvaffaqiyatni o'lchamaydi va hech qanday tibbiy yoki psixiatrik xulosa o'rnini bosmaydi. Kasb yo'nalishlari — o'ylab ko'rish uchun tavsiya, cheklov emas.",
+        "loading": "Tip ma'lumoti yuklanmoqda…",
+        "errorTitle": "Tip ma'lumotini yuklab bo'lmadi",
+        "errorText": "Ulanishni tekshirib, qayta urinib ko'ring.",
+        "notFoundTitle": "Bunday tip topilmadi",
+        "notFoundText": "Havoladagi kod noto'g'ri bo'lishi mumkin. Barcha tiplar ro'yxatidan tanlang.",
+        "notFoundAction": "Barcha tiplarni ko'rish"
+      }
+    },
     "about": {
       "title": "Biz haqimizda",
       "hero": {
         "eyebrow": "Loyiha haqida",
         "heading": "Maktabdagi o'quvchini yaxshiroq tushunish uchun ko'nikmalar",
-        "lead": "Shaxsiyat — o'quvchi profilini yig'ish, ballash va tushunarli hisobotga aylantirish uchun qurilgan platforma."
+        "lead": "Shaxsiyat — o'quvchi profilini yig'ish, ball berish va tushunarli hisobotga aylantirish uchun qurilgan platforma."
       },
       "body": {
         "p1": "Maktabda o'quvchi haqida ko'p narsa baho jurnalidan ko'rinadi. Lekin uning nimadan charchashi, qanday muhitda ochilishi va nimaga qiziqishi ko'pincha ko'rinmay qoladi — aynan shu ma'lumot pedagogga kundalik ishda kerak bo'ladi.",
@@ -1983,7 +2025,7 @@
       },
       "methodHeading": "Metodika haqida ochiq gap",
       "methodBody": {
-        "p1": "Anketa to'rt blokdan iborat va har blok o'z ballash qoidasiga ega. Qoidalar oldindan yozilgan, hujjatlashtirilgan va sessiyadan sessiyaga o'zgarmaydi — shu sabab natijalarni bir-biri bilan taqqoslash mumkin.",
+        "p1": "Anketa to'rt blokdan iborat va har blok o'z ball berish qoidasiga ega. Qoidalar oldindan yozilgan, hujjatlashtirilgan va sessiyadan sessiyaga o'zgarmaydi — shu sabab natijalarni bir-biri bilan taqqoslash mumkin.",
         "p2": "Ayni paytda ochiq aytamiz: bu klinik vosita emas va tashxis qo'ymaydi. Natija o'quvchiga yorliq yopishtirish uchun emas, u bilan suhbatni boshlash uchun ishlatiladi."
       },
       "principles": {
@@ -2035,7 +2077,7 @@
         "heading": "Ko'p yoziladigan mavzular",
         "items": {
           "pilot": "Maktabimizda sinov o'tkazmoqchimiz",
-          "methodology": "Metodika va ballash bo'yicha savol",
+          "methodology": "Metodika va ball berish bo'yicha savol",
           "report": "Hisobot ko'rinishi va eksport",
           "technical": "Texnik nosozlik yuz berdi"
         }

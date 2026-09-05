@@ -1,3 +1,4 @@
+import { Info, Link2, Scale } from 'lucide-react';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Blob, GirihStar, PatternBackdrop } from '@/shared/ui/brand';
@@ -20,30 +21,23 @@ const SAMPLE_BARS = [
   { key: 'discipline', percent: 57, bar: 'bg-lojuvard-500', label: 'text-lojuvard-700' },
 ] as const;
 
-const TRUST_KEYS = ['link', 'rules', 'noDiagnosis'] as const;
+/**
+ * Hero ostidagi uchta ishonch nuqtasi. Ilgari bular belgichali qisqa qatorlar edi —
+ * o'quvchi/ota-ona uchun juda siqiq ("Hisobot tashxis emas" nima uchun muhimligi
+ * ko'rinmasdi). Endi har biri ochiladigan karta: sarlavha bir qarashda o'qiladi,
+ * tushuntirish esa bosilganda chiqadi.
+ *
+ * `<details>/<summary>` ATAYLAB — FAQ bo'limidagi bilan bir xil sabab: ochish-yopish
+ * brauzerning o'zida ishlaydi, klaviatura va skrinriderlar uchun qo'shimcha `aria-*`
+ * yozish shart emas, JS o'chiq bo'lsa ham matn o'qiladi.
+ */
+const TRUST_ITEMS = [
+  { key: 'link', Icon: Link2 },
+  { key: 'rules', Icon: Scale },
+  { key: 'noDiagnosis', Icon: Info },
+] as const;
 
 const STAT_KEYS = ['blocks', 'link', 'reliability', 'privacy'] as const;
-
-/** Ro'yxat oldidagi kichik belgi — dekorativ, ma'no yonidagi matnda. */
-function CheckIcon() {
-  return (
-    <svg
-      viewBox="0 0 16 16"
-      className="mt-0.5 size-3.5 shrink-0 text-zumrad-600"
-      fill="none"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path
-        d="m3 8.5 3.2 3.2L13 5"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 export function HeroSection() {
   const { t } = useTranslation();
@@ -86,12 +80,38 @@ export function HeroSection() {
 
           <ul
             aria-label={t('marketing.home.hero.trustListLabel')}
-            className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-[13px] font-medium text-ink-soft"
+            className="mt-8 grid gap-3 sm:grid-cols-3"
           >
-            {TRUST_KEYS.map((key) => (
-              <li key={key} className="flex items-start gap-1.5">
-                <CheckIcon />
-                {t(`marketing.home.hero.trust.${key}`)}
+            {TRUST_ITEMS.map(({ key, Icon }) => (
+              <li key={key}>
+                <details className="group card h-full p-4 open:bg-paper-deep/50">
+                  <summary className="flex cursor-pointer list-none items-start gap-2.5 [&::-webkit-details-marker]:hidden">
+                    <Icon
+                      className="mt-px size-4 shrink-0 text-firuza-700"
+                      aria-hidden="true"
+                      focusable="false"
+                    />
+                    <span className="font-display text-[13px] leading-snug font-bold text-ink">
+                      {t(`marketing.home.hero.trust.${key}.title`)}
+                    </span>
+                    <span
+                      className="ml-auto grid size-6 shrink-0 place-items-center rounded-full border border-line-strong text-ink-muted transition-transform duration-300 group-open:rotate-45"
+                      aria-hidden="true"
+                    >
+                      <svg viewBox="0 0 16 16" className="size-3" fill="none" focusable="false">
+                        <path
+                          d="M8 3v10M3 8h10"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </span>
+                  </summary>
+                  <p className="mt-3 text-[13px] leading-relaxed text-ink-soft">
+                    {t(`marketing.home.hero.trust.${key}.text`)}
+                  </p>
+                </details>
               </li>
             ))}
           </ul>
@@ -131,10 +151,7 @@ export function HeroSection() {
             */}
             <dl className="mt-7 space-y-4">
               {SAMPLE_BARS.map((item, index) => (
-                <div
-                  key={item.key}
-                  className="grid grid-cols-[1fr_auto] items-baseline gap-x-3"
-                >
+                <div key={item.key} className="grid grid-cols-[1fr_auto] items-baseline gap-x-3">
                   <dt className={`text-[13px] font-bold ${item.label}`}>
                     {t(`marketing.home.hero.sample.bars.${item.key}`)}
                   </dt>
