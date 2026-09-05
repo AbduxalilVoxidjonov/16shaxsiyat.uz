@@ -84,7 +84,8 @@ npm run generate:api          # swagger'dan TS tiplari
 
 # Infra
 docker compose up -d db
-docker compose up -d
+docker compose up -d                          # to'liq stek (seed'siz)
+docker compose --profile init run --rm seed   # katalogni yozish (bir marta)
 ```
 
 ## Avtonom ishlash rejimi

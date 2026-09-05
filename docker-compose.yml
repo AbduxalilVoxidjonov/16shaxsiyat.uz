@@ -31,9 +31,11 @@ services:
   # ichida avtomatik `Database.Migrate()` chaqirilmaydi). Bajarilib to'xtaydi;
   # `api` uning muvaffaqiyatli tugashini kutadi.
   migrate:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.api
+    # Obraz `api` xizmatida bir marta quriladi (`image: 16shaxsiyat-api`) — bu yerda
+    # `build:` YO'Q. Ilgari `migrate`, `seed` va `api` uchchalasi ham AYNAN bir xil
+    # `docker/Dockerfile.api` dan uch alohida obraz qurar edi: `up --build` da uch marta
+    # ortiqcha qurish ketardi. Endi bitta obraz uch xizmatda qayta ishlatiladi.
+    image: 16shaxsiyat-api
     command: ["--migrate"]
     environment: &api_env
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
@@ -57,25 +59,38 @@ services:
         condition: service_healthy
     restart: "no"
 
-  # Katalog seed'i (190 savol, 16 tip, kasb xaritasi, superadmin) — idempotent.
+  # Katalog seed'i (190 savol, 16 tip, kasb xaritasi, superadmin) — idempotent, LEKIN
+  # ma'lumot bir marta yozilgach har `up` da qayta yugurishi shart emas (egasining
+  # 2026-09-05 qarori: "bir marta qo'shilib bo'lganlari endi kerak emas").
+  #
+  # Shu sabab `profiles: [init]` — ODATIY `docker compose up -d` uni ISHGA TUSHIRMAYDI.
+  # Seed kerak bo'lganda (bo'sh baza, yangi savol banki, yangi tip katalogi):
+  #     docker compose --profile init run --rm seed
+  #
+  # `migrate` esa ATAYLAB profil ostiga OLINMADI: u sxemani `__EFMigrationsHistory` bilan
+  # solishtiradi va yangilik bo'lmasa bir soniyada tugaydi, ya'ni "qayta yugurish"ning
+  # narxi yo'q. Lekin uni o'tkazib yuborilsa xato JIMGINA yuzaga chiqadi — API sxema
+  # eskirganini ishga tushishda tekshirmaydi (`Program.cs`), shunchaki keyinroq
+  # "column does not exist" bilan yiqiladi. Avtomatik qolgani shuning uchun.
   seed:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.api
+    image: 16shaxsiyat-api
     command: ["--seed"]
     environment: *api_env
+    profiles: ["init"]
     depends_on:
-      migrate:
-        condition: service_completed_successfully
+      db:
+        condition: service_healthy
     restart: "no"
 
   api:
     build:
       context: .
       dockerfile: docker/Dockerfile.api
+    # Aniq teg — `migrate` va `seed` xuddi shu obrazni qayta ishlatadi (yuqoridagi izoh).
+    image: 16shaxsiyat-api
     environment: *api_env
     depends_on:
-      seed:
+      migrate:
         condition: service_completed_successfully
     restart: unless-stopped
 

@@ -80,19 +80,27 @@ docker compose up -d --build
 ```
 
 Bu ketma-ket bajaradi: `db` (sog'lom bo'lguncha kutadi) → `migrate` (barcha migratsiya,
-bir martalik) → `seed` (190 savol, 16 tip, kasb xaritasi, superadmin — idempotent) → `api` →
-`app` (frontend + `/api` proksi) → `tunnel` (production'da Cloudflare'ga ulaydi).
+bir martalik) → `api` → `app` (frontend + `/api` proksi) → `tunnel` (production'da
+Cloudflare'ga ulaydi).
+
+**Seed bu zanjirda yo'q.** Katalog (190 savol, 16 tip, kasb xaritasi, superadmin) bir marta
+yozilgach har deploy'da qayta yugurishi shart emas, shu sabab u `init` profili ostida.
+Bo'sh bazada yoki katalog yangilanganda bir marta ishga tushiring:
+
+```bash
+docker compose --profile init run --rm seed
+```
 
 Holatni kuzatish:
 ```bash
 docker compose ps
-docker compose logs -f migrate seed     # ikkalasi ham 0-kod bilan tugashi shart
+docker compose logs -f migrate     # 0-kod bilan tugashi shart
 ```
 
 **Faqat lokal sinov** (production tunnel kerak emas) — `app`ni xostga vaqtincha chiqarib
 ko'rish uchun `docker-compose.yml`dagi izohlangan `ports:` qatorini oching yoki:
 ```bash
-docker compose up -d --build db migrate seed api app   # tunnel'siz
+docker compose up -d --build db migrate api app   # tunnel'siz
 docker compose port app 8080
 curl http://localhost:<port>/health
 ```

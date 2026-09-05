@@ -35,9 +35,6 @@ docker compose up -d --build
    migrate (bir martalik: `dotnet StudentRoadMap.Api.dll --migrate`, restart: "no")
         │  depends_on: condition: service_completed_successfully
         ▼
-   seed (bir martalik: `--seed`, idempotent — 190 savol, 16 tip, kasb xaritasi, superadmin)
-        │  depends_on: condition: service_completed_successfully
-        ▼
    api (doimiy, restart: unless-stopped)
         │  depends_on
         ▼
@@ -50,6 +47,30 @@ docker compose up -d --build
 **Bitta buyruq — butun oqim.** `docker compose up -d --build` shu zanjirni ketma-ket
 bajaradi va to'xtaydi; qadamlardan biri muvaffaqiyatsiz bo'lsa, keyingisi ishga tushmaydi
 (`condition: service_completed_successfully`).
+
+### `seed` zanjirda YO'Q — `init` profili ostida
+
+`seed` (190 savol, 16 tip, kasb xaritasi, superadmin) `profiles: ["init"]` bilan
+belgilangan, ya'ni odatiy `docker compose up -d` uni **ishga tushirmaydi**. Katalog bir
+marta yozilgach har deploy'da qayta yugurishi shart emas edi (egasining 2026-09-05 qarori).
+Kerak bo'lganda — bo'sh baza, yangi savol banki yoki yangilangan tip katalogi:
+
+```bash
+docker compose --profile init run --rm seed
+```
+
+`migrate` esa ATAYLAB avtomatik qoldi. U sxemani `__EFMigrationsHistory` bilan
+solishtiradi va yangilik bo'lmasa bir soniyada tugaydi — "qayta yugurish"ning narxi yo'q.
+Uni ham profil ostiga olish xavfli: `Program.cs` ishga tushishda sxema eskirganini
+TEKSHIRMAYDI, shu sabab o'tkazib yuborilgan migratsiya xatoni jimgina, keyinroq
+"column does not exist" ko'rinishida chiqaradi.
+
+### Obraz bir marta quriladi
+
+`migrate`, `seed` va `api` uchchalasi ham aynan bir xil `docker/Dockerfile.api` dan
+quriladi. Ilgari har biri O'Z obrazini qurardi — `up --build` da bitta Dockerfile uch
+marta ortiqcha qurilardi. Endi `build:` faqat `api` da, qolgan ikkisi `image:
+16shaxsiyat-api` bilan o'sha obrazni qayta ishlatadi (`--build` da 4 emas, 2 obraz).
 
 Muhim tafsilotlar:
 
