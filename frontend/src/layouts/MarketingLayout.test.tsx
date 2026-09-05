@@ -27,7 +27,7 @@ describe('MarketingLayout', () => {
     expect(screen.getByText('Bosh sahifa mazmuni')).toBeInTheDocument();
   });
 
-  it("asosiy navigatsiyada uchta bo'lim havolasi bor", () => {
+  it("asosiy navigatsiya bosh sahifadan boshlanadi va to'rt havoladan iborat", () => {
     renderLayout();
 
     const nav = screen.getByRole('navigation', { name: 'Asosiy menyu' });
@@ -35,7 +35,22 @@ describe('MarketingLayout', () => {
       .getAllByRole('link')
       .map((link) => link.getAttribute('href'));
 
-    expect(hrefs).toEqual(['/metodika', '/biz-haqimizda', '/aloqa']);
+    expect(hrefs).toEqual(['/', '/metodika', '/biz-haqimizda', '/aloqa']);
+    expect(within(nav).getByRole('link', { name: 'Asosiy' })).toHaveAttribute('href', '/');
+  });
+
+  it('bosh sahifada faqat "Asosiy" havolasi joriy deb belgilanadi', () => {
+    renderLayout('/');
+
+    const nav = screen.getByRole('navigation', { name: 'Asosiy menyu' });
+    // `isActivePath` bosh sahifani ANIQ moslik bo'yicha tekshiradi — aks holda `/` prefiksi
+    // barcha havolalarga mos kelib, hammasi joriy deb belgilanardi.
+    const current = within(nav)
+      .getAllByRole('link')
+      .filter((link) => link.getAttribute('aria-current') === 'page')
+      .map((link) => link.getAttribute('href'));
+
+    expect(current).toEqual(['/']);
   });
 
   it('joriy sahifa havolasi `aria-current="page"` bilan belgilanadi', () => {

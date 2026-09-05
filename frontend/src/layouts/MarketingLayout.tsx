@@ -19,15 +19,21 @@ import { cn } from '@/shared/lib/cn';
  * (`src/index.css`), shu sabab qog'oz palitrasi shu yerdagi wrapper'da beriladi.
  */
 
-/** Header va footer navigatsiyasi — matn kalitlari `marketing.nav.*` dan olinadi. */
+/**
+ * Header va footer navigatsiyasi — matn kalitlari `marketing.nav.*` dan olinadi.
+ * "Asosiy" ataylab ro'yxatning boshida: logotip ham bosh sahifaga olib boradi, lekin
+ * foydalanuvchi uchun ochiq havola bo'lishi kerak (logotipning bosiladiganligi hammaga
+ * ravshan emas). `isActivePath` bosh sahifani aniq moslik bo'yicha tekshiradi.
+ */
 const NAV_ITEMS = [
+  { key: 'home', to: ROUTES.marketing.home },
   { key: 'methodology', to: ROUTES.marketing.methodology },
   { key: 'about', to: ROUTES.marketing.about },
   { key: 'contact', to: ROUTES.marketing.contact },
 ] as const;
 
-/** Footer'dagi "Sayt" ustuni — bosh sahifa ham qo'shiladi. */
-const FOOTER_LINKS = [{ key: 'home', to: ROUTES.marketing.home }, ...NAV_ITEMS] as const;
+/** Footer'dagi "Sayt" ustuni header bilan bir xil ro'yxatdan foydalanadi. */
+const FOOTER_LINKS = NAV_ITEMS;
 
 const MOBILE_MENU_ID = 'marketing-mobile-menu';
 

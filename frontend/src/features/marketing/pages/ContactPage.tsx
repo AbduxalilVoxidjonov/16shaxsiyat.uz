@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { CONTACT } from '@/shared/config/contact';
+import { cn } from '@/shared/lib/cn';
 import { usePageTitle } from '@/shared/hooks/usePageTitle';
 import { GirihStar } from '@/shared/ui/brand';
 import { PageHero } from '../components/PageHero';
@@ -17,9 +18,11 @@ import { PageHero } from '../components/PageHero';
  * locale faylida faqat sarlavha va izoh matni qoladi (qiymat ikki joyda saqlanmasin).
  */
 const CHANNELS = [
-  { key: 'email', ...CONTACT.email, external: false },
-  { key: 'phone', ...CONTACT.phone, external: false },
-  { key: 'telegram', ...CONTACT.telegram, external: true },
+  // Pochta manzili eng uzun qiymat — o'z qatorini to'liq egallaydi va shriftи kichikroq,
+  // aks holda tor kartada `break-word` bilan ikki-uch qatorga bo'linib ketadi.
+  { key: 'email', ...CONTACT.email, external: false, wide: true },
+  { key: 'phone', ...CONTACT.phone, external: false, wide: false },
+  { key: 'telegram', ...CONTACT.telegram, external: true, wide: false },
 ] as const;
 
 const TOPICS = ['pilot', 'methodology', 'report', 'technical'] as const;
@@ -41,7 +44,7 @@ export default function ContactPage() {
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <ul className="grid gap-5 sm:grid-cols-2">
             {CHANNELS.map((channel) => (
-              <li key={channel.key}>
+              <li key={channel.key} className={channel.wide ? 'sm:col-span-2' : undefined}>
                 <a
                   href={channel.href}
                   rel={channel.external ? 'noreferrer' : undefined}
@@ -54,7 +57,12 @@ export default function ContactPage() {
                   <span className="eyebrow block text-ink-soft">
                     {t(`marketing.contact.channels.${channel.key}.title`)}
                   </span>
-                  <span className="font-display mt-3 block text-xl font-extrabold break-words text-firuza-700">
+                  <span
+                    className={cn(
+                      'font-display mt-3 block font-extrabold break-words text-firuza-700',
+                      channel.wide ? 'text-lg sm:text-xl' : 'text-xl',
+                    )}
+                  >
                     {channel.display}
                   </span>
                   <span className="mt-3 block text-[14px] leading-relaxed text-ink-soft">
