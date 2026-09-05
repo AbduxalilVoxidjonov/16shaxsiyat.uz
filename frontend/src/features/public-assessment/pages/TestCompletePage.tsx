@@ -10,7 +10,7 @@ import type { PublicTestSummary } from '@/shared/api/types';
 import { useSessionState } from '../api/useSessionState';
 import { useSessionStore } from '../store/sessionStore';
 import { useSessionExpiredGuard } from '../hooks/useSessionExpiredGuard';
-import { pickNextTestCode } from '../lib/nextTest';
+import { pickNextTestCode } from '@/shared/lib/nextTest';
 import { publicButtonClass } from '../components/publicStyles';
 
 interface TestCompleteLocationState {

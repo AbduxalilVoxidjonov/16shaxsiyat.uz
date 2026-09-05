@@ -1660,6 +1660,116 @@
       "emptyDescription": "Tanlangan filtrlarga mos sessiya yo'q. Filtrlarni o'zgartirib ko'ring."
     }
   },
+  "account": {
+    "login": {
+      "title": "Kirish",
+      "eyebrow": "Shaxsiy kabinet",
+      "heading": "Telegram orqali kiring",
+      "lead": "Kirish uchun alohida parol kerak emas — Telegram akkauntingiz yetarli. Kirgach testni boshlaysiz va natijalaringiz kabinetda saqlanadi.",
+      "pending": "Kirish tekshirilmoqda…",
+      "widgetHint": "Telegram tugmasini bosing — ma'lumotlaringizni siz tasdiqlaganingizdan keyin kirasiz.",
+      "notConfiguredTitle": "Telegram kirishi hozircha sozlanmagan",
+      "notConfiguredDescription": "Kirish tugmasi hali ulanmagan. Birozdan so'ng qayta urinib ko'ring yoki biz bilan bog'laning.",
+      "promises": {
+        "own": {
+          "title": "Natija sizniki",
+          "text": "Testlaringiz va natijalaringiz kabinetingizda saqlanadi, xohlagan vaqt ochasiz."
+        },
+        "privacy": {
+          "title": "Kamida ma'lumot",
+          "text": "Telegramdan faqat ism va rasm olinadi. Telefon raqamingiz va yozishmalaringiz olinmaydi."
+        },
+        "free": {
+          "title": "Bepul",
+          "text": "Test topshirish va natijani ko'rish uchun to'lov talab qilinmaydi."
+        }
+      },
+      "errors": {
+        "generic": "Kirishda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring.",
+        "invalid": "Telegram ma'lumoti tasdiqlanmadi. Sahifani yangilab, qaytadan urinib ko'ring.",
+        "expired": "Kirish so'rovining muddati o'tgan. Telegram tugmasini qaytadan bosing.",
+        "rateLimited": "Juda ko'p urinish bo'ldi. Bir necha daqiqadan so'ng qayta urinib ko'ring.",
+        "notConfigured": "Telegram kirishi serverda hali sozlanmagan. Birozdan so'ng qayta urinib ko'ring."
+      }
+    },
+    "profile": {
+      "eyebrow": "Kabinet",
+      "unknownName": "Foydalanuvchi",
+      "joinedAt": "Ro'yxatdan o'tgan sana: {{date}}",
+      "logout": "Chiqish",
+      "deleteCta": "Akkauntni o'chirish"
+    },
+    "home": {
+      "title": "Kabinet"
+    },
+    "history": {
+      "heading": "Test tarixi",
+      "lead": "Topshirgan testlaringiz va ularning holati.",
+      "startCta": "Yangi test boshlash",
+      "startedAt": "Boshlangan: {{date}}",
+      "completedAt": "Yakunlangan: {{date}}",
+      "openResult": "Natijani ko'rish",
+      "resultUnavailable": "Natija hali ochilmagan",
+      "emptyTitle": "Hali test topshirmagansiz",
+      "emptyDescription": "Birinchi testni boshlang — anketa qisqa, test bloklarini istalgan vaqtda davom ettirasiz.",
+      "status": {
+        "Draft": "Boshlanmagan",
+        "InProgress": "Davom etmoqda",
+        "Completed": "Yakunlangan",
+        "Analyzing": "Tahlil qilinmoqda",
+        "Analyzed": "Tayyor",
+        "AnalysisFailed": "Tahlil bajarilmadi",
+        "Abandoned": "Tashlab ketilgan"
+      }
+    },
+    "result": {
+      "back": "Kabinetga qaytish",
+      "notFoundTitle": "Natija topilmadi",
+      "notFoundDescription": "Bunday test sessiyasi sizning kabinetingizda yo'q. Ro'yxatdan tanlab qaytadan oching."
+    },
+    "delete": {
+      "title": "Akkauntni o'chirasizmi?",
+      "description": "Bu amalni ortga qaytarib bo'lmaydi.",
+      "warning": "O'chirilgandan keyin kabinetingizga kira olmaysiz va natijalaringiz sizga ko'rinmaydi.",
+      "confirm": "Ha, o'chirilsin",
+      "consequences": {
+        "profile": "Profil ma'lumotlaringiz (ism, foydalanuvchi nomi, rasm) o'chiriladi.",
+        "results": "Kabinetdagi test natijalari sizga ko'rinmay qoladi.",
+        "newAccount": "Shu Telegram akkaunti bilan qayta kirsangiz, YANGI akkaunt ochiladi — eski natijalar unga bog'lanmaydi."
+      },
+      "doneToast": "Akkaunt o'chirildi.",
+      "errorFallback": "Akkauntni o'chirishda xatolik yuz berdi. Qayta urinib ko'ring."
+    },
+    "register": {
+      "title": "Test uchun anketa",
+      "eyebrow": "Yangi test",
+      "lead": "Bir necha savolga javob bering — bu ma'lumotlar natijani to'g'ri hisoblash uchun kerak.",
+      "back": "Kabinetga qaytish",
+      "submitCta": "Testni boshlash",
+      "resumedNotice": "Tugallanmagan sessiyangiz davom ettirildi.",
+      "consentText": "Test javoblarim va natijalarim \"Shaxsiyat\" platformasida ta'limiy maqsadda qayta ishlanishiga roziman. Ma'lumotlar uchinchi shaxslarga berilmaydi.",
+      "parentalConsentText": "18 yoshgacha bo'lgan foydalanuvchilar uchun ota-ona (yoki qonuniy vakil) roziligi majburiy.",
+      "parentalConsentLabel": "Ota-onam (qonuniy vakilim) test topshirishimga rozi",
+      "genderOptions": {
+        "male": "Erkak",
+        "female": "Ayol"
+      },
+      "fields": {
+        "grade": "Sinf",
+        "gradeNone": "Maktabda o'qimayman",
+        "gradeHint": "Maktabda o'qimasangiz — \"Maktabda o'qimayman\" ni tanlang."
+      },
+      "errors": {
+        "generic": "Testni boshlashda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring.",
+        "programRequired": "Dastur tanlanmagan. Birozdan so'ng qayta urinib ko'ring.",
+        "noProgram": "Hozircha ochiq test dasturi yo'q. Birozdan so'ng qayta urinib ko'ring.",
+        "notConfigured": "Ommaviy test hali sozlanmagan. Birozdan so'ng qayta urinib ko'ring.",
+        "inactive": "Ommaviy test vaqtincha to'xtatilgan.",
+        "duplicate": "Siz bu testni yaqinda yakunlagansiz. Yangi test biroz vaqtdan keyin ochiladi.",
+        "rateLimited": "Juda ko'p urinish bo'ldi. Bir soatdan so'ng qayta urinib ko'ring."
+      }
+    }
+  },
   "marketing": {
     "nav": {
       "home": "Asosiy",
@@ -1670,7 +1780,9 @@
       "mobileLabel": "Mobil menyu",
       "openMenu": "Menyuni ochish",
       "closeMenu": "Menyuni yopish",
-      "cta": "Maktabingiz uchun"
+      "login": "Kirish",
+      "account": "Kabinet",
+      "startTest": "Testni boshlash"
     },
     "footer": {
       "description": "Shaxsiyat — maktablar uchun mo'ljallangan o'quvchi profili platformasi. Test javoblari ballanadi, ishonchlilik jihatidan tekshiriladi va maktab uchun tushunarli hisobotga aylantiriladi.",
@@ -1684,17 +1796,17 @@
     "home": {
       "title": "Maktablar uchun o'quvchi profili",
       "hero": {
-        "badge": "Maktablar uchun",
+        "badge": "Maktablar va har bir foydalanuvchi uchun",
         "headingLead": "Har bir o'quvchi haqida",
         "headingHighlight": "asosli profil",
-        "lead": "Maktab shaxsiy havola oladi, o'quvchi anketani to'ldirib to'rt blok testni yechadi. Tizim javoblarni belgilangan formulalar bo'yicha ballaydi, ishonchlilikni tekshiradi va tahlilni tayyorlaydi. Maktab rahbariyati har bir o'quvchining profilini bitta panelda ko'radi.",
-        "primaryCta": "Maktabingiz uchun so'rov",
+        "lead": "Testni Telegram orqali kirib o'zingiz topshirasiz va natijani shaxsiy kabinetingizda ko'rasiz. Maktablar esa shaxsiy havola oladi: o'quvchilar anketani to'ldirib test bloklarini yechadi, rahbariyat har bir profilni bitta panelda ko'radi. Ikkala yo'lda ham javoblar belgilangan formulalar bo'yicha baholanadi va ishonchlilik tekshiriladi.",
+        "primaryCta": "Testni boshlash",
         "secondaryCta": "Metodikani ko'rish",
         "trustListLabel": "Platforma qoidalari",
         "trust": {
           "link": {
-            "title": "Faqat maktab havolasi orqali ochiladi",
-            "text": "Har bir maktab o'z havolasini oladi. Ochiq ro'yxatdan o'tish yo'q — o'quvchi testni o'zicha ocha olmaydi va natijalar faqat o'sha maktabga tegishli bo'lib qoladi."
+            "title": "Ikki yo'l: shaxsiy kabinet yoki maktab havolasi",
+            "text": "O'zingiz uchun — Telegram orqali kirasiz, natija faqat sizning kabinetingizda qoladi. Maktab uchun — maktab o'z havolasini oladi va o'sha havoladagi natijalar faqat o'sha maktabga tegishli bo'ladi."
           },
           "rules": {
             "title": "Ball berish qoidalari oldindan belgilangan",
@@ -1852,11 +1964,11 @@
         }
       },
       "cta": {
-        "eyebrow": "Maktabingiz uchun",
-        "heading": "Platformani maktabingizda ko'rib chiqing",
-        "text": "Havola, sozlash va namunaviy hisobot bo'yicha bog'laning — qanday ishlashini birga ko'rib chiqamiz.",
-        "primary": "Bog'lanish",
-        "secondary": "Metodikani o'qish"
+        "eyebrow": "Boshlash",
+        "heading": "O'zingizni sinab ko'ring",
+        "text": "Telegram orqali kiring, anketani to'ldiring va test bloklarini o'z tezligingizda yeching. Maktabingiz uchun ulanish kerak bo'lsa — bog'laning.",
+        "primary": "Testni boshlash",
+        "secondary": "Maktabingiz uchun bog'lanish"
       }
     },
     "methodology": {

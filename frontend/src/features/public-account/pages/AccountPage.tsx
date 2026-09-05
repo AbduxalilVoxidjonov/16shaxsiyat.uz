@@ -1,0 +1,139 @@
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
+import { Plus } from 'lucide-react';
+import { usePageTitle } from '@/shared/hooks/usePageTitle';
+import { EmptyState, ErrorState, Skeleton } from '@/shared/ui';
+import { useToast } from '@/shared/ui/useToast';
+import { ROUTES } from '@/shared/config/routes';
+import { AppError } from '@/shared/api/AppError';
+import { usePublicSession, usePublicLogout } from '../api/usePublicSession';
+import { useMyAssessments } from '../api/useMyAssessments';
+import { useDeleteMyAccount } from '../api/useDeleteMyAccount';
+import { usePublicUserStore } from '../store/publicUserStore';
+import { ProfileCard } from '../components/ProfileCard';
+import { AssessmentHistoryList } from '../components/AssessmentHistoryList';
+import { DeleteAccountDialog } from '../components/DeleteAccountDialog';
+
+function HistorySkeleton() {
+  return (
+    <div className="flex flex-col gap-3" aria-hidden="true">
+      {[0, 1, 2].map((key) => (
+        <Skeleton key={key} className="h-24 w-full rounded-4xl bg-line/70" />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * `/kabinet` — ommaviy foydalanuvchining shaxsiy kabineti (`docs/07` §5).
+ *
+ * Profil (§5.1) + test tarixi (§5.2) + akkauntni o'chirish (§5.5). Guard (`PublicUserRoute`)
+ * bu sahifaga faqat kirgan foydalanuvchini kiritadi, shu sabab bu yerda `user` bor deb
+ * hisoblanadi — `null` bo'lsa ham sahifa yiqilmaydi (yuklanish holati ko'rsatiladi).
+ */
+export default function AccountPage() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const toast = useToast();
+
+  const { user } = usePublicSession();
+  const logout = usePublicLogout();
+  const clearSession = usePublicUserStore((state) => state.clear);
+  const assessmentsQuery = useMyAssessments();
+  const deleteAccount = useDeleteMyAccount();
+
+  const [isDeleteOpen, setDeleteOpen] = useState(false);
+  const [isLoggingOut, setLoggingOut] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | undefined>(undefined);
+
+  usePageTitle(t('account.home.title'));
+
+  async function handleLogout() {
+    setLoggingOut(true);
+    await logout();
+    navigate(ROUTES.marketing.home, { replace: true });
+  }
+
+  function handleDelete() {
+    setDeleteError(undefined);
+    deleteAccount.mutate(undefined, {
+      onSuccess: () => {
+        setDeleteOpen(false);
+        // Server tokenlarni bekor qildi — lokal holat ham darhol tozalanadi.
+        clearSession();
+        toast.show({ variant: 'success', title: t('account.delete.doneToast') });
+        navigate(ROUTES.marketing.home, { replace: true });
+      },
+      onError: (error) => {
+        setDeleteError(
+          error instanceof AppError ? error.message : t('account.delete.errorFallback'),
+        );
+      },
+    });
+  }
+
+  return (
+    <div className="wrap flex flex-col gap-8 py-12 sm:py-16">
+      {user ? (
+        <ProfileCard
+          user={user}
+          onLogout={() => void handleLogout()}
+          onDeleteRequest={() => {
+            setDeleteOpen(true);
+          }}
+          isLoggingOut={isLoggingOut}
+        />
+      ) : (
+        <Skeleton className="h-32 w-full rounded-4xl bg-line/70" />
+      )}
+
+      <section className="flex flex-col gap-5" aria-labelledby="account-history-heading">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2
+              id="account-history-heading"
+              className="font-display text-xl font-extrabold tracking-tight text-ink"
+            >
+              {t('account.history.heading')}
+            </h2>
+            <p className="mt-1 text-sm text-ink-soft">{t('account.history.lead')}</p>
+          </div>
+          <Link to={ROUTES.account.startTest} className="btn btn-md btn-primary shrink-0">
+            <Plus className="size-4" aria-hidden="true" />
+            {t('account.history.startCta')}
+          </Link>
+        </div>
+
+        {assessmentsQuery.isPending && <HistorySkeleton />}
+
+        {assessmentsQuery.isError && <ErrorState onRetry={() => void assessmentsQuery.refetch()} />}
+
+        {assessmentsQuery.isSuccess &&
+          (assessmentsQuery.data.items.length === 0 ? (
+            <EmptyState
+              title={t('account.history.emptyTitle')}
+              description={t('account.history.emptyDescription')}
+              action={
+                <Link to={ROUTES.account.startTest} className="btn btn-md btn-primary mt-3">
+                  {t('account.history.startCta')}
+                </Link>
+              }
+            />
+          ) : (
+            <AssessmentHistoryList items={assessmentsQuery.data.items} />
+          ))}
+      </section>
+
+      <DeleteAccountDialog
+        open={isDeleteOpen}
+        onClose={() => {
+          setDeleteOpen(false);
+        }}
+        onConfirm={handleDelete}
+        isDeleting={deleteAccount.isPending}
+        error={deleteError}
+      />
+    </div>
+  );
+}

@@ -1,12 +1,9 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Select, type SelectOption } from '@/shared/ui/Select';
+import type { BirthDateValue } from '@/shared/lib/birthDate';
+import { Select, type SelectOption } from './Select';
 
-export interface BirthDateValue {
-  day: string;
-  month: string;
-  year: string;
-}
+export type { BirthDateValue };
 
 export interface BirthDateSelectProps {
   value: BirthDateValue;

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { GirihStar, Logo } from '@/shared/ui/brand';
+import { usePublicSession } from '@/features/public-account/api/usePublicSession';
 import { CONTACT } from '@/shared/config/contact';
 import { ROUTES } from '@/shared/config/routes';
 import { cn } from '@/shared/lib/cn';
@@ -44,6 +45,16 @@ function isActivePath(pathname: string, to: string): boolean {
 function MarketingHeader() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
+  /*
+    Navigatsiya foydalanuvchi kirgan-kirmaganiga qarab ikki xil ko'rinadi (P47):
+    anonim — "Kirish" + "Testni boshlash" (`/kirish`), kirgan — "Kabinet" + "Testni
+    boshlash" (`/kabinet/test`). Sessiya holati `usePublicSession` orqali keladi va u
+    faqat `localStorage` dagi BELGI bo'lganda server so'rovini yuboradi.
+  */
+  const { isAuthenticated } = usePublicSession();
+  const accountLink = isAuthenticated ? ROUTES.account.home : ROUTES.account.login;
+  const accountLabel = isAuthenticated ? t('marketing.nav.account') : t('marketing.nav.login');
+  const startTestLink = isAuthenticated ? ROUTES.account.startTest : ROUTES.account.login;
   /*
     Mobil menyu holati QAYSI sahifada ochilgani bilan birga saqlanadi. Shu sabab boshqa
     sahifaga o'tilishi bilan (havola bosildimi yoki brauzerning "orqaga" tugmasimi — farqi
@@ -110,11 +121,11 @@ function MarketingHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link
-            to={ROUTES.marketing.contact}
-            className="btn btn-md btn-primary hidden sm:inline-flex"
-          >
-            {t('marketing.nav.cta')}
+          <Link to={accountLink} className="btn btn-md btn-ghost hidden sm:inline-flex">
+            {accountLabel}
+          </Link>
+          <Link to={startTestLink} className="btn btn-md btn-primary hidden sm:inline-flex">
+            {t('marketing.nav.startTest')}
           </Link>
           <button
             type="button"
@@ -165,8 +176,11 @@ function MarketingHeader() {
               {t(`marketing.nav.${item.key}`)}
             </Link>
           ))}
-          <Link to={ROUTES.marketing.contact} className="btn btn-lg btn-primary mt-4 w-full">
-            {t('marketing.nav.cta')}
+          <Link to={accountLink} className="btn btn-lg btn-ghost mt-4 w-full">
+            {accountLabel}
+          </Link>
+          <Link to={startTestLink} className="btn btn-lg btn-primary mt-2 w-full">
+            {t('marketing.nav.startTest')}
           </Link>
         </nav>
       </div>

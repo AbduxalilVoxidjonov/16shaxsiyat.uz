@@ -4,6 +4,7 @@ import { MarketingLayout } from '@/layouts/MarketingLayout';
 import { PublicLayout } from '@/layouts/PublicLayout';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import { ProtectedRoute } from '@/features/auth/ProtectedRoute';
+import { PublicUserRoute } from '@/features/public-account/PublicUserRoute';
 import { ROUTE_PATTERNS } from '@/shared/config/routes';
 import { RouteFallback } from './RouteFallback';
 import NotFoundPage from './NotFoundPage';
@@ -14,6 +15,16 @@ const MethodologyPage = lazy(() => import('@/features/marketing/pages/Methodolog
 const TypeDetailPage = lazy(() => import('@/features/marketing/pages/TypeDetailPage'));
 const AboutPage = lazy(() => import('@/features/marketing/pages/AboutPage'));
 const ContactPage = lazy(() => import('@/features/marketing/pages/ContactPage'));
+
+// Ommaviy foydalanuvchi kabineti (P47) — Telegram kirishi va maktabsiz test oqimi.
+// `MarketingLayout` ostida: bu sahifalar ham ommaviy saytning bir qismi (navigatsiya kerak),
+// test SAHIFALARINING o'zi esa baribir chalg'itmaydigan `PublicLayout` da qoladi.
+const PublicLoginPage = lazy(() => import('@/features/public-account/pages/PublicLoginPage'));
+const AccountPage = lazy(() => import('@/features/public-account/pages/AccountPage'));
+const AccountResultPage = lazy(() => import('@/features/public-account/pages/AccountResultPage'));
+const PublicRegistrationPage = lazy(
+  () => import('@/features/public-account/pages/PublicRegistrationPage'),
+);
 
 // Ommaviy oqim (docs/10, 3-bo'lim)
 const LandingPage = lazy(() => import('@/features/public-assessment/pages/LandingPage'));
@@ -68,6 +79,19 @@ const router = createBrowserRouter([
       { path: ROUTE_PATTERNS.marketing.type, element: withSuspense(TypeDetailPage) },
       { path: ROUTE_PATTERNS.marketing.about, element: withSuspense(AboutPage) },
       { path: ROUTE_PATTERNS.marketing.contact, element: withSuspense(ContactPage) },
+      { path: ROUTE_PATTERNS.account.login, element: withSuspense(PublicLoginPage) },
+      {
+        path: ROUTE_PATTERNS.account.home,
+        element: <PublicUserRoute>{withSuspense(AccountPage)}</PublicUserRoute>,
+      },
+      {
+        path: ROUTE_PATTERNS.account.startTest,
+        element: <PublicUserRoute>{withSuspense(PublicRegistrationPage)}</PublicUserRoute>,
+      },
+      {
+        path: ROUTE_PATTERNS.account.result,
+        element: <PublicUserRoute>{withSuspense(AccountResultPage)}</PublicUserRoute>,
+      },
     ],
   },
   {

@@ -20,17 +20,32 @@ describe('HomePage (ommaviy bosh sahifa)', () => {
     expect(headings[0]).toHaveTextContent(/asosli profil/);
   });
 
-  it("CTA'lar aloqa va metodika sahifalariga olib boradi (test havolasi YO'Q)", () => {
+  /*
+    P47 gacha bu test bosh sahifada testni boshlash havolasi BO'LMASLIGINI qo'riqlardi:
+    o'sha paytda testga faqat maktab havolasi (`/t/:slug`) orqali kirilardi. Platforma
+    hamma uchun ochilgach shart o'zgardi — endi asosiy CTA `/kirish` (Telegram) ga boradi.
+    Test o'chirilmadi, chunki uning IKKINCHI vazifasi hamon kuchda: bosh sahifa hech qachon
+    MAKTAB havolasini (`/t/...`) chiqarmaydi — u har maktabga xos va shaxsiy.
+  */
+  it("asosiy CTA kirish sahifasiga boradi, maktab havolasi (`/t/...`) chiqmaydi", () => {
     renderPage();
 
     const links = screen.getAllByRole('link');
     const hrefs = links.map((link) => link.getAttribute('href'));
 
-    expect(hrefs).toContain('/aloqa');
+    expect(hrefs).toContain('/kirish');
     expect(hrefs).toContain('/metodika');
-    // O'quvchi testga faqat maktab havolasi (`/t/:slug`) orqali kiradi — bosh sahifada
-    // testni boshlash havolasi bo'lmasligi kerak.
+    // Maktablar uchun so'rov yo'li ham saqlanib qoldi (endi ikkinchi darajali harakat).
+    expect(hrefs).toContain('/aloqa');
+    // Maktab havolasi shaxsiy — ommaviy sahifada hech qachon ko'rinmaydi.
     expect(hrefs.some((href) => href?.startsWith('/t/'))).toBe(false);
+  });
+
+  it("hero'dagi asosiy tugma 'Testni boshlash' deb nomlanadi (P47)", () => {
+    renderPage();
+
+    const [startCta] = screen.getAllByRole('link', { name: 'Testni boshlash' });
+    expect(startCta).toHaveAttribute('href', '/kirish');
   });
 
   it("namunaviy karta 'haqiqiy ma'lumot emas' deb belgilanadi", () => {

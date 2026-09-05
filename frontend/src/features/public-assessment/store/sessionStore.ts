@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { STORAGE_KEYS } from '@/shared/config/storageKeys';
+import { setSessionAdopter } from '@/shared/api/sessionToken';
 
 export interface SessionState {
   sessionToken: string | null;
@@ -53,3 +54,16 @@ export const useSessionStore = create<SessionState>()(
     { name: STORAGE_KEYS.session },
   ),
 );
+
+/**
+ * Maktabsiz (kabinet) sessiyasini qabul qilish — `shared/api/sessionToken.ts` dagi neytral
+ * uzatish nuqtasi. `features/public-account` `POST /api/me/sessions` bilan sessiya ochadi,
+ * lekin uni SHU store olib boradi; ikki feature bir-birini import qilmagani uchun
+ * (`docs/10` §2) bog'lanish shu ro'yxatdan o'tish orqali.
+ *
+ * Bu modul yuklanmagan bo'lsa uzatish `localStorage` orqali ketadi va store keyin
+ * hydration bilan xuddi shu holatga keladi — maktab oqimi uchun HECH NARSA o'zgarmaydi.
+ */
+setSessionAdopter(({ sessionToken, slug, assessmentId }) => {
+  useSessionStore.getState().setSession(sessionToken, slug, assessmentId);
+});

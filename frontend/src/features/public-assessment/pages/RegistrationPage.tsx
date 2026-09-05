@@ -4,7 +4,16 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { usePageTitle } from '@/shared/hooks/usePageTitle';
-import { Button, ErrorState, Input, Select, Skeleton } from '@/shared/ui';
+import {
+  BirthDateSelect,
+  Button,
+  ConsentBlock,
+  ErrorState,
+  Input,
+  PhoneField,
+  Select,
+  Skeleton,
+} from '@/shared/ui';
 import { useToast } from '@/shared/ui/useToast';
 import { ROUTES } from '@/shared/config/routes';
 import { AppError } from '@/shared/api/AppError';
@@ -14,10 +23,7 @@ import type { Gender, StartSessionRequestBody } from '@/shared/api/types';
 import { useSchoolInfo } from '../api/useSchoolInfo';
 import { useStartSession } from '../api/useStartSession';
 import { useSessionStore } from '../store/sessionStore';
-import { pickNextTestCode } from '../lib/nextTest';
-import { ConsentBlock } from '../components/ConsentBlock';
-import { PhoneField } from '../components/PhoneField';
-import { BirthDateSelect } from '../components/BirthDateSelect';
+import { pickNextTestCode } from '@/shared/lib/nextTest';
 import { publicButtonClass } from '../components/publicStyles';
 import {
   MAX_AGE,

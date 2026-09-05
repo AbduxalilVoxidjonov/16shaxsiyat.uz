@@ -1,23 +1,44 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
+import { usePublicUserStore } from '@/features/public-account/store/publicUserStore';
 import { MarketingLayout } from './MarketingLayout';
 
+/**
+ * P47 dan beri header ommaviy foydalanuvchi sessiyasini biladi (`usePublicSession`), shu
+ * sabab qatlam `QueryClientProvider` talab qiladi. Sessiya tiklash so'rovi FAQAT
+ * `localStorage` dagi belgi bo'lganda yuboriladi — bu testlarda belgi yo'q, ya'ni hech
+ * qanday tarmoq chaqiruvi bo'lmaydi (anonim holat).
+ */
 function renderLayout(initialPath = '/') {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <MemoryRouter initialEntries={[initialPath]}>
-      <Routes>
-        <Route element={<MarketingLayout />}>
-          <Route path="/" element={<p>Bosh sahifa mazmuni</p>} />
-          <Route path="/metodika" element={<p>Metodika mazmuni</p>} />
-        </Route>
-      </Routes>
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[initialPath]}>
+        <Routes>
+          <Route element={<MarketingLayout />}>
+            <Route path="/" element={<p>Bosh sahifa mazmuni</p>} />
+            <Route path="/metodika" element={<p>Metodika mazmuni</p>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 
 describe('MarketingLayout', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    usePublicUserStore.getState().clear();
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+    usePublicUserStore.getState().clear();
+  });
+
   it("mazmunga o'tish havolasi va `main` landmark beradi", () => {
     renderLayout();
 
@@ -82,6 +103,37 @@ describe('MarketingLayout', () => {
       'aria-expanded',
       'false',
     );
+  });
+
+  it("anonim foydalanuvchiga 'Kirish' va 'Testni boshlash' havolalari ko'rsatiladi (P47)", () => {
+    renderLayout();
+
+    // Ikkalasi ham `/kirish` ga boradi: kirmasdan turib test boshlab bo'lmaydi.
+    const [loginLink] = screen.getAllByRole('link', { name: 'Kirish' });
+    expect(loginLink).toHaveAttribute('href', '/kirish');
+    const [startLink] = screen.getAllByRole('link', { name: 'Testni boshlash' });
+    expect(startLink).toHaveAttribute('href', '/kirish');
+    expect(screen.queryByRole('link', { name: 'Kabinet' })).not.toBeInTheDocument();
+  });
+
+  it("kirgan foydalanuvchiga 'Kabinet' va anketa havolasi ko'rsatiladi (P47)", () => {
+    usePublicUserStore.getState().setSession('token-1', {
+      id: 'user-1',
+      username: 'alivali',
+      firstName: 'Ali',
+      lastName: 'Valiyev',
+      photoUrl: null,
+      createdAt: '2026-09-01T10:00:00Z',
+      lastLoginAt: '2026-09-05T10:00:00Z',
+    });
+
+    renderLayout();
+
+    const [accountLink] = screen.getAllByRole('link', { name: 'Kabinet' });
+    expect(accountLink).toHaveAttribute('href', '/kabinet');
+    const [startLink] = screen.getAllByRole('link', { name: 'Testni boshlash' });
+    expect(startLink).toHaveAttribute('href', '/kabinet/test');
+    expect(screen.queryByRole('link', { name: 'Kirish' })).not.toBeInTheDocument();
   });
 
   it("footer'da eslatma va joriy yil ko'rsatiladi", () => {

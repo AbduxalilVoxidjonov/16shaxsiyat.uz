@@ -24,5 +24,19 @@ export const env = {
    */
   apiBaseUrl: readEnv('VITE_API_BASE_URL'),
   appName: readEnv('VITE_APP_NAME', 'Shaxsiyat'),
+  /**
+   * Telegram Login Widget uchun bot nomi (`@`siz), masalan `shaxsiyat_login_bot`.
+   *
+   * **Bo'sh qoldirilishi mumkin** — bunda `/kirish` sahifasi oq ekran emas, "Telegram
+   * kirishi hozircha sozlanmagan" degan tushunarli holatni ko'rsatadi. Widget skripti
+   * bot nomisiz umuman ishlamaydi (Telegram `data-telegram-login` ni talab qiladi), shu
+   * sabab uni "bo'sh satr bilan" yuklashning ma'nosi yo'q.
+   *
+   * Server tomonda mos sozlama — `Telegram:BotToken` (`docs/07` §2a.1): u berilmasa
+   * `POST /api/auth/telegram` `503 TELEGRAM_AUTH_NOT_CONFIGURED` qaytaradi. Ikkalasi
+   * ALOHIDA sozlanadi, shu sabab frontend "bot nomi bor, lekin server sozlanmagan"
+   * holatini ham alohida xabar bilan ko'rsatadi.
+   */
+  telegramBot: readEnv('VITE_TELEGRAM_BOT'),
   sentryDsn: readEnv('VITE_SENTRY_DSN'),
 } as const;

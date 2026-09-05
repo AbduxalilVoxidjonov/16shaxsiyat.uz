@@ -20,6 +20,19 @@ export const ROUTES = {
     about: '/biz-haqimizda',
     contact: '/aloqa',
   },
+  /**
+   * Ommaviy foydalanuvchi kabineti (P47) — Telegram orqali kirgan tashqi foydalanuvchi
+   * uchun. Maktab oqimidan (`public`) MUSTAQIL: u yerda kirish ham, ro'yxatdan o'tish ham
+   * talab qilinmaydi, bu yerda esa hamma narsa JWT egaligiga tayanadi (`docs/07` §5).
+   */
+  account: {
+    login: '/kirish',
+    home: '/kabinet',
+    /** Maktabsiz test uchun anketa — `POST /api/me/sessions` (`docs/07` §5.4). */
+    startTest: '/kabinet/test',
+    /** Kabinetdagi arxiv natija — `GET /api/me/assessments/{id}/result` (`docs/07` §5.3). */
+    result: (assessmentId: string) => `/kabinet/natijalar/${assessmentId}`,
+  },
   public: {
     landing: (slug: string) => `/t/${slug}`,
     register: (slug: string) => `/t/${slug}/register`,
@@ -55,6 +68,12 @@ export const ROUTE_PATTERNS = {
     type: '/metodika/:kod',
     about: '/biz-haqimizda',
     contact: '/aloqa',
+  },
+  account: {
+    login: '/kirish',
+    home: '/kabinet',
+    startTest: '/kabinet/test',
+    result: '/kabinet/natijalar/:assessmentId',
   },
   public: {
     landing: '/t/:slug',

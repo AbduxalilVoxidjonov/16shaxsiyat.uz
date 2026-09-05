@@ -148,3 +148,30 @@ export type PublicTypeCatalog = components['schemas']['GetTypeCatalogResult'];
 
 /** Bitta shaxsiyat tipining ochiq tavsifi (`type_catalog` yozuvi) — `docs/07` 1.10-bo'lim. */
 export type PublicTypeCatalogItem = components['schemas']['PublicTypeCatalogItemDto'];
+
+/**
+ * Ommaviy foydalanuvchi kabineti (P47) — docs/07-api-shartnoma.md §2a va §5.
+ * Bu yerda ham qo'lda yozilgan DTO YO'Q — `schema.d.ts` dan re-export.
+ */
+
+/**
+ * `POST /api/auth/telegram` so'rov tanasi — Telegram Login Widget bergan obyekt
+ * **o'zgartirilmasdan** (kalitlar `snake_case`, chunki imzo aynan shu nomlardan
+ * hisoblangan — `docs/07` §2a.1).
+ */
+export type TelegramLoginRequestBody = components['schemas']['TelegramLoginRequest'];
+
+/** `POST /api/auth/telegram` javobi — `docs/07` §2a.1. `refreshToken` tanada HECH QACHON yo'q. */
+export type TelegramLoginResponse = components['schemas']['TelegramLoginResult'];
+
+/** Ommaviy foydalanuvchi profili (`GET /api/me`) — `docs/07` §5.1. `telegramId` qaytarilmaydi. */
+export type PublicUser = components['schemas']['PublicUserDto'];
+
+/** `GET /api/me/assessments` javobi — `docs/07` §5.2. Sahifalash yo'q. */
+export type MyAssessmentsResponse = components['schemas']['ListMyAssessmentsResult'];
+
+/** Kabinetdagi bitta test sessiyasi — `docs/07` §5.2. Ball/indeks/bayroq maydonlari YO'Q. */
+export type MyAssessment = components['schemas']['MyAssessmentDto'];
+
+/** `POST /api/me/sessions` so'rov tanasi — `docs/07` §5.4 (maktabsiz, `slug`/`accessToken`siz). */
+export type StartPublicSessionRequestBody = components['schemas']['StartPublicSessionRequest'];

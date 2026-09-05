@@ -70,7 +70,12 @@ export function HeroSection() {
           <p className="lead mt-6 max-w-xl">{t('marketing.home.hero.lead')}</p>
 
           <div className="mt-9 flex flex-wrap items-center gap-3">
-            <Link to={ROUTES.marketing.contact} className="btn btn-lg btn-primary">
+            {/*
+              P47: asosiy CTA endi HAQIQIY harakat — testni boshlash. Ilgari u ataylab
+              `/aloqa` ga borardi, chunki test faqat maktab havolasi (`/t/:slug`) orqali
+              ochilardi; endi tashqi foydalanuvchi Telegram orqali kirib o'zi topshiradi.
+            */}
+            <Link to={ROUTES.account.login} className="btn btn-lg btn-primary">
               {t('marketing.home.hero.primaryCta')}
             </Link>
             <Link to={ROUTES.marketing.methodology} className="btn btn-lg btn-ghost">

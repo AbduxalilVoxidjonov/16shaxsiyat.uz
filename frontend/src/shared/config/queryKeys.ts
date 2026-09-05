@@ -19,4 +19,15 @@ export const QUERY_KEYS = {
    * hamma uchun bir xil (ochiq marketing kontenti, sessiyaga bog'liq emas).
    */
   publicTypeCatalog: () => ['public', 'type-catalog'] as const,
+  /**
+   * `docs/07` §2a.2 + §5.1 — `features/public-account/api/usePublicSession.ts`. Sahifa
+   * yangilanganda sessiyani tiklash (refresh → `GET /api/me`) natijasi; parametrsiz, chunki
+   * bir vaqtda bitta ommaviy foydalanuvchi sessiyasi bo'ladi.
+   */
+  publicUserSession: () => ['public-user', 'session'] as const,
+  /** `docs/07` §5.2 — `features/public-account/api/useMyAssessments.ts`. */
+  publicUserAssessments: () => ['public-user', 'assessments'] as const,
+  /** `docs/07` §5.3 — `features/public-account/api/useMyAssessmentResult.ts`. */
+  publicUserAssessmentResult: (assessmentId: string) =>
+    ['public-user', 'assessment-result', assessmentId] as const,
 } as const;

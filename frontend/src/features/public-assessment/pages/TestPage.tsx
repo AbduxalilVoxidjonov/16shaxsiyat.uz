@@ -15,7 +15,7 @@ import { useAutosave } from '../hooks/useAutosave';
 import { useQuestionVisibility } from '../hooks/useQuestionVisibility';
 import { useSessionExpiredGuard } from '../hooks/useSessionExpiredGuard';
 import { useSessionStore } from '../store/sessionStore';
-import { pickNextTestCode } from '../lib/nextTest';
+import { pickNextTestCode } from '@/shared/lib/nextTest';
 import { LikertQuestion } from '../components/LikertQuestion';
 import { TestProgressHeader } from '../components/TestProgressHeader';
 import { SaveStatusIndicator } from '../components/SaveStatusIndicator';

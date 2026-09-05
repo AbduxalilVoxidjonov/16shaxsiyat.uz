@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { birthDateToIso, calculateAge, isValidCalendarDate } from '@/shared/lib/birthDate';
 
 /**
  * E-2 anketa validatsiyasi — `docs/11` E-2, `prompts/20`. Yosh oralig'i va F.I.Sh. uzunligi
@@ -12,24 +13,12 @@ export const MAX_AGE = 20;
 const MIN_FULLNAME_LENGTH = 5;
 const ACCESS_CODE_LENGTH = 6;
 
-function isValidCalendarDate(day: number, month: number, year: number): boolean {
-  const date = new Date(Date.UTC(year, month - 1, day));
-  return (
-    date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
-  );
-}
-
-/** Backend `StartSessionCommandValidator.IsAgeInRange` bilan bir xil algoritm. */
-export function calculateAge(birth: Date, now: Date): number {
-  let age = now.getUTCFullYear() - birth.getUTCFullYear();
-  const beforeBirthday =
-    now.getUTCMonth() < birth.getUTCMonth() ||
-    (now.getUTCMonth() === birth.getUTCMonth() && now.getUTCDate() < birth.getUTCDate());
-  if (beforeBirthday) {
-    age -= 1;
-  }
-  return age;
-}
+/**
+ * Sana hisobi endi `shared/lib/birthDate` da — ommaviy (maktabsiz) anketa bilan UMUMIY
+ * (yosh chegarasi farq qiladi, algoritm emas). Eski nomlar shu yerdan re-export qilinadi,
+ * chunki ular bu modulning ommaviy API'si bo'lib qolgan.
+ */
+export { calculateAge, birthDateToIso };
 
 const birthDateSchema = z
   .object({
@@ -126,8 +115,3 @@ export const REGISTRATION_DEFAULT_VALUES: RegistrationFormValues = {
   consentAccepted: false,
   accessCode: '',
 };
-
-/** RHF `birthDate` obyektini backend kutgan `YYYY-MM-DD` (`date`) satriga o'giradi. */
-export function birthDateToIso(value: RegistrationFormValues['birthDate']): string {
-  return `${value.year}-${value.month.padStart(2, '0')}-${value.day.padStart(2, '0')}`;
-}

@@ -36,14 +36,15 @@ export function CtaBandSection() {
           </h2>
           <p className="mt-5 text-lg leading-relaxed text-paper">{t('marketing.home.cta.text')}</p>
           <div className="mt-9 flex flex-wrap justify-center gap-3">
+            {/* P47: birinchi harakat — testni boshlash; maktablar uchun so'rov ikkinchi. */}
             <Link
-              to={ROUTES.marketing.contact}
+              to={ROUTES.account.login}
               className="btn btn-lg bg-paper text-ink hover:-translate-y-0.5 hover:bg-white"
             >
               {t('marketing.home.cta.primary')}
             </Link>
             <Link
-              to={ROUTES.marketing.methodology}
+              to={ROUTES.marketing.contact}
               className="btn btn-lg border border-white/25 text-paper hover:-translate-y-0.5 hover:bg-white/10"
             >
               {t('marketing.home.cta.secondary')}

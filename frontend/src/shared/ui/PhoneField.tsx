@@ -20,7 +20,7 @@ export interface PhoneFieldProps extends Omit<
  * tahrirlanadi, bu kursor/o'chirish xatti-harakatini oddiy va bashorat qilinadigan qiladi.
  *
  * Maydon chromi (`h-11 rounded-2xl border-ink-faint bg-paper-card`, xato — `terakota-600`,
- * fokus — `firuza-600`) ATAYLAB `shared/ui/Input` bilan BIR XIL yozilgan: bu komponent
+ * fokus — `firuza-600`) ATAYLAB `Input` bilan BIR XIL yozilgan: bu komponent
  * `<input>`ni `+998` prefiksi bilan o'rab turgani uchun `Input`ni qayta ishlata olmaydi,
  * lekin anketada ikkalasi yonma-yon turadi — chegara radiusi yoki xato rangi farq qilsa
  * darhol ko'zga tashlanadi. `Input` uslubi o'zgarsa, bu yer ham yangilanishi kerak.
