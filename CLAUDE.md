@@ -103,12 +103,12 @@ Git: har vazifa alohida `feat/PNN-*` branch va PR; `main` ga to'g'ridan-to'g'ri 
 
 ## Joriy holat
 
-`prompts/` bo'yicha bosqichma-bosqich quriladi. Bajarilgan promptlarni shu yerda belgilab bor:
+`prompts/` bo'yicha bosqichma-bosqich quriladi.
 
-- [ ] P01 solution · [ ] P02 domain · [ ] P03 persistence · [ ] P04 seed infra
-- [ ] P05–P08 savol banklari · [ ] P09 scoring
-- [ ] P10–P12 ommaviy API · [ ] P13–P15 admin API · [ ] P16–P18 AI modul
-- [ ] P19–P21 ommaviy UI · [ ] P22–P26 admin UI · [ ] P27–P29 eksport/sozlamalar
-- [ ] P30 E2E · [ ] P31 xavfsizlik · [ ] P32 deploy · [ ] P33 anketa konstruktori
-- [x] P45 ommaviy dizayn (16shaxsiyat.uz vizual tizimi frontendga ko'chirildi — yangi marketing
-  qatlami `/`, `/metodika`, `/biz-haqimizda`, `/aloqa`; `docs/10` §9, `PROGRESS.md`)
+**Holatning yagona manbai — `PROGRESS.md` jadvali.** Bu yerda nusxa saqlanmaydi: ilgari shu
+joyda checkbox ro'yxati turardi va u `PROGRESS.md` dan uzilib qolgan edi (hammasi `[ ]` deb
+turgan, aslida P01–P45 bajarilgan). Ikki joyda holat saqlash muqarrar ravishda chalkashlikka
+olib keladi, shuning uchun ro'yxat olib tashlandi.
+
+Joriy holat: **P01–P45 bajarilgan** (jumladan P33 anketa konstruktori, P34–P36 dastur modeli,
+P42 Excel import, P45 ommaviy dizayn). Tafsilot va ochiq risklar — `PROGRESS.md`.
