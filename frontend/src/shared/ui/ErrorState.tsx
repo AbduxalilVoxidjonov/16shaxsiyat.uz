@@ -18,13 +18,14 @@ export function ErrorState({ className, title, description, onRetry }: ErrorStat
     <div
       role="alert"
       className={cn(
-        'flex flex-col items-center gap-2 rounded-xl border border-danger-200 bg-danger-50 px-6 py-12 text-center',
+        'flex flex-col items-center gap-2 rounded-2xl border border-terakota-200 bg-terakota-50 px-6 py-12 text-center',
         className,
       )}
     >
-      <AlertTriangle className="text-danger-500" size={32} aria-hidden="true" />
-      <p className="text-base font-medium text-neutral-900">{title ?? t('error.title')}</p>
-      <p className="max-w-sm text-sm text-neutral-600">{description ?? t('error.generic')}</p>
+      {/* `terakota-600` (`-500` emas): `terakota-50` fonida 5.5:1 — belgi ham aniq ko'rinadi. */}
+      <AlertTriangle className="text-terakota-600" size={32} aria-hidden="true" />
+      <p className="font-display text-base font-bold text-ink">{title ?? t('error.title')}</p>
+      <p className="max-w-sm text-sm text-ink-soft">{description ?? t('error.generic')}</p>
       {onRetry && (
         <Button variant="outline" size="sm" onClick={onRetry} className="mt-2">
           {t('common.retry')}

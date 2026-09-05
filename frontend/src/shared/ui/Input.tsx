@@ -21,7 +21,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label htmlFor={inputId} className="text-sm font-medium text-neutral-700">
+        <label htmlFor={inputId} className="text-sm font-medium text-ink-soft">
           {label}
         </label>
       )}
@@ -29,11 +29,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         ref={ref}
         id={inputId}
         className={cn(
-          'h-11 rounded-lg border border-neutral-300 bg-white px-3 text-base text-neutral-900',
-          'placeholder:text-neutral-400',
-          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600',
-          'disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-neutral-400',
-          error && 'border-danger-500',
+          // Chegara `ink-faint` (#A79C91): `line-strong` (#DCD0BE) oq fonda atigi 1.52:1
+          // beradi va maydon chekkasi ko'rinmay qoladi. `ink-faint` 2.69:1 — WCAG 1.4.11
+          // (3:1) ga hali yetmaydi, lekin eski `neutral-300` (1.47:1) dan sezilarli yaxshi.
+          'h-11 rounded-2xl border border-ink-faint bg-paper-card px-3 text-base text-ink',
+          'placeholder:text-ink-muted',
+          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-firuza-600',
+          'disabled:cursor-not-allowed disabled:bg-paper-deep disabled:text-ink-faint',
+          error && 'border-terakota-600',
           className,
         )}
         aria-invalid={Boolean(error) || undefined}
@@ -41,12 +44,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         {...props}
       />
       {error && (
-        <p id={descriptionId} className="text-sm text-danger-600" role="alert">
+        <p id={descriptionId} className="text-sm text-terakota-700" role="alert">
           {error}
         </p>
       )}
       {!error && hint && (
-        <p id={descriptionId} className="text-sm text-neutral-500">
+        <p id={descriptionId} className="text-sm text-ink-soft">
           {hint}
         </p>
       )}

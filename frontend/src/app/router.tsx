@@ -1,11 +1,18 @@
 import { lazy, Suspense, type ComponentType, type ReactElement } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router';
+import { MarketingLayout } from '@/layouts/MarketingLayout';
 import { PublicLayout } from '@/layouts/PublicLayout';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import { ProtectedRoute } from '@/features/auth/ProtectedRoute';
 import { ROUTE_PATTERNS } from '@/shared/config/routes';
 import { RouteFallback } from './RouteFallback';
 import NotFoundPage from './NotFoundPage';
+
+// Ommaviy tanishtiruv sahifalari (P45) — test oqimidan alohida, `MarketingLayout` ostida
+const MarketingHomePage = lazy(() => import('@/features/marketing/pages/HomePage'));
+const MethodologyPage = lazy(() => import('@/features/marketing/pages/MethodologyPage'));
+const AboutPage = lazy(() => import('@/features/marketing/pages/AboutPage'));
+const ContactPage = lazy(() => import('@/features/marketing/pages/ContactPage'));
 
 // Ommaviy oqim (docs/10, 3-bo'lim)
 const LandingPage = lazy(() => import('@/features/public-assessment/pages/LandingPage'));
@@ -52,6 +59,15 @@ function withSuspense(Component: ComponentType): ReactElement {
 }
 
 const router = createBrowserRouter([
+  {
+    element: <MarketingLayout />,
+    children: [
+      { path: ROUTE_PATTERNS.marketing.home, element: withSuspense(MarketingHomePage) },
+      { path: ROUTE_PATTERNS.marketing.methodology, element: withSuspense(MethodologyPage) },
+      { path: ROUTE_PATTERNS.marketing.about, element: withSuspense(AboutPage) },
+      { path: ROUTE_PATTERNS.marketing.contact, element: withSuspense(ContactPage) },
+    ],
+  },
   {
     element: <PublicLayout />,
     children: [

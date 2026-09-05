@@ -20,34 +20,37 @@ import { cn } from '@/shared/lib/cn';
  */
 export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="relative w-full overflow-x-auto rounded-xl border border-neutral-200">
+    <div className="relative w-full overflow-x-auto rounded-2xl border border-line bg-paper-card">
       <table className={cn('w-full border-collapse text-left text-sm', className)} {...props} />
     </div>
   );
 }
 
 export function TableHeader({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
-  return <thead className={cn('bg-neutral-50', className)} {...props} />;
+  return <thead className={cn('bg-paper-deep', className)} {...props} />;
 }
 
 export function TableBody({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
-  return <tbody className={cn('divide-y divide-neutral-100', className)} {...props} />;
+  return <tbody className={cn('divide-y divide-line', className)} {...props} />;
 }
 
 export function TableRow({ className, ...props }: HTMLAttributes<HTMLTableRowElement>) {
-  return <tr className={cn('hover:bg-neutral-50', className)} {...props} />;
+  // Qator ustiga kelganda `firuza-50` (#EAF7F7): `paper` (#FBF8F3) oq fonda deyarli
+  // ko'rinmasdi, firuza tint esa brend rangida va aniq seziladi (matn kontrasti 16.54:1).
+  return <tr className={cn('hover:bg-firuza-50', className)} {...props} />;
 }
 
 export function TableHead({ className, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {
   return (
     <th
       scope="col"
-      className={cn('px-4 py-3 font-medium text-neutral-500', className)}
+      // `ink-muted` `paper-deep` fonida 4.15:1 — AA dan past, shu sabab `ink-soft` (8.59:1).
+      className={cn('px-4 py-3 font-semibold text-ink-soft', className)}
       {...props}
     />
   );
 }
 
 export function TableCell({ className, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn('px-4 py-3 text-neutral-900', className)} {...props} />;
+  return <td className={cn('px-4 py-3 text-ink', className)} {...props} />;
 }

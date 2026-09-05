@@ -13,7 +13,7 @@ export function Spinner({ className, size = 20 }: SpinnerProps) {
   return (
     <span role="status" className="inline-flex items-center gap-2">
       <Loader2
-        className={cn('animate-spin text-neutral-500', className)}
+        className={cn('animate-spin text-firuza-600', className)}
         size={size}
         aria-hidden="true"
       />

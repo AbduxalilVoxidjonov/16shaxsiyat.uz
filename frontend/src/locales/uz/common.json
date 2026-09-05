@@ -99,6 +99,24 @@
       "enableCta": "Yoqish",
       "disableCta": "O'chirish",
       "enableSuccess": "2FA muvaffaqiyatli yoqildi. Zaxira kodlarni xavfsiz joyda saqlang.",
+      "setupHeading": "1-qadam. QR kodni skanerlang",
+      "setupDescription": "Google Authenticator, Authy yoki shunga o'xshash ilovani oching va quyidagi QR kodni skanerlang.",
+      "qrAlt": "2FA sozlash uchun QR kod",
+      "manualHeading": "Skaner ishlamasa",
+      "manualDescription": "Ilovaga quyidagi maxfiy kalitni qo'lda kiriting.",
+      "copySecretCta": "Kalitdan nusxa olish",
+      "copySecretSuccess": "Maxfiy kalit nusxalandi.",
+      "confirmHeading": "2-qadam. Ilovadagi kodni kiriting",
+      "confirmDescription": "Ilova ko'rsatayotgan 6 xonali kodni kiriting — 2FA faqat shundan keyin yoqiladi.",
+      "codeLabel": "Tasdiqlash kodi",
+      "codePlaceholder": "123456",
+      "confirmCta": "Tasdiqlash",
+      "cancelSetupCta": "Bekor qilish",
+      "codeRequired": "6 xonali kodni kiriting.",
+      "codeInvalid": "Kod noto'g'ri. Ilovadagi joriy kodni kiriting va telefon soati to'g'riligini tekshiring.",
+      "enrollmentExpired": "Sozlash muddati tugadi. \"Yoqish\" tugmasini bosib QR kodni qaytadan oling.",
+      "enrollmentNotStarted": "Sozlash boshlanmagan. \"Yoqish\" tugmasini bosing.",
+      "pendingNotice": "2FA hali YOQILMAGAN — tasdiqlashni tugatmaguningizcha kirish avvalgidek ishlaydi.",
       "disableSuccess": "2FA o'chirildi.",
       "secretLabel": "Maxfiy kalit",
       "confirmDisableTitle": "2FA'ni o'chirishni tasdiqlang",
@@ -1467,6 +1485,7 @@
       "AuthLoginSucceeded": "Tizimga kirish (muvaffaqiyatli)",
       "AuthLoginFailed": "Tizimga kirish (muvaffaqiyatsiz)",
       "AuthPasswordChanged": "Parol o'zgartirildi",
+      "AuthTotpEnrollmentStarted": "2FA sozlash boshlandi",
       "AuthTotpEnabled": "2FA yoqildi",
       "AuthTotpDisabled": "2FA o'chirildi",
       "SecurityRefreshReuse": "Shubhali refresh token urinishi",
@@ -1639,6 +1658,389 @@
       "reliability": "Ishonchlilik",
       "emptyTitle": "Sessiya topilmadi",
       "emptyDescription": "Tanlangan filtrlarga mos sessiya yo'q. Filtrlarni o'zgartirib ko'ring."
+    }
+  },
+  "marketing": {
+    "nav": {
+      "home": "Bosh sahifa",
+      "methodology": "Metodika",
+      "about": "Biz haqimizda",
+      "contact": "Aloqa",
+      "primaryLabel": "Asosiy menyu",
+      "mobileLabel": "Mobil menyu",
+      "openMenu": "Menyuni ochish",
+      "closeMenu": "Menyuni yopish",
+      "cta": "Maktabingiz uchun"
+    },
+    "footer": {
+      "description": "Shaxsiyat — maktablar uchun mo'ljallangan o'quvchi profili platformasi. Test javoblari ballanadi, ishonchlilik jihatidan tekshiriladi va maktab uchun tushunarli hisobotga aylantiriladi.",
+      "sitemapHeading": "Sayt",
+      "contactHeading": "Bog'lanish",
+      "emailValue": "salom@16shaxsiyat.uz",
+      "telegramLabel": "Telegram kanal",
+      "ctaLabel": "Maktabingiz uchun so'rov",
+      "disclaimerLabel": "Eslatma:",
+      "disclaimer": "Platforma ta'limiy maqsadda ishlaydi va tibbiy yoki psixologik tashxis qo'ymaydi. Hisobot o'quvchini baholash yoki tanlab olish uchun rasmiy asos emas — u pedagog va psixolog uchun suhbat boshlash nuqtasi.",
+      "copyright": "© {{year}} Shaxsiyat. Barcha huquqlar himoyalangan."
+    },
+    "home": {
+      "title": "Maktablar uchun o'quvchi profili",
+      "hero": {
+        "badge": "Maktablar uchun",
+        "headingLead": "Har bir o'quvchi haqida",
+        "headingHighlight": "asosli profil",
+        "lead": "Maktab shaxsiy havola oladi, o'quvchi anketani to'ldirib to'rt blok testni yechadi. Tizim javoblarni belgilangan formulalar bo'yicha ballaydi, ishonchlilikni tekshiradi va tahlilni tayyorlaydi. Maktab rahbariyati har bir o'quvchining profilini bitta panelda ko'radi.",
+        "primaryCta": "Maktabingiz uchun so'rov",
+        "secondaryCta": "Metodikani ko'rish",
+        "trustListLabel": "Platforma qoidalari",
+        "trust": {
+          "link": "Test faqat maktab havolasi orqali ochiladi",
+          "rules": "Ballash qoidalari oldindan belgilangan",
+          "noDiagnosis": "Hisobot tashxis emas"
+        },
+        "sample": {
+          "eyebrow": "Namuna profil",
+          "student": "9-sinf o'quvchisi",
+          "reliability": "Ishonchlilik: yuqori",
+          "bars": {
+            "social": "Ijtimoiy faollik",
+            "openness": "Yangilikka ochiqlik",
+            "cooperation": "Hamkorlik",
+            "discipline": "Uyushqoqlik"
+          },
+          "note": "Bu — sahifani ko'rsatish uchun tuzilgan namunaviy ko'rsatkichlar, haqiqiy o'quvchi ma'lumoti emas."
+        },
+        "statsLabel": "Platforma raqamlarda",
+        "stats": {
+          "blocks": {
+            "value": "4",
+            "label": "blok test"
+          },
+          "link": {
+            "value": "1",
+            "label": "maktab uchun bitta havola"
+          },
+          "reliability": {
+            "value": "3",
+            "label": "ishonchlilik darajasi"
+          },
+          "privacy": {
+            "value": "0",
+            "label": "AI'ga yuboriladigan shaxsiy ma'lumot"
+          }
+        }
+      },
+      "steps": {
+        "eyebrow": "Qanday ishlaydi",
+        "heading": "Havoladan hisobotgacha to'rt qadam",
+        "lead": "Oqim maktab uchun ham, o'quvchi uchun ham sodda: qo'shimcha dastur o'rnatilmaydi, ro'yxatdan o'tish shakli uzun emas.",
+        "stepLabel": "Qadam {{number}}",
+        "items": {
+          "link": {
+            "title": "Maktab havola oladi",
+            "text": "Maktab tizimda ro'yxatdan o'tkaziladi va unga shaxsiy havola beriladi. Havolani sinf rahbari yoki psixolog tarqatadi; u ochiq qidiruvdan topilmaydi."
+          },
+          "form": {
+            "title": "O'quvchi anketani to'ldiradi",
+            "text": "Faqat zarur ma'lumot so'raladi: ism, sinf, yosh va jins. Ortiqcha ma'lumot yig'ilmaydi."
+          },
+          "tests": {
+            "title": "To'rt blok test yechiladi",
+            "text": "Bloklar ketma-ket yechiladi. O'quvchi to'xtatib qo'ysa, keyinroq o'sha joydan davom ettira oladi."
+          },
+          "analysis": {
+            "title": "Tizim ballaydi va tahlil qiladi",
+            "text": "Javoblar belgilangan formulalar bo'yicha ballanadi, ishonchlilik nazoratidan o'tadi, so'ng AI ballarni izohlab hisobot tayyorlaydi."
+          }
+        }
+      },
+      "benefits": {
+        "eyebrow": "Maktabga nima beradi",
+        "heading": "Baho jurnalida ko'rinmaydigan tomon",
+        "lead": "Profil o'quvchini tasniflash uchun emas, u haqida to'g'ri savol berishni osonlashtirish uchun kerak.",
+        "items": {
+          "overview": {
+            "title": "Barcha natija bir joyda",
+            "text": "Maktabdagi har bir sessiya, uning holati va yakuniy profil admin panelda bitta ro'yxatda ko'rinadi."
+          },
+          "classes": {
+            "title": "Sinf kesimida ko'rish",
+            "text": "Natijalarni sinf, yosh va jins bo'yicha filtrlab, alohida o'quvchini ham, umumiy manzarani ham ko'rish mumkin."
+          },
+          "reliability": {
+            "title": "Beparvo to'ldirilgan anketa ajratiladi",
+            "text": "Javoblarning ichki mos kelishi va naqshi tekshiriladi; shubhali sessiya alohida belgilanadi."
+          },
+          "psychologist": {
+            "title": "Psixolog uchun tayyor material",
+            "text": "Hisobot suhbatga kirish nuqtasi beradi: nimani so'rash va nimaga e'tibor berish kerakligini ko'rsatadi."
+          },
+          "parents": {
+            "title": "Ota-ona bilan suhbat tili",
+            "text": "Umumiy so'zlar o'rniga aniq ko'rsatkichlar — bu suhbatni bahsdan hamkorlikka o'tkazadi."
+          },
+          "privacy": {
+            "title": "Ma'lumot maxfiyligi",
+            "text": "Tahlil uchun AI'ga ism, telefon, maktab nomi va aniq tug'ilgan sana yuborilmaydi — faqat yosh, sinf, jins va ballar."
+          }
+        }
+      },
+      "method": {
+        "eyebrow": "Metodika",
+        "heading": "To'rt blok, bitta profil",
+        "lead": "Har bir blok mustaqil ballanadi va o'z savol bankiga ega. Birgalikda ular o'quvchining uslubi, xarakteri, qiziqishi va o'quv faolligini ko'rsatadi.",
+        "cta": "Metodikani to'liq o'qish",
+        "items": {
+          "style": {
+            "title": "Shaxsiyat uslubi",
+            "text": "Fikrlash, muloqot va qaror qabul qilish uslubi bo'yicha ko'rsatkichlar."
+          },
+          "fiveFactor": {
+            "title": "Besh omil",
+            "text": "Xarakterning ilmiy adabiyotda keng qo'llanadigan beshta keng omili bo'yicha profil."
+          },
+          "interests": {
+            "title": "Kasb qiziqishlari",
+            "text": "Qaysi faoliyat yo'nalishlari o'quvchini ko'proq qiziqtirishi."
+          },
+          "activity": {
+            "title": "O'quv faolligi va motivatsiya",
+            "text": "O'qishga munosabat, uyushqoqlik va ichki turtki ko'rsatkichlari."
+          }
+        }
+      },
+      "faq": {
+        "eyebrow": "Savol-javob",
+        "heading": "Ko'p beriladigan savollar",
+        "lead": "Javobini topa olmadingizmi? Bizga yozing — imkon qadar tez javob beramiz.",
+        "items": {
+          "grade": {
+            "q": "Bu test bahomi?",
+            "a": "Yo'q. Bu yerda to'g'ri yoki noto'g'ri javob yo'q. Ball o'quvchining o'zini qanday tasvirlaganini ko'rsatadi, bilim darajasini emas."
+          },
+          "diagnosis": {
+            "q": "Hisobot tashxis o'rnini bosadimi?",
+            "a": "Yo'q. Platforma tibbiy yoki psixologik tashxis qo'ymaydi. Ruhiy holat bilan bog'liq jiddiy tashvish bo'lsa, mutaxassisga murojaat qilish kerak."
+          },
+          "access": {
+            "q": "Testni kim boshlashi mumkin?",
+            "a": "Faqat maktab bergan havola orqali kirgan o'quvchi. Havolasiz test ochilmaydi va saytdan test topib bo'lmaydi."
+          },
+          "data": {
+            "q": "Ma'lumotlar qayerda saqlanadi?",
+            "a": "Javoblar va profillar maktabga biriktirilgan holda serverda saqlanadi hamda faqat vakolatli hisob orqali ko'riladi."
+          },
+          "ai": {
+            "q": "AI nima qiladi?",
+            "a": "AI ball hisoblamaydi. U tayyor ballarni o'qib, ularni tushunarli matnga aylantiradi; tashxis atamalari promptda taqiqlangan va javob qo'shimcha filtrdan o'tkaziladi."
+          },
+          "duration": {
+            "q": "Qancha vaqt oladi?",
+            "a": "Bloklar alohida yechiladi va orasida tanaffus qilish mumkin — o'quvchi hammasini bir o'tirishda tugatishi shart emas."
+          },
+          "change": {
+            "q": "Natija vaqt o'tishi bilan o'zgaradimi?",
+            "a": "O'zgarishi mumkin. Chegaraga yaqin ko'rsatkichlar yosh va tajriba bilan siljiydi, shuning uchun profil bir marta chiqarilgan hukm sifatida qaralmaydi."
+          }
+        }
+      },
+      "cta": {
+        "eyebrow": "Maktabingiz uchun",
+        "heading": "Platformani maktabingizda ko'rib chiqing",
+        "text": "Havola, sozlash va namunaviy hisobot bo'yicha bog'laning — qanday ishlashini birga ko'rib chiqamiz.",
+        "primary": "Bog'lanish",
+        "secondary": "Metodikani o'qish"
+      }
+    },
+    "methodology": {
+      "title": "Metodika",
+      "hero": {
+        "eyebrow": "Metodika",
+        "heading": "Platforma nimani va qanday o'lchaydi",
+        "lead": "O'quvchi to'rt blokdan iborat anketani yechadi. Har blok mustaqil ballanadi; natijalar birgalikda bitta profilni hosil qiladi."
+      },
+      "blocks": {
+        "measuresLabel": "Nimani o'lchaydi",
+        "scoringLabel": "Qanday ballanadi",
+        "supportingChip": "Yordamchi blok",
+        "items": {
+          "style": {
+            "title": "Shaxsiyat uslubi",
+            "question": "O'quvchi qanday fikrlaydi va qaror qabul qiladi?",
+            "measures": "Diqqat yo'nalishi, ma'lumotni qabul qilish, qaror qabul qilish va ishni tashkil qilish uslubi bo'yicha ko'rsatkichlar.",
+            "scoring": "Har bir o'lcham uchun bir nechta bayonot beriladi; ularning yarmi teskari kalitlangan — rozilik qarama-qarshi tomonga hisoblanadi. Bu bir xil javob berishga moyillikni kamaytiradi."
+          },
+          "fiveFactor": {
+            "title": "Besh omil",
+            "question": "Xarakterning keng qirralari qanday taqsimlangan?",
+            "measures": "Ilmiy adabiyotda keng qo'llanadigan beshta keng omil bo'yicha ko'rsatkich.",
+            "scoring": "Har omil o'z bayonotlari yig'indisi sifatida hisoblanadi va taqqoslash uchun 0 dan 100 gacha bo'lgan ko'rsatkichga keltiriladi."
+          },
+          "interests": {
+            "title": "Kasb qiziqishlari",
+            "question": "Qanday faoliyat o'quvchini ko'proq tortadi?",
+            "measures": "Faoliyat yo'nalishlari bo'yicha qiziqish darajasi.",
+            "scoring": "Yo'nalishlar ballari o'zaro taqqoslanadi va eng yuqori bir nechtasi profilda ko'rsatiladi. Qiziqish qobiliyat bilan tenglashtirilmaydi."
+          },
+          "activity": {
+            "title": "O'quv faolligi va motivatsiya",
+            "question": "O'qishga munosabat qanday?",
+            "measures": "Uyushqoqlik, o'z-o'zini tashkil qilish va ichki turtki ko'rsatkichlari.",
+            "scoring": "Bu blok shaxsiyat profilini o'zgartirmaydi — u qolgan uch blok natijasini qanday o'qish kerakligini aniqlashtiradi."
+          }
+        }
+      },
+      "reliability": {
+        "eyebrow": "Ishonchlilik nazorati",
+        "heading": "Har bir sessiya tekshiriladi",
+        "lead": "Beparvo yoki shoshib to'ldirilgan anketa natijani buzadi. Shuning uchun profil chiqarilishidan oldin javoblar bir necha mezon bo'yicha tekshiriladi.",
+        "checks": {
+          "consistency": {
+            "title": "Ichki mos kelish",
+            "text": "Bir xil o'lchamni turli tomondan so'raydigan bayonotlarga berilgan javoblar solishtiriladi."
+          },
+          "pattern": {
+            "title": "Javob naqshi",
+            "text": "Ketma-ket bir xil variantni tanlash yoki tasodifiy sakrash alohida qayd etiladi."
+          },
+          "pace": {
+            "title": "Javob tezligi",
+            "text": "Savolni o'qishga yetmaydigan darajada tez berilgan javoblar belgilab qo'yiladi."
+          }
+        },
+        "statusesHeading": "Sessiya uchta belgidan birini oladi",
+        "statuses": {
+          "reliable": {
+            "label": "Ishonchli",
+            "text": "Natija odatdagidek o'qiladi."
+          },
+          "questionable": {
+            "label": "Shubhali",
+            "text": "Natija ehtiyotkorlik bilan o'qiladi; suhbatda aniqlashtirish tavsiya etiladi."
+          },
+          "unreliable": {
+            "label": "Ishonchsiz",
+            "text": "Natija profil sifatida ishlatilmaydi; testni qayta yechish taklif qilinadi."
+          }
+        }
+      },
+      "ai": {
+        "eyebrow": "AI tahlil",
+        "heading": "AI qayerda ishlaydi, qayerda ishlamaydi",
+        "lead": "AI hisob-kitobga aralashmaydi. Uning vazifasi — tayyor ballarni pedagog va ota-ona o'qiy oladigan matnga aylantirish.",
+        "items": {
+          "scoring": {
+            "title": "Ball hisoblamaydi",
+            "text": "Barcha ballar oldindan belgilangan formulalar bo'yicha serverda hisoblanadi; AI tayyor raqamlarni oladi."
+          },
+          "privacy": {
+            "title": "Shaxsiy ma'lumot olmaydi",
+            "text": "So'rovga ism, telefon, maktab nomi va aniq tug'ilgan sana kiritilmaydi — faqat yosh, sinf, jins va ballar."
+          },
+          "noDiagnosis": {
+            "title": "Tashxis qo'ymaydi",
+            "text": "Klinik atamalar promptda taqiqlangan, javob esa qo'shimcha filtrdan o'tkaziladi."
+          },
+          "human": {
+            "title": "Odam o'rnini bosmaydi",
+            "text": "Hisobotni psixolog yoki sinf rahbari o'qiydi; yakuniy xulosani odam chiqaradi."
+          }
+        }
+      },
+      "notes": {
+        "percent": {
+          "title": "Foizlar nimani bildiradi",
+          "text": "Har bir ko'rsatkich 0 dan 100 gacha beriladi. 50 ga yaqin qiymat ikkala qutb ham deyarli teng ifodalanganini, chekkadagi qiymat esa aniq ustunlikni bildiradi."
+        },
+        "border": {
+          "title": "Chegaraga yaqin natija",
+          "text": "45–55 oralig'idagi ko'rsatkichni yagona xulosa uchun asos qilib olmang: bunday holatda ikkala tavsifni ham o'qib chiqish to'g'riroq."
+        },
+        "repeat": {
+          "title": "Qayta yechish",
+          "text": "Profil o'zgarmas emas. Bir necha oydan keyin qayta yechish o'quvchidagi siljishni ko'rsatadi."
+        }
+      },
+      "disclaimer": {
+        "title": "Cheklovlar haqida ochiq gap",
+        "text": "Bu klinik vosita emas. Natija tibbiy yoki psixiatrik tashxis o'rnini bosmaydi va o'quvchini tanlab olish, sinfga taqsimlash yoki baholash uchun rasmiy asos bo'la olmaydi. U pedagog va psixologga o'quvchini yaxshiroq tushunish uchun qo'shimcha ma'lumot beradi, xolos."
+      },
+      "cta": {
+        "heading": "Metodika bo'yicha savolingiz bormi?",
+        "text": "Formulalar, savol banklari va hisobot ko'rinishi bo'yicha batafsil ma'lumot beramiz.",
+        "action": "Bog'lanish"
+      }
+    },
+    "about": {
+      "title": "Biz haqimizda",
+      "hero": {
+        "eyebrow": "Loyiha haqida",
+        "heading": "Maktabga o'quvchini yaxshiroq tushunish uchun asbob",
+        "lead": "Shaxsiyat — o'quvchi profilini yig'ish, ballash va tushunarli hisobotga aylantirish uchun qurilgan platforma."
+      },
+      "body": {
+        "p1": "Maktabda o'quvchi haqida ko'p narsa baho jurnalidan ko'rinadi. Lekin uning nimadan charchashi, qanday muhitda ochilishi va nimaga qiziqishi ko'pincha ko'rinmay qoladi — aynan shu ma'lumot pedagogga kundalik ishda kerak bo'ladi.",
+        "p2": "Biz shu bo'shliqni to'ldirishga harakat qildik: o'quvchi bir marta anketani to'ldiradi, tizim javoblarni bir xil qoidalar bo'yicha ballaydi va natijani maktab uchun bitta joyda ko'rsatadi. Barcha savollar va hisobot matnlari o'zbek tilida yozilgan.",
+        "p3": "Platforma o'quvchini tasniflash uchun emas, u haqida to'g'ri savol berishni osonlashtirish uchun mo'ljallangan."
+      },
+      "methodHeading": "Metodika haqida ochiq gap",
+      "methodBody": {
+        "p1": "Anketa to'rt blokdan iborat va har blok o'z ballash qoidasiga ega. Qoidalar oldindan yozilgan, hujjatlashtirilgan va sessiyadan sessiyaga o'zgarmaydi — shu sabab natijalarni bir-biri bilan taqqoslash mumkin.",
+        "p2": "Ayni paytda ochiq aytamiz: bu klinik vosita emas va tashxis qo'ymaydi. Natija o'quvchiga yorliq yopishtirish uchun emas, u bilan suhbatni boshlash uchun ishlatiladi."
+      },
+      "principles": {
+        "language": {
+          "title": "Ona tilida",
+          "text": "Savollar ham, hisobotlar ham tarjima emas — o'zbek tilida o'ylab yozilgan."
+        },
+        "rules": {
+          "title": "Qoidalar ochiq",
+          "text": "Ball qanday hisoblanishi hujjatlashtirilgan; natija «qora quti» emas."
+        },
+        "privacy": {
+          "title": "Kerakli ma'lumotgina",
+          "text": "Anketa faqat tahlil uchun zarur maydonlarni so'raydi, AI'ga esa shaxsiy ma'lumot umuman yuborilmaydi."
+        },
+        "noLabels": {
+          "title": "Yorliqsiz",
+          "text": "Hech bir profil boshqasidan ustun emas. Hisobotda kuchli tomon ham, cheklov ham bir xil ochiqlik bilan yoziladi."
+        }
+      },
+      "cta": {
+        "heading": "Maktabingiz uchun ko'rib chiqmoqchimisiz?",
+        "text": "Havola, sozlash va namunaviy hisobotni ko'rsatamiz.",
+        "action": "Bog'lanish"
+      }
+    },
+    "contact": {
+      "title": "Aloqa",
+      "hero": {
+        "eyebrow": "Aloqa",
+        "heading": "Bizga yozing",
+        "lead": "Har bir xabar o'qiladi. Odatda bir-ikki ish kuni ichida javob beramiz."
+      },
+      "channels": {
+        "email": {
+          "title": "Elektron pochta",
+          "value": "salom@16shaxsiyat.uz",
+          "text": "Maktablar uchun ulanish, hujjatlar va hamkorlik takliflari."
+        },
+        "telegram": {
+          "title": "Telegram",
+          "value": "@16shaxsiyat",
+          "text": "Yangilanishlar va qisqa savollar uchun tezkor kanal."
+        }
+      },
+      "topics": {
+        "heading": "Ko'p yoziladigan mavzular",
+        "items": {
+          "pilot": "Maktabimizda sinov o'tkazmoqchimiz",
+          "methodology": "Metodika va ballash bo'yicha savol",
+          "report": "Hisobot ko'rinishi va eksport",
+          "technical": "Texnik nosozlik yuz berdi"
+        }
+      },
+      "note": "Iltimos, xabarda o'quvchilarning shaxsiy ma'lumotlarini (ism-familiya ro'yxatlari, telefon raqamlari va shunga o'xshash) yubormang — ular bizga kerak emas."
     }
   }
 }

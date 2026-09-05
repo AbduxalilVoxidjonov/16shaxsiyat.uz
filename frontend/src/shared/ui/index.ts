@@ -1,4 +1,6 @@
 export * from './Badge';
+// Ommaviy sahifalarning brend/dekor elementlari (P45)
+export * from './brand';
 export * from './Button';
 export * from './Card';
 export * from './Checkbox';

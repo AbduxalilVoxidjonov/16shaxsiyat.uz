@@ -7,6 +7,9 @@ Foydalanuvchiga ko'rinadigan nom — **Shaxsiyat** (`16shaxsiyat.uz`). Sarlavha,
 
 Tag-line (landing sahifada, ixtiyoriy): *"O'zingni bilib, yo'lingni tanla"*.
 
+Til: hozircha faqat o'zbekcha (lotin) ko'rinadi — til almashtirgich UI'da yo'q, `ru`
+tarjimasi bo'sh skelet (`fallbackLng: 'uz'` hammasini o'zbekchaga qaytaradi).
+
 ---
 
 ## 1. Dizayn prinsiplari
@@ -29,6 +32,20 @@ Tag-line (landing sahifada, ixtiyoriy): *"O'zingni bilib, yo'lingni tanla"*.
 
 Diagramma ranglari **ball darajasini bildirmaydi** (past ball "yomon" emas) — bir xil neytral
 palitra, faqat farqlash uchun.
+
+> **P45 (2026-09-05) — token nomlari.** Yuqoridagi jadval semantik ROLLARni tavsiflaydi, ular
+> hamon amal qiladi; **konkret token nomlari** endi ikkiga bo'lingan (`docs/10` §9.1):
+> - **Admin panel** (bo'lim 3) va `shared/ui` — eski tokenlar: `primary-*` (asosiy),
+>   `success-*` (muvaffaqiyat), `warning-*` (ogohlantirish), `danger-*` (xavf), `neutral-*`.
+> - **Ommaviy sahifalar** (bo'lim 2, 2a) — yangi qog'oz-siyoh palitra: `paper`/`paper-deep`/
+>   `paper-card` (fon), `ink`/`ink-soft`/`ink-muted`/`ink-faint` (matn), `line`/`line-strong`
+>   (chegara), `firuza-*` (asosiy — CTA, faol holat), `binafsha-*` (masalan Likert savolida
+>   "rad" qutbi), `zumrad-*`/`lojuvard-*`/`zarhal-*`/`terakota-*` (dekorativ/urg'u aksentlari,
+>   masalan natija ekranidagi "AI tashxis qo'ymaydi" izohi `zarhal` rangda).
+>
+> Ikkalasi ham "diagramma/rang ball darajasini bildirmaydi" qoidasiga bo'ysunadi — yangi
+> palitrada ham `LikertQuestion` doiralarining rangi rozilik/rad QUTBINI ko'rsatadi, ball
+> "yaxshi/yomon"ligini emas.
 
 ---
 
@@ -71,20 +88,24 @@ palitra, faqat farqlash uchun.
 │ ████████████░░░░░░░░░░░  24/60 savol         │
 ├──────────────────────────────────────────────┤
 │                                              │
-│  11. Yangi odamlar bilan tanishish menga     │
-│      oson.                                   │
+│         11. Yangi odamlar bilan tanishish    │
+│             menga oson.                      │
 │                                              │
-│  ( Umuman qo'shilmayman )                    │
-│  ( Qo'shilmayman        )                    │
-│  ( Bilmadim             )                    │
-│  ( Qo'shilaman          )   ✓                │
-│  ( To'liq qo'shilaman   )                    │
+│   ◔      ◕      ⬤      ◕      ◔             │  ← doiralar chetdan
+│  Umuman qo'shilmayman     To'liq qo'shilaman │     markazga kichrayadi
 │                                              │
 │  12. …                                       │
 ├──────────────────────────────────────────────┤
 │  ← Orqaga                    Keyingi →       │  ← sticky footer
 └──────────────────────────────────────────────┘
 ```
+- **Ko'rinish shkala turiga moslashadi** (`LikertQuestion`, P45 — `docs/10` §4.3): 4+ darajali
+  shkala (`Likert7`/`Likert5`) — chetdan markazga kichrayuvchi doiralar qatori (yuqoridagi
+  maket), ostida faqat ikki qutb yorlig'i; 3 va undan kam daraja (`Binary`) — markazlashgan
+  yirik doiralar, har birining OSTIDA o'z yorlig'i; `options[]` bilan keladigan savol
+  (`SingleChoice`/`ForcedChoice`) — doira EMAS, vertikal variant KARTALARI.
+- Klaviatura: `1..9` raqamlari mos variantni tanlaydi (doira/karta soniga qarab), `Enter`
+  keyingi savolga o'tadi.
 - Javob tanlanganda yumshoq animatsiya, avtomatik keyingi savolga scroll (oxirgi savolda emas).
 - To'ldirilmagan savol bo'lsa "Keyingi" bosilganda birinchi bo'shiga scroll + qizil ramka.
 - Yuqorida kichkina "Saqlandi ✓" indikatori (autosave holati).
@@ -102,11 +123,68 @@ palitra, faqat farqlash uchun.
 - Ruxsat berilmagan bo'lsa: "Natijalar maktab psixologiga yuboriladi."
 
 ### E-6 Qisqa natija (`/t/:slug/result`)
-- Tip kartasi: harflar, o'zbekcha nom, 2 jumlalik tavsif.
-- 3 ta kuchli tomon.
-- 3 ta mos yo'nalish.
-- Pastda: "Bu tashxis emas — bu hozirgi holating surati. To'liq tahlil maktabingizda."
+- Tip kartasi: harflar (gradient firuza emblema ustida), o'zbekcha nom, qisqa tavsif.
+- Kuchli tomonlar ro'yxati (mavjud bo'lsa).
+- Mos yo'nalishlar — chip ro'yxati (mavjud bo'lsa).
+- Pastda doim ko'rinadigan eslatma: "AI tashxis qo'ymaydi" (CLAUDE.md 6-qoida).
+- **Diagramma/foiz/progress-bar ATAYLAB YO'Q** (P45, `docs/10` §9.8) — `GET /sessions/result`
+  ball yoki o'lcham qaytarmaydi, mavjud bo'lmagan ma'lumotni "chizib qo'yish" soxta xulosa
+  bo'lardi. Uch holat, uchalasi ham "kartasiz", qizil xato ko'rinishisiz (odatiy oqim):
+  - **Tayyor** — to'liq natija kartasi yuqoridagi tavsif bilan.
+  - **Tayyorlanmoqda** (`202`) — aylanuvchi girih nishoni + "Qayta urinish" tugmasi.
+  - **Ko'rsatilmaydi** (`403`, `App:ShowResultToStudent=false` — **standart sozlama**, xato
+    EMAS) — xushmuomala tushuntirish: "Natijalar maktab psixologiga yuboriladi".
 - **Ko'rsatilmaydi:** aktivlik ballari, `NeedsAttention`, xom ballar, to'liq AI hisobot.
+
+---
+
+## 2a. Ommaviy tanishtiruv (marketing) sahifalari — P45
+
+Auditoriya — maktab rahbarlari, psixologlar, ota-onalar (o'quvchi EMAS). Bu sahifalar
+(`MarketingLayout`, `docs/10` §9.5) test oqimidan (bo'lim 2) ATAYLAB mustaqil — sessiyaga
+umuman bog'liq emas va **testni boshlash tugmasi yo'q**: o'quvchi testga faqat maktab
+bergan havola (`/t/:slug`) orqali kiradi. Barcha CTA `/aloqa` yoki `/metodika`ga olib boradi.
+
+Umumiy chrome: sticky header (sahifa boshida shaffof, pastga siljiganda qog'oz fon +
+blur bilan ajraladi) to'liq navigatsiya va mobilda to'liq ekranli menyu bilan; katta,
+girih naqshli footer — sayt xaritasi, aloqa kanallari va "AI tashxis qo'ymaydi" eslatmasi
+(CLAUDE.md 6-qoida) har sahifada ko'rinadi.
+
+### M-1 Bosh sahifa (`/`)
+Bo'limlar ketma-ketligi: kim uchun → qanday ishlaydi → nimani o'lchaydi → maktabga nima
+beradi → savol-javob → yakuniy taklif.
+- **Hero:** katta va'da sarlavhasi, qisqa tavsif, ikkita CTA (**"Maktabingiz uchun so'rov"**
+  → `/aloqa`, **"Metodikani ko'rish"** → `/metodika`), ishonch ro'yxati (test faqat maktab
+  havolasi orqali ochiladi / ballash qoidalari oldindan belgilangan / hisobot tashxis emas)
+  va namunaviy profil kartasi — aniq izoh bilan: **"bu — sahifani ko'rsatish uchun tuzilgan
+  namunaviy ko'rsatkichlar, haqiqiy o'quvchi ma'lumoti emas"**.
+- **Qanday ishlaydi:** to'rt qadamli tartiblangan ro'yxat (havola → anketa+test → tahlil →
+  hisobot).
+- **Nimani o'lchaydi:** 4 blok metodika qisqacha (16 tipli model, Big Five, RIASEC, Aktivlik)
+  — atama darajasida, savol/natija namunasisiz.
+- **Nega tanlash kerak:** maktabga beriladigan foyda (bitta panel, standartlashtirilgan
+  ballash, ishonchlilik tekshiruvi).
+- **FAQ:** `<details>`/`<summary>` akkordeoni (JS holatisiz, brauzer o'zi boshqaradi).
+- **Yakuniy CTA band.**
+
+### M-2 Metodika (`/metodika`)
+- 4 blok metodikaning batafsilroq tavsifi.
+- Ishonchlilik darajalari — bo'lim 1dagi rang ohangi bilan mos (`Reliable`/`Questionable`/
+  `Unreliable` tushunchalari, lekin bu yerda umumiy tushuntirish, individual natija emas).
+- AI tahlil qanday ishlashi (provayder-agnostik, shaxsiy ma'lumot yuborilmasligi — CLAUDE.md
+  5-qoida) oddiy tilda tushuntiriladi.
+
+### M-3 Biz haqimizda (`/biz-haqimizda`)
+- Missiya va yondashuv haqida qisqa matn (jamoa/rivojlanish tarixi emas — MVP bosqichida
+  loyiha yosh).
+
+### M-4 Aloqa (`/aloqa`)
+- Ikki aloqa kanali karta ko'rinishida: email (`mailto:`) va Telegram kanal havolasi.
+- Mumkin bo'lgan mavzular ro'yxati (nima haqida yozish mumkin): pilot loyihasi, metodika,
+  hisobot, texnik savol.
+- **Forma ATAYLAB YO'Q** — xabar yuborish uchun backend endpointi mavjud emas, ishlamaydigan
+  forma foydalanuvchini aldardi. Forma kerak bo'lsa alohida vazifa sifatida (mos endpoint
+  bilan birga) qo'shiladi.
 
 ---
 

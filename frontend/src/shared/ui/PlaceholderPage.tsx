@@ -19,8 +19,8 @@ export function PlaceholderPage({ titleKey, descriptionKey }: PlaceholderPagePro
 
   return (
     <section className="flex min-h-[50vh] flex-col items-center justify-center gap-2 p-6 text-center">
-      <h1 className="text-xl font-semibold text-neutral-900">{title}</h1>
-      <p className="text-sm text-neutral-500">{t(descriptionKey ?? 'pages.placeholderNotice')}</p>
+      <h1 className="font-display text-xl font-extrabold text-ink">{title}</h1>
+      <p className="text-sm text-ink-soft">{t(descriptionKey ?? 'pages.placeholderNotice')}</p>
     </section>
   );
 }

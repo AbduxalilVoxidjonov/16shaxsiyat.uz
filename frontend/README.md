@@ -4,6 +4,12 @@
 Foydalanuvchiga ko'rinadigan barcha matnda **Shaxsiyat** nomi ishlatiladi
 (`docs/00`–`docs/15`, `CLAUDE.md`ga qarang).
 
+Uch qatlam: **ommaviy tanishtiruv** (`/`, `/metodika`, `/biz-haqimizda`, `/aloqa` — maktab
+rahbarlari/psixologlar/ota-onalar uchun, `MarketingLayout`), **ommaviy test oqimi**
+(`/t/:slug/...` — o'quvchi uchun, `PublicLayout`, sessiyaga bog'liq) va **admin panel**
+(`/admin/...` — superadmin, `AdminLayout`). Vizual dizayn tizimi (P45, 2026-09-05)
+`16shaxsiyat.uz` statik saytidan ko'chirilgan — pastdagi "Dizayn tizimi" bo'limiga qarang.
+
 Arxitektura tafsilotlari: `docs/10-frontend-arxitektura.md`. UX/ekranlar: `docs/11-ux-va-ekranlar.md`.
 
 ## Ishga tushirish
@@ -77,6 +83,65 @@ VA javob sxemalari, shu jumladan xato holatlari. Qoidalar:
   Null-ishlash faqat chindan ixtiyoriy maydonlarda: `accessCode`, `classLetter`, `parentPhone`,
   `email`, `languageCode`, `currentTestCode`, `scaleLabels`, `options`, `currentValue`.
 
+## Papka tuzilmasi (qisqacha — to'liq: `docs/10` §2)
+
+```
+src/
+├── app/            # router.tsx, providers.tsx, ErrorBoundary
+├── shared/
+│   ├── api/        # client.ts, publicClient.ts, adminClient.ts, schema.d.ts (generatsiya)
+│   ├── ui/         # Badge, Button, Card, Dialog, DataTable, Toast, ... (19 komponent)
+│   │   └── brand/  # GirihStar, Logo, Ornament (Divider/Blob/ArchTop), PatternBackdrop — P45
+│   ├── hooks/ lib/ config/
+├── features/
+│   ├── marketing/          # P45 — HomePage/MethodologyPage/AboutPage/ContactPage + sections/
+│   ├── public-assessment/  # Landing → Registration → Test → Finish → Result
+│   ├── auth/ dashboard/ schools/ students/ assessments/ programs/
+│   ├── ai-settings/ catalog/ audit/ settings/
+├── widgets/        # PersonalityRadar, AxisBar, RiasecChart, IndexGauge, AiReportView, ...
+└── layouts/
+    ├── MarketingLayout.tsx  # P45 — sticky header + katta footer, ommaviy tanishtiruv uchun
+    ├── PublicLayout.tsx     # minimal, navigatsiyasiz — ommaviy TEST oqimi uchun
+    └── AdminLayout.tsx      # sidebar + header
+```
+
+**Qoida:** `features/*` bir-birini import qilmaydi; umumiy narsa `shared/` yoki `widgets/`ga chiqadi.
+
+## Route xaritasi (qisqacha — to'liq: `docs/10` §3)
+
+| Guruh | Yo'llar | Layout |
+|---|---|---|
+| Marketing (P45) | `/`, `/metodika`, `/biz-haqimizda`, `/aloqa` | `MarketingLayout` |
+| Ommaviy test oqimi | `/t/:slug`, `/t/:slug/register`, `/t/:slug/test/:testCode(/done)`, `/t/:slug/finish`, `/t/:slug/result` | `PublicLayout` |
+| Admin | `/admin/login`, `/admin`, `/admin/schools(/:id)`, `/admin/students(/:id)`, `/admin/assessments(/:id)`, `/admin/catalog(/tests/:id)`, `/admin/programs(/:id)`, `/admin/ai`, `/admin/audit`, `/admin/settings` | `AdminLayout` (`ProtectedRoute`) |
+
+Barcha havolalar `shared/config/routes.ts` (`ROUTES`/`ROUTE_PATTERNS`) orqali quriladi — hardcode
+path yo'q. **Marketing va test oqimi ATAYLAB ajratilgan:** test faqat maktab bergan havola
+(`/t/:slug`) orqali ochiladi, marketing sahifalarida "Testni boshlash" tugmasi yo'q.
+
+## Dizayn tizimi (P45, 2026-09-05 — to'liq: `docs/10` §9)
+
+`16shaxsiyat.uz` (statik marketing sayti) dizayni shu frontendga ko'chirilgan. Eski
+`primary-*`/`success-*`/`warning-*`/`danger-*`/`neutral-*` tokenlari (admin panel, `shared/ui`)
+**saqlangan** — yangi tokenlar `src/index.css`ga FAQAT qo'shildi, hech narsa o'chirilmadi.
+Ikkala palitra hozircha yonma-yon mavjud.
+
+- **Ranglar:** `paper`/`paper-deep`/`paper-card` (fon), `ink`/`ink-soft`/`ink-muted`/`ink-faint`
+  (matn), `line`/`line-strong` (chegara), `firuza-50…900` (brend aksenti), + dekorativ
+  `binafsha-*`/`zumrad-*`/`lojuvard-*`/`zarhal-*`/`terakota-*`.
+- **Shrift:** `font-sans` = Inter Variable, `font-display` = Plus Jakarta Sans Variable
+  (`@fontsource-variable/*` — `main.tsx`da import qilinadi).
+- **Boshqa tokenlar:** `rounded-4xl`/`rounded-5xl`, `shadow-soft`/`shadow-lift`/`shadow-glow`,
+  `max-w-content` (72rem)/`max-w-prose` (44rem), `ease-signature`, `animate-fade-up|fade-in|
+  float|spin-slow|grow`, `bg-girih`/`bg-girih-light` (girih naqsh fonlari).
+- **Komponent klasslari** (`@layer components`, faqat ommaviy sahifalarda): `.wrap`/
+  `.wrap-narrow`, `.card`/`.card-hover`, `.btn` + o'lcham/ko'rinish variantlari, `.chip`,
+  `.eyebrow`, `.lead`, `.prose-uz`.
+- **Brend komponentlari** — `shared/ui/brand/`: `GirihStar`, `Logo`, `Divider`/`Blob`/`ArchTop`
+  (`Ornament.tsx`), `PatternBackdrop`.
+- `shared/ui`ning 19 komponenti va `AdminLayout` yangi palitraga o'tkazilgan (Props API
+  o'zgarmagan); `features/**`da eski tokenlarning 69+ ishlatilishi hali qoladi — texnik qarz.
+
 ## Muhim arxitektura qoidalari (qisqacha — to'liq: `docs/10`)
 
 - `features/*` bir-birini import qilmaydi; umumiy narsa `shared/` yoki `widgets/`ga chiqadi.
@@ -86,7 +151,8 @@ VA javob sxemalari, shu jumladan xato holatlari. Qoidalar:
   tokeni (`features/public-assessment/store/sessionStore.ts`) va javob navbati uchun.
 - `dangerouslySetInnerHTML` taqiqlangan — ESLint xato darajasida majburlaydi.
 - Barcha foydalanuvchi matni `react-i18next` kalitlari orqali (`src/locales/uz/common.json`
-  asosiy; `ru/common.json` hozircha bo'sh skelet).
+  asosiy; `ru/common.json` **bo'sh obyekt** — til almashtirgich UI'da yo'q, `fallbackLng: 'uz'`
+  hammasini o'zbekchaga qaytaradi).
 
 ## Muhit o'zgaruvchilari
 

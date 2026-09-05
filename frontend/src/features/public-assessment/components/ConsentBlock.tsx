@@ -15,8 +15,8 @@ export function ConsentBlock({ consentText, checked, onChange, onBlur, error }: 
   const { t } = useTranslation();
 
   return (
-    <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
-      <p className="mb-3 text-sm text-neutral-600">{consentText}</p>
+    <div className="rounded-3xl border border-line bg-paper-deep/60 p-5">
+      <p className="mb-3 text-sm leading-relaxed text-ink-soft">{consentText}</p>
       <Checkbox
         label={t('register.consentLabel')}
         checked={checked}

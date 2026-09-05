@@ -1,7 +1,12 @@
 /**
- * P30 da HAQIQIY topilgan, LEKIN shu vazifada TUZATILMAGAN kamchiliklar
- * (P30 chegarasi: `frontend/src/**` va `src/**` ga tegilmaydi — u fayllarda boshqa
- * agentlar ishlayapti). Ro'yxat ikki vazifani bajaradi:
+ * E2E to'plami ATAYLAB kechadigan topilmalar. Ikki xil bo'ladi:
+ *
+ *   (a) HAQIQIY, lekin shu vazifa chegarasidan tashqarida qolgan kamchiliklar;
+ *   (b) tekshiruv vositasining YOLG'ON IJOBIY natijalari — WCAG bo'yicha buzilish yo'q,
+ *       lekin `axe` uni farqlay olmaydi. Har bir bunday yozuvda WCAG bandiga havola
+ *       bilan sabab yozilishi SHART, aks holda yozuv haqiqiy nuqsonni yashiradi.
+ *
+ * Ro'yxat ikki vazifani bajaradi:
  *
  *   1. to'plam yashil qoladi — mavjud kamchiliklar butun E2E'ni to'sib qo'ymaydi;
  *   2. YANGI buzilish baribir testni yiqitadi — regressiya himoyasi saqlanadi.
@@ -19,14 +24,23 @@ export interface KnownA11yIssue {
   note: string;
 }
 
+// P30-4 (`E-3 Test sahifasi` — savol raqami `text-neutral-400`) P45 reskinida TUZATILDI:
+// raqam endi `bg-firuza-50` medalyoni ichida `text-firuza-700` (#0a6767 / #eaf7f7 ≈ 6.1:1,
+// `LikertQuestion.tsx` `legend` bloki). Tekshirildi — `axe` shu ekranda bitta ham
+// `serious`/`critical` topilma bermaydi, shu sabab yozuv o'chirildi.
 export const KNOWN_A11Y_ISSUES: readonly KnownA11yIssue[] = [
   {
-    id: 'P30-4',
-    screens: ['E-3 Test sahifasi'],
+    id: 'P45-1',
+    screens: ['M-1 Bosh sahifa', 'M-1.1 Mobil menyu'],
     rule: 'color-contrast',
     note:
-      "Savol raqami prefiksi (`legend` ichidagi `text-neutral-400` — \"1.\", \"2.\" …) " +
-      'kontrast chegarasidan past — sahifada 11 ta element.',
+      "YOLG'ON IJOBIY. Bosh sahifadagi \"Qanday ishlaydi\" kartalarining burchagidagi " +
+      "ulkan tartib raqami (`HowItWorksSection.tsx`, 110px, `text-line/70` ≈ 1.19:1) — " +
+      "sof BEZAK: u `aria-hidden=\"true\"`, ma'noni tashimaydi va o'sha raqam yonidagi " +
+      '"Qadam 01" chipida to\'liq kontrast bilan takrorlanadi. WCAG 1.4.3 sof bezak ' +
+      "matnni kontrast talabidan ochiq istisno qiladi; `axe` esa faqat vizual ko'rinishga " +
+      "qaraydi va `aria-hidden` ni hisobga olmaydi. Rangni 3:1 gacha quyuqlashtirish " +
+      "bezakni asosiy matndan kuchliroq qilib yuborardi — ya'ni o'qishni YOMONLASHTIRARDI.",
   },
 ];
 

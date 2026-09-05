@@ -65,13 +65,13 @@ export function ConfirmDialog({
       }
     >
       {warning && (
-        <p role="alert" className="rounded-lg bg-warning-50 p-3 text-sm text-warning-700">
+        <p role="alert" className="rounded-2xl bg-zarhal-50 p-3 text-sm text-zarhal-800">
           {warning}
         </p>
       )}
       {children && <div className="mt-2">{children}</div>}
       {error && (
-        <p role="alert" className="mt-2 text-sm text-danger-600">
+        <p role="alert" className="mt-2 text-sm text-terakota-700">
           {error}
         </p>
       )}

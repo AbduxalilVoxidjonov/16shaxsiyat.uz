@@ -4,7 +4,7 @@
 > PM har vazifa boshlanganda va tugaganda **darhol** yangilaydi.
 
 **Loyiha:** Shaxsiyat (`16shaxsiyat.uz`) · ichki nom `StudentRoadMap`
-**Oxirgi yangilanish:** 2026-09-02 · **Joriy bosqich:** B4 (AI modul) ‖ B6 (Admin UI) · **Joriy vazifa:** P37 katalog backend ‖ keyingi to'lqin
+**Oxirgi yangilanish:** 2026-09-05 · **Joriy bosqich:** B6 (Admin UI) ‖ B7 (Ommaviy dizayn) · **Joriy vazifa:** P45 hujjatlar sinxronizatsiyasi ‖ 2FA/QR to'lqini (boshqa agentda, parallel)
 
 ---
 
@@ -62,6 +62,7 @@
 | P43 | Savolma-savol javoblar va tahlili | backend + frontend | ✅ | — | Teskari tuzatilgan qiymat · ishonchlilik signallari |
 | P44 | AI tahlil tugmasi, avtomatik o'chirildi | backend + frontend | ✅ | — | Egasining qarori · `Ai__AutoAnalyzeOnCompletion=false` |
 | P38 | Katalog: tizim testini tahrirlash UI | frontend-react | ✅ | — | **Egasi so'radi** · ko'rish+tahrirlash, o'chirish yo'q |
+| P45 | Ommaviy dizayn ko'chirish (16shaxsiyat statik sayt → frontend) | frontend-react | ✅ | — | Marketing qatlami yangi (`/`, `/metodika`, `/biz-haqimizda`, `/aloqa`) · dizayn tizimi FAQAT qo'shimcha (eski tokenlar tegilmagan) · 527 test · branch `feat/P45-ommaviy-dizayn`, commit qilinmagan |
 
 ---
 
@@ -328,10 +329,79 @@
 
 ---
 
+### 2026-09-05
+
+- **P45 (ommaviy dizayn ko'chirish) tugadi** — frontend **527 test**, `typecheck`/`lint`/
+  `build` yashil. `16shaxsiyat.uz` (Next.js 15 + Tailwind 3 statik sayt) loyihasining vizual
+  dizayni shu frontendga (React 19 + Vite + Tailwind 4) ko'chirildi:
+  - **Dizayn tizimi** `frontend/src/index.css`ga FAQAT QO'SHIMCHA tarzda kiritildi — eski
+    `primary/success/warning/danger/neutral` tokenlariga TEGILMADI (admin panel va
+    `shared/ui` hamon ularga tayanadi). Yangi: ranglar (`paper`/`ink`/`line` oilalari,
+    `firuza` brend aksenti, `binafsha`/`zumrad`/`lojuvard`/`zarhal`/`terakota` dekorativ
+    palitralar), shriftlar (`font-sans` Inter Variable, `font-display` Plus Jakarta Sans
+    Variable — `@fontsource-variable/*`), `rounded-4xl/5xl`, `shadow-soft/lift/glow`,
+    `max-w-content/prose`, animatsiyalar (`animate-fade-up/fade-in/float/spin-slow/grow`),
+    girih naqsh fonlari (`bg-girih`/`bg-girih-light`) va komponent klasslari
+    (`.wrap`/`.card`/`.btn`/`.chip`/`.eyebrow`/`.lead`/`.prose-uz`). Ikkita ataylab kontrast
+    og'ishi WCAG AA sababli: `.btn-primary` `firuza-600` (`firuza-500`+oq = 3.28:1, AA dan
+    past), `.eyebrow` `ink-soft` (`ink-muted` = 4.49:1, chegaradan past).
+  - **Yangi brend komponentlari** — `shared/ui/brand/`: `GirihStar`, `Logo`, `Divider`/
+    `Blob`/`ArchTop` (`Ornament.tsx`), `PatternBackdrop`.
+  - **Yangi marketing qatlami** — ilgari `/` `404` qaytarardi. `MarketingLayout.tsx` (sticky
+    shaffof header + girih naqshli katta footer) + `features/marketing/` (`HomePage`/
+    `MethodologyPage`/`AboutPage`/`ContactPage` + umumiy `sections/`), route'lar `/`,
+    `/metodika`, `/biz-haqimizda`, `/aloqa`. Kontent 100% yangi yozilgan — CLAUDE.md
+    6a-qoidasi bo'yicha 16shaxsiyat'ning tur kodlari, guruh nomlari, "MBTI" so'zi
+    ko'chirilmagan; `HomePage.test.tsx`da buni qo'riqlaydigan regressiya testi bor. Hech
+    qayerda "Testni boshlash" CTA yo'q — test faqat maktab havolasi orqali ochiladi;
+    `/aloqa`da forma YO'Q (backend endpointi mavjud emas, ishlamaydigan forma aldardi).
+  - **Ommaviy TEST oqimi qayta ko'rindi** (`PublicLayout.tsx`, `public-assessment/**`) —
+    MANTIQ o'zgarmadi, faqat JSX/`className`. `LikertQuestion` moslashuvchan bo'ldi:
+    `Likert7`/`Likert5` (doiralar qatori, chetdan markazga kichrayadi), `Binary` (yirik
+    markazlashgan doiralar), `SingleChoice`/`ForcedChoice` (variant kartalari); klaviatura
+    endi `1..9` (avval `1..5`).
+  - **Natija sahifasida** (`StudentResultPage`, E-6) diagramma/foiz ATAYLAB qo'shilmadi —
+    `GET /sessions/result` ball yoki o'lcham qaytarmaydi. Uch holat: tayyor / tayyorlanmoqda
+    (`202`) / ko'rsatilmaydi (`403`, `App:ShowResultToStudent=false` — standart sozlama,
+    xato EMAS).
+  - `shared/ui`ning 19 komponenti + `AdminLayout` yangi palitraga o'tkazildi (`primary-*`→
+    `firuza-*`, `neutral-*`→`paper`/`ink`/`line`, `danger`→`terakota`, `success`→`zumrad`,
+    `warning`→`zarhal`). **Props API o'zgarmadi.**
+  - **Ochiq qolgan:** `ru` lokali bo'sh (til almashtirgich yo'q, `fallbackLng: 'uz'`); eski
+    semantik tokenlar `index.css`da hali turibdi va `features/**`/`widgets/**`da **69 dan
+    ortiq faylda** to'g'ridan-to'g'ri ishlatiladi — demak hozircha IKKITA rang tizimi
+    yonma-yon (birlashtirish keyingi bosqich); E2E (Playwright) bu o'zgarishlar bilan hali
+    ishga tushirilmagan (boshqa agent parallel 2FA/QR to'lqinini tekshirmoqda, shu bilan
+    birga bu branch ham qayta sinaladi).
+  - **Branch:** `feat/P45-ommaviy-dizayn`, hali commit qilinmagan (loyiha egasining "push
+    qilinmaydi" siyosati — 2026-08-31 qarori — davom etmoqda; commit navbatda).
+- **Hujjatlar P45ga moslashtirildi** (shu vazifa, faqat hujjat fayllari):
+  - `docs/10-frontend-arxitektura.md`: §1 stek jadvalidagi noto'g'ri `shadcn/ui`(Radix)
+    yozuvi tuzatildi (`package.json`da bunday paket hech qachon bo'lmagan) va `ru` "tayyor"
+    degan noto'g'ri yozuv ham; §2 papka tuzilmasiga `marketing/`, `MarketingLayout.tsx`,
+    `shared/ui/brand/` qo'shildi; §3 route jadvaliga marketing qatorlari qo'shildi va
+    P45'dan oldin ham eskirgan bir necha admin sub-route (`schools/:id`,
+    `catalog/tests/:id`, `programs(/:id)`) tiklandi; §4.3 Savol UI moslashuvchan
+    komponentga mos yangilandi; yangi **§9** qo'shildi (dizayn tizimi, brend komponentlari,
+    marketing qatlami, ikki qatlam-komponent farqi, ochiq savollar).
+  - `docs/11-ux-va-ekranlar.md`: §1 rang jadvaliga ikki tizim tushuntirilishi qo'shildi
+    (admin — eski tokenlar, ommaviy — yangi); E-3/E-6 tavsiflari yangi ko'rinishga
+    moslashtirildi; yangi **§2a** qo'shildi (M-1…M-4 marketing ekranlari); §0ga til holati
+    (faqat `uz`) qo'shildi.
+  - `frontend/README.md`: papka tuzilmasi, route xaritasi va dizayn tizimi bo'limlari
+    qo'shildi (ilgari umuman yo'q edi — faqat run/lint/generate:api ko'rsatmalari bor edi).
+  - `CLAUDE.md`: "Joriy holat" ro'yxatiga P45 belgilandi.
+  - **Tegilmagan (topshiriq bo'yicha qat'iy taqiqlangan):** `docs/04–08` va barcha kod
+    fayllari — ular ustida boshqa agent (2FA/QR) parallel ishlamoqda.
+
+---
+
 ## Ma'lum risklar va texnik qarzlar
 
 | Risk / qarz | Ta'sir | Reja |
 |-------------|--------|------|
+| P45 (2026-09-05) dan beri IKKITA rang tizimi yonma-yon: eski `primary/success/warning/danger/neutral` (admin, `shared/ui`) va yangi `paper/ink/line/firuza/...` (ommaviy sahifalar) | Ikki manba — kelajakda admin va ommaviy ekranlar orasida vizual nomuvofiqlik yoki noto'g'ri tokenni ko'chirib qo'yish xavfi. `features/**`/`widgets/**`da eski tokenning 69+ ishlatilishi bor | Egasi so'raganda admin panelni ham yangi palitraga to'liq o'tkazish va eski tokenlarni `index.css`dan olib tashlash (`docs/10` §9.9) |
+| E2E (Playwright) P45 dizayn o'zgarishlari bilan hali ishga tushirilmagan | Yangi marketing ekranlari va o'zgargan `LikertQuestion` uchun regressiya qamrovi yo'q | Boshqa agentning parallel (2FA/QR) to'lqini tugagach, `feat/P45-ommaviy-dizayn` branch'i uchun alohida E2E/vizual tekshiruv |
 | Savol banklari (190 savol) sifati — real o'quvchida sinalmagan | Natija ishonchliligi | Pilotdan keyin matnlarni tuzatish (`docs/14` 5-bo'lim) |
 | AI prompt sifati faqat mock bilan sinaladi | Hisobot sifati | P17 dan keyin 10 ta oltin namuna bilan qo'lda baholash |
 | `answers` jadvali tez o'sadi (190 qator/sessiya) | Ishlash | 100k sessiyadan keyin partitsiya (v2) |

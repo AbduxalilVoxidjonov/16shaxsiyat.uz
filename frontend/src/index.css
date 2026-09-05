@@ -5,7 +5,14 @@
  * Diagramma ranglari ball darajasini bildirmaydi; bu tokenlar faqat UI holatlari uchun.
  */
 @theme {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /*
+   * Asosiy matn shrifti. `Inter Variable` — `@fontsource-variable/inter` npm paketidan
+   * keladigan variable-font oilasi (`src/main.tsx` da import qilinadi); paket bo'lmagan
+   * muhitda ro'yxatdagi keyingi nomlarga tushadi.
+   */
+  --font-sans:
+    'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
 
   /* Asosiy (primary) — harakat tugmalari, faol progress */
   --color-primary-50: #eef2ff;
@@ -62,6 +69,332 @@
   --breakpoint-md: 48rem;
   --breakpoint-lg: 64rem;
   --breakpoint-xl: 80rem;
+
+  /* ===========================================================================
+   * OMMAVIY (public) SAHIFALAR DIZAYN TIZIMI — P45
+   *
+   * Quyidagi tokenlar FAQAT qo'shimcha: yuqoridagi primary/success/warning/danger/
+   * neutral tokenlariga tegilmagan, chunki admin panel va `shared/ui` ning 19 ta
+   * komponenti o'shalarga tayanadi. Ommaviy sahifalar o'z layout wrapperida
+   * `bg-paper text-ink` beradi — `body` global uslubi O'ZGARMAYDI.
+   * ======================================================================== */
+
+  /*
+   * Sarlavha shrifti (Plus Jakarta Sans Variable). Tailwind 4 `--font-*` nomlaridan
+   * `font-display` utility klassini AVTOMATIK yaratmaydi — u pastda `@utility
+   * font-display` bilan qo'lda qo'shilgan.
+   */
+  --font-display:
+    'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+
+  /* Qog'oz — ommaviy sahifalarning iliq fon qatlamlari (`bg-paper`, `bg-paper-deep`, `bg-paper-card`) */
+  --color-paper: #fbf8f3;
+  --color-paper-deep: #f4efe6;
+  --color-paper-card: #ffffff;
+
+  /* Siyoh — matn ierarxiyasi: asosiy → yumshoq → so'nik → juda och (`text-ink`, `text-ink-soft`, ...) */
+  --color-ink: #191512;
+  --color-ink-soft: #4a423b;
+  --color-ink-muted: #7c7168;
+  --color-ink-faint: #a79c91;
+
+  /* Chiziq — chegaralar va ajratkichlar (`border-line`, `border-line-strong`) */
+  --color-line: #eae1d4;
+  --color-line-strong: #dcd0be;
+
+  /* Firuza — ommaviy yo'nalishning asosiy brend aksenti */
+  --color-firuza-50: #eaf7f7;
+  --color-firuza-100: #cceded;
+  --color-firuza-200: #9bdcdc;
+  --color-firuza-300: #63c6c6;
+  --color-firuza-400: #31adad;
+  --color-firuza-500: #0f9e9e;
+  --color-firuza-600: #0b8080;
+  --color-firuza-700: #0a6767;
+  --color-firuza-800: #0a5252;
+  --color-firuza-900: #0a4343;
+
+  /* Binafsha — dekorativ aksent palitrasi */
+  --color-binafsha-50: #f2eefb;
+  --color-binafsha-100: #e4dbf7;
+  --color-binafsha-200: #c9b8ef;
+  --color-binafsha-300: #ad94e6;
+  --color-binafsha-400: #8b6bd8;
+  --color-binafsha-500: #6d4ac7;
+  --color-binafsha-600: #5839a6;
+  --color-binafsha-700: #452c84;
+  --color-binafsha-800: #342166;
+  --color-binafsha-900: #26184b;
+
+  /* Zumrad — dekorativ aksent palitrasi */
+  --color-zumrad-50: #eaf7f2;
+  --color-zumrad-100: #d2efe4;
+  --color-zumrad-200: #a6dfc9;
+  --color-zumrad-300: #74cba9;
+  --color-zumrad-400: #4bb490;
+  --color-zumrad-500: #2f9e7a;
+  --color-zumrad-600: #248063;
+  --color-zumrad-700: #1d664f;
+  --color-zumrad-800: #164e3d;
+  --color-zumrad-900: #103a2d;
+
+  /* Lojuvard — dekorativ aksent palitrasi */
+  --color-lojuvard-50: #ebf2fa;
+  --color-lojuvard-100: #d6e5f5;
+  --color-lojuvard-200: #adcaeb;
+  --color-lojuvard-300: #7fade0;
+  --color-lojuvard-400: #5290ce;
+  --color-lojuvard-500: #2a6fb5;
+  --color-lojuvard-600: #215a94;
+  --color-lojuvard-700: #1a4775;
+  --color-lojuvard-800: #143659;
+  --color-lojuvard-900: #0f2842;
+
+  /* Zarhal — dekorativ aksent palitrasi */
+  --color-zarhal-50: #fdf6ea;
+  --color-zarhal-100: #faebd1;
+  --color-zarhal-200: #f4d6a3;
+  --color-zarhal-300: #ecbe6e;
+  --color-zarhal-400: #e2a947;
+  --color-zarhal-500: #d9962a;
+  --color-zarhal-600: #b47a20;
+  --color-zarhal-700: #8f5f19;
+  --color-zarhal-800: #6d4813;
+  --color-zarhal-900: #50350e;
+
+  /* Terakota — iliq qo'shimcha aksent (kichik urg'ular uchun) */
+  --color-terakota-50: #fcf0ec;
+  --color-terakota-100: #f8ded5;
+  --color-terakota-200: #f0bcaa;
+  --color-terakota-300: #e5967b;
+  --color-terakota-400: #d87352;
+  --color-terakota-500: #c8552e;
+  --color-terakota-600: #a44325;
+  --color-terakota-700: #82351d;
+  --color-terakota-800: #632817;
+  --color-terakota-900: #491d11;
+
+  /*
+   * Yumaloqlash. `--radius-4xl` Tailwind 4 da standart (2rem) — bu yerda qiymat aynan
+   * mos, shu sabab shunchaki tasdiqlab qo'yiladi; `--radius-5xl` esa yangi pog'ona.
+   */
+  --radius-4xl: 2rem;
+  --radius-5xl: 2.75rem;
+
+  /* Soyalar — `shadow-soft`, `shadow-lift`, `shadow-glow` */
+  --shadow-soft: 0 1px 2px rgba(25, 21, 18, 0.04), 0 8px 24px -12px rgba(25, 21, 18, 0.12);
+  --shadow-lift: 0 2px 4px rgba(25, 21, 18, 0.05), 0 18px 40px -18px rgba(25, 21, 18, 0.22);
+  --shadow-glow: 0 18px 40px -20px rgba(15, 158, 158, 0.55);
+
+  /*
+   * Konteyner kengliklari → `max-w-content` (72rem) va `max-w-prose` (44rem).
+   *
+   * Tailwind 4 da `max-w-*` `--container-*` nomlar makonidan o'qiydi — spetsifikatsiyada
+   * aytilgan `--width-*` degan nomlar makoni Tailwind 4.3 da UMUMAN YO'Q, shu sabab
+   * `--container-*` ishlatilgan.
+   *
+   * `max-w-prose` esa alohida hodisa: Tailwind uni hali ham ESKIRGAN (`@theme default
+   * inline reference` bloki, `theme.css`) `--max-width-prose: 65ch` kalitidan oladi va u
+   * `--container-prose` dan ustun chiqadi (tekshirilgan: faqat `--container-prose` bergan
+   * qurilishda `.wrap-narrow` da `max-width:65ch` chiqdi). Shu sabab IKKALASI ham
+   * belgilangan: bugun eskirgan kalit ishlaydi, u olib tashlangach `--container-prose`
+   * o'rnini bosadi — qiymat bir xil, xatti-harakat o'zgarmaydi.
+   *
+   * Ustidan yozish xavfsiz: `max-w-prose` mavjud kodda hech qayerda ishlatilmagani
+   * grep bilan tekshirilgan (2026-09-05).
+   */
+  --container-content: 72rem;
+  --container-prose: 44rem;
+  --max-width-prose: 44rem;
+
+  /* Loyihaning "imzo" tezlanishi — silliq, biroz otilib chiquvchi harakat */
+  --ease-signature: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Animatsiyalar — `animate-fade-up`, `animate-fade-in`, `animate-float`, ... */
+  --animate-fade-up: fade-up 0.6s var(--ease-signature) both;
+  --animate-fade-in: fade-in 0.5s ease both;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-spin-slow: spin-slow 40s linear infinite;
+  --animate-grow: grow 1s var(--ease-signature) both;
+}
+
+/*
+ * Ommaviy sahifalar animatsiyalarining kadr ta'riflari. Tailwind 4 da `--animate-*`
+ * o'zgaruvchisi faqat `animation` qisqartmasini beradi — `@keyframes` bloklari oddiy
+ * CSS sifatida alohida yoziladi.
+ */
+@keyframes fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes grow {
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+/*
+ * Ommaviy sahifalar uchun maxsus utility klasslar. Tailwind 4 da `@utility` direktivasi
+ * ularni to'liq huquqli utility qiladi — `hover:`, `sm:` kabi variantlar bilan ishlaydi.
+ */
+
+/* Sarlavha shrifti — Tailwind `--font-display` dan klass yaratmagani uchun qo'lda */
+@utility font-display {
+  font-family: var(--font-display);
+}
+
+/* Girih (turkiy geometrik) naqsh — och fonlar uchun, chiziqlari qumrang */
+@utility bg-girih {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cg fill='none' stroke='%23DDD2C0' stroke-width='1'%3E%3Crect x='18' y='18' width='28' height='28'/%3E%3Crect x='18' y='18' width='28' height='28' transform='rotate(45 32 32)'/%3E%3Ccircle cx='32' cy='32' r='2.5'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 64px 64px;
+}
+
+/* Xuddi shu naqsh, lekin to'q fonlar uchun — chiziqlari yarim shaffof oq */
+@utility bg-girih-light {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cg fill='none' stroke='%23FFFFFF' stroke-opacity='0.16' stroke-width='1'%3E%3Crect x='13' y='13' width='22' height='22'/%3E%3Crect x='13' y='13' width='22' height='22' transform='rotate(45 24 24)'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 48px 48px;
+}
+
+/* Elementning pastki qismini asta-sekin shaffofga o'tkazuvchi niqob (dekor fonlar uchun) */
+@utility mask-fade-b {
+  -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+}
+
+/* Sarlavha satrlarini teng uzunlikda bo'lish — yolg'iz qolgan so'zning oldini oladi */
+@utility balance {
+  text-wrap: balance;
+}
+
+/* Skroll paneli ko'rinmaydigan gorizontal ro'yxatlar uchun */
+@utility no-scrollbar {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/*
+ * Ommaviy sahifalarning takrorlanuvchi kompozitsiya klasslari.
+ *
+ * NOM TO'QNASHUVI TEKSHIRUVI (2026-09-05): loyiha bo'ylab `card`, `btn`, `chip`,
+ * `wrap`, `lead`, `eyebrow` klass nomlarining birortasi ham HECH QAYERDA ishlatilmagan
+ * (`shared/ui/Card.tsx` va `Button.tsx` faqat utility klasslar bilan yozilgan), shu
+ * sabab prefiks kerak emas va nomlar sof holicha olindi. Bu klasslar `components`
+ * qatlamida — har qanday utility klass ularning ustidan yozadi.
+ */
+@layer components {
+  /* Sahifa kengligi konteynerlari */
+  .wrap {
+    @apply mx-auto w-full max-w-content px-5 sm:px-8;
+  }
+  .wrap-narrow {
+    @apply mx-auto w-full max-w-prose px-5 sm:px-8;
+  }
+
+  /* Karta — ommaviy sahifalarning asosiy sirt elementi */
+  .card {
+    @apply rounded-4xl border border-line bg-paper-card shadow-soft;
+  }
+  .card-hover {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lift;
+  }
+
+  /* Tugmalar: `.btn` + o'lcham (`.btn-lg|md|sm`) + ko'rinish (`.btn-primary|ghost|dark`) */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full font-semibold select-none;
+    @apply transition-all duration-200 disabled:pointer-events-none disabled:opacity-40;
+  }
+  .btn-lg {
+    @apply h-14 px-8 text-[15px];
+  }
+  .btn-md {
+    @apply h-11 px-6 text-sm;
+  }
+  .btn-sm {
+    @apply h-9 px-4 text-[13px];
+  }
+  /*
+    Fon ATAYLAB `firuza-600` (asl 16shaxsiyat dizaynida `firuza-500` edi): oq matn
+    `firuza-500` (#0F9E9E) ustida atigi 3.28:1 beradi — WCAG AA (4.5:1) dan past va
+    e2e `axe` tekshiruvi buni "serious" deb belgilaydi. `firuza-600` (#0B8080) bilan
+    4.76:1 — AA o'tadi, brend tusi esa deyarli o'zgarmaydi. `shared/ui/Button.tsx` ham
+    xuddi shu sababdan `firuza-600` ishlatadi — ikkalasi bir xil bo'lishi shart.
+  */
+  .btn-primary {
+    @apply bg-firuza-600 text-white shadow-glow hover:-translate-y-0.5 hover:bg-firuza-700 active:translate-y-0;
+  }
+  .btn-ghost {
+    @apply border border-line-strong bg-paper-card text-ink hover:-translate-y-0.5 hover:border-ink/25;
+  }
+  .btn-dark {
+    @apply bg-ink text-paper hover:-translate-y-0.5 hover:bg-ink-soft;
+  }
+
+  /* Kichik yorliq (rangi chaqiruv joyida `bg-*`/`text-*` bilan beriladi) */
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold;
+  }
+
+  /*
+    Bo'lim sarlavhasi ustidagi kichik bosh harfli yozuv.
+    Rang ATAYLAB `ink-soft` (asl dizaynda `ink-muted` edi): `ink-muted` (#7C7168)
+    `paper` (#FBF8F3) fonida 4.49:1 — WCAG AA dan bir chizim past, matn esa 11px
+    (yirik matn imtiyozi tegmaydi). `ink-soft` (#4A423B) 9.29:1 beradi.
+  */
+  .eyebrow {
+    @apply text-[11px] font-bold tracking-[0.2em] text-ink-soft uppercase;
+  }
+
+  /* Sarlavha ostidagi yirikroq kirish matni */
+  .lead {
+    @apply text-lg leading-relaxed text-ink-soft sm:text-xl;
+  }
+
+  /* Uzun o'qish matni — paragraflar orasidagi bo'shliq va qulay satr balandligi */
+  .prose-uz p {
+    @apply mb-5 text-[17px] leading-[1.85] text-ink-soft;
+  }
+  .prose-uz p:last-child {
+    @apply mb-0;
+  }
 }
 
 /*
@@ -96,7 +429,6 @@ dialog:modal.dialog-drawer-start {
   /* Drawer to'liq balandlikda (`h-dvh`) ochiladi — umumiy `max-height` cheklovi tegmasin. */
   max-height: 100dvh;
 }
-
 
 @layer base {
   html {

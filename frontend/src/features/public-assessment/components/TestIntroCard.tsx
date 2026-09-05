@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Card } from '@/shared/ui/Card';
+import { GirihStar } from '@/shared/ui/brand';
 import type { PublicTestCatalogItem } from '@/shared/api/types';
 
 export type TestIntroCardProps = PublicTestCatalogItem;
@@ -15,12 +15,18 @@ export function TestIntroCard({ code, name, questionCount, estimatedMinutes }: T
   const description = t(`pages.landing.testDescriptions.${code}`, { defaultValue: '' });
 
   return (
-    <Card className="flex flex-col gap-1">
-      <h3 className="text-sm font-semibold text-neutral-900">{name}</h3>
-      {description && <p className="text-sm text-neutral-600">{description}</p>}
-      <p className="text-xs text-neutral-500">
-        {t('pages.landing.testMeta', { count: questionCount, minutes: estimatedMinutes })}
-      </p>
-    </Card>
+    <div className="card card-hover flex items-start gap-4 rounded-3xl p-5">
+      {/* Girih nishoni — har bir blokni vizual ravishda "kartochka" qiladi (sof dekor). */}
+      <span className="relative grid size-11 shrink-0 place-items-center rounded-[28%] bg-linear-to-br from-firuza-50 to-firuza-100">
+        <GirihStar className="absolute inset-[20%] text-firuza-500/70" strokeWidth={2.5} />
+      </span>
+      <div className="flex min-w-0 flex-col gap-1">
+        <h3 className="font-display text-[15px] font-bold text-ink">{name}</h3>
+        {description && <p className="text-sm leading-relaxed text-ink-soft">{description}</p>}
+        <p className="text-xs font-semibold text-ink-soft">
+          {t('pages.landing.testMeta', { count: questionCount, minutes: estimatedMinutes })}
+        </p>
+      </div>
+    </div>
   );
 }

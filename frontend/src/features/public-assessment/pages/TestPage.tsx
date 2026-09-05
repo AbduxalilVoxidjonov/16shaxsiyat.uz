@@ -20,6 +20,7 @@ import { LikertQuestion } from '../components/LikertQuestion';
 import { TestProgressHeader } from '../components/TestProgressHeader';
 import { SaveStatusIndicator } from '../components/SaveStatusIndicator';
 import { OfflineBanner } from '../components/OfflineBanner';
+import { publicButtonClass } from '../components/publicStyles';
 import type { PublicQuestion } from '@/shared/api/types';
 
 function prefersReducedMotion(): boolean {
@@ -34,9 +35,9 @@ function prefersReducedMotion(): boolean {
 function TestPageSkeleton() {
   return (
     <div className="flex flex-col gap-4" aria-hidden="true">
-      <Skeleton className="h-16 w-full rounded-xl" />
+      <Skeleton className="h-16 w-full rounded-2xl" />
       {[0, 1, 2, 3].map((key) => (
-        <Skeleton key={key} className="h-32 w-full rounded-xl" />
+        <Skeleton key={key} className="h-44 w-full rounded-4xl" />
       ))}
     </div>
   );
@@ -203,7 +204,10 @@ export default function TestPage() {
       setInvalidIds(new Set(unanswered.map((q) => q.id)));
       const first = unanswered[0];
       const node = first ? fieldsetRefs.current.get(first.id) : undefined;
-      node?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'center' });
+      node?.scrollIntoView({
+        behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+        block: 'center',
+      });
       node?.focus({ preventScroll: true });
       return;
     }
@@ -251,7 +255,10 @@ export default function TestPage() {
           navigate(ROUTES.public.testDone(slug, testCode), {
             // `tests` — TestCompletePage'ga qo'shimcha `GET /sessions/me` so'rovisiz "qolgan
             // bloklar" ro'yxatini (nom/vaqt) berish uchun (P36, `sessionStore.ts` izohiga qarang).
-            state: { nextTestCode: result.nextTestCode ?? null, tests: sessionStateQuery.data?.tests },
+            state: {
+              nextTestCode: result.nextTestCode ?? null,
+              tests: sessionStateQuery.data?.tests,
+            },
           });
         }
       },
@@ -296,7 +303,9 @@ export default function TestPage() {
       const currentTestCode = sessionStateQuery.data?.currentTestCode;
       return (
         <Navigate
-          to={currentTestCode ? ROUTES.public.test(slug, currentTestCode) : ROUTES.public.finish(slug)}
+          to={
+            currentTestCode ? ROUTES.public.test(slug, currentTestCode) : ROUTES.public.finish(slug)
+          }
           replace
         />
       );
@@ -335,7 +344,7 @@ export default function TestPage() {
   const totalBlocks = sessionStateQuery.data?.tests.length ?? 1;
 
   return (
-    <div className="flex flex-col gap-4 pb-24">
+    <div className="flex flex-col gap-4 pb-28">
       <TestProgressHeader
         testName={testName}
         blockIndex={testInfo.order}
@@ -344,7 +353,7 @@ export default function TestPage() {
         total={totalQuestions}
       />
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-end">
         <SaveStatusIndicator status={autosave.status} />
       </div>
 
@@ -376,12 +385,18 @@ export default function TestPage() {
         ))}
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-neutral-200 bg-white px-4 py-3">
-        <div className="mx-auto flex w-full max-w-xl items-center justify-between gap-3">
-          <Button variant="outline" onClick={handlePrev} disabled={page <= 1}>
+      <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-paper/95 px-5 py-3 backdrop-blur-xl sm:px-8">
+        <div className="mx-auto flex w-full max-w-prose items-center justify-between gap-3">
+          <Button
+            variant="outline"
+            className={publicButtonClass('ghost', 'md')}
+            onClick={handlePrev}
+            disabled={page <= 1}
+          >
             {t('common.back')}
           </Button>
           <Button
+            className={publicButtonClass('primary', 'lg')}
             onClick={() => {
               void handleNext();
             }}

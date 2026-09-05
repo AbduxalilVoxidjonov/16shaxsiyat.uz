@@ -7,12 +7,14 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   variant?: BadgeVariant;
 }
 
+// Har bir juftlik `text-xs` (kichik matn) uchun WCAG AA 4.5:1 dan yuqori:
+// primary 7.22:1 · success 7.85:1 · warning 6.91:1 · danger 8.88:1 · neutral 8.59:1.
 const VARIANT_CLASSES: Record<BadgeVariant, string> = {
-  primary: 'bg-primary-100 text-primary-700',
-  success: 'bg-success-100 text-success-700',
-  warning: 'bg-warning-100 text-warning-700',
-  danger: 'bg-danger-100 text-danger-700',
-  neutral: 'bg-neutral-100 text-neutral-700',
+  primary: 'bg-firuza-100 text-firuza-800',
+  success: 'bg-zumrad-100 text-zumrad-800',
+  warning: 'bg-zarhal-100 text-zarhal-800',
+  danger: 'bg-terakota-100 text-terakota-800',
+  neutral: 'bg-paper-deep text-ink-soft',
 };
 
 /**

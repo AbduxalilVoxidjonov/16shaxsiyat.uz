@@ -3,6 +3,17 @@
  * Barcha havolalar shu obyekt orqali quriladi (hardcode path yo'q).
  */
 export const ROUTES = {
+  /**
+   * Ommaviy tanishtiruv (marketing) sahifalari — maktab rahbarlari, psixologlar va ota-onalar
+   * uchun. Test oqimidan (`public`) ATAYLAB ajratilgan: test faqat maktab havolasi orqali
+   * (`/t/:slug`) ochiladi, bu yerdagi sahifalar esa sessiyaga umuman bog'liq emas.
+   */
+  marketing: {
+    home: '/',
+    methodology: '/metodika',
+    about: '/biz-haqimizda',
+    contact: '/aloqa',
+  },
   public: {
     landing: (slug: string) => `/t/${slug}`,
     register: (slug: string) => `/t/${slug}/register`,
@@ -32,6 +43,12 @@ export const ROUTES = {
 
 /** `react-router` uchun yo'l naqshlari (parametr o'rniga `:param`). */
 export const ROUTE_PATTERNS = {
+  marketing: {
+    home: '/',
+    methodology: '/metodika',
+    about: '/biz-haqimizda',
+    contact: '/aloqa',
+  },
   public: {
     landing: '/t/:slug',
     register: '/t/:slug/register',

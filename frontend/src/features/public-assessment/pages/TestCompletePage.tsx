@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate, useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { usePageTitle } from '@/shared/hooks/usePageTitle';
 import { Button, ErrorState, Skeleton } from '@/shared/ui';
+import { GirihStar } from '@/shared/ui/brand';
 import { ROUTES } from '@/shared/config/routes';
 import { AppError } from '@/shared/api/AppError';
 import type { PublicTestSummary } from '@/shared/api/types';
@@ -10,6 +11,7 @@ import { useSessionState } from '../api/useSessionState';
 import { useSessionStore } from '../store/sessionStore';
 import { useSessionExpiredGuard } from '../hooks/useSessionExpiredGuard';
 import { pickNextTestCode } from '../lib/nextTest';
+import { publicButtonClass } from '../components/publicStyles';
 
 interface TestCompleteLocationState {
   nextTestCode?: string | null;
@@ -25,9 +27,10 @@ interface TestCompleteLocationState {
 function TestCompleteSkeleton() {
   return (
     <div className="flex flex-col items-center gap-4 py-10" aria-hidden="true">
+      <Skeleton className="size-20 rounded-full" />
       <Skeleton className="h-8 w-56" />
-      <Skeleton className="h-24 w-full rounded-xl" />
-      <Skeleton className="h-12 w-full rounded-lg" />
+      <Skeleton className="h-24 w-full rounded-3xl" />
+      <Skeleton className="h-14 w-full rounded-full" />
     </div>
   );
 }
@@ -99,40 +102,57 @@ export default function TestCompletePage() {
   const remainingCatalogItems = nextCatalogItem
     ? remainingSourceTests.filter((item) => item.order >= nextCatalogItem.order)
     : [];
-  const remainingMinutes = remainingCatalogItems.reduce((sum, item) => sum + item.estimatedMinutes, 0);
+  const remainingMinutes = remainingCatalogItems.reduce(
+    (sum, item) => sum + item.estimatedMinutes,
+    0,
+  );
 
   return (
-    <div className="flex flex-col items-center gap-6 py-10 text-center">
-      <p className="text-4xl" aria-hidden="true">
-        🎉
-      </p>
-      <h1 className="text-xl font-bold text-neutral-900">{t('pages.testDone.heading')}</h1>
+    <div className="flex animate-fade-up flex-col items-center gap-6 py-10 text-center motion-reduce:animate-none">
+      {/*
+        Bayram belgisi emoji o'rniga girih yulduzi: brend tiliga mos va "vazmin" qoladi.
+        Dekorativ — `GirihStar` o'zi `aria-hidden`, sarlavha ma'noni to'liq yetkazadi.
+      */}
+      <span className="relative grid size-20 place-items-center rounded-full bg-firuza-50 ring-1 ring-firuza-100">
+        <GirihStar className="size-11 text-firuza-500" strokeWidth={2.5} />
+      </span>
+
+      <h1 className="font-display text-2xl font-extrabold tracking-tight text-balance text-ink">
+        {t('pages.testDone.heading')}
+      </h1>
 
       {remainingCatalogItems.length > 0 && (
-        <div className="w-full rounded-xl border border-neutral-200 bg-white p-4 text-left">
-          <p className="mb-2 text-sm font-medium text-neutral-700">
+        <div className="card w-full rounded-3xl p-5 text-left">
+          <p className="mb-3 text-sm font-semibold text-ink">
             {t('pages.testDone.remainingHeading', {
               count: remainingCatalogItems.length,
               minutes: remainingMinutes,
             })}
           </p>
-          <ul className="flex flex-col gap-1 text-sm text-neutral-600">
+          <ul className="flex flex-col gap-2 text-sm text-ink-soft">
             {remainingCatalogItems.map((item) => (
-              <li key={item.code}>{item.name}</li>
+              <li key={item.code} className="flex items-center gap-2.5">
+                <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-firuza-400" />
+                {item.name}
+              </li>
             ))}
           </ul>
         </div>
       )}
 
-      <div className="flex w-full flex-col gap-3">
+      <div className="flex w-full flex-col items-stretch gap-3">
         <Button
           size="lg"
-          className="w-full"
+          className={publicButtonClass('primary', 'lg', 'w-full')}
           onClick={() => navigate(ROUTES.public.test(slug, resolvedNextTestCode))}
         >
           {t('pages.testDone.continueCta')}
         </Button>
-        <Button variant="ghost" className="w-full" onClick={() => navigate(ROUTES.public.landing(slug))}>
+        <Button
+          variant="ghost"
+          className={publicButtonClass('ghost', 'md', 'w-full')}
+          onClick={() => navigate(ROUTES.public.landing(slug))}
+        >
           {t('pages.testDone.laterCta')}
         </Button>
       </div>

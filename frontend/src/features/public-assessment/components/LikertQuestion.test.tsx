@@ -104,4 +104,72 @@ describe('LikertQuestion', () => {
     renderQuestion({ invalid: false });
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
+
+  // Ko'rinish daraja soniga moslashadi (`03-public-api.md` 6-bo'lim) — quyidagi uch holat
+  // shkala/variant turlarining har biri uchun bittadan (P45 dizayn ishi).
+  it("Likert7 — 7 ta daraja ham radio sifatida ko'rsatiladi", () => {
+    const labels: PublicScaleLabel[] = Array.from({ length: 7 }, (_, index) => ({
+      value: index + 1,
+      label: `Daraja ${String(index + 1)}`,
+    }));
+    renderQuestion({ scaleLabels: labels, question: { ...QUESTION, type: 'Likert7' } });
+
+    expect(screen.getAllByRole('radio')).toHaveLength(7);
+    expect(screen.getByRole('radio', { name: 'Daraja 7' })).toBeInTheDocument();
+  });
+
+  it("Binary — ikki daraja o'z yorlig'i bilan ko'rsatiladi va tanlanadi", async () => {
+    const user = userEvent.setup();
+    const onAnswer = vi.fn();
+    render(
+      <LikertQuestion
+        question={{ ...QUESTION, type: 'Binary' }}
+        scaleLabels={[
+          { value: 0, label: "Yo'q" },
+          { value: 1, label: 'Ha' },
+        ]}
+        value={null}
+        invalid={false}
+        onAnswer={onAnswer}
+        onAdvance={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('radio', { name: 'Ha' }));
+
+    expect(onAnswer).toHaveBeenCalledWith(1);
+  });
+
+  it("SingleChoice — options[] variant kartalari sifatida ko'rsatiladi", async () => {
+    const user = userEvent.setup();
+    const onAnswer = vi.fn();
+    render(
+      <LikertQuestion
+        question={{
+          ...QUESTION,
+          type: 'SingleChoice',
+          options: [
+            { id: 'o2', text: 'Ikkinchi variant', value: 20, order: 2 },
+            { id: 'o1', text: 'Birinchi variant', value: 10, order: 1 },
+          ],
+        }}
+        // `SingleChoice` uchun server `scaleLabels`ni bermaydi (`null`).
+        scaleLabels={[]}
+        value={null}
+        invalid={false}
+        onAnswer={onAnswer}
+        onAdvance={vi.fn()}
+      />,
+    );
+
+    // `order` bo'yicha saralanadi — birinchi bo'lib "Birinchi variant" chiqadi.
+    expect(screen.getAllByRole('radio').map((node) => node.getAttribute('value'))).toEqual([
+      '10',
+      '20',
+    ]);
+
+    await user.click(screen.getByRole('radio', { name: 'Ikkinchi variant' }));
+
+    expect(onAnswer).toHaveBeenCalledWith(20);
+  });
 });

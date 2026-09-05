@@ -24,11 +24,13 @@ const VARIANT_ICON: Record<ToastVariant, ComponentType<{ size?: number; classNam
   danger: AlertTriangle,
 };
 
+// Matn `-900`, fon `-50`: eng past juftlik 10.09:1 (info). Tavsif satri `opacity-80` bilan
+// yumshatiladi — aralashtirilgan rang baribir kamida 5.80:1 beradi (AA o'tadi).
 const VARIANT_CLASSES: Record<ToastVariant, string> = {
-  info: 'border-primary-200 bg-primary-50 text-primary-800',
-  success: 'border-success-300 bg-success-50 text-success-700',
-  warning: 'border-warning-300 bg-warning-50 text-warning-700',
-  danger: 'border-danger-300 bg-danger-50 text-danger-700',
+  info: 'border-firuza-200 bg-firuza-50 text-firuza-900',
+  success: 'border-zumrad-200 bg-zumrad-50 text-zumrad-900',
+  warning: 'border-zarhal-300 bg-zarhal-50 text-zarhal-900',
+  danger: 'border-terakota-200 bg-terakota-50 text-terakota-900',
 };
 
 function createToastId(): string {
@@ -86,7 +88,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               key={toast.id}
               role="status"
               className={cn(
-                'pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg border p-3 shadow-md',
+                'pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-2xl border p-3 shadow-lift',
                 VARIANT_CLASSES[toast.variant],
               )}
             >
@@ -99,7 +101,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 type="button"
                 onClick={() => dismiss(toast.id)}
                 aria-label={t('common.close')}
-                className="shrink-0 opacity-70 hover:opacity-100"
+                className="shrink-0 rounded-full opacity-70 hover:opacity-100"
               >
                 <X size={16} aria-hidden="true" />
               </button>

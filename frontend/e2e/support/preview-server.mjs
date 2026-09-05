@@ -21,11 +21,18 @@ if (!distDir || !existsSync(path.join(distDir, 'index.html'))) {
 // `frontend/.env` da `VITE_API_BASE_URL=https://16shaxsiyat.uz` turadi — build shu qiymatni
 // bundlega "inline" qilib qo'yishi mumkin. Build `VITE_API_BASE_URL=` (bo'sh, ya'ni
 // same-origin) bilan qilinadi; quyida buning HAQIQATAN shunday bo'lgani tekshiriladi.
+//
+// Tekshiruv ATAYLAB domenning O'ZINI emas, uni HTTP ORIGIN sifatida ishlatishni qidiradi
+// (`//16shaxsiyat.uz`, `//api.16shaxsiyat.uz`). P45 marketing qatlami sahifada brend
+// pochtasini ko'rsatadi (`mailto:salom@16shaxsiyat.uz`) — bu hech qanday tarmoq so'rovi
+// emas, lekin oddiy `includes('16shaxsiyat.uz')` uni ham jonli domen deb hisoblab, butun
+// E2E to'plamini ishga tushmasdan to'xtatib qo'yardi.
 const assetsDir = path.join(distDir, 'assets');
+const LIVE_ORIGIN = /\/\/(?:[a-z0-9-]+\.)*16shaxsiyat\.uz/i;
 if (existsSync(assetsDir)) {
   for (const name of readdirSync(assetsDir)) {
     if (!name.endsWith('.js')) continue;
-    if (readFileSync(path.join(assetsDir, name), 'utf8').includes('16shaxsiyat.uz')) {
+    if (LIVE_ORIGIN.test(readFileSync(path.join(assetsDir, name), 'utf8'))) {
       console.error(
         `[e2e] TO'XTATILDI: build ichida jonli domen topildi (${name}). ` +
           'E2E build `VITE_API_BASE_URL=` bilan qilinishi shart.',

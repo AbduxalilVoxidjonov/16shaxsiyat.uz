@@ -119,7 +119,7 @@ export function DataTable<T>({
                   <button
                     type="button"
                     onClick={() => handleSortClick(column.id)}
-                    className="inline-flex items-center gap-1 font-medium text-neutral-500 hover:text-neutral-900"
+                    className="inline-flex items-center gap-1 font-semibold text-ink-soft hover:text-ink"
                   >
                     {column.header}
                     {sort?.columnId === column.id ? (
@@ -192,7 +192,7 @@ export function DataTable<T>({
       {isEmpty && <EmptyState title={emptyTitle} description={emptyDescription} />}
 
       {!isLoading && !isEmpty && (
-        <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-neutral-600">
+        <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-ink-soft">
           <p>{t('dataTable.totalCount', { count: total })}</p>
           <nav aria-label={t('dataTable.paginationLabel')} className="flex items-center gap-2">
             <Button

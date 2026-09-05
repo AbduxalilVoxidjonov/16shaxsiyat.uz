@@ -109,3 +109,5 @@ Git: har vazifa alohida `feat/PNN-*` branch va PR; `main` ga to'g'ridan-to'g'ri 
 - [ ] P10–P12 ommaviy API · [ ] P13–P15 admin API · [ ] P16–P18 AI modul
 - [ ] P19–P21 ommaviy UI · [ ] P22–P26 admin UI · [ ] P27–P29 eksport/sozlamalar
 - [ ] P30 E2E · [ ] P31 xavfsizlik · [ ] P32 deploy · [ ] P33 anketa konstruktori
+- [x] P45 ommaviy dizayn (16shaxsiyat.uz vizual tizimi frontendga ko'chirildi — yangi marketing
+  qatlami `/`, `/metodika`, `/biz-haqimizda`, `/aloqa`; `docs/10` §9, `PROGRESS.md`)

@@ -38,7 +38,14 @@ const MONTH_KEYS = [
  * tekshiruvi (`registrationSchema.ts`) alohida, bu yerdagi oraliq faqat tanlov ro'yxatini
  * qisqartirish uchun (biroz keng — chegara holatlari uchun).
  */
-export function BirthDateSelect({ value, onChange, onBlur, errors, minAge, maxAge }: BirthDateSelectProps) {
+export function BirthDateSelect({
+  value,
+  onChange,
+  onBlur,
+  errors,
+  minAge,
+  maxAge,
+}: BirthDateSelectProps) {
   const { t } = useTranslation();
 
   const dayOptions = useMemo<SelectOption[]>(
@@ -51,7 +58,11 @@ export function BirthDateSelect({ value, onChange, onBlur, errors, minAge, maxAg
   );
 
   const monthOptions = useMemo<SelectOption[]>(
-    () => MONTH_KEYS.map((key, index) => ({ value: String(index + 1), label: t(`register.months.${key}`) })),
+    () =>
+      MONTH_KEYS.map((key, index) => ({
+        value: String(index + 1),
+        label: t(`register.months.${key}`),
+      })),
     [t],
   );
 
@@ -68,7 +79,7 @@ export function BirthDateSelect({ value, onChange, onBlur, errors, minAge, maxAg
 
   return (
     <fieldset className="flex flex-col gap-1.5">
-      <legend className="mb-1.5 text-sm font-medium text-neutral-700">
+      <legend className="mb-1.5 text-sm font-medium text-ink-soft">
         {t('register.fields.birthDate')}
       </legend>
       <div className="grid grid-cols-3 gap-2">

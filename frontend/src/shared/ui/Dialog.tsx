@@ -70,18 +70,19 @@ export function Dialog({
       aria-labelledby="dialog-title"
       aria-describedby={description ? 'dialog-description' : undefined}
       className={cn(
-        'w-full max-w-md rounded-xl border border-neutral-200 bg-white p-0 shadow-lg',
-        'backdrop:bg-neutral-900/40',
+        'w-full max-w-md rounded-4xl border border-line bg-paper-card p-0 shadow-lift',
+        'backdrop:bg-ink/40',
         className,
       )}
     >
-      <div className="flex items-start justify-between gap-4 border-b border-neutral-100 p-4">
+      <div className="flex items-start justify-between gap-4 border-b border-line p-4">
         <div>
-          <h2 id="dialog-title" className="text-base font-semibold text-neutral-900">
+          <h2 id="dialog-title" className="font-display text-base font-bold text-ink">
             {title}
           </h2>
+          {/* `ink-muted` oq (`paper-card`) fonda 4.75:1 — AA o'tadi; oyna foni har doim oq. */}
           {description && (
-            <p id="dialog-description" className="mt-1 text-sm text-neutral-500">
+            <p id="dialog-description" className="mt-1 text-sm text-ink-muted">
               {description}
             </p>
           )}
@@ -90,14 +91,14 @@ export function Dialog({
           type="button"
           onClick={onClose}
           aria-label={t('common.close')}
-          className="rounded-md p-1.5 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+          className="rounded-full p-1.5 text-ink-muted hover:bg-paper-deep hover:text-ink"
         >
           <X size={18} aria-hidden="true" />
         </button>
       </div>
       <div className="p-4">{children}</div>
       {footer && (
-        <div className="flex justify-end gap-2 border-t border-neutral-100 p-4">{footer}</div>
+        <div className="flex justify-end gap-2 border-t border-line p-4">{footer}</div>
       )}
     </dialog>
   );

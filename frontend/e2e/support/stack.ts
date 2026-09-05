@@ -91,7 +91,12 @@ export async function startStack(): Promise<void> {
   // `down -v` — oldingi run qoldiqlari va bazasi butunlay o'chiriladi. Har test o'z
   // maktabini yaratsa ham, toza baza takrorlanuvchanlikni kafolatlaydi.
   await runCompose(['down', '-v', '--remove-orphans'], env);
-  await runCompose(['up', '-d'], env);
+  // `--build` MAJBURIY: `shaxsiyat-e2e-api:latest` tegi bir marta yig'ilgach, `up -d`
+  // uni QAYTA yig'maydi va E2E jimgina ESKI backendga qarshi ishlaydi. Aynan shu tufayli
+  // `GET /api/admin/schools/link-health` (backendda bor) E2E stekida `404` qaytarayotgan
+  // edi — boshqaruv paneli konsolida xato, sabab esa ko'rinmasdi. Docker qatlam keshi
+  // tufayli manba o'zgarmagan bo'lsa qayta yig'ish deyarli bepul.
+  await runCompose(['up', '-d', '--build'], env);
   await waitForApi(240_000);
 }
 

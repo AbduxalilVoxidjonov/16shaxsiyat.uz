@@ -5,6 +5,7 @@ import { useNavigate, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { usePageTitle } from '@/shared/hooks/usePageTitle';
 import { Button, Card, Input } from '@/shared/ui';
+import { Logo } from '@/shared/ui/brand';
 import { AppError } from '@/shared/api/AppError';
 import { cn } from '@/shared/lib/cn';
 import { ROUTES } from '@/shared/config/routes';
@@ -103,8 +104,14 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-neutral-50 p-4">
       <Card className="w-full max-w-sm">
-        <div className="mb-5 flex flex-col items-center gap-1 text-center">
-          <p className="text-xl font-bold text-primary-700">{t('app.name')}</p>
+        {/*
+          Brend bloki `AdminLayout` bilan BITTA manbadan (`shared/ui/brand/Logo`). Ilgari
+          bu yerda qo'lda yozilgan `text-primary-700` (indigo #4338CA) turardi — P45
+          reskinidan keyin u yolg'iz qolib ketdi: o'sha kartaning "Kirish" tugmasi
+          allaqachon firuza va ikkalasi ochiq ziddiyat berardi.
+        */}
+        <div className="mb-5 flex flex-col items-center gap-1.5 text-center">
+          <Logo />
           <h1 className="text-sm font-medium text-neutral-500">{t('auth.login.heading')}</h1>
         </div>
         <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex flex-col gap-4">

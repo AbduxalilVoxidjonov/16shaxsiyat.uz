@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { usePageTitle } from '@/shared/hooks/usePageTitle';
-import { Button, ErrorState, Skeleton, Spinner } from '@/shared/ui';
+import { ErrorState, Skeleton } from '@/shared/ui';
+import { GirihStar, PatternBackdrop } from '@/shared/ui/brand';
 import { ROUTES } from '@/shared/config/routes';
 import { AppError } from '@/shared/api/AppError';
 import { useSessionState } from '../api/useSessionState';
@@ -16,10 +17,45 @@ const RESULT_BUTTON_DELAY_MS = 10_000;
 function FinishSkeleton() {
   return (
     <div className="flex flex-col items-center gap-4 py-16" aria-hidden="true">
-      <Skeleton className="h-8 w-64" />
-      <Skeleton className="size-8 rounded-full" />
-      <Skeleton className="h-4 w-48" />
+      <Skeleton className="size-24 rounded-[26%] bg-line/70" />
+      <Skeleton className="h-7 w-64 rounded-full bg-line/70" />
+      <Skeleton className="h-4 w-48 rounded-full bg-line/70" />
     </div>
+  );
+}
+
+/**
+ * Sekin aylanuvchi girih yulduzi — sahifaning "vazmin kutish" belgisi. Sof dekorativ
+ * (`GirihStar` o'zi `aria-hidden`), holat matni har doim yonida yozuv bilan beriladi.
+ */
+function WaitingMark() {
+  return (
+    <span className="relative grid size-28 shrink-0 place-items-center">
+      <GirihStar className="absolute inset-0 animate-spin-slow text-firuza-200" strokeWidth={1.5} />
+      <GirihStar
+        className="absolute inset-[22%] animate-float text-firuza-400"
+        strokeWidth={2}
+        withCircle={false}
+      />
+    </span>
+  );
+}
+
+/**
+ * "Nafas oluvchi" uch nuqta — kutish davom etayotganini bildiradi. Matn emas, dekor:
+ * holatning o'zi yonidagi paragrafda so'z bilan aytiladi.
+ */
+function WaitingDots() {
+  return (
+    <span className="flex items-center gap-1.5" aria-hidden="true">
+      {[0, 1, 2].map((index) => (
+        <span
+          key={index}
+          className="size-1.5 animate-pulse rounded-full bg-firuza-400"
+          style={{ animationDelay: `${index * 220}ms` }}
+        />
+      ))}
+    </span>
   );
 }
 
@@ -117,10 +153,16 @@ export default function FinishPage() {
 
   if (!completeSession.data) {
     return (
-      <div className="flex flex-col items-center gap-4 py-16 text-center">
-        <Spinner size={32} />
-        <p className="text-neutral-600">{t('pages.finish.analyzing')}</p>
-      </div>
+      <section className="relative overflow-hidden rounded-5xl border border-line bg-paper-card px-6 py-14 text-center shadow-soft">
+        <PatternBackdrop className="opacity-25" />
+        <div className="relative flex flex-col items-center gap-6 animate-fade-in">
+          <WaitingMark />
+          <p role="status" className="flex items-center gap-2.5 text-[15px] text-ink-soft">
+            {t('pages.finish.analyzing')}
+            <WaitingDots />
+          </p>
+        </div>
+      </section>
     );
   }
 
@@ -136,29 +178,56 @@ export default function FinishPage() {
   // shu bayroqni tekshiradi — himoya ikki qatlamda.
   if (!sessionState.hasPersonalityBattery) {
     return (
-      <div className="flex flex-col items-center gap-4 py-16 text-center">
-        <h1 className="text-xl font-bold text-neutral-900">{t('publicAssessment.survey.thanksHeading')}</h1>
-        <p className="text-neutral-600">{t('publicAssessment.survey.thanksMessage')}</p>
-      </div>
+      <section className="relative overflow-hidden rounded-5xl border border-line bg-paper-card px-6 py-14 text-center shadow-soft">
+        <PatternBackdrop className="opacity-25" />
+        <div className="relative flex flex-col items-center gap-5 animate-fade-up">
+          <WaitingMark />
+          <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink balance sm:text-3xl">
+            {t('publicAssessment.survey.thanksHeading')}
+          </h1>
+          <p className="max-w-sm text-[15px] leading-relaxed text-ink-soft">
+            {t('publicAssessment.survey.thanksMessage')}
+          </p>
+        </div>
+      </section>
     );
   }
 
   return (
-    <div className="flex flex-col items-center gap-4 py-16 text-center">
-      <h1 className="text-xl font-bold text-neutral-900">{t('pages.finish.heading')}</h1>
-      <Spinner size={32} />
-      <p className="text-neutral-600">{t('pages.finish.analyzing')}</p>
-      {completeSession.data.showResultToStudent ? (
-        <Button
-          size="lg"
-          disabled={!resultButtonReady}
-          onClick={() => navigate(ROUTES.public.result(slug))}
+    <section className="relative overflow-hidden rounded-5xl border border-line bg-paper-card px-6 py-14 text-center shadow-soft">
+      <PatternBackdrop className="opacity-25" />
+
+      <div className="relative flex flex-col items-center gap-5 animate-fade-up">
+        <WaitingMark />
+
+        <p className="eyebrow">{t('pages.finish.title')}</p>
+        <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink balance sm:text-3xl">
+          {t('pages.finish.heading')}
+        </h1>
+
+        <p
+          role="status"
+          className="flex items-center gap-2.5 text-[15px] leading-relaxed text-ink-soft"
         >
-          {t('pages.finish.viewResultCta')}
-        </Button>
-      ) : (
-        <p className="text-sm text-neutral-500">{t('pages.finish.sentToPsychologist')}</p>
-      )}
-    </div>
+          {t('pages.finish.analyzing')}
+          <WaitingDots />
+        </p>
+
+        {completeSession.data.showResultToStudent ? (
+          <button
+            type="button"
+            className="btn btn-lg btn-primary mt-2"
+            disabled={!resultButtonReady}
+            onClick={() => navigate(ROUTES.public.result(slug))}
+          >
+            {t('pages.finish.viewResultCta')}
+          </button>
+        ) : (
+          <p className="mt-1 max-w-sm rounded-4xl bg-paper-deep px-5 py-3 text-sm leading-relaxed text-ink-soft">
+            {t('pages.finish.sentToPsychologist')}
+          </p>
+        )}
+      </div>
+    </section>
   );
 }

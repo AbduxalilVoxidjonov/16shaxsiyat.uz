@@ -18,6 +18,7 @@ import { pickNextTestCode } from '../lib/nextTest';
 import { ConsentBlock } from '../components/ConsentBlock';
 import { PhoneField } from '../components/PhoneField';
 import { BirthDateSelect } from '../components/BirthDateSelect';
+import { publicButtonClass } from '../components/publicStyles';
 import {
   MAX_AGE,
   MIN_AGE,
@@ -55,11 +56,11 @@ function isRegistrationFieldKey(key: string): key is keyof RegistrationFormValue
 function RegistrationSkeleton() {
   return (
     <div className="flex flex-col gap-5" aria-hidden="true">
-      <Skeleton className="h-7 w-48" />
+      <Skeleton className="mx-auto h-8 w-48" />
       {[0, 1, 2, 3, 4, 5].map((key) => (
-        <Skeleton key={key} className="h-11 w-full rounded-lg" />
+        <Skeleton key={key} className="h-11 w-full rounded-xl" />
       ))}
-      <Skeleton className="h-12 w-full rounded-lg" />
+      <Skeleton className="h-14 w-full rounded-full" />
     </div>
   );
 }
@@ -116,7 +117,9 @@ export default function RegistrationPage() {
       // sessionStore boshqa oynada tozalangan) — o'quvchi tanlov ekraniga qaytariladi
       // (CLAUDE.md MAXSUS DIQQAT 4-band).
       toast.show({ variant: 'info', title: t('publicAssessment.programRequired.message') });
-      navigate(`${ROUTES.public.landing(slug)}?k=${encodeURIComponent(accessToken)}`, { replace: true });
+      navigate(`${ROUTES.public.landing(slug)}?k=${encodeURIComponent(accessToken)}`, {
+        replace: true,
+      });
       return;
     }
 
@@ -179,7 +182,9 @@ export default function RegistrationPage() {
       grade: Number(values.grade),
       classLetter: values.classLetter ? values.classLetter.toUpperCase() : undefined,
       phone: toE164UzPhone(values.phone) ?? '',
-      parentPhone: values.parentPhone ? (toE164UzPhone(values.parentPhone) ?? undefined) : undefined,
+      parentPhone: values.parentPhone
+        ? (toE164UzPhone(values.parentPhone) ?? undefined)
+        : undefined,
       email: values.email || undefined,
       consentAccepted: values.consentAccepted,
       languageCode: 'uz',
@@ -235,162 +240,188 @@ export default function RegistrationPage() {
   // ko'rsatilmaydi (server `400 PROGRAM_REQUIRED` bilan javob berishini kutish shart emas).
   if (requiresProgramSelection && !selectedProgramCode) {
     return (
-      <Navigate to={`${ROUTES.public.landing(slug)}?k=${encodeURIComponent(accessToken)}`} replace />
+      <Navigate
+        to={`${ROUTES.public.landing(slug)}?k=${encodeURIComponent(accessToken)}`}
+        replace
+      />
     );
   }
 
   return (
-    <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex flex-col gap-5">
-      <h1 className="text-xl font-bold text-neutral-900">{t('pages.register.title')}</h1>
+    <div className="flex animate-fade-up flex-col gap-6 motion-reduce:animate-none">
+      <header className="flex flex-col items-center gap-2 text-center">
+        <p className="eyebrow text-firuza-700">{school.name}</p>
+        <h1 className="font-display text-2xl font-extrabold tracking-tight text-balance text-ink">
+          {t('pages.register.title')}
+        </h1>
+      </header>
 
-      <Input
-        label={t('register.fields.fullName')}
-        autoComplete="name"
-        error={errors.fullName?.message}
-        {...register('fullName')}
-      />
+      <form
+        onSubmit={(event) => void onSubmit(event)}
+        noValidate
+        className="card flex flex-col gap-5 p-5 sm:p-7"
+      >
+        <Input
+          label={t('register.fields.fullName')}
+          autoComplete="name"
+          error={errors.fullName?.message}
+          {...register('fullName')}
+        />
 
-      <Controller
-        control={control}
-        name="birthDate"
-        render={({ field }) => (
-          <BirthDateSelect
-            value={field.value}
-            onChange={field.onChange}
-            onBlur={field.onBlur}
-            minAge={MIN_AGE}
-            maxAge={MAX_AGE}
-            errors={{
-              day: errors.birthDate?.day?.message,
-              month: errors.birthDate?.month?.message,
-              year: errors.birthDate?.year?.message,
-            }}
+        <Controller
+          control={control}
+          name="birthDate"
+          render={({ field }) => (
+            <BirthDateSelect
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              minAge={MIN_AGE}
+              maxAge={MAX_AGE}
+              errors={{
+                day: errors.birthDate?.day?.message,
+                month: errors.birthDate?.month?.message,
+                year: errors.birthDate?.year?.message,
+              }}
+            />
+          )}
+        />
+
+        <fieldset className="flex flex-col gap-1.5">
+          <legend className="mb-1.5 text-sm font-medium text-ink-soft">
+            {t('register.fields.gender')}
+          </legend>
+          <div className="flex gap-3">
+            {(['Male', 'Female'] as const).map((option) => (
+              <label
+                key={option}
+                className={cn(
+                  'flex h-11 flex-1 cursor-pointer items-center justify-center rounded-xl border text-sm font-semibold transition-colors',
+                  // Radio input `sr-only` (vizual jihatdan yashirilgan) — fokus halqasi shu sabab
+                  // o'rab turgan yorliqda ko'rsatiladi (`has-[:focus-visible]`), aks holda
+                  // klaviatura bilan navigatsiya qilganda fokus ko'rinmay qolardi (`docs/11`, 4-bo'lim).
+                  'has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-firuza-500',
+                  genderValue === option
+                    ? 'border-firuza-500 bg-firuza-50 text-firuza-800'
+                    : 'border-line bg-paper-card text-ink-soft hover:border-firuza-300',
+                )}
+              >
+                <input type="radio" value={option} className="sr-only" {...register('gender')} />
+                {t(`register.genderOptions.${option === 'Male' ? 'male' : 'female'}`)}
+              </label>
+            ))}
+          </div>
+          {errors.gender && (
+            <p role="alert" className="text-sm text-terakota-700">
+              {errors.gender.message}
+            </p>
+          )}
+        </fieldset>
+
+        {/*
+          `minmax(0,…)` MAJBURIY: sof `1fr` ning eng kichik o'lchami `auto`, ya'ni
+          "Sinf harfi" inputining brauzer standarti bo'yicha juda keng min-content
+          o'lchami. 390px da shu tufayli nisbat teskarisiga aylanib ketardi — "Sinf"
+          ustuni siqilib, "Tanlang" matni "Tanl…" bo'lib kesilardi.
+        */}
+        <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-3">
+          <Select
+            label={t('register.fields.grade')}
+            placeholder={t('register.fields.gradePlaceholder')}
+            options={GRADE_OPTIONS}
+            error={errors.grade?.message}
+            {...register('grade')}
+          />
+          <Input
+            label={t('register.fields.classLetter')}
+            maxLength={2}
+            error={errors.classLetter?.message}
+            {...register('classLetter')}
+          />
+        </div>
+
+        <Controller
+          control={control}
+          name="phone"
+          render={({ field }) => (
+            <PhoneField
+              label={t('register.fields.phone')}
+              autoComplete="tel-national"
+              value={field.value}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.phone?.message}
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="parentPhone"
+          render={({ field }) => (
+            <PhoneField
+              label={t('register.fields.parentPhone')}
+              value={field.value}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.parentPhone?.message}
+              hint={errors.parentPhone ? undefined : t('register.fields.parentPhoneHint')}
+            />
+          )}
+        />
+
+        <Input
+          label={t('register.fields.email')}
+          type="email"
+          autoComplete="email"
+          hint={errors.email ? undefined : t('register.fields.emailHint')}
+          error={errors.email?.message}
+          {...register('email')}
+        />
+
+        <Controller
+          control={control}
+          name="consentAccepted"
+          render={({ field }) => (
+            <ConsentBlock
+              consentText={school.consentText}
+              checked={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.consentAccepted?.message}
+            />
+          )}
+        />
+
+        {requiresAccessCode && (
+          <Input
+            label={t('register.fields.accessCode')}
+            inputMode="numeric"
+            maxLength={6}
+            error={errors.accessCode?.message}
+            {...register('accessCode')}
           />
         )}
-      />
 
-      <fieldset className="flex flex-col gap-1.5">
-        <legend className="mb-1.5 text-sm font-medium text-neutral-700">
-          {t('register.fields.gender')}
-        </legend>
-        <div className="flex gap-3">
-          {(['Male', 'Female'] as const).map((option) => (
-            <label
-              key={option}
-              className={cn(
-                'flex h-11 flex-1 cursor-pointer items-center justify-center rounded-lg border text-sm font-medium',
-                // Radio input `sr-only` (vizual jihatdan yashirilgan) — fokus halqasi shu sabab
-                // o'rab turgan yorliqda ko'rsatiladi (`has-[:focus-visible]`), aks holda
-                // klaviatura bilan navigatsiya qilganda fokus ko'rinmay qolardi (`docs/11`, 4-bo'lim).
-                'has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary-600',
-                genderValue === option
-                  ? 'border-primary-600 bg-primary-50 text-primary-700'
-                  : 'border-neutral-300 text-neutral-700',
-              )}
-            >
-              <input type="radio" value={option} className="sr-only" {...register('gender')} />
-              {t(`register.genderOptions.${option === 'Male' ? 'male' : 'female'}`)}
-            </label>
-          ))}
-        </div>
-        {errors.gender && (
-          <p role="alert" className="text-sm text-danger-600">
-            {errors.gender.message}
+        {formError && (
+          <p
+            role="alert"
+            className="rounded-2xl border border-terakota-200 bg-terakota-50 px-4 py-3 text-sm text-terakota-800"
+          >
+            {formError}
           </p>
         )}
-      </fieldset>
 
-      <div className="grid grid-cols-[2fr_1fr] gap-3">
-        <Select
-          label={t('register.fields.grade')}
-          placeholder={t('register.fields.gradePlaceholder')}
-          options={GRADE_OPTIONS}
-          error={errors.grade?.message}
-          {...register('grade')}
-        />
-        <Input
-          label={t('register.fields.classLetter')}
-          maxLength={2}
-          error={errors.classLetter?.message}
-          {...register('classLetter')}
-        />
-      </div>
-
-      <Controller
-        control={control}
-        name="phone"
-        render={({ field }) => (
-          <PhoneField
-            label={t('register.fields.phone')}
-            autoComplete="tel-national"
-            value={field.value}
-            onValueChange={field.onChange}
-            onBlur={field.onBlur}
-            error={errors.phone?.message}
-          />
-        )}
-      />
-
-      <Controller
-        control={control}
-        name="parentPhone"
-        render={({ field }) => (
-          <PhoneField
-            label={t('register.fields.parentPhone')}
-            value={field.value}
-            onValueChange={field.onChange}
-            onBlur={field.onBlur}
-            error={errors.parentPhone?.message}
-            hint={errors.parentPhone ? undefined : t('register.fields.parentPhoneHint')}
-          />
-        )}
-      />
-
-      <Input
-        label={t('register.fields.email')}
-        type="email"
-        autoComplete="email"
-        hint={errors.email ? undefined : t('register.fields.emailHint')}
-        error={errors.email?.message}
-        {...register('email')}
-      />
-
-      <Controller
-        control={control}
-        name="consentAccepted"
-        render={({ field }) => (
-          <ConsentBlock
-            consentText={school.consentText}
-            checked={field.value}
-            onChange={field.onChange}
-            onBlur={field.onBlur}
-            error={errors.consentAccepted?.message}
-          />
-        )}
-      />
-
-      {requiresAccessCode && (
-        <Input
-          label={t('register.fields.accessCode')}
-          inputMode="numeric"
-          maxLength={6}
-          error={errors.accessCode?.message}
-          {...register('accessCode')}
-        />
-      )}
-
-      {formError && (
-        <p
-          role="alert"
-          className="rounded-lg border border-danger-200 bg-danger-50 px-3 py-2 text-sm text-danger-700"
+        <Button
+          type="submit"
+          size="lg"
+          className={publicButtonClass('primary', 'lg', 'w-full')}
+          isLoading={isSubmitting}
+          disabled={!consentAccepted}
         >
-          {formError}
-        </p>
-      )}
-
-      <Button type="submit" size="lg" isLoading={isSubmitting} disabled={!consentAccepted}>
-        {t('register.submitCta')}
-      </Button>
-    </form>
+          {t('register.submitCta')}
+        </Button>
+      </form>
+    </div>
   );
 }
