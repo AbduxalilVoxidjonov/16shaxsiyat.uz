@@ -34,6 +34,11 @@ public static class DependencyInjection
         // `prompts/11`: ommaviy katalog keshi — `StartTest`/`GetTestQuestions` ikkalasi ham ishlatadi.
         services.AddScoped<PublicCatalogCache>();
 
+        // P47: o'quvchiga ko'rsatiladigan qisqartirilgan natija proyeksiyasi — maktab oqimi
+        // (`GetStudentResultQueryHandler`) va ommaviy kabinet (`GetMyAssessmentResultQueryHandler`)
+        // BIR XIL mantiqni ishlatishi uchun alohida servis (`IAppDbContext`ga bog'liq — `Scoped`).
+        services.AddScoped<StudentResultBuilder>();
+
         // `prompts/12`: scoring engine `Domain/Scoring`da tayyor (o'zgartirilmaydi) — bu yerda
         // faqat DI ro'yxatidan o'tkaziladi. Strategiyalar holatsiz (sof funksiya) — `Singleton`.
         services.AddSingleton<IScoringStrategy, Mbti16Strategy>();

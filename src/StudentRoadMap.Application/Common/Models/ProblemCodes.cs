@@ -138,6 +138,42 @@ public static class ProblemCodes
     /// </summary>
     public const string ImportFileInvalid = "IMPORT_FILE_INVALID";
 
+    // --- P47 (ommaviy makon va Telegram kirishi) — `docs/06` 6-bo'lim jadvaliga qo'shildi. ---
+
+    /// <summary>
+    /// `POST /api/auth/telegram` — Telegram imzosi (`hash`) mos kelmadi. Mijoz uchun bu
+    /// "qaytadan kiring" degani (401). Sabab ATAYIN oshkor qilinmaydi (soxta imzo, o'zgartirilgan
+    /// maydon yoki boshqa botning tokeni — hammasi bir xil javob).
+    /// </summary>
+    public const string TelegramAuthInvalid = "TELEGRAM_AUTH_INVALID";
+
+    /// <summary>
+    /// `auth_date` <see cref="TelegramAuthInvalid"/> dan ATAYIN ajratilgan: imzo TO'G'RI, lekin
+    /// ma'lumot eskirgan (24 soatdan oshgan) — mijoz Telegram tugmasini QAYTA bosishi kifoya,
+    /// hech narsa buzilmagan (401).
+    /// </summary>
+    public const string TelegramAuthExpired = "TELEGRAM_AUTH_EXPIRED";
+
+    /// <summary>
+    /// `Telegram:BotToken` berilmagan — bu server SOZLAMASI muammosi, mijozning aybi emas.
+    /// `401` qaytarish chalg'ituvchi bo'lardi ("kirishim noto'g'ri" deb o'ylardi), shu sabab
+    /// `503` (xizmat vaqtincha mavjud emas).
+    /// </summary>
+    public const string TelegramAuthNotConfigured = "TELEGRAM_AUTH_NOT_CONFIGURED";
+
+    /// <summary>
+    /// Ommaviy makon (`SchoolKind.PublicSpace`) bazada topilmadi — seed bajarilmagan
+    /// (`docker compose --profile init run --rm seed`). Server holati muammosi (409).
+    /// </summary>
+    public const string PublicSpaceNotConfigured = "PUBLIC_SPACE_NOT_CONFIGURED";
+
+    /// <summary>
+    /// `PublicUser.MarkDeleted` chaqirilgan akkaunt bilan amal bajarishga urinish
+    /// (`DomainException("PUBLIC_USER_DELETED")`). Token hali amal qilayotgan bo'lishi mumkin
+    /// (access token 30 daqiqa) — mijoz uchun bu "sessiya tugadi" (401).
+    /// </summary>
+    public const string PublicUserDeleted = "PUBLIC_USER_DELETED";
+
     /// <summary>`Error.Code` → HTTP status. Ro'yxatda yo'q kod uchun standart qiymat `409` (domen holat mashinasi konflikti).</summary>
     public static readonly IReadOnlyDictionary<string, int> HttpStatusByCode = new Dictionary<string, int>(StringComparer.Ordinal)
     {
@@ -174,6 +210,11 @@ public static class ProblemCodes
         [QuestionCodeDuplicate] = StatusCodes.Status409Conflict,
         [TestDefinitionInvalidTransition] = StatusCodes.Status409Conflict,
         [ImportFileInvalid] = StatusCodes.Status400BadRequest,
+        [TelegramAuthInvalid] = StatusCodes.Status401Unauthorized,
+        [TelegramAuthExpired] = StatusCodes.Status401Unauthorized,
+        [TelegramAuthNotConfigured] = StatusCodes.Status503ServiceUnavailable,
+        [PublicSpaceNotConfigured] = StatusCodes.Status409Conflict,
+        [PublicUserDeleted] = StatusCodes.Status401Unauthorized,
     };
 
     /// <summary>Default (`docs/06` jadvaliga kirmagan domen kodlari uchun) — holat mashinasi konflikti.</summary>
@@ -196,5 +237,6 @@ public static class ProblemCodes
         public const int Status429TooManyRequests = 429;
         public const int Status500InternalServerError = 500;
         public const int Status502BadGateway = 502;
+        public const int Status503ServiceUnavailable = 503;
     }
 }

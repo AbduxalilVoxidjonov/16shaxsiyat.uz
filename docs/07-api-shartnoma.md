@@ -342,6 +342,84 @@ tiplar bo'limi va `/metodika/:kod` sahifalari shu javobdan quriladi.
 
 ---
 
+## 2a. Ommaviy foydalanuvchi autentifikatsiyasi (Telegram) — P47
+
+> **Maktab havolasi oqimi (`/t/{slug}?k=…`) BU BO'LIMDAN MUSTAQIL va O'ZGARMAGAN** — u yerda
+> ro'yxatdan o'tish shart emas, o'quvchi maktab nomidan kiraveradi (§1.1–1.10).
+
+| Metod | Yo'l | Auth | Izoh |
+|-------|------|------|------|
+| POST | `/api/auth/telegram` | yo'q | Telegram Login Widget obyekti → `{accessToken, expiresIn, isNewUser, user}`; refresh token **`httpOnly` cookie** da |
+| POST | `/api/auth/telegram/refresh` | cookie | Tana **bo'sh** → yangi `accessToken` + rotatsiya qilingan cookie |
+| POST | `/api/auth/telegram/logout` | cookie | Refresh tokenni bekor qiladi, cookie'ni tozalaydi (idempotent, `204`) |
+
+### 2a.1 `POST /api/auth/telegram`
+
+So'rov — Telegram Login Widget `onauth` callback'i bergan obyekt **o'zgartirilmasdan**
+(kalitlar `snake_case`, chunki imzo aynan shu nomlardan hisoblangan):
+
+```json
+{
+  "id": 123456789,
+  "first_name": "Ali",
+  "last_name": "Valiyev",
+  "username": "alivali",
+  "photo_url": "https://t.me/i/userpic/320/abc.jpg",
+  "auth_date": 1767225600,
+  "hash": "6f1a…64 belgili hex"
+}
+```
+
+`last_name`/`username`/`photo_url` — ixtiyoriy; Telegram bermasa **umuman yubormaslik** kerak
+(bo'sh satr yuborilsa imzo mos kelmaydi).
+
+`200 OK`:
+
+```json
+{
+  "accessToken": "eyJhbGciOi…",
+  "expiresIn": 1800,
+  "isNewUser": true,
+  "user": {
+    "id": "8f14e45f-ceea-467a-9e6b-1a2b3c4d5e6f",
+    "username": "alivali",
+    "firstName": "Ali",
+    "lastName": "Valiyev",
+    "photoUrl": "https://t.me/i/userpic/320/abc.jpg",
+    "createdAt": "2026-09-05T10:12:00Z",
+    "lastLoginAt": "2026-09-05T10:12:00Z"
+  }
+}
+```
+
+`refreshToken` javob tanasida **HECH QACHON** bo'lmaydi — faqat
+`Set-Cookie: srm_public_refresh_token=…; HttpOnly; Secure; SameSite=Strict; Path=/api/auth/telegram`.
+Frontend `credentials: 'include'` bilan so'rov yuboradi.
+`user.telegramId` ham **qaytarilmaydi** (minimallik prinsipi, `docs/08` §5).
+
+Xatolar:
+
+| Kod | HTTP | Qachon |
+|-----|------|--------|
+| `VALIDATION_ERROR` | 400 | `id ≤ 0`, `auth_date ≤ 0`, `hash` 64 belgili hex emas |
+| `TELEGRAM_AUTH_INVALID` | 401 | Imzo mos kelmadi (maydon o'zgartirilgan yoki boshqa bot tokeni) |
+| `TELEGRAM_AUTH_EXPIRED` | 401 | `auth_date` 24 soatdan eski (yoki 5 daqiqadan ko'p kelajakda) |
+| `RATE_LIMITED` | 429 | IP bo'yicha 10/5 daqiqa |
+| `TELEGRAM_AUTH_NOT_CONFIGURED` | 503 | Serverda `Telegram:BotToken` berilmagan |
+
+### 2a.2 `POST /api/auth/telegram/refresh`
+
+Tana bo'sh. `200 OK` → `{ "accessToken": "…", "expiresIn": 1800 }` + rotatsiya qilingan cookie.
+`401 UNAUTHORIZED` — token yo'q / yaroqsiz / muddati o'tgan / **qayta ishlatilgan**.
+Qayta ishlatish aniqlanganda foydalanuvchining BARCHA refresh tokenlari bekor qilinadi va
+`PublicSecurity.RefreshReuse` audit yozuvi qoldiriladi (superadmin oqimidagi bilan aynan bir xil).
+
+### 2a.3 `POST /api/auth/telegram/logout`
+
+Tana bo'sh. Har doim `204 No Content` (idempotent), cookie tozalanadi.
+
+---
+
 ## 3. Admin endpointlari (`Authorize(Roles = "SuperAdmin")`)
 
 ### 3.1 Maktablar
@@ -1031,6 +1109,174 @@ prefiksi yo'q. Zaxira shablon hisobotlar (`IsFallbackReport = true`) statistikag
 | `POST /api/public/.../answers` | sessiya bo'yicha 120/daqiqa |
 | `GET /api/public/schools/{slug}` | IP bo'yicha 60/daqiqa |
 | `POST /api/auth/login` | IP bo'yicha 10/15 daqiqa |
+| `POST /api/auth/telegram` | IP bo'yicha 10/5 daqiqa (P47) |
+| `POST /api/me/sessions` | IP bo'yicha 10/soat (P47, ommaviy sessiya bilan bir xil) |
+| Ommaviy kabinet (`/api/me/*`, `telegram/refresh`, `telegram/logout`) | IP bo'yicha 120/daqiqa (P47) |
 | Admin API (umumiy) | 300/daqiqa |
 
 **Swagger:** `/swagger` faqat `Development` va `Staging` da.
+
+---
+
+## 5. Ommaviy foydalanuvchi kabineti (`Authorize(Policy = "PublicUser")`) — P47
+
+Barcha endpointlar `Authorization: Bearer <accessToken>` talab qiladi (Telegram kirishidan
+olingan token). **Superadmin tokeni bu yerda ishlamaydi va aksincha** — ikki auditoriya
+alohida JWT `aud` bilan ajratilgan (`docs/08` §2a).
+
+| Metod | Yo'l | Izoh |
+|-------|------|------|
+| GET | `/api/me` | Profil |
+| GET | `/api/me/assessments` | Test sessiyalari tarixi |
+| GET | `/api/me/assessments/{id}/result` | Bitta sessiyaning qisqartirilgan natijasi |
+| POST | `/api/me/sessions` | Ommaviy (maktabsiz) sessiya ochish |
+| DELETE | `/api/me` | O'z ma'lumotini o'chirish (anonimlashtirish) |
+
+Umumiy xatolar: `401 UNAUTHORIZED` (token yo'q/yaroqsiz/akkaunt o'chirilgan),
+`429 RATE_LIMITED` (IP bo'yicha 120/daqiqa; `POST /api/me/sessions` uchun 10/soat).
+
+### 5.1 `GET /api/me`
+
+`200 OK` — `2a.1` dagi `user` obyektining aynan o'zi.
+
+### 5.2 `GET /api/me/assessments`
+
+```json
+{
+  "items": [
+    {
+      "id": "3f2504e0-4f89-11d3-9a0c-0305e82c3301",
+      "status": "Analyzed",
+      "startedAt": "2026-09-01T09:00:00Z",
+      "completedAt": "2026-09-01T09:48:00Z",
+      "programCode": "PERSONALITY_PROFILE",
+      "programName": "Shaxsiyat profili",
+      "resultAvailable": true
+    }
+  ]
+}
+```
+
+Sahifalash YO'Q (bitta foydalanuvchida sessiyalar soni kichik). Tartib — `startedAt` bo'yicha
+kamayish. `resultAvailable` — natija HOZIR ochilishi mumkinmi (`status = Analyzed` **va**
+natija ko'rsatish yoqilgan); frontend tugmani shu bo'yicha ko'rsatadi.
+Ball/indeks/bayroq maydonlari bu yerda **hech qachon** bo'lmaydi.
+
+### 5.3 `GET /api/me/assessments/{id}/result`
+
+`200 OK` — §1.9 bilan **aynan bir xil** shakl:
+
+```json
+{
+  "personalityType": "INTJ",
+  "typeName": "Strateg",
+  "shortDescription": "…",
+  "topStrengths": ["…", "…", "…"],
+  "careerFields": ["…"],
+  "note": "Bu natija tashxis emas — hozirgi holatingiz surati."
+}
+```
+
+| Javob | Qachon |
+|-------|--------|
+| `202 Accepted` (tanasiz) | Sessiya hali `Analyzed` emas |
+| `403 FORBIDDEN` | Natija ko'rsatish o'chirilgan (§5.5) |
+| `404 NOT_FOUND` | `id` mavjud emas **yoki boshqa foydalanuvchiga tegishli** |
+
+> **Nega `403` emas `404`.** Begona sessiya uchun `403` qaytarish "bunday sessiya bor"
+> ma'lumotini oshkor qilardi (mavjudlik oracle'i). `CLAUDE.md` 8-qoidasi buzilmaydi: egalik
+> `id` bilan emas, JWT bilan aniqlanadi; `id` faqat SHU foydalanuvchining sessiyalari
+> ichidan tanlash kaliti.
+
+> **Muddat tekshirilmaydi.** §1.9 dan farqli (u yerda `410 SESSION_EXPIRED` bor): kabinetda
+> natija — arxiv, egalik esa doimiy. 7 kundan keyin o'z natijasini ko'ra olmaslik shaxsiy
+> kabinetning ma'nosini yo'qotardi.
+
+### 5.4 `POST /api/me/sessions`
+
+So'rov:
+
+```json
+{
+  "fullName": "Karimov Sardor Alisherovich",
+  "birthDate": "1995-04-12",
+  "gender": "Male",
+  "phone": "+998901234567",
+  "consentAccepted": true,
+  "parentalConsent": false,
+  "grade": null,
+  "email": null,
+  "languageCode": "uz",
+  "programCode": null
+}
+```
+
+Maktab oqimidagi §1.2 dan farqlari:
+
+| Maydon | Maktab (§1.2) | Ommaviy (§5.4) |
+|--------|---------------|----------------|
+| `slug`/`accessToken`/`accessCode` | majburiy | **yo'q** (egalik JWT bilan) |
+| yosh (`birthDate`) | 6–20 | **6–99** |
+| `grade` | majburiy 1–11 | **ixtiyoriy** (`null` = maktabda o'qimaydi) |
+| `classLetter`/`parentPhone` | bor | **yo'q** |
+| `parentalConsent` | yo'q | **18 yoshgacha `true` bo'lishi SHART** |
+| `consentVersion` | — | server qo'yadi, mijozdan qabul qilinmaydi |
+
+Javob — §1.2 bilan **aynan bir xil** (`StartSessionResult`):
+
+```json
+{
+  "sessionToken": "…",
+  "assessmentId": "…",
+  "status": "Draft",
+  "expiresAt": "2026-09-12T10:12:00Z",
+  "resumed": false,
+  "tests": [
+    { "code": "MBTI16", "name": "…", "status": "NotStarted", "answeredCount": 0,
+      "totalCount": 60, "displayOrder": 1, "estimatedMinutes": 15 }
+  ]
+}
+```
+
+`201 Created` — yangi sessiya; `200 OK` — tugallanmagan sessiya davom ettirildi (`resumed: true`).
+
+Shundan keyin foydalanuvchi **maktab oqimidagi bilan bir xil** endpointlardan foydalanadi
+(`X-Session-Token` bilan `/api/public/sessions/*`, §1.3–1.9) — hech qanday parallel oqim yo'q.
+
+Xatolar:
+
+| Kod | HTTP | Qachon |
+|-----|------|--------|
+| `VALIDATION_ERROR` | 400 | Yosh/telefon/sinf/rozilik qoidalari |
+| `PROGRAM_REQUIRED` | 400 | Bir nechta dastur mavjud, `programCode` berilmagan |
+| `NOT_FOUND` | 404 | Berilgan `programCode` ommaviy makonda mavjud emas |
+| `DUPLICATE_ASSESSMENT` | 409 | So'nggi 90 kunda testni allaqachon yakunlagan (BR-1) |
+| `NO_PROGRAM_AVAILABLE` | 409 | Ommaviy makonga birorta dastur biriktirilmagan |
+| `PUBLIC_SPACE_NOT_CONFIGURED` | 409 | Ommaviy makon seed qilinmagan (`--seed` bajarilmagan) |
+| `SCHOOL_INACTIVE` | 410 | Ommaviy makon o'chirilgan |
+| `RATE_LIMITED` | 429 | IP bo'yicha 10/soat yoki kunlik limit |
+
+### 5.5 `DELETE /api/me`
+
+Tana yo'q. Har doim `204 No Content` (idempotent).
+
+Nima bo'ladi: `public_users` yozuvi **anonimlashtiriladi** (`telegram_id`, `username`,
+`first_name`, `last_name`, `photo_url` tozalanadi, `deleted_at` qo'yiladi), barcha refresh
+tokenlar bekor qilinadi, `PublicUser.Deleted` audit yoziladi. Yozuvning O'ZI qoladi —
+test natijalari arxivi (`docs/08` §5: 5 yil) va `students.public_user_id` FK buzilmasligi
+uchun. Shu Telegram akkaunti bilan qayta kirilsa **YANGI** akkaunt yaratiladi.
+
+Access token 30 daqiqagacha "tirik" qolishi mumkin, lekin `/api/me/*` darhol `401` qaytaradi.
+
+### 5.6 Natija ko'rsatish qoidasi (`showResultToStudent`)
+
+Natija (§1.9 va §5.3) IKKI bayroqning **VA** birlashmasida ochiladi:
+
+1. `App:ShowResultToStudent` — **global avariya rubilnigi**, standart `true`;
+2. `schools.show_result_to_student` — makon qarori: maktab uchun standart `false`
+   (natija psixolog orqali beriladi), **ommaviy makon uchun `true`**.
+
+Ya'ni ommaviy foydalanuvchi o'z natijasini ko'radi, maktab o'quvchisi esa — faqat maktab
+o'z makonida yoqib qo'ysa. Global `false` ikkalasini ham darhol yopadi.
+
+---

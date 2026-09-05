@@ -161,6 +161,16 @@ public sealed class CompleteSessionCommandHandlerTests
             Assessment.CompleteTest(testDefinition.Id, [], Now.AddMinutes(-1));
 
             Context = new FakeCompleteSessionAppDbContext();
+            // P47: makon (maktab) yozuvi kerak — javobdagi `showResultToStudent` GLOBAL
+            // bayroq VA `School.ShowResultToStudent` birlashmasi (`ShowResultPolicy`).
+            Context.SchoolList.Add(School.Create(
+                schoolId,
+                "Sinov maktabi",
+                "Toshkent",
+                "Chilonzor",
+                SchoolSlug.Create("sinov-maktabi").Value,
+                "access-token-sinov-0123456789abcdef",
+                Now.AddDays(-30)));
             Context.AssessmentList.Add(Assessment);
             Context.AssessmentTestList.Add(assessmentTest);
             Context.TestDefinitionList.Add(testDefinition);
@@ -291,6 +301,9 @@ public sealed class CompleteSessionCommandHandlerTests
 
         public List<Student> StudentList { get; } = [];
 
+        /// <summary>P47: `CompleteSessionCommandHandler` javobdagi `showResultToStudent` uchun MAKON bayrog'ini o'qiydi.</summary>
+        public List<School> SchoolList { get; } = [];
+
         public bool SaveChangesCalled { get; private set; }
 
         public bool FailCommit { get; set; }
@@ -339,7 +352,7 @@ public sealed class CompleteSessionCommandHandlerTests
 
         public Task<bool> TryMarkTotpBackupCodeUsedAsync(Guid backupCodeId, DateTimeOffset usedAt, CancellationToken cancellationToken = default) => throw Unsupported();
 
-        public IQueryable<School> Schools => throw Unsupported();
+        public IQueryable<School> Schools => SchoolList.AsQueryable();
 
         public IQueryable<TestScale> TestScales => throw Unsupported();
 

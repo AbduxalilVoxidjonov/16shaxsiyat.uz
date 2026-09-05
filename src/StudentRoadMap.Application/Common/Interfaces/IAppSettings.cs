@@ -11,11 +11,17 @@ public interface IAppSettings
     int SessionLifetimeDays { get; }
 
     /// <summary>
-    /// O'quvchiga qisqartirilgan natijani ko'rsatish (`GET /api/public/sessions/result`,
-    /// `docs/07` 1.9-bo'lim) yoqilganmi. Standart qiymat — **`false`** (`prompts/12`
-    /// cheklovi): bu `PROGRESS.md` ochiq savol #1 — loyiha egasidan hali javob kelmagan,
-    /// shuning uchun ehtiyotkor sozlama tanlangan, superadmin `App:ShowResultToStudent`
-    /// orqali yoqadi.
+    /// GLOBAL "natija ko'rsatilsinmi" bayrog'i (`App:ShowResultToStudent`). **P47dan buyon bu
+    /// yagona qaror nuqtasi EMAS, balki avariya rubilnigi (kill-switch)** — haqiqiy qaror
+    /// makon darajasida (`School.ShowResultToStudent`), ikkalasi `ShowResultPolicy` da
+    /// **VA** (`&amp;&amp;`) bilan birlashtiriladi.
+    /// <para>
+    /// Standart qiymat — **`true`** (ilgari `false`). Sabab: makon bayrog'i maktab uchun
+    /// standart `false` (natija psixolog orqali beriladi — avvalgi xatti-harakat SAQLANADI),
+    /// ommaviy makon uchun esa `true`. Global bayroq yopiq qolsa ommaviy kabinet qutidan
+    /// chiqishi bilan ishlamas edi. `App:ShowResultToStudent=false` — huquqiy talab yoki
+    /// insident holatida BUTUN tizimni bir env o'zgaruvchisi bilan yopish uchun.
+    /// </para>
     /// </summary>
     bool ShowResultToStudent { get; }
 

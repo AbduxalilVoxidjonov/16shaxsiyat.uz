@@ -1,10 +1,8 @@
 using MediatR;
-using StudentRoadMap.Application.Common;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
 using StudentRoadMap.Application.Public.Common;
 using StudentRoadMap.Domain.Assessments;
-using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Common;
 
 namespace StudentRoadMap.Application.Public.GetStudentResult;
@@ -13,40 +11,44 @@ namespace StudentRoadMap.Application.Public.GetStudentResult;
 /// `docs/07` 1.9-bo'lim. Read-only — `AsNoTracking`.
 ///
 /// Javob uch xil:
-/// - `403 FORBIDDEN` — superadmin sozlamasi (`App:ShowResultToStudent`, default `false`,
-///   `prompts/12` cheklovi 8) o'chirilgan bo'lsa. Boshqa hech narsani tekshirmasdan, ENG
-///   BIRINCHI qaytariladi — DB'ga bekorga murojaat qilinmaydi.
+/// - `403 FORBIDDEN` — natija ko'rsatish o'chirilgan. **P47dan buyon bu IKKI bayroqning
+///   birlashmasi** (`ShowResultPolicy`): GLOBAL `App:ShowResultToStudent` (kill-switch) VA
+///   sessiya tegishli bo'lgan MAKONning `School.ShowResultToStudent`i. Global bayroq
+///   birinchi tekshiriladi — u `false` bo'lsa DB'ga umuman murojaat qilinmaydi (avvalgi
+///   xatti-harakat saqlangan); makon bayrog'i esa sessiya topilgandan keyin.
 /// - `202` (`Result.Success(null)`, kontroller `Accepted()`ga aylantiradi) — sessiya hali
-///   `Analyzed` holatiga yetmagan (P18'gacha, AI ulanmagan bo'lsa, bu HAR DOIM shu holat).
-/// - `200` — `Analyzed` holatida, batareyaning shaxsiyat tipi (`PersonalityBatteryRole.PersonalityType`)
-///   va kasb qiziqishlari (`PersonalityBatteryRole.CareerInterest`) `TestResult`laridan qurilgan
-///   qisqartirilgan natija. Bu natijalar metodika KODI bo'yicha emas, domen roli bo'yicha
-///   tanlanadi (`Domain.Catalog.PersonalityBattery`) — sabab pastdagi izohda.
+///   `Analyzed` holatiga yetmagan.
+/// - `200` — `Analyzed` holatida, `StudentResultBuilder` qurgan qisqartirilgan natija.
 /// </summary>
 internal sealed class GetStudentResultQueryHandler : IRequestHandler<GetStudentResultQuery, Result<GetStudentResultResult?>>
 {
-    private const string NoteUz = "Bu natija tashxis emas — hozirgi holatingiz surati.";
-    private const int MaxTopStrengths = 3;
-    private const int MaxCareerFields = 3;
-
     private readonly IAppDbContext _context;
     private readonly IAsyncQueryExecutor _executor;
     private readonly IDateTime _dateTime;
     private readonly IAppSettings _appSettings;
+    private readonly StudentResultBuilder _resultBuilder;
 
-    public GetStudentResultQueryHandler(IAppDbContext context, IAsyncQueryExecutor executor, IDateTime dateTime, IAppSettings appSettings)
+    public GetStudentResultQueryHandler(
+        IAppDbContext context,
+        IAsyncQueryExecutor executor,
+        IDateTime dateTime,
+        IAppSettings appSettings,
+        StudentResultBuilder resultBuilder)
     {
         _context = context;
         _executor = executor;
         _dateTime = dateTime;
         _appSettings = appSettings;
+        _resultBuilder = resultBuilder;
     }
 
     public async Task<Result<GetStudentResultResult?>> Handle(GetStudentResultQuery request, CancellationToken cancellationToken)
     {
+        // GLOBAL kill-switch — boshqa hech narsani tekshirmasdan, ENG BIRINCHI (DB'ga
+        // bekorga murojaat qilinmaydi).
         if (!_appSettings.ShowResultToStudent)
         {
-            return Result.Failure<GetStudentResultResult?>(new Error(ProblemCodes.Forbidden, "O'quvchiga natija ko'rsatish hozircha o'chirilgan."));
+            return Forbidden();
         }
 
         var now = _dateTime.UtcNow;
@@ -65,91 +67,28 @@ internal sealed class GetStudentResultQueryHandler : IRequestHandler<GetStudentR
             return Result.Failure<GetStudentResultResult?>(new Error(ProblemCodes.SessionExpired, "Sessiyaning amal qilish muddati tugagan."));
         }
 
+        // MAKON bayrog'i — maktab natijani odatda psixolog orqali beradi (`false`), ommaviy
+        // makon esa foydalanuvchiga to'g'ridan-to'g'ri ko'rsatadi (`true`).
+        var school = await _executor.FirstOrDefaultAsync(
+            _context.AsNoTracking(_context.Schools).Where(s => s.Id == assessment.SchoolId),
+            cancellationToken).ConfigureAwait(false);
+
+        if (school is null || !ShowResultPolicy.IsAllowed(_appSettings.ShowResultToStudent, school))
+        {
+            return Forbidden();
+        }
+
         if (assessment.Status != AssessmentStatus.Analyzed)
         {
-            // 202 — tahlil hali tayyor emas (`docs/07` 1.9-bo'lim). AI navbati hozircha
-            // ulanmagan (`NoOpJobQueue`, P18'gacha) — bu holat amalda HAR DOIM shu bo'ladi.
+            // 202 — tahlil hali tayyor emas (`docs/07` 1.9-bo'lim).
             return Result.Success<GetStudentResultResult?>(null);
         }
 
-        var testResults = await _executor.ToListAsync(
-            _context.AsNoTracking(_context.TestResults).Where(r => r.AssessmentId == assessment.Id),
-            cancellationToken).ConfigureAwait(false);
-
-        // ⚠️ Natija QAYSI test blokidan olinishi metodika KODI bilan aniqlanmaydi (`docs/06`
-        // 8-bo'lim, 2026-09-02 "dastur" qarori). Ilgari bu yerda `TestCode == "MBTI16"` /
-        // `"RIASEC"` satr solishtiruvi turardi: `Custom` dastur boshqa kodli metodika ishlatsa
-        // (yoki kod versiyalansa) ekran JIMGINA noto'g'ri holatga tushardi — `MBTI16` kodli
-        // superadmin anketasi shaxsiyat tipi o'rniga o'tib ketardi, hech qanday xato ko'rinmasdi.
-        // Mezon — `PersonalityBattery.RoleOf` domen qoidasi (`PersonalityBatteryRoles` orqali).
-        var rolesByAssessmentTestId = await PersonalityBatteryRoles.LoadByAssessmentTestIdAsync(
-            _context, _executor, assessment.Id, cancellationToken).ConfigureAwait(false);
-
-        var personalityTypeCode = PersonalityBatteryRoles
-            .FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.PersonalityType)?.ResultCode;
-        var careerInterestCode = PersonalityBatteryRoles
-            .FindByRole(testResults, rolesByAssessmentTestId, PersonalityBatteryRole.CareerInterest)?.ResultCode;
-
-        string typeName = "";
-        string shortDescription = "";
-        IReadOnlyList<string> topStrengths = [];
-
-        if (!string.IsNullOrEmpty(personalityTypeCode))
-        {
-            var typeCatalogEntry = await _executor.FirstOrDefaultAsync(
-                _context.AsNoTracking(_context.TypeCatalog).Where(t => t.Code == personalityTypeCode),
-                cancellationToken).ConfigureAwait(false);
-
-            if (typeCatalogEntry is not null)
-            {
-                typeName = typeCatalogEntry.NameUz;
-                shortDescription = typeCatalogEntry.ShortDescriptionUz;
-                topStrengths = typeCatalogEntry.Strengths.Take(MaxTopStrengths).ToList();
-            }
-        }
-
-        var careerFields = await ResolveCareerFieldsAsync(careerInterestCode, cancellationToken).ConfigureAwait(false);
-
-        var result = new GetStudentResultResult(
-            PersonalityType: personalityTypeCode ?? "",
-            TypeName: typeName,
-            ShortDescription: shortDescription,
-            TopStrengths: topStrengths,
-            CareerFields: careerFields,
-            Note: NoteUz);
+        var result = await _resultBuilder.BuildAsync(assessment.Id, cancellationToken).ConfigureAwait(false);
 
         return Result.Success<GetStudentResultResult?>(result);
     }
 
-    /// <summary>
-    /// `docs/03` §4.3: `CareerMap.HollandCode` 2 harfli kalit. O'quvchining 3 harfli Holland
-    /// kodi (`docs/03` §4.2 misoli: `IRA`) 15 mumkin bo'lgan juftlikdan faqat ba'zilarini
-    /// qamraydi (seed'da 18 ta — barcha tartib bo'yicha 9 juftlik) — shu sabab ANIQ mos
-    /// kelmasligi mumkin bo'lgan ikkinchi/uchinchi harf juftligini emas, o'quvchining TOP-3
-    /// harfining IKKALASI ham (tartibsiz) shu 2 harfli kodda uchraydigan yozuvlarni tanlaydi
-    /// (`RelevanceOrder` bo'yicha, 3 tagacha). Kod topilmasa (masalan `RIASEC` bu sessiyada
-    /// yo'q) — bo'sh ro'yxat, xato emas (kasb yo'nalishlari ixtiyoriy ma'lumot).
-    /// PM'ga savol: bu moslash mantiqi (aniq talqin yo'qligi sababli) tasdiqlanishi kerak.
-    /// </summary>
-    private async Task<IReadOnlyList<string>> ResolveCareerFieldsAsync(string? hollandCode, CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrEmpty(hollandCode))
-        {
-            return [];
-        }
-
-        var codeLetters = hollandCode.ToCharArray();
-
-        var careerMapEntries = await _executor.ToListAsync(
-            _context.AsNoTracking(_context.CareerMap).OrderBy(c => c.RelevanceOrder),
-            cancellationToken).ConfigureAwait(false);
-
-        return careerMapEntries
-            .Where(c => c.HollandCode.All(letter => codeLetters.Contains(letter)))
-            .OrderBy(c => c.RelevanceOrder)
-            .Select(c => c.FieldNameUz)
-            .Distinct()
-            .Take(MaxCareerFields)
-            .ToList();
-    }
+    private static Result<GetStudentResultResult?> Forbidden() =>
+        Result.Failure<GetStudentResultResult?>(new Error(ProblemCodes.Forbidden, ShowResultPolicy.ForbiddenMessageUz));
 }

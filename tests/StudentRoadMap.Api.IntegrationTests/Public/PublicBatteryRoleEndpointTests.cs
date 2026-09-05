@@ -73,7 +73,7 @@ public sealed class PublicStudentResultBatteryRoleEndpointTests : IClassFixture<
         db.CareerMap.Add(CareerMapEntry.Create(Guid.NewGuid(), "IR", "Muhandislik va texnika"));
         await db.SaveChangesAsync();
         var accessToken = TestDataFactory.NewAccessToken("battery-role-result1");
-        var school = await TestDataFactory.CreateSchoolAsync(db, now, "maktab-battery-role-result1", accessToken);
+        var school = await TestDataFactory.CreateSchoolAsync(db, now, "maktab-battery-role-result1", accessToken, showResultToStudent: true);
 
         // Kod ≠ strategiya: haqiqiy batareya `PERS-BAT-*` kodi bilan.
         var personalityTest = await TestDataFactory.CreateStandaloneSystemTestAsync(

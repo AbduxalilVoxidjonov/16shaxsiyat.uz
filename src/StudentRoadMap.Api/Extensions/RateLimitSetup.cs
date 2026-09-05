@@ -41,6 +41,31 @@ public static class RateLimitSetup
     /// </summary>
     public const string AdminApi = "AdminApi";
 
+    /// <summary>
+    /// `POST /api/auth/telegram` — IP bo'yicha 10/5 daqiqa, `AdminLogin` bilan AYNAN bir xil
+    /// qiymat va sabab. Bu yerda hisob blokirovkasi (`AdminUser.IsLocked`) EKVIVALENTI YO'Q —
+    /// Telegram imzosini "sinab ko'rish" mumkin emas (parol emas, HMAC), lekin IP limiti
+    /// soxta imzo bilan bombardimon qilishning (har urinish SHA-256 + HMAC hisoblashi va
+    /// audit yozuvi) oldini oladi.
+    ///
+    /// ⚠️ `refresh`/`logout` bu siyosatga KIRMAYDI (`PublicUserApi` ostida): ular KIRISH
+    /// urinishi emas, muntazam ish trafigi (access token 30 daqiqada bir yangilanadi), va
+    /// bitta NAT orqasidagi bir nechta foydalanuvchi 10/5 daqiqa kvotasini oddiy
+    /// foydalanishda ham tugatib qo'yardi. `AdminLogin` ham faqat `login` ga qo'llanadi —
+    /// bir xil naqsh.
+    /// </summary>
+    public const string PublicTelegramAuth = "PublicTelegramAuth";
+
+    /// <summary>
+    /// Ommaviy kabinet o'qish endpointlari (`GET /api/me`, `/api/me/assessments`,
+    /// `/api/me/assessments/{id}/result`, `DELETE /api/me`) — IP bo'yicha 120/daqiqa.
+    /// `AdminApi` (300/daqiqa) dan pastroq: kabinet trafigi ancha kam va foydalanuvchi bazasi
+    /// ochiq. IP bo'yicha (foydalanuvchi emas) — `UseRateLimiter()` `UseAuthentication()`dan
+    /// OLDIN ishlaydi (`Program.cs`), ya'ni JWT `sub` limiter ishlagan paytda hali yo'q
+    /// (`AdminApi` bilan bir xil sabab/cheklov).
+    /// </summary>
+    public const string PublicUserApi = "PublicUserApi";
+
     /// <summary>Rad etilgan so'rov uchun oyna uzunligi saqlanadigan `HttpContext.Items` kaliti.</summary>
     private const string RetryAfterWindowItemKey = "RateLimit.RetryAfterWindow";
 
@@ -113,6 +138,18 @@ public static class RateLimitSetup
             options.AddPolicy(PublicSaveAnswers, httpContext => FixedWindow(
                 httpContext,
                 partitionKey: GetSessionToken(httpContext),
+                permitLimit: 120,
+                window: TimeSpan.FromMinutes(1)));
+
+            options.AddPolicy(PublicTelegramAuth, httpContext => FixedWindow(
+                httpContext,
+                partitionKey: GetClientIp(httpContext),
+                permitLimit: 10,
+                window: TimeSpan.FromMinutes(5)));
+
+            options.AddPolicy(PublicUserApi, httpContext => FixedWindow(
+                httpContext,
+                partitionKey: GetClientIp(httpContext),
                 permitLimit: 120,
                 window: TimeSpan.FromMinutes(1)));
 

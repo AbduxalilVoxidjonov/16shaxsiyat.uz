@@ -100,6 +100,12 @@ internal static class TestDataFactory
         }
     }
 
+    /// <summary>
+    /// Sinov maktabi. `showResultToStudent` — P47da qo'shildi: natija ko'rsatish endi MAKON
+    /// darajasidagi qaror (`School.ShowResultToStudent`, maktab uchun standart `false`) va
+    /// global bayroq bilan `&&` qilinadi (`ShowResultPolicy`). Standart qiymat domendagi
+    /// bilan bir xil (`false`) — natijani ko'rishni sinaydigan testlar `true` uzatadi.
+    /// </summary>
     public static async Task<School> CreateSchoolAsync(
         AppDbContext db,
         DateTimeOffset now,
@@ -108,7 +114,8 @@ internal static class TestDataFactory
         int dailyRegistrationLimit = 500,
         bool isActive = true,
         string? accessCode = null,
-        string? region = null)
+        string? region = null,
+        bool showResultToStudent = false)
     {
         var slug = SchoolSlug.Create(slugSeed).Value;
         var school = School.Create(
@@ -121,6 +128,11 @@ internal static class TestDataFactory
             now,
             dailyRegistrationLimit: dailyRegistrationLimit,
             accessCode: accessCode);
+
+        if (showResultToStudent)
+        {
+            school.SetShowResultToStudent(true, now);
+        }
 
         if (!isActive)
         {

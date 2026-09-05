@@ -35,7 +35,7 @@ public sealed class PublicGetStudentResultEndpointTests : IClassFixture<ShowResu
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var now = DateTimeOffset.UtcNow;
         var accessToken = TestDataFactory.NewAccessToken("result-notready1");
-        var school = await TestDataFactory.CreateSchoolAsync(db, now, "maktab-result-notready1", accessToken);
+        var school = await TestDataFactory.CreateSchoolAsync(db, now, "maktab-result-notready1", accessToken, showResultToStudent: true);
         await TestDataFactory.CreatePublishedTestAsync(db, now, "RNR1", 1, questionCount: 2);
 
         using var client = _factory.CreateClient();
@@ -71,7 +71,7 @@ public sealed class PublicGetStudentResultEndpointTests : IClassFixture<ShowResu
 
         var now = DateTimeOffset.UtcNow;
         var accessToken = TestDataFactory.NewAccessToken("result-ready1");
-        var school = await TestDataFactory.CreateSchoolAsync(db, now, "maktab-result-ready1", accessToken);
+        var school = await TestDataFactory.CreateSchoolAsync(db, now, "maktab-result-ready1", accessToken, showResultToStudent: true);
 
         // Haqiqiy `MBTI16`/`RIASEC` `TestDefinition`lar `DbSeeder` orqali allaqachon mavjud —
         // ularning ID'lari `AssessmentTest.TestDefinitionId` uchun ishlatiladi. Scoring
@@ -166,7 +166,12 @@ public sealed class PublicGetStudentResultEndpointTests : IClassFixture<ShowResu
     }
 }
 
-/// <summary>`App:ShowResultToStudent` o'chirilgan (standart) holat — `403 FORBIDDEN`. Alohida `IClassFixture` (standart `PublicApiTestFactory`).</summary>
+/// <summary>
+/// Natija ko'rsatish O'CHIQ holat — `403 FORBIDDEN`. P47dan buyon bu MAKON bayrog'i
+/// (`School.ShowResultToStudent`, maktab uchun standart `false`) hisobiga: global bayroq
+/// (`App:ShowResultToStudent`) endi standart `true` (kill-switch). Global rubilnikning
+/// o'zi butun tizimni yopishi `PublicResultKillSwitchEndpointTests` da sinaladi.
+/// </summary>
 public sealed class PublicGetStudentResultForbiddenEndpointTests : IClassFixture<PublicApiTestFactory>
 {
     private readonly PublicApiTestFactory _factory;
@@ -177,7 +182,7 @@ public sealed class PublicGetStudentResultForbiddenEndpointTests : IClassFixture
     }
 
     [Fact]
-    public async Task GetStudentResult_ShowResultToStudentOchirilgan_403ForbiddenQaytaradi()
+    public async Task GetStudentResult_MakonBayrogiOchirilgan_403ForbiddenQaytaradi()
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();

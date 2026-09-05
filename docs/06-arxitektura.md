@@ -241,6 +241,13 @@ Barcha xatolar `application/problem+json`:
 | `METHOD_NOT_ALLOWED` | 405 | Marshrut bor, HTTP metodi qo'llab-quvvatlanmaydi (P31) |
 | `PAYLOAD_TOO_LARGE` | 413 | So'rov tanasi server chegarasidan katta (P31) |
 | `UNSUPPORTED_MEDIA_TYPE` | 415 | `Content-Type` qo'llab-quvvatlanmaydi (P31) |
+| `TELEGRAM_AUTH_INVALID` | 401 | Telegram imzosi (`hash`) mos kelmadi (P47) |
+| `TELEGRAM_AUTH_EXPIRED` | 401 | Telegram `auth_date` 24 soatdan eski / kelajakda (P47) |
+| `TELEGRAM_AUTH_NOT_CONFIGURED` | 503 | Serverda `Telegram:BotToken` berilmagan (P47) |
+| `PUBLIC_SPACE_NOT_CONFIGURED` | 409 | Ommaviy makon (`SchoolKind.PublicSpace`) seed qilinmagan (P47) |
+| `PUBLIC_USER_DELETED` | 401 | Ommaviy akkaunt o'chirilgan/anonimlashtirilgan (P47) |
+| `NO_PROGRAM_AVAILABLE` | 409 | Makonga birorta mavjud dastur biriktirilmagan (P15/P47) |
+| `PROGRAM_REQUIRED` | 400 | Bir nechta dastur mavjud, `programCode` berilmagan (P34) |
 
 > **`429` javobi.** `Retry-After` sarlavhasi (butun sekund) MAJBURIY, va bir xil qiymat
 > `ProblemDetails` tanasida `retryAfterSeconds` maydoni sifatida takrorlanadi — sarlavhani
@@ -266,9 +273,11 @@ Barcha xatolar `application/problem+json`:
 {
   "ConnectionStrings": { "Postgres": "Host=db;Database=studentroadmap;Username=srm;Password=***" },
   "Jwt": { "Issuer": "studentroadmap", "Audience": "studentroadmap-admin",
+           "PublicAudience": "studentroadmap-public",
            "Key": "***", "AccessTokenMinutes": 30, "RefreshTokenDays": 14 },
   "App": { "FrontendUrl": "https://16shaxsiyat.uz", "SessionLifetimeDays": 7,
-           "SeedOnStartup": false },
+           "SeedOnStartup": false, "ShowResultToStudent": true },
+  "Telegram": { "BotToken": "***" },
   "Security": { "EncryptionKey": "***base64-32byte***", "IpHashSalt": "***" },
   "Ai": { "DefaultProvider": "Gemini", "TimeoutSeconds": 90, "MaxRetries": 3,
           "EnableFallbackChain": true, "PromptVersion": "v1.0" },
@@ -282,6 +291,49 @@ Barcha xatolar `application/problem+json`:
 ---
 
 ## 8. Qarorlar jurnali (yangi qarorlar shu yerga qo'shiladi)
+
+### 2026-09-05 — P47: ommaviy foydalanuvchi (Telegram) va maktabsiz oqim
+
+**1. Ikki auditoriya `aud` bilan ajratildi — faqat rolga tayanilmadi.**
+Superadmin tokeni `aud = Jwt:Audience` (`studentroadmap-admin`), ommaviy foydalanuvchi tokeni
+`aud = Jwt:PublicAudience` (`studentroadmap-public`), rol esa mos ravishda `SuperAdmin` /
+`PublicUser`. API'da IKKI `JwtBearer` sxemasi (`Bearer` va `PublicBearer`) ro'yxatdan
+o'tkazildi; `SuperAdminPolicy` **o'zgarmadi**. Sabab: faqat rolga tayanish bitta xato policy
+sozlamasi bilan ikki auditoriyani aralashtirib yuborardi — `aud` esa IMZO validatsiyasi
+darajasida rad etadi, ya'ni ommaviy token superadmin sxemasida ROLGA umuman yetib bormaydi.
+
+**2. `StartSession` KENGAYTIRILMADI — alohida `StartPublicSessionCommand` yozildi.**
+Ikki oqimning kirish shartnomasi bir-biriga mos kelmaydi (maktabda `slug`+`accessToken`
+majburiy, yosh 6–20, sinf 1–11 majburiy; ommaviyda JWT majburiy, yosh 6–99, sinf ixtiyoriy).
+Bitta buyruqqa siqish `StartSessionCommandValidator` ni shartli qoidalarga to'ldirishni,
+ya'ni maktab oqimining validatsiya yo'lini o'zgartirishni talab qilardi — bu esa asosiy
+cheklovni ("maktab oqimi bir belgi ham o'zgarmasin") buzardi. Nusxa ko'chirish oldini olish
+uchun umumiy qadamlar ikki yordamchiga ajratildi: `ProgramAvailability` (allaqachon bor edi)
+va yangi `AssessmentTestAttacher` — ikkala handler ham AYNAN shularni chaqiradi.
+Sessiya ochilgandan keyin ommaviy foydalanuvchi maktab oqimidagi AYNAN o'sha
+`/api/public/sessions/*` endpointlaridan foydalanadi — parallel oqim yaratilmadi.
+
+**3. `App:ShowResultToStudent` standart qiymati `false` → `true` ga o'zgartirildi.**
+Qaror endi MAKON darajasida (`schools.show_result_to_student`): maktab uchun standart
+`false` (avvalgi xatti-harakat saqlanadi), ommaviy makon uchun `true`. Global bayroq esa
+avariya rubilnigiga (kill-switch) aylandi — `ShowResultPolicy` ikkalasini `&&` bilan
+birlashtiradi. Global `false` qolganda ommaviy kabinet qutidan chiqishi bilan ishlamas edi;
+`true` qilinganda esa maktab o'quvchisiga hech narsa ochilmaydi, chunki makon bayrog'i
+yopiq. Bir xil qoida `POST /api/public/sessions/complete` javobidagi `showResultToStudent`
+maydoniga ham qo'llandi — aks holda javob va'da berib, `GET .../result` `403` qaytarardi.
+
+**4. Sessiya tokeni qidiruvi xeshga o'tkazildi (ikki bosqichli, 1-bosqich).**
+`SessionTokenAuthenticationHandler` endi `assessments.session_token_hash` (SHA-256) bo'yicha
+qidiradi. Ochiq `session_token` ustuni SAQLANDI va faqat yozish uchun qoldi — ustunni
+o'chirish ALOHIDA migratsiya (2-bosqich) sifatida bajarilishi kerak (`CLAUDE.md` 7-qoida).
+
+**5. Ommaviy audit harakatlari `Application` qatlamida (`PublicAuditActions`).**
+`Domain.Identity.AuditActions` bu bosqichda qulflangan (domen agenti yakunlagan) — qiymatlar
+bir xil uslubda (`PublicAuth.LoginSucceeded`, `PublicAuth.LoginFailed`, `PublicUser.Deleted`,
+`PublicSecurity.RefreshReuse`) va bir xil `audit_logs` jadvaliga tushadi, shu sabab keyinchalik
+domen qatlamiga ko'chirish bazadagi tarixni buzmaydi. `AuditLog.AdminUserId` ommaviy oqimda
+HAR DOIM `null` (u `admin_users` ga FK) — kim ekanligi `EntityType`/`EntityId` orqali yoziladi.
+
 
 | Sana | Qaror | Kim | Sabab |
 |------|-------|-----|-------|

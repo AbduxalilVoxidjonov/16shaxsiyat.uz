@@ -49,6 +49,10 @@ public static class DependencyInjection
         // uzunligi xato bo'lsa fail-fast (`docs/13-auth-va-jwt.md` MAXSUS DIQQAT 2-band).
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
         services.AddSingleton<ITotpService, TotpService>();
+        // P47: Telegram Login Widget imzosini tekshiradi. Holatsiz (`Telegram:BotToken`dan
+        // hisoblangan `secret_key` konstruktorda bir marta) — `Singleton`. `JwtTokenService`dan
+        // farqli, sozlama yo'qligida fail-fast QILMAYDI (`TelegramLoginVerifier` izohi).
+        services.AddSingleton<ITelegramLoginVerifier, TelegramLoginVerifier>();
         services.AddSingleton<IAppSettings, AppSettingsProvider>();
         // `prompts/14`: maktab havolasi QR kodi — holatsiz (sof funksiya), `Singleton`.
         services.AddSingleton<IQrCodeGenerator, QrCodeGenerator>();

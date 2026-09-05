@@ -110,7 +110,10 @@ public sealed class PublicCompleteFlowEndpointTests : IClassFixture<PublicApiTes
         // qarori) — sessiya `Completed` bo'lib qoladi, AI tahlili admin panelidagi tugma bilan
         // QO'LDA ishga tushiriladi. Bayroq YOQILGAN oqim `PublicAutoAnalyzeFlagEndpointTests`da.
         completeSessionBody!.Status.Should().Be("Completed");
-        completeSessionBody.ShowResultToStudent.Should().BeFalse("standart `App:ShowResultToStudent` `false` (`prompts/12` cheklovi 8)");
+        // P47: `showResultToStudent` — GLOBAL kill-switch (standart `true`) VA MAKON bayrog'ining
+        // birlashmasi. Bu maktab `School.ShowResultToStudent = false` (domendagi standart), shu
+        // sabab javob `false` — ya'ni maktab oqimining xatti-harakati o'zgarmadi.
+        completeSessionBody.ShowResultToStudent.Should().BeFalse("maktab makonida `School.ShowResultToStudent` standart `false`");
 
         using (var verifyScope = _factory.Services.CreateScope())
         {

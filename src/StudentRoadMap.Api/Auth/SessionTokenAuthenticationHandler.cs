@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
+using StudentRoadMap.Domain.Common;
 
 namespace StudentRoadMap.Api.Auth;
 
@@ -56,8 +57,20 @@ public sealed class SessionTokenAuthenticationHandler : AuthenticationHandler<Se
             return AuthenticateResult.NoResult();
         }
 
+        // P47: qidiruv XOM token ustunidan (`session_token`) SHA-256 XESHIGA ko'chirildi
+        // (`Assessment.SessionTokenHash`, `TokenHash.Compute`) — refresh tokenlar bilan bir
+        // xil himoya darajasi: DB nusxasi sizib chiqsa ham faol sessiyalarni bevosita ochib
+        // bo'lmaydi. Xesh ustunida unikal indeks bor, ya'ni so'rov narxi o'zgarmadi.
+        //
+        // ⚠️ KEYINGI MIGRATSIYA (ikki bosqichli destruktiv o'zgarish, `CLAUDE.md` 7-qoida):
+        // ochiq `assessments.session_token` ustuni endi HECH QAYERDA o'qilmaydi (faqat
+        // `Assessment.Create`/`RotateSessionToken` yozadi va sessiya ochilganda bir marta
+        // mijozga qaytariladi). Ikkinchi bosqichda alohida migratsiya bilan ustun va uning
+        // domendagi xususiyati O'CHIRILISHI kerak.
+        var tokenHash = TokenHash.Compute(token);
+
         var assessment = await _executor.FirstOrDefaultAsync(
-            _context.AsNoTracking(_context.Assessments).Where(a => a.SessionToken == token),
+            _context.AsNoTracking(_context.Assessments).Where(a => a.SessionTokenHash == tokenHash),
             Context.RequestAborted).ConfigureAwait(false);
 
         if (assessment is null)

@@ -11,6 +11,7 @@ using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Identity.ChangePassword;
 using StudentRoadMap.Application.Identity.DisableTotp;
 using StudentRoadMap.Application.Identity.Login;
+using StudentRoadMap.Application.PublicUsers.TelegramLogin;
 using StudentRoadMap.Infrastructure;
 using StudentRoadMap.Infrastructure.Persistence;
 using StudentRoadMap.Infrastructure.Persistence.Seeding;
@@ -29,7 +30,11 @@ builder.Host.UseSerilog((context, services, configuration) =>
         .Enrich.FromLogContext()
         .Destructure.ByTransforming<LoginCommand>(c => new { c.Username, HasTotpCode = c.TotpCode is not null })
         .Destructure.ByTransforming<ChangePasswordCommand>(c => new { c.AdminUserId })
-        .Destructure.ByTransforming<DisableTotpCommand>(c => new { c.AdminUserId }));
+        .Destructure.ByTransforming<DisableTotpCommand>(c => new { c.AdminUserId })
+        // P47: Telegram buyrug'ida ham SIR (`hash`), ham SHAXSIY MA'LUMOT (ism, username,
+        // avatar havolasi, Telegram ID) bor — hech biri log oqimiga tushmasligi kerak
+        // (`CLAUDE.md` 4- va 5-qoida). Faqat "urinish bo'ldi" fakti qoladi.
+        .Destructure.ByTransforming<TelegramLoginCommand>(_ => new { Telegram = "redacted" }));
 
 // --- Servislar ---------------------------------------------------------------
 builder.Services.AddControllers()
@@ -79,7 +84,8 @@ builder.Services
     .AddAuthentication(SessionTokenAuthenticationHandler.SchemeName)
     .AddScheme<SessionTokenAuthenticationSchemeOptions, SessionTokenAuthenticationHandler>(
         SessionTokenAuthenticationHandler.SchemeName, _ => { })
-    .AddAdminJwtBearer(builder.Configuration);
+    .AddAdminJwtBearer(builder.Configuration)
+    .AddPublicUserJwtBearer(builder.Configuration);
 builder.Services.AddAdminAuthorizationPolicy();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, StudentRoadMap.Api.Auth.CurrentUser>();

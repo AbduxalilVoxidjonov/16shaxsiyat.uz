@@ -86,12 +86,20 @@ internal sealed class CompleteSessionCommandHandler : IRequestHandler<CompleteSe
             return Result.Failure<CompleteSessionResult>(new Error(ProblemCodes.NotFound, "Sessiya topilmadi."));
         }
 
+        // P47: javobdagi `showResultToStudent` — GLOBAL kill-switch VA MAKON bayrog'ining
+        // birlashmasi (`ShowResultPolicy`), faqat globalning o'zi EMAS. Aks holda javob
+        // "natijangizni ko'rishingiz mumkin" deb va'da berib, `GET .../result` esa `403`
+        // qaytarardi (maktab makonida bu HAR DOIM shunday bo'lardi).
+        var spaceShowsResult = await _executor.AnyAsync(
+            _context.AsNoTracking(_context.Schools).Where(s => s.Id == assessment.SchoolId && s.ShowResultToStudent),
+            cancellationToken).ConfigureAwait(false);
+
         // Idempotentlik (`prompts/12`): sessiya allaqachon yakunlanish oqimidan o'tgan bo'lsa
         // (yoki AI hali/allaqachon ishlagan bo'lsa) — qayta hisoblanmaydi, joriy holat qaytadi.
         if (assessment.Status is AssessmentStatus.Completed or AssessmentStatus.Analyzing
             or AssessmentStatus.Analyzed or AssessmentStatus.AnalysisFailed)
         {
-            return Result.Success(BuildResult(assessment));
+            return Result.Success(BuildResult(assessment, spaceShowsResult));
         }
 
         if (assessment.ExpiresAt <= now)
@@ -178,14 +186,14 @@ internal sealed class CompleteSessionCommandHandler : IRequestHandler<CompleteSe
             _postCommitActions.Enqueue(ct => _backgroundJobQueue.EnqueueAiAnalysisAsync(assessmentId, cancellationToken: ct));
         }
 
-        return Result.Success(BuildResult(assessment));
+        return Result.Success(BuildResult(assessment, spaceShowsResult));
     }
 
-    private CompleteSessionResult BuildResult(Assessment assessment) =>
+    private CompleteSessionResult BuildResult(Assessment assessment, bool spaceShowsResult) =>
         new(
             assessment.Status.ToString(),
             assessment.Status == AssessmentStatus.Analyzing ? MessageAnalyzingUz : MessageCompletedUz,
-            _appSettings.ShowResultToStudent,
+            ShowResultPolicy.IsAllowed(_appSettings.ShowResultToStudent, spaceShowsResult),
             ResultAvailableAt: null);
 
     /// <summary>

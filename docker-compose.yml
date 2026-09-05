@@ -43,6 +43,13 @@ services:
       Jwt__Key: ${Jwt__Key:?Jwt__Key .env faylida berilishi shart}
       Security__EncryptionKey: ${Security__EncryptionKey:?Security__EncryptionKey .env faylida berilishi shart}
       Security__IpHashSalt: ${Security__IpHashSalt:-}
+      # Telegram Login Widget imzosini tekshirish uchun bot tokeni (P47). BO'SH bo'lsa
+      # Telegram kirishi o'chiq (`503 TELEGRAM_AUTH_NOT_CONFIGURED`), qolgan oqimlar ishlaydi
+      # — shu sabab `:?` (majburiy) EMAS, `:-` (ixtiyoriy) ishlatilgan.
+      Telegram__BotToken: ${Telegram__BotToken:-}
+      # Natijani foydalanuvchiga ko'rsatish — GLOBAL kill-switch, standart `true` (P47).
+      # Haqiqiy qaror makon darajasida (`schools.show_result_to_student`).
+      App__ShowResultToStudent: ${App__ShowResultToStudent:-true}
       App__KnownProxies: ${App__KnownProxies:-}
       App__FrontendUrl: ${App__FrontendUrl:-http://localhost:8080}
       App__SeedOnStartup: "false"

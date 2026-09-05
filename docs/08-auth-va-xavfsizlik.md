@@ -1,13 +1,19 @@
 # 08 — Autentifikatsiya, avtorizatsiya va xavfsizlik
 
-## 1. Ikki xil kirish modeli
+## 1. Uch xil kirish modeli
 
-| | Superadmin | O'quvchi |
-|---|---|---|
-| Kirish | Username + parol (+ TOTP) | Maktab havolasi (+ ixtiyoriy kod) |
-| Token | JWT access (30 daq) + refresh (14 kun) | `SessionToken` (opaque, 7 kun) |
-| Saqlash | access — xotirada, refresh — `httpOnly` cookie | `localStorage` |
-| Ruxsat | Hamma admin endpoint | Faqat o'z sessiyasi |
+| | Superadmin | O'quvchi (maktab havolasi) | Ommaviy foydalanuvchi (P47) |
+|---|---|---|---|
+| Kirish | Username + parol (+ TOTP) | Maktab havolasi (+ ixtiyoriy kod) | Telegram Login Widget |
+| Token | JWT access (30 daq, `aud=…-admin`) + refresh (14 kun) | `SessionToken` (opaque, 7 kun) | JWT access (30 daq, `aud=…-public`) + refresh (14 kun) |
+| Saqlash | access — xotirada, refresh — `httpOnly` cookie (`Path=/api/auth`) | `localStorage` | access — xotirada, refresh — `httpOnly` cookie (`Path=/api/auth/telegram`) |
+| Ruxsat | Hamma admin endpoint | Faqat o'z sessiyasi | Faqat o'z kabineti (`/api/me/*`) va o'z sessiyasi |
+
+> **Uch model bir-biriga O'TMAYDI.** Superadmin va ommaviy JWT'lar alohida `aud` bilan
+> imzolanadi va API'da alohida sxemalar (`Bearer` / `PublicBearer`) tekshiradi — ya'ni
+> ommaviy token superadmin endpointida ROLGA umuman yetib bormaydi (`401`), aksi ham
+> shunday. Maktab havolasi oqimi esa ikkalasidan ham mustaqil (`X-Session-Token`) va P47da
+> **hech qanday o'zgarish ko'rmadi**.
 
 ---
 
@@ -54,6 +60,53 @@ yozilmaydi — audit faqat `Auth.TotpEnrollmentStarted` / `Auth.TotpEnabled` fak
 
 ---
 
+## 2a. Ommaviy foydalanuvchi JWT (Telegram) — P47
+
+**Kirish oqimi.** Frontend Telegram Login Widget'ini ko'rsatadi; widget `onauth` callback'ida
+`{id, first_name, last_name?, username?, photo_url?, auth_date, hash}` obyektini beradi.
+Bu obyekt **o'zgartirilmasdan** `POST /api/auth/telegram` ga yuboriladi.
+
+**Imzoni tekshirish (Telegram rasmiy algoritmi, `TelegramLoginVerifier`):**
+
+1. `data_check_string` — `hash` dan tashqari barcha maydonlar `key=value` ko'rinishida,
+   kalit bo'yicha **alifbo (ordinal) tartibida** saralanib `\n` bilan birlashtiriladi.
+   Telegram yubormagan maydon (masalan `last_name`) **umuman qo'shilmaydi** — bo'sh satr
+   bilan qo'shish imzoni buzadi.
+2. `secret_key = SHA256(bot_token)`.
+3. `HMAC_SHA256(data_check_string, secret_key)` ning hex ko'rinishi kelgan `hash` bilan
+   **doimiy vaqtda** (`CryptographicOperations.FixedTimeEquals`) solishtiriladi — baytma-bayt
+   erta chiqadigan solishtiruv xeshni bosqichma-bosqich tiklashga (timing oracle) imkon berardi.
+4. `auth_date` yangiligi: **24 soatdan** eski bo'lmasligi (Telegram namunasidagi qiymat) va
+   5 daqiqadan ko'p kelajakda bo'lmasligi (soat farqi uchun). Bu tekshiruv imzodan OLDIN —
+   eskirgan ma'lumotni HMAC hisoblashiga olib bormaslik arzonroq, `auth_date` esa imzoning
+   bir qismi, ya'ni uni o'zgartirish imzoni ham buzadi.
+
+**Bot tokeni** — `Telegram:BotToken` (env `Telegram__BotToken`), kodda/`appsettings.json`da
+YO'Q (`CLAUDE.md` 4-qoida). Berilmasa ilova ishga tushaveradi, lekin
+`POST /api/auth/telegram` `503 TELEGRAM_AUTH_NOT_CONFIGURED` qaytaradi.
+
+**Access token** claim'lari: `sub` (`PublicUser.Id`), `role = PublicUser`, `jti`, `iat`, `exp`,
+`aud = Jwt:PublicAudience` (standart `studentroadmap-public`). **`name`/ism/username claim'i
+ATAYLAB YO'Q** — token log, proxy va brauzer tarixida qolishi mumkin (`CLAUDE.md` 5-qoida
+ruhida); profil faqat `GET /api/me` orqali beriladi.
+
+**Refresh token** — superadmin naqshining aynan o'zi: 64 baytli random, DB'da faqat SHA-256
+xeshi (`public_refresh_tokens`), rotatsiya + **qayta ishlatishni aniqlash** (bekor qilingan
+token bilan urinish → foydalanuvchining BARCHA tokenlari bekor + `PublicSecurity.RefreshReuse`
+audit). Cookie: `srm_public_refresh_token`, `HttpOnly; Secure; SameSite=Strict;
+Path=/api/auth/telegram` — nom ham, yo'l ham superadminникidan farq qiladi, shu sabab bitta
+brauzerda ikkala sessiya bir-birini buzmaydi va ommaviy cookie admin endpointlariga umuman
+yuborilmaydi.
+
+**Akkauntni o'chirish** (`DELETE /api/me`): yozuv **anonimlashtiriladi**
+(`telegram_id`/`username`/ism/avatar tozalanadi, `deleted_at` qo'yiladi), barcha refresh
+tokenlar bekor qilinadi, `PublicUser.Deleted` audit yoziladi. Qattiq o'chirish emas — test
+natijalari arxivi (§5: 5 yil) va `students.public_user_id` FK saqlanishi kerak. Global query
+filtr (`deleted_at IS NULL`) o'chirilgan akkauntni barcha so'rovlardan yashiradi, shu sabab
+hali amal qilayotgan access token ham `401` oladi.
+
+---
+
 ## 3. Maktab havolasi
 
 **Havola:** `https://16shaxsiyat.uz/t/{slug}?k={accessToken}`
@@ -76,7 +129,12 @@ yozilmaydi — audit faqat `Auth.TotpEnrollmentStarted` / `Auth.TotpEnabled` fak
 
 ## 4. Sessiya tokeni (o'quvchi)
 
-- 32 bayt random → Base64Url; DB'da **ochiq** saqlanadi (imtiyozsiz, faqat o'z sessiyasiga kirish beradi).
+- 32 bayt random → Base64Url. **P47dan buyon DB'da SHA-256 XESHI bo'yicha qidiriladi**
+  (`assessments.session_token_hash`, `TokenHash.Compute`) — refresh tokenlar bilan bir xil
+  himoya darajasi: DB nusxasi sizib chiqsa ham faol sessiyalarni bevosita ochib bo'lmaydi.
+  ⚠️ Ochiq `session_token` ustuni hozircha SAQLANIB turibdi (ikki bosqichli destruktiv
+  o'zgarish, `CLAUDE.md` 7-qoida) — endi u hech qayerda O'QILMAYDI va keyingi migratsiyada
+  o'chiriladi.
 - Header: `X-Session-Token`. Custom `AuthenticationHandler` (`SessionTokenScheme`) tokenni tekshiradi,
   `HttpContext.Items["AssessmentId"]` ga qo'yadi.
 - Muddati: `ExpiresAt` (7 kun) — o'tsa `410 SESSION_EXPIRED`.
@@ -107,6 +165,17 @@ xom `answers` 1 yil (keyin arxivga yoki o'chiriladi).
 
 **O'chirish huquqi:** `DELETE /api/admin/students/{id}?hard=true` — student, sessiyalar, javoblar,
 AI tahlillar butunlay o'chadi; audit'da faqat `{studentId, deletedAt, adminId}` qoladi.
+
+**O'chirish huquqi (ommaviy foydalanuvchi, P47):** `DELETE /api/me` — foydalanuvchi
+o'zi, adminga murojaat qilmasdan. `public_users` yozuvi anonimlashtiriladi (§2a).
+⚠️ **Ochiq savol (egasiga):** ommaviy makonda yaratilgan `Student` yozuvidagi F.I.Sh./telefon
+bu bosqichda anonimlashtirilmaydi — u BR-1 (takrorlanishni aniqlash) mantig'iga kiradi va
+alohida qaror talab qiladi.
+
+**Voyaga yetmagan ommaviy foydalanuvchi (P47):** `POST /api/me/sessions` da 18 yoshgacha
+bo'lganlar uchun `parentalConsent: true` MAJBURIY; roziliknoma versiyasi (`consent_version`)
+serverda qo'yiladi (mijozdan qabul qilinmaydi), matn o'zgarganda versiya oshiriladi va
+rozilik qayta so'raladi.
 
 **Voyaga yetmaganlar:** platforma maktab bilan tuzilgan shartnoma asosida ishlaydi; anketada
 rozilik checkbox va matn (`consentText`) mavjud. Rozilik vaqti `consent_given_at` da qayd etiladi.
@@ -201,12 +270,20 @@ chunki u himoyani pasaytiradi),
 `Assessment.ScoresRecalculated`, `AiConfig.Updated`, `AiConfig.KeyChanged` (kalit qiymati emas!),
 `Catalog.QuestionUpdated`, `Export.StudentsDownloaded`.
 
+**Ommaviy foydalanuvchi (P47):** `PublicAuth.LoginSucceeded`, `PublicAuth.LoginFailed`
+(`{"reason":"hash"|"auth_date"}`, `EntityId` YOZILMAYDI — imzo tasdiqlanmagan `id` ga
+ishonib bo'lmaydi), `PublicUser.Deleted`, `PublicSecurity.RefreshReuse`.
+Bu yozuvlarda `admin_user_id` HAR DOIM `null` (u `admin_users` ga FK) — kim ekanligi
+`entity_type = "PublicUser"` + `entity_id = public_users.id` orqali qayd etiladi.
+
 Har yozuvda: kim, qachon, qaysi obyekt, `before/after` (sirlarsiz), IP xeshi, user-agent.
 
 ---
 
 ## 9. Chiqarishdan oldingi xavfsizlik ro'yxati
 
+- [x] `Telegram:BotToken` — faqat env (`Telegram__BotToken`), repo'da yo'q; berilmasa
+      Telegram kirishi o'chiq (`503`), qolgan oqimlar ishlaydi (P47)
 - [x] `Jwt:Key`, `Security:EncryptionKey`, DB paroli — faqat env, repo'da yo'q
       (`docker-compose.yml` `${...:?}` bilan majburlaydi; `appsettings.json`da sir yo'q)
 - [ ] Default superadmin paroli birinchi kirishda **majburiy** o'zgartiriladi

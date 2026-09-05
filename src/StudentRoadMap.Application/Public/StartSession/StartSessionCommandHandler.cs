@@ -214,19 +214,6 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
             return Result.Failure<StartSessionResult>(new Error(ProblemCodes.RateLimited, "Ushbu maktab uchun kunlik ro'yxatdan o'tish limiti tugadi."));
         }
 
-        // Sessiyaga FAQAT shu dasturning testlari, DASTURDAGI tartibda qo'shiladi (`prompts/34`
-        // C10-band) — `TestDefinition.DisplayOrder` EMAS, `ProgramTest.DisplayOrder`.
-        var programTests = await _executor.ToListAsync(
-            _context.ProgramTests.Where(pt => pt.ProgramId == program.Id).OrderBy(pt => pt.DisplayOrder),
-            cancellationToken).ConfigureAwait(false);
-
-        var programTestDefinitionIds = programTests.Select(pt => pt.TestDefinitionId).ToList();
-        var testDefinitionsById = (await _executor.ToListAsync(
-                _context.TestDefinitions
-                    .Where(t => programTestDefinitionIds.Contains(t.Id) && t.Status == TestDefinitionStatus.Published && t.IsActive),
-                cancellationToken).ConfigureAwait(false))
-            .ToDictionary(t => t.Id);
-
         var sessionToken = _tokenGenerator.GenerateUrlSafeToken(SessionTokenByteLength);
         var expiresAt = now.AddDays(_appSettings.SessionLifetimeDays);
         var ipHash = _ipHasher.Hash(request.IpAddress);
@@ -244,35 +231,12 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
             ipHash: ipHash,
             userAgent: request.UserAgent);
 
-        var tests = new List<PublicTestSummaryDto>(programTests.Count);
-        foreach (var programTest in programTests)
-        {
-            if (!testDefinitionsById.TryGetValue(programTest.TestDefinitionId, out var testDefinition))
-            {
-                continue;
-            }
-
-            var activeQuestionCount = await _executor.CountAsync(
-                _context.Questions.Where(q => q.TestDefinitionId == testDefinition.Id && q.IsActive),
-                cancellationToken).ConfigureAwait(false);
-
-            if (activeQuestionCount == 0)
-            {
-                continue;
-            }
-
-            var assessmentTest = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, testDefinition.Id, programTest.DisplayOrder, activeQuestionCount);
-            assessment.AddTest(assessmentTest);
-
-            tests.Add(new PublicTestSummaryDto(
-                testDefinition.Code,
-                testDefinition.NameUz,
-                TestStatus.NotStarted.ToString(),
-                0,
-                activeQuestionCount,
-                programTest.DisplayOrder,
-                testDefinition.EstimatedMinutes));
-        }
+        // Sessiyaga FAQAT shu dasturning testlari, DASTURDAGI tartibda qo'shiladi (`prompts/34`
+        // C10-band) — `TestDefinition.DisplayOrder` EMAS, `ProgramTest.DisplayOrder`. Mantiq
+        // `AssessmentTestAttacher` ga ko'chirildi (P47): ommaviy (maktabsiz) oqim ham AYNAN
+        // shu qadamni bajaradi, nusxa ko'chirilgan kod ikki oqimda ajralib ketishi mumkin edi.
+        var tests = await AssessmentTestAttacher.AttachAsync(_context, _executor, assessment, program.Id, cancellationToken)
+            .ConfigureAwait(false);
 
         if (isNewStudent)
         {
