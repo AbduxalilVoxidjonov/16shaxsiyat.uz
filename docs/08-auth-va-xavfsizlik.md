@@ -232,12 +232,20 @@ istisno production'da mavjud emas.
 
 ```
 Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none';
-                         frame-ancestors 'none'; form-action 'self'; script-src 'self';
+                         frame-ancestors 'none'; form-action 'self'; script-src 'self' https://telegram.org;
                          style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
                          font-src 'self' data: https://fonts.gstatic.com;
-                         img-src 'self' data:; connect-src 'self'
+                         img-src 'self' data:; connect-src 'self';
+                         frame-src https://oauth.telegram.org
 ```
 
+- **Telegram Login Widget uchun ikkita aniq istisno:** `script-src https://telegram.org`
+  (widget skripti) va `frame-src https://oauth.telegram.org` (widget chizadigan iframe).
+  Ular butun sayt uchun ochiq, chunki bu SPA — foydalanuvchi `/kirish` ga klient tomonda
+  o'tsa brauzer DASTLAB yuklangan sahifaning CSP'sini qo'llaydi, ya'ni faqat bitta yo'l
+  uchun alohida siyosat yozib bo'lmaydi. `connect-src` ga Telegram qo'shilmagan: widget
+  bergan ma'lumot bizning o'z API'mizga boradi va imzo serverda HMAC-SHA256 bilan
+  tekshiriladi — iframe'ga ishonilmaydi.
 - `unsafe-eval` YO'Q (`prompts/31` cheklovi).
 - `unsafe-inline` faqat STIL uchun: React `style={{…}}` atributlari va grafik kutubxonalari
   inline stil qo'yadi. Skript uchun kerak emas — Vite build'i faqat tashqi
