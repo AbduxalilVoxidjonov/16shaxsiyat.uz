@@ -27,7 +27,7 @@ describe('HomePage (ommaviy bosh sahifa)', () => {
     Test o'chirilmadi, chunki uning IKKINCHI vazifasi hamon kuchda: bosh sahifa hech qachon
     MAKTAB havolasini (`/t/...`) chiqarmaydi — u har maktabga xos va shaxsiy.
   */
-  it("asosiy CTA kirish sahifasiga boradi, maktab havolasi (`/t/...`) chiqmaydi", () => {
+  it('asosiy CTA kirish sahifasiga boradi, maktab havolasi (`/t/...`) chiqmaydi', () => {
     renderPage();
 
     const links = screen.getAllByRole('link');
@@ -71,18 +71,17 @@ describe('HomePage (ommaviy bosh sahifa)', () => {
     expect(details).not.toHaveAttribute('open');
   });
 
-  it("hero'dagi uchta ishonch nuqtasi ochiladigan karta sifatida beriladi", () => {
+  it("hero'dagi uchta ishonch nuqtasi raqamlangan karta sifatida beriladi", () => {
     renderPage();
 
     const list = screen.getByRole('list', { name: 'Platforma qoidalari' });
     const items = within(list).getAllByRole('listitem');
     expect(items).toHaveLength(3);
 
-    // Har biri yopiq holatda ochiladi — sarlavha ko'rinadi, tushuntirish esa bosilgach.
+    // Egasining qarori (2026-09-06): matn YASHIRILMAYDI — ochiladigan `details` yo'q,
+    // sarlavha ham, tushuntirish ham bir qarashda ko'rinadi.
     for (const item of items) {
-      const details = item.querySelector('details');
-      expect(details).not.toBeNull();
-      expect(details).not.toHaveAttribute('open');
+      expect(item.querySelector('details')).toBeNull();
     }
 
     expect(
@@ -91,16 +90,12 @@ describe('HomePage (ommaviy bosh sahifa)', () => {
     expect(within(list).getByText('Hisobot tashxis emas')).toBeInTheDocument();
   });
 
-  it('ishonch nuqtasi ochilganda tushuntirish matni bilan birga keladi', () => {
+  it("ishonch kartalarining tushuntirish matni darhol ko'rinadi", () => {
     renderPage();
 
     const list = screen.getByRole('list', { name: 'Platforma qoidalari' });
-    const details = within(list).getByText('Hisobot tashxis emas').closest('details');
-
-    expect(details).not.toBeNull();
-    // Matn markapda doim bor (`details` uni faqat vizual yashiradi) — mazmun
-    // skrinriderlar va qidiruv tizimlari uchun ham yo'qolmasligi kerak.
-    expect(details).toHaveTextContent(/suhbat boshlash nuqtasi/);
+    expect(within(list).getByText(/suhbat boshlash nuqtasi/)).toBeVisible();
+    expect(within(list).getByText(/hamma uchun bir xil/)).toBeVisible();
   });
 
   it('ommaviy matnda "ballash" ot shakli ishlatilmaydi (egasining atama qarori)', () => {

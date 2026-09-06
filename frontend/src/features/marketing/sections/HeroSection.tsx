@@ -1,4 +1,3 @@
-import { Info, Link2, Scale } from 'lucide-react';
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Blob, GirihStar, PatternBackdrop } from '@/shared/ui/brand';
@@ -22,20 +21,17 @@ const SAMPLE_BARS = [
 ] as const;
 
 /**
- * Hero ostidagi uchta ishonch nuqtasi. Ilgari bular belgichali qisqa qatorlar edi —
- * o'quvchi/ota-ona uchun juda siqiq ("Hisobot tashxis emas" nima uchun muhimligi
- * ko'rinmasdi). Endi har biri ochiladigan karta: sarlavha bir qarashda o'qiladi,
- * tushuntirish esa bosilganda chiqadi.
+ * Hero ostidagi uchta ishonch nuqtasi — raqamlangan kartalar (1-2-3).
  *
- * `<details>/<summary>` ATAYLAB — FAQ bo'limidagi bilan bir xil sabab: ochish-yopish
- * brauzerning o'zida ishlaydi, klaviatura va skrinriderlar uchun qo'shimcha `aria-*`
- * yozish shart emas, JS o'chiq bo'lsa ham matn o'qiladi.
+ * Ilgari bular ochiladigan `<details>` edi: sarlavha ko'rinib, tushuntirish bosilganda
+ * chiqardi. Egasining qarori (2026-09-06) — yashirmaslik, hammasi bir qarashda ko'rinsin.
+ * Shu sabab kartalar hero ostida, TO'LIQ kenglikda turadi (ilgari chap ustunning yarmiga
+ * siqilgan edi va matnga joy yetmasdi).
+ *
+ * `<ol>` ataylab: tartib mazmunga ega, ko'rinadigan raqamlar esa shu tartibning vizual
+ * takrori — shuning uchun ular `aria-hidden` (skrinrider "1 bir" deb ikki marta o'qimasin).
  */
-const TRUST_ITEMS = [
-  { key: 'link', Icon: Link2 },
-  { key: 'rules', Icon: Scale },
-  { key: 'noDiagnosis', Icon: Info },
-] as const;
+const TRUST_KEYS = ['link', 'rules', 'noDiagnosis'] as const;
 
 const STAT_KEYS = ['blocks', 'link', 'reliability', 'privacy'] as const;
 
@@ -82,44 +78,6 @@ export function HeroSection() {
               {t('marketing.home.hero.secondaryCta')}
             </Link>
           </div>
-
-          <ul
-            aria-label={t('marketing.home.hero.trustListLabel')}
-            className="mt-8 grid gap-3 sm:grid-cols-3"
-          >
-            {TRUST_ITEMS.map(({ key, Icon }) => (
-              <li key={key}>
-                <details className="group card h-full p-4 open:bg-paper-deep/50">
-                  <summary className="flex cursor-pointer list-none items-start gap-2.5 [&::-webkit-details-marker]:hidden">
-                    <Icon
-                      className="mt-px size-4 shrink-0 text-firuza-700"
-                      aria-hidden="true"
-                      focusable="false"
-                    />
-                    <span className="font-display text-[13px] leading-snug font-bold text-ink">
-                      {t(`marketing.home.hero.trust.${key}.title`)}
-                    </span>
-                    <span
-                      className="ml-auto grid size-6 shrink-0 place-items-center rounded-full border border-line-strong text-ink-muted transition-transform duration-300 group-open:rotate-45"
-                      aria-hidden="true"
-                    >
-                      <svg viewBox="0 0 16 16" className="size-3" fill="none" focusable="false">
-                        <path
-                          d="M8 3v10M3 8h10"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </span>
-                  </summary>
-                  <p className="mt-3 text-[13px] leading-relaxed text-ink-soft">
-                    {t(`marketing.home.hero.trust.${key}.text`)}
-                  </p>
-                </details>
-              </li>
-            ))}
-          </ul>
         </div>
 
         <div className="animate-fade-in relative">
@@ -182,6 +140,30 @@ export function HeroSection() {
             </p>
           </div>
         </div>
+      </div>
+
+      <div className="wrap pb-16 lg:pb-20">
+        <ol
+          aria-label={t('marketing.home.hero.trustListLabel')}
+          className="grid gap-6 sm:grid-cols-3"
+        >
+          {TRUST_KEYS.map((key, index) => (
+            <li key={key} className="card card-hover relative p-7 pt-10">
+              <span
+                className="font-display absolute -top-5 left-7 grid size-11 place-items-center rounded-2xl bg-firuza-600 text-lg font-extrabold text-white shadow-glow"
+                aria-hidden="true"
+              >
+                {index + 1}
+              </span>
+              <h3 className="font-display text-[17px] leading-snug font-extrabold text-ink">
+                {t(`marketing.home.hero.trust.${key}.title`)}
+              </h3>
+              <p className="mt-3 text-[14px] leading-relaxed text-ink-soft">
+                {t(`marketing.home.hero.trust.${key}.text`)}
+              </p>
+            </li>
+          ))}
+        </ol>
       </div>
 
       <div className="wrap">
