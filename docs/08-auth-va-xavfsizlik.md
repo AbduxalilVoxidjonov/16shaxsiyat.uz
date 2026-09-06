@@ -62,9 +62,32 @@ yozilmaydi — audit faqat `Auth.TotpEnrollmentStarted` / `Auth.TotpEnabled` fak
 
 ## 2a. Ommaviy foydalanuvchi JWT (Telegram) — P47
 
-**Kirish oqimi.** Frontend Telegram Login Widget'ini ko'rsatadi; widget `onauth` callback'ida
-`{id, first_name, last_name?, username?, photo_url?, auth_date, hash}` obyektini beradi.
-Bu obyekt **o'zgartirilmasdan** `POST /api/auth/telegram` ga yuboriladi.
+**Kirish oqimi (redirect).** Frontend Telegram Login Widget'ini `data-auth-url` bilan
+chizadi — callback manzili `/kirish` ning O'ZI (mutlaq, `window.location.origin` dan
+quriladi; Telegram nisbiy yo'lni qabul qilmaydi). Foydalanuvchi tasdiqlagach Telegram
+brauzerni o'sha manzilga QAYTARADI va ma'lumotni query parametrlarida beradi:
+`id`, `first_name`, `last_name?`, `username?`, `photo_url?`, `auth_date`, `hash`. Sahifa
+ochilganda ular o'qiladi va **o'zgartirilmasdan** `POST /api/auth/telegram` tanasiga
+yuboriladi (`credentials: 'include'`). Telegram bermagan maydon **umuman yuborilmaydi** —
+bo'sh satr `data_check_string` ni buzadi.
+
+**Nega `data-onauth` (JS callback) EMAS.** `data-onauth` atributining qiymatini Telegram
+widget'i **matn sifatida `eval` qiladi**. CSP'da `unsafe-eval` ATAYLAB yo'q (7-bo'lim),
+shu sabab widget skripti `200` bilan yuklansa ham iframe'ni umuman chiza olmasdi
+(`Evaluating a string as JavaScript violates the following Content Security Policy
+directive…`) — `/kirish` sahifasida hech qanday tugma ko'rinmasdi. Redirect oqimi `eval`
+talab qilmaydi, ya'ni CSP bo'shatilmasdan muammo hal bo'ladi.
+
+**Query parametrlari qanday tozalanadi.** Ma'lumot manzil satrida keladi, ya'ni ikki joyda
+qolib ketishi mumkin edi:
+
+- *brauzer tarixi va manzil satri* — so'rov yuborilishi bilan DARHOL (javobni kutmasdan)
+  `history.replaceState` chaqiriladi va Telegram parametrlari olib tashlanadi (`pushState`
+  EMAS: yangi yozuv "orqaga" tugmasi bilan qaytib kelardi). Telegram bilan aloqasi yo'q
+  parametrlar (`returnUrl`) saqlanadi.
+- *nginx access log* — `docker/web-nginx.conf` da `location = /kirish` uchun alohida
+  `no_query` log formati: `$request` (query bilan) o'rniga `$safe_uri` (faqat yo'l).
+  `access_log off` qilinmadi — status kod va so'rovlar soni kuzatuv uchun kerak.
 
 **Imzoni tekshirish (Telegram rasmiy algoritmi, `TelegramLoginVerifier`):**
 
@@ -241,6 +264,8 @@ Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none';
 
 - **Telegram Login Widget uchun ikkita aniq istisno:** `script-src https://telegram.org`
   (widget skripti) va `frame-src https://oauth.telegram.org` (widget chizadigan iframe).
+  `unsafe-eval` QO'SHILMADI — buning o'rniga widget `data-auth-url` (redirect) rejimida
+  ishlatiladi (§2a).
   Ular butun sayt uchun ochiq, chunki bu SPA — foydalanuvchi `/kirish` ga klient tomonda
   o'tsa brauzer DASTLAB yuklangan sahifaning CSP'sini qo'llaydi, ya'ni faqat bitta yo'l
   uchun alohida siyosat yozib bo'lmaydi. `connect-src` ga Telegram qo'shilmagan: widget

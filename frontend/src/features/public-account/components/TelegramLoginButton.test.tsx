@@ -19,6 +19,8 @@ vi.mock('@/shared/config/env', () => ({
   },
 }));
 
+const AUTH_URL = 'https://16shaxsiyat.uz/kirish';
+
 function getWidgetScript(container: HTMLElement): HTMLScriptElement | null {
   return container.querySelector('script');
 }
@@ -26,42 +28,43 @@ function getWidgetScript(container: HTMLElement): HTMLScriptElement | null {
 describe('TelegramLoginButton', () => {
   afterEach(() => {
     botName.current = 'shaxsiyat_login_bot';
-    delete window.onTelegramAuth;
   });
 
   it("Telegram skriptini DOM API bilan qo'shadi va bot nomini uzatadi", () => {
-    const { container } = render(<TelegramLoginButton onAuth={vi.fn()} />);
+    const { container } = render(<TelegramLoginButton authUrl={AUTH_URL} />);
 
     const script = getWidgetScript(container);
     expect(script).not.toBeNull();
     expect(script?.src).toBe('https://telegram.org/js/telegram-widget.js?22');
     expect(script?.getAttribute('data-telegram-login')).toBe('shaxsiyat_login_bot');
-    expect(script?.getAttribute('data-onauth')).toBe('onTelegramAuth(user)');
   });
 
-  it("`data-onauth` chaqirgan global callback `onAuth` ni AYNAN o'sha obyekt bilan uzatadi", () => {
-    const onAuth = vi.fn();
-    render(<TelegramLoginButton onAuth={onAuth} />);
+  it('`data-auth-url` (redirect) beradi — `data-onauth` (JS `eval`) UMUMAN yo‘q', () => {
+    const { container } = render(<TelegramLoginButton authUrl={AUTH_URL} />);
 
-    // Telegram bergan obyekt: `username` yo'q (foydalanuvchida yo'q) — u umuman
-    // yuborilmasligi kerak, shu sabab obyekt qayta yig'ilmaydi.
-    const payload = {
-      id: 123456789,
-      first_name: 'Ali',
-      auth_date: 1767225600,
-      hash: 'a'.repeat(64),
-    };
-    window.onTelegramAuth?.(payload);
+    const script = getWidgetScript(container);
+    expect(script?.getAttribute('data-auth-url')).toBe(AUTH_URL);
+    // `data-onauth` qiymati Telegram tomonidan `eval` qilinadi — CSP'da `unsafe-eval`
+    // yo'q, shu sabab u qaytib kelmasligi kerak (widget umuman chizilmay qolardi).
+    expect(script?.hasAttribute('data-onauth')).toBe(false);
+    expect(window).not.toHaveProperty('onTelegramAuth');
+  });
 
-    expect(onAuth).toHaveBeenCalledTimes(1);
-    // AYNAN o'sha obyekt (nusxa emas) — maydonlar qayta yig'ilmagani shu bilan tekshiriladi.
-    expect(onAuth).toHaveBeenCalledWith(payload);
+  it("`authUrl` o'zgarsa skript yangi manzil bilan qayta qo'yiladi", () => {
+    const { container, rerender } = render(<TelegramLoginButton authUrl={AUTH_URL} />);
+
+    rerender(<TelegramLoginButton authUrl={`${AUTH_URL}?returnUrl=%2Fkabinet%2Ftest`} />);
+
+    expect(container.querySelectorAll('script')).toHaveLength(1);
+    expect(getWidgetScript(container)?.getAttribute('data-auth-url')).toBe(
+      `${AUTH_URL}?returnUrl=%2Fkabinet%2Ftest`,
+    );
   });
 
   it("bot nomi berilmasa skript qo'shilmaydi va tushunarli xabar ko'rsatiladi (oq ekran YO'Q)", () => {
     botName.current = '';
 
-    const { container } = render(<TelegramLoginButton onAuth={vi.fn()} />);
+    const { container } = render(<TelegramLoginButton authUrl={AUTH_URL} />);
 
     expect(getWidgetScript(container)).toBeNull();
     expect(screen.getByText('Telegram kirishi hozircha sozlanmagan')).toBeInTheDocument();
@@ -69,7 +72,7 @@ describe('TelegramLoginButton', () => {
   });
 
   it("skript yuklanmasa ham xuddi shu tushunarli holat ko'rsatiladi", () => {
-    const { container } = render(<TelegramLoginButton onAuth={vi.fn()} />);
+    const { container } = render(<TelegramLoginButton authUrl={AUTH_URL} />);
 
     const script = getWidgetScript(container);
     expect(script).not.toBeNull();
@@ -80,12 +83,12 @@ describe('TelegramLoginButton', () => {
     expect(screen.getByText('Telegram kirishi hozircha sozlanmagan')).toBeInTheDocument();
   });
 
-  it("komponent yo'q qilinganda global callback ham olib tashlanadi", () => {
-    const { unmount } = render(<TelegramLoginButton onAuth={vi.fn()} />);
-    expect(window.onTelegramAuth).toBeTypeOf('function');
+  it("komponent yo'q qilinganda skript konteyneri tozalanadi", () => {
+    const { container, unmount } = render(<TelegramLoginButton authUrl={AUTH_URL} />);
+    expect(getWidgetScript(container)).not.toBeNull();
 
     unmount();
 
-    expect(window.onTelegramAuth).toBeUndefined();
+    expect(getWidgetScript(container)).toBeNull();
   });
 });

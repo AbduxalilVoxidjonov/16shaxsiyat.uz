@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { env } from '@/shared/config/env';
-import type { TelegramLoginRequestBody } from '@/shared/api/types';
 
 /**
- * Telegram Login Widget (`docs/07` §2a.1).
+ * Telegram Login Widget (`docs/07` §2a.1, `docs/08` §2a).
  *
  * ## Qanday ulanadi
  *
@@ -14,10 +13,20 @@ import type { TelegramLoginRequestBody } from '@/shared/api/types';
  * `appendChild`) — `dangerouslySetInnerHTML` CLAUDE.md 12-qoidasi bo'yicha taqiqlangan va
  * bu yerda kerak ham emas.
  *
- * `data-onauth` atributi Telegram tomonidan GLOBAL doirada bajariladi, shu sabab callback
- * `window` ga vaqtincha o'rnatiladi va komponent yo'q qilinganda olib tashlanadi. Callback
- * ichida `onAuthRef` ishlatiladi — skript bir marta yuklanadi, `onAuth` esa har renderda
- * yangi funksiya bo'lishi mumkin.
+ * ## Nega `data-auth-url` (redirect), `data-onauth` (callback) EMAS
+ *
+ * `data-onauth` atributining qiymati Telegram tomonidan **matn sifatida `eval` qilinadi**
+ * (`eval("onTelegramAuth(user)")`). Bizning CSP'da `unsafe-eval` ATAYLAB yo'q
+ * (`docs/08` 7-bo'lim), shu sabab jonli saytda widget skripti `200` bilan yuklansa ham
+ * iframe'ni umuman chiza olmasdi:
+ *
+ *     Evaluating a string as JavaScript violates the following Content Security Policy
+ *     directive because 'unsafe-eval' is not an allowed source of script
+ *
+ * Foydalanuvchi `/kirish` sahifasida hech qanday tugma ko'rmasdi. `data-auth-url` esa
+ * `eval` talab qilmaydi: Telegram brauzerni berilgan manzilga query parametrlar bilan
+ * QAYTARADI, sahifa esa ularni o'qib API'ga yuboradi (`lib/telegramCallback.ts`).
+ * Yechim CSP'ni bo'shatmaydi.
  *
  * ## Bot sozlanmagan holat
  *
@@ -27,35 +36,22 @@ import type { TelegramLoginRequestBody } from '@/shared/api/types';
  * xabar chiqadi.
  */
 
-declare global {
-  interface Window {
-    /** Telegram widget `data-onauth` orqali chaqiradigan global callback. */
-    onTelegramAuth?: (user: TelegramLoginRequestBody) => void;
-  }
-}
-
 const TELEGRAM_WIDGET_SRC = 'https://telegram.org/js/telegram-widget.js?22';
-const AUTH_CALLBACK_NAME = 'onTelegramAuth';
 
 export interface TelegramLoginButtonProps {
   /**
-   * Telegram bergan obyekt — **o'zgartirilmagan holda**. Chaqiruvchi uni to'g'ridan-to'g'ri
-   * `POST /api/auth/telegram` tanasiga yuboradi.
+   * Foydalanuvchi tasdiqlagach Telegram brauzerni QAYTARADIGAN manzil. **Mutlaq bo'lishi
+   * shart** (`https://...`) — Telegram nisbiy yo'lni qabul qilmaydi.
    */
-  onAuth: (user: TelegramLoginRequestBody) => void;
+  authUrl: string;
   /** Kirish so'rovi ketayotganda widget o'chiriladi (ikki marta bosishdan himoya). */
   disabled?: boolean;
 }
 
-export function TelegramLoginButton({ onAuth, disabled = false }: TelegramLoginButtonProps) {
+export function TelegramLoginButton({ authUrl, disabled = false }: TelegramLoginButtonProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
-  const onAuthRef = useRef(onAuth);
   const [scriptFailed, setScriptFailed] = useState(false);
-
-  useEffect(() => {
-    onAuthRef.current = onAuth;
-  }, [onAuth]);
 
   const botName = env.telegramBot;
 
@@ -65,10 +61,6 @@ export function TelegramLoginButton({ onAuth, disabled = false }: TelegramLoginB
       return;
     }
 
-    window[AUTH_CALLBACK_NAME] = (user: TelegramLoginRequestBody) => {
-      onAuthRef.current(user);
-    };
-
     const script = document.createElement('script');
     script.src = TELEGRAM_WIDGET_SRC;
     script.async = true;
@@ -77,7 +69,7 @@ export function TelegramLoginButton({ onAuth, disabled = false }: TelegramLoginB
     script.setAttribute('data-radius', '20');
     // Foydalanuvchi rasmi widget tugmasida ko'rsatilmaydi — u bizga faqat javobda kerak.
     script.setAttribute('data-userpic', 'false');
-    script.setAttribute('data-onauth', `${AUTH_CALLBACK_NAME}(user)`);
+    script.setAttribute('data-auth-url', authUrl);
     script.onerror = () => {
       setScriptFailed(true);
     };
@@ -85,9 +77,8 @@ export function TelegramLoginButton({ onAuth, disabled = false }: TelegramLoginB
 
     return () => {
       container.replaceChildren();
-      delete window[AUTH_CALLBACK_NAME];
     };
-  }, [botName]);
+  }, [botName, authUrl]);
 
   if (!botName || scriptFailed) {
     return (
