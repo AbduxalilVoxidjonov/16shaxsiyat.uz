@@ -1,3 +1,4 @@
+using StudentRoadMap.Application.Admin.Common;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Domain.Assessments;
 using StudentRoadMap.Domain.Students;
@@ -12,6 +13,8 @@ namespace StudentRoadMap.Application.Admin.Students.List;
 /// DIQQAT #1: "filtr ikki joyda ajralib ketsa, hisobotlar jimgina bir-biriga mos kelmay
 /// qoladi"). Faqat FILTR (`Where`) — sahifalash/saralash chaqiruvchida qoladi (eksportda
 /// sahifalash yo'q, `ListStudentsQueryHandler`da esa mavjud saralash/sahifalash o'zgarmaydi).
+/// `source`/`publicSpaceId` — MANBA filtri (maktab / ommaviy makon), xuddi shu sababdan shu
+/// yerda: eksport ro'yxatdagi manba tanlovini ham AYNAN takrorlashi shart.
 /// </summary>
 internal static class AdminStudentFilterBuilder
 {
@@ -26,8 +29,25 @@ internal static class AdminStudentFilterBuilder
         string? activityLevel,
         DateTimeOffset? from,
         DateTimeOffset? to,
-        string? search)
+        string? search,
+        string? source,
+        Guid? publicSpaceId)
     {
+        // MANBA (`AdminSourceFilter`) — maktab oqimi yoki ommaviy makon. `schoolId` bilan
+        // BIRGA ishlatilsa ikkalasi ham qo'llanadi (mantiqan VA): ommaviy makon ID'si bilan
+        // `source=school` bo'sh natija beradi — bu TO'G'RI, chunki so'rov o'zi ziddiyatli.
+        //
+        // Makon bazada bo'lmasa (seed bajarilmagan) `Guid.Empty` sentinel sifatida ishlatiladi:
+        // hech bir `Student.SchoolId` unga teng emas, ya'ni `source=public` bo'sh, `source=school`
+        // esa HAMMASINI qaytaradi — ikkalasi ham haqiqatga mos.
+        if (source is not null)
+        {
+            var spaceId = publicSpaceId ?? Guid.Empty;
+            query = source == AdminSourceFilter.Public
+                ? query.Where(s => s.SchoolId == spaceId)
+                : query.Where(s => s.SchoolId != spaceId);
+        }
+
         if (schoolId.HasValue)
         {
             query = query.Where(s => s.SchoolId == schoolId.Value);

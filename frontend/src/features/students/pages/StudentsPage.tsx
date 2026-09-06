@@ -41,6 +41,7 @@ export default function StudentsPage() {
   });
 
   const query: StudentsListQuery = {
+    source: filters.source || undefined,
     schoolId: filters.schoolId || undefined,
     grade: filters.grade ? Number(filters.grade) : undefined,
     status: filters.status || undefined,
@@ -99,6 +100,18 @@ export default function StudentsPage() {
       ),
     },
     { id: 'schoolName', header: t('students.table.school'), cell: (row) => row.schoolName },
+    {
+      // Manba ustuni (P48): qator qaysi oqimdan kelganini KO'RSATADI. Filtr bilan birga
+      // ishlaydi — filtr tanlanmagan bo'lsa ham har qator o'z manbasini oshkor qiladi,
+      // shu sabab aralashgan ro'yxat hech qachon chalg'itmaydi.
+      id: 'source',
+      header: t('students.table.source'),
+      cell: (row) => (
+        <Badge variant={row.source === 'Public' ? 'primary' : 'neutral'}>
+          {t(`students.enums.source.${row.source}`)}
+        </Badge>
+      ),
+    },
     {
       id: 'grade',
       header: t('students.table.grade'),

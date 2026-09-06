@@ -5218,6 +5218,7 @@ export interface components {
             /** Format: uuid */
             programId: string;
             programName?: string | null;
+            source: string;
         };
         AdminAssessmentListItemDtoPagedResult: {
             items: components["schemas"]["AdminAssessmentListItemDto"][];
@@ -5408,12 +5409,13 @@ export interface components {
             recentAssessments: components["schemas"]["AdminDashboardRecentAssessmentDto"][];
             funnel: components["schemas"]["AdminDashboardFunnelDto"];
             schoolBreakdown: components["schemas"]["AdminDashboardSchoolBreakdownItemDto"][];
+            source: string;
         };
         AdminDashboardTotalsDto: {
             /** Format: int32 */
-            schools: number;
+            schools?: number | null;
             /** Format: int32 */
-            activeSchools: number;
+            activeSchools?: number | null;
             /** Format: int32 */
             students: number;
             /** Format: int32 */
@@ -5523,6 +5525,53 @@ export interface components {
             isActive: boolean;
             /** Format: date-time */
             createdAt: string;
+        };
+        AdminPublicSpaceAvailabilityDto: {
+            status: string;
+            /** Format: int32 */
+            availableProgramCount: number;
+            /** Format: int32 */
+            usableProgramCount: number;
+        };
+        AdminPublicSpaceDto: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            slug: string;
+            isActive: boolean;
+            showResultToStudent: boolean;
+            /** Format: int32 */
+            dailyRegistrationLimit: number;
+            publicUrl: string;
+            availability: components["schemas"]["AdminPublicSpaceAvailabilityDto"];
+            programs: components["schemas"]["AdminPublicSpaceProgramDto"][];
+            stats: components["schemas"]["AdminPublicSpaceStatsDto"];
+        };
+        AdminPublicSpaceProgramDto: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            nameUz: string;
+            status: string;
+            visibility: string;
+            isActive: boolean;
+            /** Format: int32 */
+            testCount: number;
+            hasUsableTest: boolean;
+        };
+        AdminPublicSpaceStatsDto: {
+            /** Format: int32 */
+            userCount: number;
+            /** Format: int32 */
+            totalAssessments: number;
+            /** Format: int32 */
+            inProgressCount: number;
+            /** Format: int32 */
+            completedCount: number;
+            /** Format: int32 */
+            analyzedCount: number;
+            /** Format: date-time */
+            lastActivityAt?: string | null;
         };
         AdminRecalculateScoresResultDto: {
             /** Format: uuid */
@@ -5663,6 +5712,7 @@ export interface components {
             reliabilityFlag?: string | null;
             /** Format: date-time */
             lastAssessmentAt?: string | null;
+            source: string;
         };
         AdminStudentListItemDtoPagedResult: {
             items: components["schemas"]["AdminStudentListItemDto"][];
@@ -6215,6 +6265,9 @@ export interface components {
             answered: number;
             /** Format: int32 */
             total: number;
+        };
+        SetPublicSpaceShowResultRequest: {
+            enabled: boolean;
         };
         StartPublicSessionRequest: {
             fullName: string;

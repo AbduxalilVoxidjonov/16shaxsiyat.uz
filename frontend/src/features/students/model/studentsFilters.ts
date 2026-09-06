@@ -1,13 +1,16 @@
 import {
   ACTIVITY_LEVEL_VALUES,
   ASSESSMENT_STATUS_VALUES,
+  STUDENT_SOURCE_QUERY_VALUES,
   type ActivityLevel,
   type AssessmentStatus,
+  type StudentSourceQuery,
 } from './enums';
 
 /** URL'dagi bo'sh bo'lmagan qiymatlar ro'yxati — chip va "faol filtr" hisoblash uchun. */
 export const STUDENTS_FILTER_KEYS = [
   'search',
+  'source',
   'schoolId',
   'grade',
   'status',
@@ -21,6 +24,8 @@ export type StudentsFilterKey = (typeof STUDENTS_FILTER_KEYS)[number];
 
 export interface StudentsFilterValues {
   search: string;
+  /** `''` — hammasi (maktab + ommaviy), aks holda faqat bitta manba. */
+  source: StudentSourceQuery | '';
   schoolId: string;
   /** `''` — hammasi, aks holda `'1'`..`'11'`. */
   grade: string;
@@ -52,6 +57,7 @@ export function readStudentsFilters(searchParams: URLSearchParams): StudentsFilt
   const gradeNumber = grade ? Number(grade) : NaN;
   return {
     search: searchParams.get('search') ?? '',
+    source: readEnum(searchParams, 'source', STUDENT_SOURCE_QUERY_VALUES),
     schoolId: searchParams.get('schoolId') ?? '',
     grade: Number.isInteger(gradeNumber) && gradeNumber >= 1 && gradeNumber <= 11 ? grade! : '',
     status: readEnum(searchParams, 'status', ASSESSMENT_STATUS_VALUES),
@@ -67,6 +73,7 @@ export function readStudentsFilters(searchParams: URLSearchParams): StudentsFilt
 export function hasActiveStudentsFilters(filters: StudentsFilterValues): boolean {
   return (
     filters.search !== '' ||
+    filters.source !== '' ||
     filters.schoolId !== '' ||
     filters.grade !== '' ||
     filters.status !== '' ||

@@ -57,6 +57,21 @@ describe('AdminLayout', () => {
     expect(settingsLinks.length).toBeGreaterThan(0);
   });
 
+  /**
+   * P48 — ommaviy makon maktablar ro'yxatidan ajratilgani uchun uning YAGONA kirish nuqtasi
+   * shu menyu elementi. U yo'qolib qolsa bo'lim umuman ochib bo'lmaydigan bo'lardi.
+   */
+  it("yon menyuda 'Ommaviy makon' maktablardan ALOHIDA element sifatida bor", () => {
+    renderAdminLayout();
+
+    const schoolsLinks = screen.getAllByRole('link', { name: 'Maktablar' });
+    expect(schoolsLinks.length).toBeGreaterThan(0);
+
+    const publicSpaceLinks = screen.getAllByRole('link', { name: 'Ommaviy makon' });
+    expect(publicSpaceLinks.length).toBeGreaterThan(0);
+    expect(publicSpaceLinks[0]).toHaveAttribute('href', '/admin/ommaviy');
+  });
+
   it("himoyalangan mazmun (Outlet) ko'rsatiladi", () => {
     renderAdminLayout();
     expect(screen.getByText('DASHBOARD_CONTENT')).toBeInTheDocument();

@@ -21,12 +21,13 @@ const STUDENT_1 = {
   needsAttention: true,
   reliabilityFlag: 'Reliable',
   lastAssessmentAt: '2026-08-30T10:00:00Z',
+  source: 'School',
 } satisfies Schemas['AdminStudentListItemDto'];
 
 const STUDENT_2 = {
   id: 'student-2',
   fullName: 'Karimova Nilufar',
-  schoolName: "1-son ixtisoslashtirilgan maktab",
+  schoolName: '1-son ixtisoslashtirilgan maktab',
   grade: 10,
   classLetter: null,
   phone: '+998901112233',
@@ -37,6 +38,7 @@ const STUDENT_2 = {
   needsAttention: false,
   reliabilityFlag: null,
   lastAssessmentAt: null,
+  source: 'Public',
 } satisfies Schemas['AdminStudentListItemDto'];
 
 /**
@@ -189,7 +191,8 @@ describe('StudentsPage', () => {
       expect(
         fetchMock.mock.calls.some(
           ([input]) =>
-            String(input).includes('/api/admin/students?') && String(input).includes('search=Sardor'),
+            String(input).includes('/api/admin/students?') &&
+            String(input).includes('search=Sardor'),
         ),
       ).toBe(true);
     });
@@ -228,7 +231,7 @@ describe('StudentsPage', () => {
     });
   });
 
-  it("\"Sinf\" ustuni sarlavhasiga bosilganda saralash URL'ga yoziladi (grade)", async () => {
+  it('"Sinf" ustuni sarlavhasiga bosilganda saralash URL\'ga yoziladi (grade)', async () => {
     const fetchMock = mockFetch();
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderStudentsPage();
@@ -403,6 +406,79 @@ describe('StudentsPage', () => {
     expect(
       screen.getByText("Hali o'quvchi yo'q — maktab havolasini ulashing."),
     ).toBeInTheDocument();
+  });
+
+  /**
+   * P48 — manba bo'yicha ajratish. Ommaviy makon endi maktablar ro'yxatida YO'Q, shu sabab
+   * ommaviy foydalanuvchilarga tushishning yagona yo'li shu filtr; ustun esa filtr
+   * tanlanmagan bo'lsa ham har qatorning manbasini oshkor qiladi.
+   */
+  it("har qatorda manba ustuni ko'rsatiladi (maktab / ommaviy)", async () => {
+    mockFetch();
+    renderStudentsPage();
+
+    await screen.findByText('Aliyev Sardor');
+    const table = within(screen.getByRole('table'));
+
+    const schoolRow = within(table.getByText('Aliyev Sardor').closest('tr')!);
+    expect(schoolRow.getByText('Maktab')).toBeInTheDocument();
+
+    const publicRow = within(table.getByText('Karimova Nilufar').closest('tr')!);
+    expect(publicRow.getByText('Ommaviy makon')).toBeInTheDocument();
+  });
+
+  it("manba filtri URL'ga yoziladi va so'rovga `source` parametri qo'shiladi", async () => {
+    const fetchMock = mockFetch();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderStudentsPage();
+
+    await screen.findByText('Aliyev Sardor');
+    fetchMock.mockClear();
+
+    await user.selectOptions(screen.getByLabelText('Manba'), 'public');
+
+    await waitFor(() => {
+      expect(screen.getByTestId('url-probe').textContent).toContain('source=public');
+    });
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.some(([input]) => String(input).includes('source=public'))).toBe(
+        true,
+      );
+    });
+  });
+
+  it("chuqur havoladan `source` o'qiladi va faol filtr chipi ko'rsatiladi", async () => {
+    const fetchMock = mockFetch();
+    renderStudentsPage('/admin/students?source=public');
+
+    await screen.findByText('Aliyev Sardor');
+
+    expect(screen.getByLabelText('Manba')).toHaveValue('public');
+    expect(screen.getByText('Manba: Ommaviy makon')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.some(([input]) => String(input).includes('source=public'))).toBe(
+        true,
+      );
+    });
+  });
+
+  it('eksport ham joriy manba filtri bilan yuboriladi', async () => {
+    const fetchMock = mockFetch();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderStudentsPage('/admin/students?source=public');
+
+    await screen.findByText('Aliyev Sardor');
+    await user.click(screen.getByRole('button', { name: "Excel'ga eksport" }));
+
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(
+          ([input]) =>
+            String(input).includes('/api/admin/students/export') &&
+            String(input).includes('source=public'),
+        ),
+      ).toBe(true);
+    });
   });
 
   it("server xato bersa qayta urinish tugmasi bilan xato holati ko'rsatiladi", async () => {

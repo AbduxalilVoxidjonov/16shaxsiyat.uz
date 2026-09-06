@@ -75,6 +75,10 @@ internal sealed class ExportStudentsQueryHandler : IRequestHandler<ExportStudent
         // `OrderBy(Id)` — sahifalash emas, faqat `Skip`/`Take` bo'laklashning barqaror (stable)
         // bo'lishi uchun (aks holda ikkita ketma-ket `Skip` chaqiruvi bir xil qatorni ikki marta
         // yoki hech qachon qaytarmasligi kafolatlanmaydi).
+        var publicSpaceId = await AdminSourceFilter
+            .FindPublicSpaceIdAsync(_context, _executor, cancellationToken)
+            .ConfigureAwait(false);
+
         var filteredQuery = AdminStudentFilterBuilder.Apply(
             _context,
             _context.AsNoTracking(_context.Students),
@@ -86,7 +90,9 @@ internal sealed class ExportStudentsQueryHandler : IRequestHandler<ExportStudent
             request.ActivityLevel,
             request.From,
             request.To,
-            request.Search)
+            request.Search,
+            AdminSourceFilter.Parse(request.Source),
+            publicSpaceId)
             .OrderBy(s => s.Id);
 
         var rowCount = 0;
@@ -129,6 +135,7 @@ internal sealed class ExportStudentsQueryHandler : IRequestHandler<ExportStudent
                         request.From,
                         request.To,
                         HasSearch = !string.IsNullOrWhiteSpace(request.Search),
+                        Source = AdminSourceFilter.Parse(request.Source),
                     },
                 }),
                 ipHash: _ipHasher.Hash(request.IpAddress),

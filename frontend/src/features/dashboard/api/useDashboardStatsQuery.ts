@@ -10,6 +10,7 @@ function buildQueryString(query: DashboardStatsQuery): string {
   const params = new URLSearchParams();
   if (query.from) params.set('from', query.from);
   if (query.to) params.set('to', query.to);
+  if (query.source) params.set('source', query.source);
   return params.toString();
 }
 

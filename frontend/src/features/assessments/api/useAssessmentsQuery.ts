@@ -24,6 +24,8 @@ function toRangeEnd(date: string): string {
 
 export function buildAssessmentsQueryString(query: AssessmentsListQuery): string {
   const params = new URLSearchParams();
+  // Manba filtri (P48) — maktab va ommaviy sessiyalarni ajratish uchun.
+  if (query.source) params.set('source', query.source);
   if (query.schoolId) params.set('schoolId', query.schoolId);
   if (query.status) params.set('status', query.status);
   if (query.from) params.set('from', toRangeStart(query.from));

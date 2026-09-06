@@ -59,6 +59,7 @@ const LIST_ROW = {
   reliabilityFlag: 'Reliable',
   programId: 'program-1',
   programName: null,
+  source: 'School',
 } satisfies AssessmentListItemDto;
 
 /**

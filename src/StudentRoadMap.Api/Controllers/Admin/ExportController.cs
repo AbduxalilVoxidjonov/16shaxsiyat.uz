@@ -52,11 +52,12 @@ public sealed class ExportController : ControllerBase
         [FromQuery] DateTimeOffset? from,
         [FromQuery] DateTimeOffset? to,
         [FromQuery] string? search,
+        [FromQuery] string? source,
         CancellationToken cancellationToken)
     {
         var query = new ExportStudentsQuery(
             schoolId, grade, status, needsAttention, personalityType, activityLevel, from, to, search,
-            RequireAdminUserId(), ClientIp(), UserAgent());
+            RequireAdminUserId(), ClientIp(), UserAgent(), source);
 
         var result = await _sender.Send(query, cancellationToken).ConfigureAwait(false);
         if (!result.IsSuccess)

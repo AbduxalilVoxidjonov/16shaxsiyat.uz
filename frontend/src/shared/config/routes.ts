@@ -46,6 +46,13 @@ export const ROUTES = {
     dashboard: '/admin',
     schools: '/admin/schools',
     schoolDetail: (id: string) => `/admin/schools/${id}`,
+    /**
+     * Ommaviy makon (P48) — maktablar ro'yxatidan TO'LIQ ajratilgan bo'lim. Yo'l o'zbekcha
+     * (`/admin/ommaviy`): bu bo'lim atamalari ham o'zbekcha ("makon", "foydalanuvchilar"),
+     * `/admin/schools` bilan yonma-yon turganda ular boshqa-boshqa narsa ekani URL'dan ham
+     * ko'rinib tursin.
+     */
+    publicSpace: '/admin/ommaviy',
     students: '/admin/students',
     studentProfile: (id: string) => `/admin/students/${id}`,
     assessments: '/admin/assessments',
@@ -88,6 +95,7 @@ export const ROUTE_PATTERNS = {
     dashboard: '/admin',
     schools: '/admin/schools',
     schoolDetail: '/admin/schools/:id',
+    publicSpace: '/admin/ommaviy',
     students: '/admin/students',
     studentProfile: '/admin/students/:id',
     assessments: '/admin/assessments',

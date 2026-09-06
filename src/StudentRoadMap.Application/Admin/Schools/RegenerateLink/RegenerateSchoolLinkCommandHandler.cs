@@ -46,7 +46,7 @@ internal sealed class RegenerateSchoolLinkCommandHandler : IRequestHandler<Regen
         var now = _dateTime.UtcNow;
 
         var school = await _executor.FirstOrDefaultAsync(
-            _context.Schools.Where(s => s.Id == request.Id),
+            _context.Schools.SchoolsOnly().Where(s => s.Id == request.Id),
             cancellationToken).ConfigureAwait(false);
 
         if (school is null)

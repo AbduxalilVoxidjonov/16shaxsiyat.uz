@@ -39,6 +39,23 @@ internal sealed class ListAssessmentsQueryHandler : IRequestHandler<ListAssessme
 
         var query = _context.AsNoTracking(_context.Assessments);
 
+        // Ommaviy makon `Id`si — MANBA filtri uchun ham, javobdagi `source` uchun ham
+        // (`ListStudentsQueryHandler` bilan bir xil naqsh: bitta arzon so'rov).
+        var publicSpaceId = await AdminSourceFilter
+            .FindPublicSpaceIdAsync(_context, _executor, cancellationToken)
+            .ConfigureAwait(false);
+
+        var source = AdminSourceFilter.Parse(request.Source);
+        if (source is not null)
+        {
+            // Makon topilmasa `Guid.Empty` sentinel — `AdminStudentFilterBuilder` dagi bilan
+            // bir xil sabab (hech bir `SchoolId` unga teng emas).
+            var spaceId = publicSpaceId ?? Guid.Empty;
+            query = source == AdminSourceFilter.Public
+                ? query.Where(a => a.SchoolId == spaceId)
+                : query.Where(a => a.SchoolId != spaceId);
+        }
+
         if (request.SchoolId.HasValue)
         {
             query = query.Where(a => a.SchoolId == request.SchoolId.Value);
@@ -109,7 +126,8 @@ internal sealed class ListAssessmentsQueryHandler : IRequestHandler<ListAssessme
                 a.ReliabilityFlag?.ToString(),
                 a.ProgramId,
                 // Dastur yozuvi topilmasa `null` — soxta nom yoki bo'sh satr EMAS.
-                programNameById.GetValueOrDefault(a.ProgramId)))
+                programNameById.GetValueOrDefault(a.ProgramId),
+                AdminSourceFilter.SourceOf(a.SchoolId, publicSpaceId)))
             .ToList();
 
         return Result.Success(PagedResult<AdminAssessmentListItemDto>.Create(items, page, pageSize, totalCount));

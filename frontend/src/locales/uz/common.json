@@ -42,7 +42,8 @@
     "comingSoon": "Tez orada",
     "openMenu": "Menyuni ochish",
     "closeMenu": "Menyuni yopish",
-    "programs": "Dasturlar"
+    "programs": "Dasturlar",
+    "publicSpace": "Ommaviy makon"
   },
   "dataTable": {
     "paginationLabel": "Sahifalash",
@@ -241,6 +242,9 @@
     },
     "catalogTestDetail": {
       "title": "Test"
+    },
+    "publicSpace": {
+      "title": "Ommaviy makon"
     }
   },
   "test": {
@@ -474,7 +478,11 @@
       "activityLevelAll": "Barchasi",
       "needsAttentionLabel": "Faqat e'tibor talab qiladiganlar",
       "fromLabel": "Sanadan",
-      "toLabel": "Sanagacha"
+      "toLabel": "Sanagacha",
+      "sourceLabel": "Manba",
+      "sourceAll": "Hammasi",
+      "sourceSchool": "Maktab",
+      "sourcePublic": "Ommaviy makon"
     },
     "chips": {
       "ariaLabel": "Faol filtrlar",
@@ -488,7 +496,8 @@
       "from": "Sanadan: {{value}}",
       "to": "Sanagacha: {{value}}",
       "remove": "{{value}} filtrini olib tashlash",
-      "clearAll": "Hammasini tozalash"
+      "clearAll": "Hammasini tozalash",
+      "source": "Manba: {{value}}"
     },
     "table": {
       "ariaLabel": "O'quvchilar jadvali",
@@ -503,7 +512,8 @@
       "lastAssessmentAt": "Sana",
       "needsAttentionLabel": "E'tibor talab qiladi",
       "emptyTitle": "Hali o'quvchi yo'q",
-      "emptyDescription": "Hali o'quvchi yo'q — maktab havolasini ulashing."
+      "emptyDescription": "Hali o'quvchi yo'q — maktab havolasini ulashing.",
+      "source": "Manba"
     },
     "enums": {
       "status": {
@@ -526,6 +536,10 @@
         "Reliable": "Ishonchli",
         "Questionable": "Shubhali",
         "Unreliable": "Ishonchsiz"
+      },
+      "source": {
+        "School": "Maktab",
+        "Public": "Ommaviy makon"
       }
     }
   },
@@ -927,6 +941,12 @@
     "error": {
       "title": "Statistika yuklanmadi",
       "description": "Server bilan bog'lanishda xatolik yuz berdi."
+    },
+    "source": {
+      "legend": "Ma’lumot manbai",
+      "school": "Maktablar",
+      "public": "Ommaviy makon",
+      "publicHint": "Ommaviy makon raqamlari maktab raqamlari bilan aralashtirilmaydi."
     }
   },
   "publicAssessment": {
@@ -1645,7 +1665,11 @@
       "allSchools": "Barcha maktablar",
       "from": "Sanadan",
       "to": "Sanagacha",
-      "clearAll": "Filtrlarni tozalash"
+      "clearAll": "Filtrlarni tozalash",
+      "source": "Manba",
+      "allSources": "Hammasi",
+      "sourceSchool": "Maktab",
+      "sourcePublic": "Ommaviy makon"
     },
     "table": {
       "ariaLabel": "Sessiyalar ro'yxati",
@@ -1657,7 +1681,14 @@
       "completedAt": "Yakunlangan",
       "reliability": "Ishonchlilik",
       "emptyTitle": "Sessiya topilmadi",
-      "emptyDescription": "Tanlangan filtrlarga mos sessiya yo'q. Filtrlarni o'zgartirib ko'ring."
+      "emptyDescription": "Tanlangan filtrlarga mos sessiya yo'q. Filtrlarni o'zgartirib ko'ring.",
+      "source": "Manba"
+    },
+    "enums": {
+      "source": {
+        "School": "Maktab",
+        "Public": "Ommaviy makon"
+      }
     }
   },
   "account": {
@@ -2191,6 +2222,86 @@
         }
       },
       "note": "Iltimos, xabarda o'quvchilarning shaxsiy ma'lumotlarini (ism-familiya ro'yxatlari, telefon raqamlari va shunga o'xshash) yubormang — ular bizga kerak emas."
+    }
+  },
+  "publicSpace": {
+    "subtitle": "Telegram orqali kirgan tashqi foydalanuvchilar shu makonda test topshiradi. Bu — tizim yozuvi: alohida bo’lim sifatida boshqariladi va o’chirilmaydi.",
+    "status": {
+      "title": "Makon holati",
+      "active": "Faol",
+      "inactive": "Faol emas",
+      "slugLabel": "Manzil kaliti",
+      "dailyLimitLabel": "Kunlik ro’yxatdan o’tish limiti",
+      "protectedNote": "Bu makon tizim yozuvi: uni o’chirish va faolsizlantirish mumkin emas."
+    },
+    "availability": {
+      "okTitle": "Hammasi joyida",
+      "okDescription": "Foydalanuvchilar test boshlay oladi.",
+      "brokenTitle": "Hozir hech kim test boshlay olmaydi",
+      "reason": {
+        "NoProgramsAtAll": "Tizimda umuman dastur yo’q.",
+        "NoProgramAssigned": "Bu makonga bironta dastur biriktirilmagan.",
+        "ProgramsDeactivated": "Dastur o’chirilgan — hech kim test boshlay olmaydi.",
+        "ProgramsWithoutTests": "Dastur bor, lekin uning tarkibida nashr qilingan anketa yo’q.",
+        "unknown": "Sabab noma’lum — dasturlar bo’limini tekshiring."
+      },
+      "inactiveProgramNotice": "“{{name}}” dasturi o’chirilgan. Uni faollashtirmaguningizcha bu makonda test boshlanmaydi.",
+      "goToProgram": "Dasturni ochish",
+      "goToPrograms": "Dasturlar bo’limi"
+    },
+    "stats": {
+      "title": "Statistika",
+      "userCount": "Ro’yxatdan o’tganlar",
+      "totalAssessments": "Jami sessiyalar",
+      "inProgressCount": "Jarayonda",
+      "completedCount": "Tugallangan",
+      "analyzedCount": "Tahlil qilingan",
+      "lastActivityAt": "Oxirgi faollik"
+    },
+    "programs": {
+      "title": "Biriktirilgan dasturlar",
+      "emptyTitle": "Hali dastur biriktirilmagan",
+      "emptyDescription": "Pastdagi ro’yxatdan dastur tanlab biriktiring — usiz hech kim test boshlay olmaydi.",
+      "columnCode": "Kod",
+      "columnName": "Nomi",
+      "columnStatus": "Holat",
+      "columnTests": "Anketalar",
+      "testCount": "{{count}} ta",
+      "inactiveBadge": "O’chirilgan",
+      "activeBadge": "Faol",
+      "noUsableTest": "Nashr qilingan anketa yo’q",
+      "remove": "Olib tashlash",
+      "removeAria": "“{{name}}” dasturini olib tashlash",
+      "addLabel": "Dastur biriktirish",
+      "addPlaceholder": "Dasturni tanlang…",
+      "addCta": "Biriktirish",
+      "addSuccess": "Dastur biriktirildi",
+      "removeSuccess": "Dastur olib tashlandi",
+      "mutationError": "Amal bajarilmadi — qayta urinib ko’ring",
+      "allAssigned": "Barcha dasturlar allaqachon biriktirilgan"
+    },
+    "showResult": {
+      "title": "Natijani foydalanuvchiga ko’rsatish",
+      "description": "Yoqilgan bo’lsa, foydalanuvchi testni yakunlagach o’z natijasini kabinetida ko’radi.",
+      "label": "Natija foydalanuvchiga ko’rsatilsin",
+      "enabled": "Yoqilgan",
+      "disabled": "O’chirilgan",
+      "success": "Sozlama saqlandi",
+      "error": "Sozlama saqlanmadi — qayta urinib ko’ring"
+    },
+    "link": {
+      "title": "Ommaviy havola",
+      "description": "Foydalanuvchilar shu havola orqali kiradi.",
+      "copy": "Havoladan nusxa olish",
+      "copied": "Havola nusxalandi",
+      "copyErrorTitle": "Nusxalab bo’lmadi",
+      "copyErrorDescription": "Havolani qo’lda nusxalang: {{url}}"
+    },
+    "error": {
+      "title": "Ommaviy makon yuklanmadi",
+      "description": "Ma’lumotni olishda xato yuz berdi.",
+      "notConfiguredTitle": "Ommaviy makon sozlanmagan",
+      "notConfiguredDescription": "Bazada ommaviy makon yozuvi topilmadi — seed bajarilmagan bo’lishi mumkin."
     }
   }
 }

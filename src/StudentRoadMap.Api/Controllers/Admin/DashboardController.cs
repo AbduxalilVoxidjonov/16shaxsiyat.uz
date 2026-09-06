@@ -26,16 +26,21 @@ public sealed class DashboardController : ControllerBase
         _sender = sender;
     }
 
-    /// <summary>`GET /api/admin/dashboard/stats?from=&to=` — `docs/07` 3.6-bo'lim to'liq javobi.</summary>
+    /// <summary>
+    /// `GET /api/admin/dashboard/stats?from=&to=&source=` — `docs/07` 3.6-bo'lim to'liq javobi.
+    /// `source` (2026-09-06) — KO'LAM: `school` (STANDART, maktab oqimi) yoki `public`
+    /// (ommaviy makon). Ikki ko'lam raqamlari bitta javobda hech qachon aralashmaydi.
+    /// </summary>
     [HttpGet("stats")]
     [ProducesResponseType(typeof(AdminDashboardStatsDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
     public async Task<ActionResult<AdminDashboardStatsDto>> GetStats(
         [FromQuery] DateTimeOffset? from,
         [FromQuery] DateTimeOffset? to,
+        [FromQuery] string? source,
         CancellationToken cancellationToken)
     {
-        var result = await _sender.Send(new GetDashboardStatsQuery(from, to), cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new GetDashboardStatsQuery(from, to, source), cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
     }

@@ -28,6 +28,17 @@ export function ActiveFilterChips({ filters, schoolName, onRemove, onClearAll }:
   if (filters.search) {
     chips.push({ key: 'search', label: t('students.chips.search', { value: filters.search }) });
   }
+  if (filters.source) {
+    chips.push({
+      key: 'source',
+      label: t('students.chips.source', {
+        value:
+          filters.source === 'school'
+            ? t('students.filters.sourceSchool')
+            : t('students.filters.sourcePublic'),
+      }),
+    });
+  }
   if (filters.schoolId) {
     chips.push({
       key: 'schoolId',

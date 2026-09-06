@@ -15,6 +15,9 @@ const LIST_STALE_TIME_MS = 30_000;
  */
 export function buildStudentsQueryString(query: StudentsListQuery): string {
   const params = new URLSearchParams();
+  // Manba filtri (P48) — eksport ham AYNAN shu funksiyadan o'tadi, shu sabab ro'yxatda
+  // ko'rilgan kesim bilan eksport qilingan fayl hech qachon farq qilmaydi.
+  if (query.source) params.set('source', query.source);
   if (query.schoolId) params.set('schoolId', query.schoolId);
   if (query.grade !== undefined) params.set('grade', String(query.grade));
   if (query.status) params.set('status', query.status);

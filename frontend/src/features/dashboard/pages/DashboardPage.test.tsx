@@ -67,6 +67,19 @@ const FULL_STATS = {
       lastActivityAt: '2026-08-30T10:00:00Z',
     },
   ],
+  source: 'School',
+} satisfies Schemas['AdminDashboardStatsDto'];
+
+/**
+ * `?source=public` javobi (P48). Backend bu kesimda `schools`/`activeSchools` ni `null`
+ * qilib qaytaradi ("bu kesimda bunday ko'rsatkich YO'Q") va `schoolBreakdown` bo'sh —
+ * maktab va ommaviy raqamlar HECH QACHON aralashmaydi.
+ */
+const PUBLIC_STATS = {
+  ...FULL_STATS,
+  totals: { ...FULL_STATS.totals, schools: null, activeSchools: null },
+  schoolBreakdown: [],
+  source: 'Public',
 } satisfies Schemas['AdminDashboardStatsDto'];
 
 interface FetchMockOptions {
@@ -90,9 +103,7 @@ function mockFetch(options: FetchMockOptions = {}) {
       if (options.statsErrorStatus) {
         return Promise.resolve(problemResponse('INTERNAL_ERROR', options.statsErrorStatus));
       }
-      return Promise.resolve(
-        jsonResponse<'AdminDashboardStatsDto'>(options.stats ?? FULL_STATS),
-      );
+      return Promise.resolve(jsonResponse<'AdminDashboardStatsDto'>(options.stats ?? FULL_STATS));
     }
     return Promise.reject(new Error(`unexpected fetch: ${url}`));
   });
@@ -127,7 +138,7 @@ describe('DashboardPage', () => {
     vi.unstubAllGlobals();
   });
 
-  it('KPI kartalar, oxirgi 30 kun va taqsimotlar render bo\'ladi', async () => {
+  it("KPI kartalar, oxirgi 30 kun va taqsimotlar render bo'ladi", async () => {
     mockFetch();
     renderDashboardPage();
 
@@ -167,7 +178,7 @@ describe('DashboardPage', () => {
     expect(within(step).getByText('oldingidan 40%')).toBeInTheDocument();
   });
 
-  it('maktablar kesimida completionRate ulushdan foizga o\'giriladi (0.778 → 78%)', async () => {
+  it("maktablar kesimida completionRate ulushdan foizga o'giriladi (0.778 → 78%)", async () => {
     // Regressiya: backend `completed / registered` ulushini (0..1) qaytaradi, foizni emas.
     // `× 100` unutilganda 50% yakunlagan maktab jadvalda `1%` bo'lib ko'rinardi.
     mockFetch();
@@ -289,9 +300,7 @@ describe('DashboardPage', () => {
     renderDashboardPage();
 
     expect(await screen.findByText("Hali maktab yo'q")).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Birinchi maktabni qo\'shish' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: "Birinchi maktabni qo'shish" })).toBeInTheDocument();
     // Nol bilan to'la KPI kartalar ko'rsatilmaydi.
     expect(screen.queryByText('Yakunlangan sessiyalar')).not.toBeInTheDocument();
   });
@@ -391,7 +400,73 @@ describe('DashboardPage', () => {
     });
   });
 
-  it('server xato bersa qayta urinish tugmasi bilan xato holati ko\'rsatiladi', async () => {
+  /**
+   * P48 — egasining talabi: "dashboard raqamlari maktab va ommaviy bo'yicha aralashmasin".
+   * Standart kesim `school`; ommaviy kesimda maktabga oid bloklar UMUMAN ko'rsatilmaydi
+   * (`—` emas: `—` "ma'lumot hali yo'q" degan BOSHQA ma'noni beradi).
+   */
+  it("standart holatda so'rov maktab kesimi bilan yuboriladi", async () => {
+    const fetchMock = mockFetch();
+    renderDashboardPage();
+
+    await screen.findByText('42');
+    expect(fetchMock.mock.calls.some(([input]) => String(input).includes('source=school'))).toBe(
+      true,
+    );
+  });
+
+  it("ommaviy kesimda maktab KPI kartasi va maktablar kesimi jadvali ko'rsatilmaydi", async () => {
+    mockFetch({ stats: PUBLIC_STATS });
+    renderDashboardPage('/admin?source=public');
+
+    // O'quvchilar/sessiyalar raqamlari baribir ko'rinadi — sahifa bo'sh qolmaydi.
+    expect(await screen.findByText('5820')).toBeInTheDocument();
+
+    // "Maktablar" matni manba almashtirgichida ham bor — tekshiruv KPI blokiga
+    // scope qilinadi.
+    const kpi = within(screen.getByTestId('dashboard-kpi-cards'));
+    expect(kpi.queryByText('Maktablar')).not.toBeInTheDocument();
+    expect(screen.queryByText('39 faol / 42 jami')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('table', { name: 'Maktablar kesimi jadvali' }),
+    ).not.toBeInTheDocument();
+    // Maktab havolalari banneri ham bu kesimda ko'rsatilmaydi.
+    expect(screen.queryByText(/maktab havolasi ishlamaydi/)).not.toBeInTheDocument();
+  });
+
+  it("manba almashtirilganda URL va so'rov yangilanadi", async () => {
+    const fetchMock = mockFetch();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderDashboardPage();
+
+    await screen.findByText('42');
+    fetchMock.mockClear();
+
+    await user.click(screen.getByRole('radio', { name: 'Ommaviy makon' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('url-probe').textContent).toContain('source=public');
+    });
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(
+          ([input]) =>
+            String(input).includes('/api/admin/dashboard/stats') &&
+            String(input).includes('source=public'),
+        ),
+      ).toBe(true);
+    });
+  });
+
+  it("ommaviy kesimda `schools = 0` bo'sh holati CHIQMAYDI (u faqat maktab kesimiga tegishli)", async () => {
+    mockFetch({ stats: PUBLIC_STATS });
+    renderDashboardPage('/admin?source=public');
+
+    await screen.findByText('5820');
+    expect(screen.queryByText("Hali maktab yo'q")).not.toBeInTheDocument();
+  });
+
+  it("server xato bersa qayta urinish tugmasi bilan xato holati ko'rsatiladi", async () => {
     const fetchMock = mockFetch({ statsErrorStatus: 500 });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderDashboardPage();

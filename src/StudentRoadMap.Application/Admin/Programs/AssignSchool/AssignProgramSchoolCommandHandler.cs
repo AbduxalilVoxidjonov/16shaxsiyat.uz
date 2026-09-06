@@ -1,14 +1,15 @@
 using MediatR;
-using StudentRoadMap.Application.Admin.Common;
 using StudentRoadMap.Application.Common.Interfaces;
-using StudentRoadMap.Application.Common.Models;
-using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Common;
-using StudentRoadMap.Domain.Identity;
 
 namespace StudentRoadMap.Application.Admin.Programs.AssignSchool;
 
-/// <summary>`prompts/34` E15-band. Idempotent — allaqachon biriktirilgan bo'lsa hech narsa qilinmaydi (409 emas).</summary>
+/// <summary>
+/// `prompts/34` E15-band. Mexanizmning O'ZI `ProgramSchoolAssignment.AssignAsync` da
+/// (2026-09-06 da chiqarildi) — ommaviy makon bo'limi ham AYNAN shu metodni chaqiradi,
+/// ya'ni biriktirish qoidasi va audit yozuvi ikki oqimda ham bitta joydan.
+/// Idempotent — allaqachon biriktirilgan bo'lsa hech narsa qilinmaydi (409 emas).
+/// </summary>
 internal sealed class AssignProgramSchoolCommandHandler : IRequestHandler<AssignProgramSchoolCommand, Result<AdminProgramDetailDto>>
 {
     private readonly IAppDbContext _context;
@@ -26,48 +27,24 @@ internal sealed class AssignProgramSchoolCommandHandler : IRequestHandler<Assign
 
     public async Task<Result<AdminProgramDetailDto>> Handle(AssignProgramSchoolCommand request, CancellationToken cancellationToken)
     {
-        var now = _dateTime.UtcNow;
-
-        var program = await _executor.FirstOrDefaultAsync(
-            _context.AsNoTracking(_context.AssessmentPrograms).Where(p => p.Id == request.ProgramId),
+        var result = await ProgramSchoolAssignment.AssignAsync(
+            _context,
+            _executor,
+            _ipHasher,
+            request.ProgramId,
+            request.SchoolId,
+            request.AdminUserId,
+            request.IpAddress,
+            request.UserAgent,
+            _dateTime.UtcNow,
             cancellationToken).ConfigureAwait(false);
 
-        if (program is null)
+        if (result.IsFailure)
         {
-            return Result.Failure<AdminProgramDetailDto>(new Error(ProblemCodes.NotFound, "Dastur topilmadi."));
+            return Result.Failure<AdminProgramDetailDto>(result.Error);
         }
 
-        var schoolExists = await _executor.AnyAsync(
-            _context.Schools.Where(s => s.Id == request.SchoolId),
-            cancellationToken).ConfigureAwait(false);
-
-        if (!schoolExists)
-        {
-            return Result.Failure<AdminProgramDetailDto>(new Error(ProblemCodes.NotFound, "Maktab topilmadi."));
-        }
-
-        var alreadyAssigned = await _executor.AnyAsync(
-            _context.SchoolPrograms.Where(sp => sp.ProgramId == request.ProgramId && sp.SchoolId == request.SchoolId),
-            cancellationToken).ConfigureAwait(false);
-
-        if (!alreadyAssigned)
-        {
-            _context.Add(SchoolProgram.Create(Guid.NewGuid(), request.SchoolId, request.ProgramId, now));
-
-            _context.Add(AuditLog.Create(
-                AuditActions.ProgramSchoolAssigned,
-                now,
-                request.AdminUserId,
-                entityType: "AssessmentProgram",
-                entityId: program.Id,
-                afterJson: AuditSnapshot.Serialize(new { program.Id, request.SchoolId }),
-                ipHash: _ipHasher.Hash(request.IpAddress),
-                userAgent: request.UserAgent));
-
-            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        }
-
-        var dto = await ProgramMapping.BuildDetailDtoAsync(_context, _executor, program, cancellationToken).ConfigureAwait(false);
+        var dto = await ProgramMapping.BuildDetailDtoAsync(_context, _executor, result.Value, cancellationToken).ConfigureAwait(false);
 
         return Result.Success(dto);
     }

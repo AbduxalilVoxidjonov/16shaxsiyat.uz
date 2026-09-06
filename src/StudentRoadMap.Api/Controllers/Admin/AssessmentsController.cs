@@ -40,7 +40,10 @@ public sealed class AssessmentsController : ControllerBase
         _currentUser = currentUser;
     }
 
-    /// <summary>`GET /api/admin/assessments` — `docs/07` 3.3-bo'lim.</summary>
+    /// <summary>
+    /// `GET /api/admin/assessments` — `docs/07` 3.3-bo'lim. `source` (2026-09-06) — MANBA
+    /// filtri: `school` yoki `public` (ommaviy makon). Berilmasa — hammasi.
+    /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<AdminAssessmentListItemDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
@@ -52,9 +55,10 @@ public sealed class AssessmentsController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? sort = null,
+        [FromQuery] string? source = null,
         CancellationToken cancellationToken = default)
     {
-        var query = new ListAssessmentsQuery(schoolId, status, from, to, page, pageSize, sort);
+        var query = new ListAssessmentsQuery(schoolId, status, from, to, page, pageSize, sort, source);
         var result = await _sender.Send(query, cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);

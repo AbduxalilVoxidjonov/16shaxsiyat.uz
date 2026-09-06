@@ -21,6 +21,13 @@ namespace StudentRoadMap.Application.Admin.Students;
 /// ko'rsatadi, soxta nom O'YLAB TOPILMAYDI. Sahifa hajmida bitta batch so'rov
 /// (`ExportStudentsQueryHandler` dagi `typeNameCache` bilan bir xil naqsh).
 /// </para>
+/// <para>
+/// **`Source`** (2026-09-06): yozuv qaysi OQIMDAN kelgan — `"School"` (maktab havolasi) yoki
+/// `"Public"` (ommaviy makon, Telegram orqali kirgan tashqi foydalanuvchi). `SchoolName` yolg'iz
+/// yetarli emas edi: ommaviy makon ham `schools` jadvalidagi qator (`SchoolKind` izohi), shu
+/// sabab uning nomi ro'yxatda oddiy maktab nomi kabi ko'rinardi va admin ikki oqimni ajrata
+/// olmasdi. Qiymatlar `AdminSourceFilter` da, `?source=` filtri bilan BIR MANBADAN.
+/// </para>
 /// </summary>
 public sealed record AdminStudentListItemDto(
     Guid Id,
@@ -36,7 +43,8 @@ public sealed record AdminStudentListItemDto(
     string? ActivityLevel,
     bool NeedsAttention,
     string? ReliabilityFlag,
-    DateTimeOffset? LastAssessmentAt);
+    DateTimeOffset? LastAssessmentAt,
+    string Source);
 
 /// <summary>`GET /api/admin/students/{id}` — `docs/07` 3.2-bo'lim `student` qismi.</summary>
 public sealed record AdminStudentDetailDto(

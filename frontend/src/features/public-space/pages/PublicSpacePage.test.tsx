@@ -1,0 +1,321 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter, Route, Routes } from 'react-router';
+import { ToastProvider } from '@/shared/ui/Toast';
+import { jsonResponse, pagedResponse, problemResponse, type Schemas } from '@/test/apiMock';
+import PublicSpacePage from './PublicSpacePage';
+
+/**
+ * `GET /api/admin/public-space` javobi — backend `AdminPublicSpaceDto`.
+ *
+ * Fikstura EGASINING JONLI HOLATIDAN olingan (2026-09-05): yagona `PERSONALITY_PROFILE`
+ * dasturi `Published`, lekin `isActive = false` — ya'ni hozir hech kim test boshlay
+ * olmaydi. Aynan shu holat panelda ANIQ ko'rinishi kerak (2026-09-03 hodisasining takrori
+ * bo'lmasin).
+ */
+const INACTIVE_PROGRAM = {
+  id: 'program-1',
+  code: 'PERSONALITY_PROFILE',
+  nameUz: 'Shaxsiyat profili',
+  status: 'Published',
+  visibility: 'Assigned',
+  isActive: false,
+  testCount: 4,
+  hasUsableTest: true,
+} satisfies Schemas['AdminPublicSpaceProgramDto'];
+
+const BLOCKED_SPACE = {
+  id: '00000000-0000-0000-0000-000000000002',
+  name: 'Ommaviy makon',
+  slug: 'ommaviy',
+  isActive: true,
+  showResultToStudent: true,
+  dailyRegistrationLimit: 100000,
+  publicUrl: 'https://16shaxsiyat.uz/kirish',
+  availability: {
+    status: 'ProgramsDeactivated',
+    availableProgramCount: 0,
+    usableProgramCount: 0,
+  },
+  programs: [INACTIVE_PROGRAM],
+  stats: {
+    userCount: 128,
+    totalAssessments: 96,
+    inProgressCount: 7,
+    completedCount: 74,
+    analyzedCount: 61,
+    lastActivityAt: '2026-09-04T12:00:00Z',
+  },
+} satisfies Schemas['AdminPublicSpaceDto'];
+
+/** Hammasi joyida bo'lgan holat — ogohlantirish CHIQMASLIGI kerak. */
+const HEALTHY_SPACE = {
+  ...BLOCKED_SPACE,
+  availability: { status: 'Ok', availableProgramCount: 1, usableProgramCount: 1 },
+  programs: [{ ...INACTIVE_PROGRAM, isActive: true }],
+} satisfies Schemas['AdminPublicSpaceDto'];
+
+/** Dastursiz holat — biriktirish oqimini sinash uchun. */
+const EMPTY_SPACE = {
+  ...BLOCKED_SPACE,
+  availability: {
+    status: 'NoProgramAssigned',
+    availableProgramCount: 0,
+    usableProgramCount: 0,
+  },
+  programs: [],
+} satisfies Schemas['AdminPublicSpaceDto'];
+
+const PROGRAM_OPTION = {
+  id: 'program-1',
+  code: 'PERSONALITY_PROFILE',
+  nameUz: 'Shaxsiyat profili',
+  kind: 'System',
+  visibility: 'Assigned',
+  status: 'Published',
+  isActive: false,
+  isSystem: true,
+  displayOrder: 1,
+  testCount: 4,
+} satisfies Schemas['AdminProgramListItemDto'];
+
+interface FetchMockOptions {
+  space?: Schemas['AdminPublicSpaceDto'];
+  /** Ketma-ket `GET` javoblari — mutatsiyadan keyin yangilangan holatni ko'rsatish uchun. */
+  mutationResult?: Schemas['AdminPublicSpaceDto'];
+  spaceErrorStatus?: number;
+  spaceErrorCode?: string;
+}
+
+function mockFetch(options: FetchMockOptions = {}) {
+  const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    const method = init?.method ?? 'GET';
+
+    if (url.includes('/api/admin/programs')) {
+      return Promise.resolve(pagedResponse<'AdminProgramListItemDto'>([PROGRAM_OPTION]));
+    }
+
+    if (url.includes('/api/admin/public-space')) {
+      if (method !== 'GET') {
+        return Promise.resolve(
+          jsonResponse<'AdminPublicSpaceDto'>(
+            options.mutationResult ?? options.space ?? BLOCKED_SPACE,
+          ),
+        );
+      }
+      if (options.spaceErrorStatus) {
+        return Promise.resolve(
+          problemResponse(options.spaceErrorCode ?? 'INTERNAL_ERROR', options.spaceErrorStatus),
+        );
+      }
+      return Promise.resolve(jsonResponse<'AdminPublicSpaceDto'>(options.space ?? BLOCKED_SPACE));
+    }
+
+    return Promise.reject(new Error(`kutilmagan so'rov: ${url}`));
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  return fetchMock;
+}
+
+function renderPage() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>
+        <MemoryRouter initialEntries={['/admin/ommaviy']}>
+          <Routes>
+            <Route path="/admin/ommaviy" element={<PublicSpacePage />} />
+            <Route path="/admin/programs/:id" element={<div>PROGRAM_DETAIL_STUB</div>} />
+          </Routes>
+        </MemoryRouter>
+      </ToastProvider>
+    </QueryClientProvider>,
+  );
+}
+
+describe('PublicSpacePage', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("makon holatini ko'rsatadi (nomi, faolligi, slug, kunlik limit)", async () => {
+    mockFetch();
+    renderPage();
+
+    expect(screen.getByText('Ommaviy makon', { selector: 'h1' })).toBeInTheDocument();
+    // Ma'lumot kelguncha skelet turadi — avval yuklangan mazmunni kutamiz.
+    expect(await screen.findByText('ommaviy')).toBeInTheDocument();
+    expect(screen.getByText('Faol')).toBeInTheDocument();
+    // Kunlik limit — ming ajratkichi bilan.
+    expect(screen.getByText(/100.?000/)).toBeInTheDocument();
+  });
+
+  it("statistika kartalari ko'rsatiladi", async () => {
+    mockFetch();
+    renderPage();
+
+    const stats = within(await screen.findByRole('region', { name: 'Statistika' }));
+    expect(stats.getByText('128')).toBeInTheDocument(); // ro'yxatdan o'tganlar
+    expect(stats.getByText('96')).toBeInTheDocument(); // jami sessiyalar
+    expect(stats.getByText('7')).toBeInTheDocument(); // jarayonda
+    expect(stats.getByText('74')).toBeInTheDocument(); // tugallangan
+    expect(stats.getByText('61')).toBeInTheDocument(); // tahlil qilingan
+    expect(stats.getByText('04.09.2026')).toBeInTheDocument();
+  });
+
+  /**
+   * Egasining jonli holati: dastur `Published`, lekin `isActive=false` — oqim jimgina
+   * o'lik. 2026-09-03 da aynan shu holat panelda hech qanday belgi bermagan edi.
+   */
+  it("dastur o'chirilgan bo'lsa aniq ogohlantirish va o'sha dasturga havola ko'rsatiladi", async () => {
+    mockFetch();
+    renderPage();
+
+    const alert = await screen.findByTestId('public-space-availability-alert');
+    expect(within(alert).getByText('Hozir hech kim test boshlay olmaydi')).toBeInTheDocument();
+    expect(
+      within(alert).getByText(/Dastur o’chirilgan — hech kim test boshlay olmaydi/),
+    ).toBeInTheDocument();
+    expect(within(alert).getByText(/“Shaxsiyat profili” dasturi o’chirilgan/)).toBeInTheDocument();
+
+    // Havola aynan o'sha dasturning sahifasiga olib boradi (dastur bu yerdan YOQILMAYDI).
+    const link = within(alert).getByRole('link', { name: 'Dasturni ochish' });
+    expect(link).toHaveAttribute('href', '/admin/programs/program-1');
+  });
+
+  it("hammasi joyida bo'lsa ogohlantirish CHIQMAYDI", async () => {
+    mockFetch({ space: HEALTHY_SPACE });
+    renderPage();
+
+    expect(await screen.findByTestId('public-space-availability-ok')).toBeInTheDocument();
+    expect(screen.queryByTestId('public-space-availability-alert')).not.toBeInTheDocument();
+  });
+
+  it('dastur biriktiriladi va yangilangan holat keshga yoziladi', async () => {
+    const fetchMock = mockFetch({ space: EMPTY_SPACE, mutationResult: HEALTHY_SPACE });
+    const user = userEvent.setup();
+    renderPage();
+
+    expect(await screen.findByText('Hali dastur biriktirilmagan')).toBeInTheDocument();
+    // Dasturlar ro'yxati alohida so'rov bilan keladi — variant paydo bo'lguncha kutamiz
+    // (aks holda `<select>` hali `disabled` holatda bo'ladi).
+    await screen.findByRole('option', { name: /PERSONALITY_PROFILE/ });
+
+    await user.selectOptions(screen.getByLabelText('Dastur biriktirish'), 'program-1');
+    await user.click(screen.getByRole('button', { name: 'Biriktirish' }));
+
+    expect(await screen.findByText('Dastur biriktirildi')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(
+          ([input, init]) =>
+            String(input).includes('/api/admin/public-space/programs/program-1') &&
+            (init as RequestInit | undefined)?.method === 'POST',
+        ),
+      ).toBe(true);
+    });
+    // Javob keshga yozilgani uchun ro'yxat qo'shimcha `GET`siz yangilanadi.
+    expect(await screen.findByText('Shaxsiyat profili')).toBeInTheDocument();
+  });
+
+  it('biriktirilgan dastur olib tashlanadi', async () => {
+    const fetchMock = mockFetch({ mutationResult: EMPTY_SPACE });
+    const user = userEvent.setup();
+    renderPage();
+
+    const programs = within(await screen.findByTestId('public-space-programs'));
+    await user.click(
+      programs.getByRole('button', { name: '“Shaxsiyat profili” dasturini olib tashlash' }),
+    );
+
+    expect(await screen.findByText('Dastur olib tashlandi')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(
+          ([input, init]) =>
+            String(input).includes('/api/admin/public-space/programs/program-1') &&
+            (init as RequestInit | undefined)?.method === 'DELETE',
+        ),
+      ).toBe(true);
+    });
+  });
+
+  it("natijani ko'rsatish sozlamasi PUT so'rovi bilan o'zgaradi", async () => {
+    const fetchMock = mockFetch({
+      mutationResult: { ...BLOCKED_SPACE, showResultToStudent: false },
+    });
+    const user = userEvent.setup();
+    renderPage();
+
+    const toggle = await screen.findByLabelText('Natija foydalanuvchiga ko’rsatilsin');
+    expect(toggle).toBeChecked();
+
+    await user.click(toggle);
+
+    expect(await screen.findByText('Sozlama saqlandi')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(([input, init]) => {
+          const request = init as RequestInit | undefined;
+          return (
+            String(input).includes('/api/admin/public-space/show-result') &&
+            request?.method === 'PUT' &&
+            String(request.body).includes('"enabled":false')
+          );
+        }),
+      ).toBe(true);
+    });
+  });
+
+  it("nofaollashtirish yoki o'chirish tugmasi UMUMAN yo'q (domen buni taqiqlaydi)", async () => {
+    mockFetch();
+    renderPage();
+
+    await screen.findByText('ommaviy');
+    expect(screen.queryByRole('button', { name: /Faolsizlantirish/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /O'chirish/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Nofaol/ })).not.toBeInTheDocument();
+  });
+
+  it("ommaviy havola nusxa olish tugmasi bilan ko'rsatiladi", async () => {
+    mockFetch();
+    renderPage();
+
+    expect(await screen.findByText('https://16shaxsiyat.uz/kirish')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Havoladan nusxa olish' })).toBeInTheDocument();
+  });
+
+  it("bu bo'limda “maktab” so'zi ishlatilmaydi", async () => {
+    mockFetch();
+    const { container } = renderPage();
+
+    await screen.findByText('ommaviy');
+    expect(container.textContent ?? '').not.toMatch(/maktab/i);
+  });
+
+  it("makon sozlanmagan bo'lsa (409) tushunarli xato ko'rsatiladi", async () => {
+    mockFetch({ spaceErrorStatus: 409, spaceErrorCode: 'PUBLIC_SPACE_NOT_CONFIGURED' });
+    renderPage();
+
+    expect(await screen.findByText('Ommaviy makon sozlanmagan')).toBeInTheDocument();
+    // Qayta urinish bu holatda foyda bermaydi — tugma ko'rsatilmaydi.
+    expect(screen.queryByRole('button', { name: 'Qayta urinish' })).not.toBeInTheDocument();
+  });
+
+  it("server xato bersa qayta urinish tugmasi ko'rsatiladi", async () => {
+    const fetchMock = mockFetch({ spaceErrorStatus: 500 });
+    const user = userEvent.setup();
+    renderPage();
+
+    const retry = await screen.findByRole('button', { name: 'Qayta urinish' });
+    const before = fetchMock.mock.calls.length;
+    await user.click(retry);
+
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.length).toBeGreaterThan(before);
+    });
+  });
+});

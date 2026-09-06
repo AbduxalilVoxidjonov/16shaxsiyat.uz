@@ -65,17 +65,27 @@ export function KpiCards({ totals, isLoading }: KpiCardsProps) {
   const navigate = useNavigate();
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-      <KpiCard
-        label={t('dashboard.kpi.schools')}
-        value={totals ? String(totals.schools) : '—'}
-        hint={
-          totals
-            ? t('dashboard.kpi.schoolsHint', { active: totals.activeSchools, total: totals.schools })
-            : undefined
-        }
-        isLoading={isLoading}
-      />
+    <div
+      data-testid="dashboard-kpi-cards"
+      className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
+    >
+      {/*
+        Maktablar kartasi FAQAT maktab kesimida (P48). Ommaviy kesimda backend `schools`/
+        `activeSchools` ni `null` qilib qaytaradi ("bu kesimda bunday ko'rsatkich YO'Q") —
+        `—` ko'rsatish emas, kartani BUTUNLAY yashirish to'g'ri: `—` "ma'lumot hali yo'q"
+        degan boshqa ma'noni beradi (`docs/06` §8 qoidasi).
+      */}
+      {totals?.schools != null && (
+        <KpiCard
+          label={t('dashboard.kpi.schools')}
+          value={String(totals.schools)}
+          hint={t('dashboard.kpi.schoolsHint', {
+            active: totals.activeSchools ?? 0,
+            total: totals.schools,
+          })}
+          isLoading={isLoading}
+        />
+      )}
       <KpiCard
         label={t('dashboard.kpi.students')}
         value={totals ? String(totals.students) : '—'}

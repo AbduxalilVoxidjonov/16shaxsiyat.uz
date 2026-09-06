@@ -8,6 +8,8 @@ import { Button } from '@/shared/ui/Button';
 import { ROUTES } from '@/shared/config/routes';
 import { useDashboardStatsQuery } from '../api/useDashboardStatsQuery';
 import { readDashboardDateRange } from '../model/dateRangeFilters';
+import { readDashboardSource } from '../model/dashboardSource';
+import { DashboardSourceFilter } from '../components/DashboardSourceFilter';
 import { DateRangeFilter } from '../components/DateRangeFilter';
 import { BrokenSchoolLinksBanner } from '../components/BrokenSchoolLinksBanner';
 import { KpiCards } from '../components/KpiCards';
@@ -52,10 +54,15 @@ export default function DashboardPage() {
 
   const [searchParams] = useSearchParams();
   const dateRange = readDashboardDateRange(searchParams);
+  // Manba kesimi (P48) — maktab va ommaviy raqamlar HECH QACHON aralashmaydi: har
+  // so'rov aniq bitta oqim uchun, tanlangan oqim esa ekranda ko'rinib turadi.
+  const source = readDashboardSource(searchParams);
+  const isSchoolSource = source === 'school';
 
   const statsQuery = useDashboardStatsQuery({
     from: dateRange.from || undefined,
     to: dateRange.to || undefined,
+    source,
   });
 
   return (
@@ -64,14 +71,19 @@ export default function DashboardPage() {
         <h1 className="text-xl font-semibold text-neutral-900">{t('pages.dashboard.title')}</h1>
       </div>
 
+      <DashboardSourceFilter />
+
       <DateRangeFilter />
 
       {/*
         "Havola ishlamaydi" signali — sana filtridan MUSTAQIL (bu joriy holat, davr statistikasi
         emas) va sahifaning ENG YUQORISIDA: 2026-09-03 hodisasida admin dasturni o'chirgach
         hech qanday belgi ko'rmagan edi.
+
+        FAQAT maktab kesimida: bu banner maktab havolalari haqida. Ommaviy makonning o'z
+        holati (`availability`) o'zining bo'limida ko'rsatiladi — ikkisi aralashtirilmaydi.
       */}
-      <BrokenSchoolLinksBanner />
+      {isSchoolSource && <BrokenSchoolLinksBanner />}
 
       {statsQuery.isError && (
         <ErrorState
@@ -85,7 +97,7 @@ export default function DashboardPage() {
 
       {!statsQuery.isError && !statsQuery.isPending && statsQuery.data && (
         <>
-          {statsQuery.data.totals.schools === 0 ? (
+          {isSchoolSource && statsQuery.data.totals.schools === 0 ? (
             <EmptyState
               title={t('dashboard.emptySchools.title')}
               description={t('dashboard.emptySchools.description')}
@@ -103,7 +115,10 @@ export default function DashboardPage() {
 
               <FunnelSection funnel={statsQuery.data.funnel} />
 
-              <SchoolBreakdownTable schoolBreakdown={statsQuery.data.schoolBreakdown} />
+              {/* Maktablar kesimi jadvali ommaviy kesimda ma'nosiz — u yerda maktab yo'q. */}
+              {isSchoolSource && (
+                <SchoolBreakdownTable schoolBreakdown={statsQuery.data.schoolBreakdown} />
+              )}
 
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                 <PersonalityDistributionChart items={statsQuery.data.personalityDistribution} />
@@ -112,6 +127,10 @@ export default function DashboardPage() {
               </div>
 
               <RecentAssessmentsList items={statsQuery.data.recentAssessments} />
+
+              {!isSchoolSource && (
+                <p className="text-xs text-neutral-500">{t('dashboard.source.publicHint')}</p>
+              )}
             </>
           )}
         </>

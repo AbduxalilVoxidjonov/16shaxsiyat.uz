@@ -22,6 +22,29 @@ export type AssessmentStatus = (typeof ASSESSMENT_STATUS_VALUES)[number];
 export const RELIABILITY_FLAG_VALUES = ['Reliable', 'Questionable', 'Unreliable'] as const;
 export type ReliabilityFlag = (typeof RELIABILITY_FLAG_VALUES)[number];
 
+/**
+ * O'quvchi yozuvining MANBASI (P48) — backend `AdminStudentListItemDto.source`.
+ *
+ * `School` — klassik maktab havolasi orqali kirgan o'quvchi; `Public` — Telegram orqali
+ * kirgan, ommaviy makondagi foydalanuvchi. Ikkalasi bir jadvalda saqlanadi (`Student.SchoolId`
+ * domenda majburiy — bu SAQLASH qarori), lekin admin panelda ATAYLAB ajratiladi: aralashib
+ * ketgan ro'yxat "maktabda 5000 o'quvchi bor" degan yolg'on taassurot berardi.
+ *
+ * Sxemada oddiy `string` (backend `ToString()`), shu sabab union bu yerda qo'lda saqlanadi —
+ * `ASSESSMENT_STATUS_VALUES` bilan bir xil naqsh.
+ */
+export const STUDENT_SOURCE_VALUES = ['School', 'Public'] as const;
+export type StudentSource = (typeof STUDENT_SOURCE_VALUES)[number];
+
+/** URL query'da ishlatiladigan qiymatlar (backend `?source=` parametri). */
+export const STUDENT_SOURCE_QUERY_VALUES = ['school', 'public'] as const;
+export type StudentSourceQuery = (typeof STUDENT_SOURCE_QUERY_VALUES)[number];
+
+/** `source` — haqiqiy `StudentSource` qiymatimi (backend `string` yuboradi). */
+export function isStudentSource(value: string | null | undefined): value is StudentSource {
+  return typeof value === 'string' && (STUDENT_SOURCE_VALUES as readonly string[]).includes(value);
+}
+
 /** `docs/05`: "ActivityLevel | 1 Passive, 2 LowActive, 3 Moderate, 4 Active, 5 HighlyActive". */
 export const ACTIVITY_LEVEL_VALUES = [
   'Passive',

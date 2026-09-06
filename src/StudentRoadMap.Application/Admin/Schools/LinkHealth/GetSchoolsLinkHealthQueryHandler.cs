@@ -31,7 +31,9 @@ internal sealed class GetSchoolsLinkHealthQueryHandler
     {
         var snapshot = await SchoolLinkHealthEvaluator.LoadCatalogAsync(_context, _executor, cancellationToken).ConfigureAwait(false);
 
-        var activeSchools = _context.AsNoTracking(_context.Schools).Where(s => s.IsActive);
+        // Ommaviy makon MAKTAB EMAS — bu signal faqat maktab havolalari haqida
+        // (`AdminSchoolScope` izohi). Ommaviy makon holati o'z bo'limida ko'rsatiladi.
+        var activeSchools = _context.AsNoTracking(_context.Schools).SchoolsOnly().Where(s => s.IsActive);
         var activeSchoolCount = await _executor.CountAsync(activeSchools, cancellationToken).ConfigureAwait(false);
 
         // `Matches(p, assignedToSchool: false)` — biriktirmadan QAT'I NAZAR ko'rinadigan dastur.

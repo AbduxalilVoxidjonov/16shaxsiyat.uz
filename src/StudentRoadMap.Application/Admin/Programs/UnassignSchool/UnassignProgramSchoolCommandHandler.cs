@@ -1,13 +1,14 @@
 using MediatR;
-using StudentRoadMap.Application.Admin.Common;
 using StudentRoadMap.Application.Common.Interfaces;
-using StudentRoadMap.Application.Common.Models;
 using StudentRoadMap.Domain.Common;
-using StudentRoadMap.Domain.Identity;
 
 namespace StudentRoadMap.Application.Admin.Programs.UnassignSchool;
 
-/// <summary>`prompts/34` E15-band. Idempotent — biriktirilmagan bo'lsa hech narsa qilinmaydi (409 emas).</summary>
+/// <summary>
+/// `prompts/34` E15-band. Mexanizm `ProgramSchoolAssignment.UnassignAsync` da —
+/// `AssignProgramSchoolCommandHandler` bilan bir xil sabab (izohiga qarang).
+/// Idempotent — biriktirilmagan bo'lsa hech narsa qilinmaydi (409 emas).
+/// </summary>
 internal sealed class UnassignProgramSchoolCommandHandler : IRequestHandler<UnassignProgramSchoolCommand, Result<AdminProgramDetailDto>>
 {
     private readonly IAppDbContext _context;
@@ -25,39 +26,24 @@ internal sealed class UnassignProgramSchoolCommandHandler : IRequestHandler<Unas
 
     public async Task<Result<AdminProgramDetailDto>> Handle(UnassignProgramSchoolCommand request, CancellationToken cancellationToken)
     {
-        var now = _dateTime.UtcNow;
-
-        var program = await _executor.FirstOrDefaultAsync(
-            _context.AsNoTracking(_context.AssessmentPrograms).Where(p => p.Id == request.ProgramId),
+        var result = await ProgramSchoolAssignment.UnassignAsync(
+            _context,
+            _executor,
+            _ipHasher,
+            request.ProgramId,
+            request.SchoolId,
+            request.AdminUserId,
+            request.IpAddress,
+            request.UserAgent,
+            _dateTime.UtcNow,
             cancellationToken).ConfigureAwait(false);
 
-        if (program is null)
+        if (result.IsFailure)
         {
-            return Result.Failure<AdminProgramDetailDto>(new Error(ProblemCodes.NotFound, "Dastur topilmadi."));
+            return Result.Failure<AdminProgramDetailDto>(result.Error);
         }
 
-        var link = await _executor.FirstOrDefaultAsync(
-            _context.SchoolPrograms.Where(sp => sp.ProgramId == request.ProgramId && sp.SchoolId == request.SchoolId),
-            cancellationToken).ConfigureAwait(false);
-
-        if (link is not null)
-        {
-            _context.Remove(link);
-
-            _context.Add(AuditLog.Create(
-                AuditActions.ProgramSchoolUnassigned,
-                now,
-                request.AdminUserId,
-                entityType: "AssessmentProgram",
-                entityId: program.Id,
-                afterJson: AuditSnapshot.Serialize(new { program.Id, request.SchoolId }),
-                ipHash: _ipHasher.Hash(request.IpAddress),
-                userAgent: request.UserAgent));
-
-            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        }
-
-        var dto = await ProgramMapping.BuildDetailDtoAsync(_context, _executor, program, cancellationToken).ConfigureAwait(false);
+        var dto = await ProgramMapping.BuildDetailDtoAsync(_context, _executor, result.Value, cancellationToken).ConfigureAwait(false);
 
         return Result.Success(dto);
     }

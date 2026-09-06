@@ -1,11 +1,18 @@
-import { ASSESSMENT_STATUS_VALUES, type AssessmentStatus } from './types';
+import {
+  ASSESSMENT_SOURCE_QUERY_VALUES,
+  ASSESSMENT_STATUS_VALUES,
+  type AssessmentSourceQuery,
+  type AssessmentStatus,
+} from './types';
 
 /** URL'da saqlanadigan filtr kalitlari (jadval holati — `useServerTableState` da alohida). */
-export const ASSESSMENTS_FILTER_KEYS = ['status', 'schoolId', 'from', 'to'] as const;
+export const ASSESSMENTS_FILTER_KEYS = ['status', 'source', 'schoolId', 'from', 'to'] as const;
 export type AssessmentsFilterKey = (typeof ASSESSMENTS_FILTER_KEYS)[number];
 
 export interface AssessmentsFilterValues {
   status: AssessmentStatus | '';
+  /** `''` — hammasi (maktab + ommaviy), aks holda faqat bitta manba. */
+  source: AssessmentSourceQuery | '';
   schoolId: string;
   /** `YYYY-MM-DD` yoki `''`. */
   from: string;
@@ -24,12 +31,17 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
  */
 export function readAssessmentsFilters(searchParams: URLSearchParams): AssessmentsFilterValues {
   const status = searchParams.get('status');
+  const source = searchParams.get('source');
   const from = searchParams.get('from') ?? '';
   const to = searchParams.get('to') ?? '';
   return {
     status:
       status && (ASSESSMENT_STATUS_VALUES as readonly string[]).includes(status)
         ? (status as AssessmentStatus)
+        : '',
+    source:
+      source && (ASSESSMENT_SOURCE_QUERY_VALUES as readonly string[]).includes(source)
+        ? (source as AssessmentSourceQuery)
         : '',
     schoolId: searchParams.get('schoolId') ?? '',
     from: ISO_DATE.test(from) ? from : '',
@@ -39,6 +51,10 @@ export function readAssessmentsFilters(searchParams: URLSearchParams): Assessmen
 
 export function hasActiveAssessmentsFilters(filters: AssessmentsFilterValues): boolean {
   return (
-    filters.status !== '' || filters.schoolId !== '' || filters.from !== '' || filters.to !== ''
+    filters.status !== '' ||
+    filters.source !== '' ||
+    filters.schoolId !== '' ||
+    filters.from !== '' ||
+    filters.to !== ''
   );
 }

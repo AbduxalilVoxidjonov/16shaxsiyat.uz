@@ -1,9 +1,21 @@
 namespace StudentRoadMap.Application.Admin.Dashboard;
 
-/// <summary>`docs/07-api-shartnoma.md` 3.6-bo'lim `totals` — hamma vaqt bo'yicha (oynaga bog'liq emas).</summary>
+/// <summary>
+/// `docs/07-api-shartnoma.md` 3.6-bo'lim `totals` — hamma vaqt bo'yicha (oynaga bog'liq emas),
+/// LEKIN so'ralgan MANBA (`?source=`) doirasida (2026-09-06).
+///
+/// <para>
+/// **`Schools`/`ActiveSchools` — `int?`** (nullable): bu ikki ko'rsatkich faqat MAKTAB
+/// ko'lamida ma'noga ega. `source=public` da ommaviy makon bitta virtual yozuv bo'lgani uchun
+/// "1 ta maktab" deb ko'rsatish YOLG'ON, `0` deb ko'rsatish esa "maktablar yo'q" degan boshqa
+/// yolg'on bo'lardi. Loyihaning barqaror qoidasi bo'yicha (`docs/06` §8, 2026-09-02:
+/// "ma'lumot yo'q bo'lsa `null`, hech qachon `0` emas") — `null`, frontend esa o'sha ikki
+/// kartani umuman ko'rsatmaydi.
+/// </para>
+/// </summary>
 public sealed record AdminDashboardTotalsDto(
-    int Schools,
-    int ActiveSchools,
+    int? Schools,
+    int? ActiveSchools,
     int Students,
     int CompletedAssessments,
     int PendingAnalysis,
@@ -80,7 +92,21 @@ public sealed record AdminDashboardSchoolBreakdownItemDto(
     double? CompletionRate,
     DateTimeOffset? LastActivityAt);
 
-/// <summary>`GET /api/admin/dashboard/stats?from=&to=` — `docs/07` 3.6-bo'lim to'liq javobi.</summary>
+/// <summary>
+/// `GET /api/admin/dashboard/stats?from=&to=&source=` — `docs/07` 3.6-bo'lim to'liq javobi.
+///
+/// <para>
+/// **`Source`** (2026-09-06) — javob QAYSI ko'lam uchun hisoblangani: `"School"` (maktab
+/// oqimi, STANDART) yoki `"Public"` (ommaviy makon). Panelda ikki oqim raqamlari HECH QACHON
+/// ARALASHMAYDI: har bir son aniq bitta ko'lamga tegishli va javobning o'zi qaysi ko'lam
+/// ekanini aytadi (frontend uni almashtirgichning holati bilan solishtiradi — mos kelmasa
+/// eski kesh ko'rsatilayotgan bo'lardi).
+/// </para>
+/// <para>
+/// `SchoolBreakdown` — `source=public` da DOIM bo'sh: ommaviy makon maktablar kesimiga
+/// tushmaydi (u maktab emas).
+/// </para>
+/// </summary>
 public sealed record AdminDashboardStatsDto(
     AdminDashboardTotalsDto Totals,
     AdminDashboardLast30DaysDto Last30Days,
@@ -89,4 +115,5 @@ public sealed record AdminDashboardStatsDto(
     IReadOnlyList<AdminDashboardHollandItemDto> HollandTop,
     IReadOnlyList<AdminDashboardRecentAssessmentDto> RecentAssessments,
     AdminDashboardFunnelDto Funnel,
-    IReadOnlyList<AdminDashboardSchoolBreakdownItemDto> SchoolBreakdown);
+    IReadOnlyList<AdminDashboardSchoolBreakdownItemDto> SchoolBreakdown,
+    string Source);

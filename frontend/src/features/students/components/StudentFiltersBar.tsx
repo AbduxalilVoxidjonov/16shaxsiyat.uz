@@ -9,6 +9,7 @@ import {
   ACTIVITY_LEVEL_VALUES,
   ASSESSMENT_STATUS_VALUES,
   PERSONALITY_TYPE_CODES,
+  STUDENT_SOURCE_QUERY_VALUES,
 } from '../model/enums';
 import {
   hasActiveStudentsFilters,
@@ -95,6 +96,7 @@ export function StudentFiltersBar() {
       const params = new URLSearchParams(prev);
       for (const key of [
         'search',
+        'source',
         'schoolId',
         'grade',
         'status',
@@ -125,6 +127,27 @@ export function StudentFiltersBar() {
             placeholder={t('students.filters.searchPlaceholder')}
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
+          />
+        </div>
+
+        {/*
+          Manba filtri (P48) — maktab kombobox'idan OLDIN turadi: avval "qaysi oqim", keyin
+          "qaysi maktab". Ommaviy makon endi maktablar ro'yxatida yo'q, shu sabab ommaviy
+          foydalanuvchilarga tushishning YAGONA yo'li shu filtr.
+        */}
+        <div className="w-full sm:w-44">
+          <Select
+            label={t('students.filters.sourceLabel')}
+            placeholder={t('students.filters.sourceAll')}
+            value={filters.source}
+            onChange={(event) => updateFilter('source', event.target.value)}
+            options={STUDENT_SOURCE_QUERY_VALUES.map((value) => ({
+              value,
+              label:
+                value === 'school'
+                  ? t('students.filters.sourceSchool')
+                  : t('students.filters.sourcePublic'),
+            }))}
           />
         </div>
 

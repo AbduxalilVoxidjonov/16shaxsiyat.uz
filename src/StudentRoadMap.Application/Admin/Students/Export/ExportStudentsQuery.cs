@@ -22,7 +22,9 @@ public sealed record ExportStudentsQuery(
     string? Search,
     Guid? AdminUserId,
     string? IpAddress,
-    string? UserAgent) : IRequest<Result<AdminStudentsExportResult>>;
+    string? UserAgent,
+    // MANBA filtri — `ListStudentsQuery.Source` bilan AYNAN bir xil ma'noda.
+    string? Source = null) : IRequest<Result<AdminStudentsExportResult>>;
 
 /// <summary>Tayyor `.xlsx` fayl baytlari + nomi — controller shundan `File(...)` qaytaradi.</summary>
 public sealed record AdminStudentsExportResult(byte[] Content, string FileName, string ContentType);

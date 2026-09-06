@@ -21,6 +21,7 @@
  * (loose, `undefined`ni ham qamrab oladi) tekshiruvi ishlatiladi, `?? 0` EMAS.
  */
 import type { components } from '@/shared/api/schema';
+import type { DashboardSource } from './dashboardSource';
 
 /** `docs/07` 3.6-bo'lim — `totals` bloki. */
 export type DashboardTotals = components['schemas']['AdminDashboardTotalsDto'];
@@ -65,4 +66,10 @@ export type DashboardStatsResponse = components['schemas']['AdminDashboardStatsD
 export interface DashboardStatsQuery {
   from?: string;
   to?: string;
+  /**
+   * Manba kesimi (P48). Backend standarti ham `school`, lekin bu yerda ATAYLAB majburiy
+   * emas: chaqiruvchi (`DashboardPage`) uni har doim ANIQ uzatadi, shunda kesh kaliti ham
+   * ("qaysi kesim ko'rilgan") aniq bo'ladi.
+   */
+  source?: DashboardSource;
 }

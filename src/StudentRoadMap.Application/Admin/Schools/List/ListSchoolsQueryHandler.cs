@@ -36,7 +36,9 @@ internal sealed class ListSchoolsQueryHandler : IRequestHandler<ListSchoolsQuery
     {
         var (page, pageSize) = AdminPagingOptions.Normalize(request.Page, request.PageSize);
 
-        var query = _context.AsNoTracking(_context.Schools);
+        // Ommaviy makon bu ro'yxatda UMUMAN yo'q — `AdminSchoolScope` izohida nima uchun
+        // global query filtri emas, aniq `Where` tanlangani asoslangan.
+        var query = _context.AsNoTracking(_context.Schools).SchoolsOnly();
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {

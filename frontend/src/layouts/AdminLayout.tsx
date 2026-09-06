@@ -5,6 +5,7 @@ import {
   BookOpen,
   ClipboardList,
   LayoutDashboard,
+  Globe,
   Layers,
   LogOut,
   Menu,
@@ -37,6 +38,9 @@ const NAV_ITEMS: NavItem[] = [
     end: true,
   },
   { to: ROUTES.admin.schools, key: 'nav.schools', icon: School },
+  // Ommaviy makon (P48) — maktablardan ALOHIDA element. U maktablar ro'yxatida ko'rinmaydi
+  // (backend `Kind = School` bo'yicha filtrlaydi), shu sabab yagona kirish nuqtasi shu yerda.
+  { to: ROUTES.admin.publicSpace, key: 'nav.publicSpace', icon: Globe },
   { to: ROUTES.admin.students, key: 'nav.students', icon: Users },
   { to: ROUTES.admin.assessments, key: 'nav.assessments', icon: ClipboardList },
   { to: ROUTES.admin.catalog, key: 'nav.catalog', icon: BookOpen },

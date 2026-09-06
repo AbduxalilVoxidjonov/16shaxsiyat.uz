@@ -18,4 +18,7 @@ public sealed record ListAssessmentsQuery(
     DateTimeOffset? To,
     int Page,
     int PageSize,
-    string? Sort) : IRequest<Result<PagedResult<AdminAssessmentListItemDto>>>;
+    string? Sort,
+    // MANBA filtri (2026-09-06): "school" (maktab havolasi oqimi) yoki "public" (ommaviy makon).
+    // `null`/noma'lum qiymat — filtr yo'q. `AdminSourceFilter.Parse` ga qarang.
+    string? Source = null) : IRequest<Result<PagedResult<AdminAssessmentListItemDto>>>;

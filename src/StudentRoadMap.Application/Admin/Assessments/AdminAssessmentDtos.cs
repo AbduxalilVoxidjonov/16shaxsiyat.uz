@@ -13,6 +13,12 @@ namespace StudentRoadMap.Application.Admin.Assessments;
 /// jadvalidagi "Dastur" ustuni doim "—" ko'rsatardi. `ProgramName` — `AssessmentProgram.NameUz`;
 /// dastur yozuvi topilmasa `null` (bo'sh satr yoki soxta nom EMAS).
 /// </para>
+/// <para>
+/// **`Source`** (2026-09-06): sessiya qaysi OQIMDAN — `"School"` yoki `"Public"` (ommaviy
+/// makon). `SchoolName` yolg'iz yetarli emas: ommaviy makon ham `schools` jadvalidagi qator,
+/// nomi ro'yxatda oddiy maktab kabi ko'rinardi (`AdminStudentListItemDto.Source` bilan bir xil
+/// sabab). Qiymatlar `AdminSourceFilter` da — `?source=` filtri bilan bir manbadan.
+/// </para>
 /// </summary>
 public sealed record AdminAssessmentListItemDto(
     Guid Id,
@@ -27,7 +33,8 @@ public sealed record AdminAssessmentListItemDto(
     double? ReliabilityScore,
     string? ReliabilityFlag,
     Guid ProgramId,
-    string? ProgramName);
+    string? ProgramName,
+    string Source);
 
 /// <summary>
 /// `GET /api/admin/assessments/{id}` javobi — `docs/07` 3.3-bo'lim.

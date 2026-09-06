@@ -1,8 +1,12 @@
 using MediatR;
+using StudentRoadMap.Application.Admin.Common;
+using StudentRoadMap.Application.Admin.Schools;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
 using StudentRoadMap.Domain.Assessments;
 using StudentRoadMap.Domain.Common;
+using StudentRoadMap.Domain.Schools;
+using StudentRoadMap.Domain.Students;
 
 namespace StudentRoadMap.Application.Admin.Dashboard.GetStats;
 
@@ -61,13 +65,21 @@ internal sealed class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboa
     /// kalit qismi sifatida ("null:null" — parametrsiz so'rov uchun BITTA barqaror kalit).
     /// Hisoblangan (`?? UtcNow` bilan to'ldirilgan) qiymatlardan EMAS — sinf izohidagi QA
     /// topilmasiga qarang.
+    ///
+    /// `source` (2026-09-06) kalitning BIRINCHI qismi: maktab va ommaviy ko'lam raqamlari
+    /// butunlay boshqa — bitta kalitni baham ko'rsa, panel bir ko'lamning raqamlarini
+    /// ikkinchisining nomi ostida ko'rsatib qo'yardi.
     /// </summary>
-    public static string CacheKey(DateTimeOffset? rawFrom, DateTimeOffset? rawTo) =>
-        $"admin-dashboard:stats:{(rawFrom.HasValue ? rawFrom.Value.ToString("O") : "null")}:{(rawTo.HasValue ? rawTo.Value.ToString("O") : "null")}";
+    public static string CacheKey(DateTimeOffset? rawFrom, DateTimeOffset? rawTo, string source) =>
+        $"admin-dashboard:stats:{source}:{(rawFrom.HasValue ? rawFrom.Value.ToString("O") : "null")}:{(rawTo.HasValue ? rawTo.Value.ToString("O") : "null")}";
 
     public async Task<Result<AdminDashboardStatsDto>> Handle(GetDashboardStatsQuery request, CancellationToken cancellationToken)
     {
-        var cacheKey = CacheKey(request.From, request.To);
+        // MANBA ko'lami — STANDART `school`: panelning tarixiy ma'nosi (maktab oqimi)
+        // saqlanadi, ommaviy makon raqamlari esa hech qachon uning ustiga qo'shilmaydi.
+        var source = AdminSourceFilter.Parse(request.Source) ?? AdminSourceFilter.School;
+
+        var cacheKey = CacheKey(request.From, request.To, source);
         if (_cache.TryGet<AdminDashboardStatsDto>(cacheKey, out var cached))
         {
             return Result.Success(cached);
@@ -77,37 +89,94 @@ internal sealed class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboa
         var to = request.To ?? now;
         var from = request.From ?? to.AddDays(-30);
 
-        var totals = await BuildTotalsAsync(cancellationToken).ConfigureAwait(false);
-        var last30Days = await BuildLast30DaysAsync(from, to, cancellationToken).ConfigureAwait(false);
-        var personalityDistribution = await BuildPersonalityDistributionAsync(cancellationToken).ConfigureAwait(false);
-        var activityDistribution = await BuildActivityDistributionAsync(cancellationToken).ConfigureAwait(false);
-        var hollandTop = await BuildHollandTopAsync(cancellationToken).ConfigureAwait(false);
-        var recentAssessments = await BuildRecentAssessmentsAsync(cancellationToken).ConfigureAwait(false);
-        var funnel = await BuildFunnelAsync(from, to, last30Days.NewStudents, last30Days.Completed, cancellationToken).ConfigureAwait(false);
-        var schoolBreakdown = await BuildSchoolBreakdownAsync(from, to, cancellationToken).ConfigureAwait(false);
+        var publicSpaceId = await AdminSourceFilter
+            .FindPublicSpaceIdAsync(_context, _executor, cancellationToken)
+            .ConfigureAwait(false);
+
+        // Makon topilmasa `Guid.Empty` sentinel (`AdminStudentFilterBuilder` dagi bilan bir xil
+        // sabab): `source=public` bo'sh, `source=school` esa hammasini qamrab oladi.
+        var scope = new DashboardScope(source == AdminSourceFilter.Public, publicSpaceId ?? Guid.Empty);
+
+        var totals = await BuildTotalsAsync(scope, cancellationToken).ConfigureAwait(false);
+        var last30Days = await BuildLast30DaysAsync(from, to, scope, cancellationToken).ConfigureAwait(false);
+        var personalityDistribution = await BuildPersonalityDistributionAsync(scope, cancellationToken).ConfigureAwait(false);
+        var activityDistribution = await BuildActivityDistributionAsync(scope, cancellationToken).ConfigureAwait(false);
+        var hollandTop = await BuildHollandTopAsync(scope, cancellationToken).ConfigureAwait(false);
+        var recentAssessments = await BuildRecentAssessmentsAsync(scope, cancellationToken).ConfigureAwait(false);
+        var funnel = await BuildFunnelAsync(from, to, last30Days.NewStudents, last30Days.Completed, scope, cancellationToken).ConfigureAwait(false);
+        var schoolBreakdown = await BuildSchoolBreakdownAsync(from, to, scope, cancellationToken).ConfigureAwait(false);
 
         var dto = new AdminDashboardStatsDto(
-            totals, last30Days, personalityDistribution, activityDistribution, hollandTop, recentAssessments, funnel, schoolBreakdown);
+            totals, last30Days, personalityDistribution, activityDistribution, hollandTop, recentAssessments, funnel, schoolBreakdown, source);
         _cache.Set(cacheKey, dto, CacheDuration);
 
         return Result.Success(dto);
     }
 
-    /// <summary>2 ta DB agregat so'rov: `schools` (`GROUP BY is_active`), `students`
-    /// (`GROUP BY needs_attention`) + 2 ta oddiy `COUNT` (`completedAssessments`,
-    /// `pendingAnalysis`). Jami 4 so'rov.</summary>
-    private async Task<AdminDashboardTotalsDto> BuildTotalsAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// Panelning KO'LAMI: ommaviy makonmi (`IsPublic`) va o'sha makonning `Id`si
+    /// (`SpaceId`, topilmasa `Guid.Empty`). Barcha `Build*` metodlari FAQAT shu ko'lam ichida
+    /// hisoblaydi — shu sabab bitta javobda ikki oqim raqamlari aralashib ketishi MUMKIN EMAS.
+    /// </summary>
+    private sealed record DashboardScope(bool IsPublic, Guid SpaceId);
+
+    /// <summary>Ko'lamga tushadigan o'quvchilar (DB darajasida, `school_id` bo'yicha).</summary>
+    private IQueryable<Student> ScopedStudents(DashboardScope scope)
     {
-        var schoolGroups = await _executor.ToListAsync(
-            _context.AsNoTracking(_context.Schools)
-                .GroupBy(s => s.IsActive)
-                .Select(g => new { IsActive = g.Key, Count = g.Count() }),
-            cancellationToken).ConfigureAwait(false);
-        var schoolsTotal = schoolGroups.Sum(g => g.Count);
-        var activeSchools = schoolGroups.Where(g => g.IsActive).Sum(g => g.Count);
+        var spaceId = scope.SpaceId;
+        var students = _context.AsNoTracking(_context.Students);
+
+        return scope.IsPublic ? students.Where(s => s.SchoolId == spaceId) : students.Where(s => s.SchoolId != spaceId);
+    }
+
+    /// <summary>Ko'lamga tushadigan sessiyalar.</summary>
+    private IQueryable<Assessment> ScopedAssessments(DashboardScope scope)
+    {
+        var spaceId = scope.SpaceId;
+        var assessments = _context.AsNoTracking(_context.Assessments);
+
+        return scope.IsPublic ? assessments.Where(a => a.SchoolId == spaceId) : assessments.Where(a => a.SchoolId != spaceId);
+    }
+
+    /// <summary>Ko'lamga tushadigan havola ochilishlari (kunlik hisoblagich).</summary>
+    private IQueryable<SchoolLinkView> ScopedLinkViews(DashboardScope scope)
+    {
+        var spaceId = scope.SpaceId;
+        var views = _context.AsNoTracking(_context.SchoolLinkViews);
+
+        return scope.IsPublic ? views.Where(v => v.SchoolId == spaceId) : views.Where(v => v.SchoolId != spaceId);
+    }
+
+    /// <summary>
+    /// 2 ta DB agregat so'rov: `schools` (`GROUP BY is_active`), `students`
+    /// (`GROUP BY needs_attention`) + 2 ta oddiy `COUNT` (`completedAssessments`,
+    /// `pendingAnalysis`). Jami 4 so'rov (ommaviy ko'lamda 3 — maktablar sanalmaydi).
+    ///
+    /// **Maktablar hisobi `AdminSchoolScope.SchoolsOnly()` bilan:** ommaviy makon `schools`
+    /// jadvalidagi qator bo'lsa ham MAKTAB EMAS — u "jami maktablar" soniga qo'shilsa, panel
+    /// admin hech qachon yaratmagan bitta ortiqcha maktabni ko'rsatib turardi.
+    /// `source=public` da esa bu ikki son UMUMAN ma'nosiz — `null` (`AdminDashboardTotalsDto`
+    /// izohi: "ma'lumot yo'q ≠ 0").
+    /// </summary>
+    private async Task<AdminDashboardTotalsDto> BuildTotalsAsync(DashboardScope scope, CancellationToken cancellationToken)
+    {
+        int? schoolsTotal = null;
+        int? activeSchools = null;
+
+        if (!scope.IsPublic)
+        {
+            var schoolGroups = await _executor.ToListAsync(
+                _context.AsNoTracking(_context.Schools)
+                    .SchoolsOnly()
+                    .GroupBy(s => s.IsActive)
+                    .Select(g => new { IsActive = g.Key, Count = g.Count() }),
+                cancellationToken).ConfigureAwait(false);
+            schoolsTotal = schoolGroups.Sum(g => g.Count);
+            activeSchools = schoolGroups.Where(g => g.IsActive).Sum(g => g.Count);
+        }
 
         var studentGroups = await _executor.ToListAsync(
-            _context.AsNoTracking(_context.Students)
+            ScopedStudents(scope)
                 .GroupBy(s => s.NeedsAttention)
                 .Select(g => new { g.Key, Count = g.Count() }),
             cancellationToken).ConfigureAwait(false);
@@ -115,11 +184,11 @@ internal sealed class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboa
         var needsAttention = studentGroups.Where(g => g.Key).Sum(g => g.Count);
 
         var completedAssessments = await _executor.CountAsync(
-            _context.AsNoTracking(_context.Assessments).Where(a => a.CompletedAt != null),
+            ScopedAssessments(scope).Where(a => a.CompletedAt != null),
             cancellationToken).ConfigureAwait(false);
 
         var pendingAnalysis = await _executor.CountAsync(
-            _context.AsNoTracking(_context.Assessments).Where(a => a.Status == AssessmentStatus.Analyzing),
+            ScopedAssessments(scope).Where(a => a.Status == AssessmentStatus.Analyzing),
             cancellationToken).ConfigureAwait(false);
 
         return new AdminDashboardTotalsDto(schoolsTotal, activeSchools, studentsTotal, completedAssessments, pendingAnalysis, needsAttention);
@@ -133,13 +202,14 @@ internal sealed class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboa
     /// `SumAsync` bor, `ReliabilityScore`/`TotalDurationSeconds` shu sabab `decimal`ga
     /// castlanadi — Npgsql/SQLite ikkalasida ham tarjima qilinadigan oddiy sonli konversiya).
     /// </summary>
-    private async Task<AdminDashboardLast30DaysDto> BuildLast30DaysAsync(DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken)
+    private async Task<AdminDashboardLast30DaysDto> BuildLast30DaysAsync(
+        DateTimeOffset from, DateTimeOffset to, DashboardScope scope, CancellationToken cancellationToken)
     {
         var newStudents = await _executor.CountAsync(
-            _context.AsNoTracking(_context.Students).Where(s => s.CreatedAt >= from && s.CreatedAt <= to),
+            ScopedStudents(scope).Where(s => s.CreatedAt >= from && s.CreatedAt <= to),
             cancellationToken).ConfigureAwait(false);
 
-        var startedInWindow = _context.AsNoTracking(_context.Assessments).Where(a => a.StartedAt >= from && a.StartedAt <= to);
+        var startedInWindow = ScopedAssessments(scope).Where(a => a.StartedAt >= from && a.StartedAt <= to);
 
         var startedGroups = await _executor.ToListAsync(
             startedInWindow
@@ -181,10 +251,11 @@ internal sealed class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboa
     }
 
     /// <summary>1 `GROUP BY` so'rov — `students.last_personality_type` (joriy holat, hamma vaqt).</summary>
-    private async Task<IReadOnlyList<AdminDashboardPersonalityItemDto>> BuildPersonalityDistributionAsync(CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<AdminDashboardPersonalityItemDto>> BuildPersonalityDistributionAsync(
+        DashboardScope scope, CancellationToken cancellationToken)
     {
         var groups = await _executor.ToListAsync(
-            _context.AsNoTracking(_context.Students)
+            ScopedStudents(scope)
                 .Where(s => s.LastPersonalityType != null)
                 .GroupBy(s => s.LastPersonalityType!)
                 .Select(g => new { Type = g.Key, Count = g.Count() })
@@ -195,10 +266,11 @@ internal sealed class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboa
     }
 
     /// <summary>1 `GROUP BY` so'rov — `students.last_activity_level`.</summary>
-    private async Task<IReadOnlyList<AdminDashboardActivityItemDto>> BuildActivityDistributionAsync(CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<AdminDashboardActivityItemDto>> BuildActivityDistributionAsync(
+        DashboardScope scope, CancellationToken cancellationToken)
     {
         var groups = await _executor.ToListAsync(
-            _context.AsNoTracking(_context.Students)
+            ScopedStudents(scope)
                 .Where(s => s.LastActivityLevel != null)
                 .GroupBy(s => s.LastActivityLevel!.Value)
                 .Select(g => new { Level = g.Key, Count = g.Count() })
@@ -209,10 +281,11 @@ internal sealed class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboa
     }
 
     /// <summary>1 `GROUP BY` so'rov — `students.last_holland_code`, eng ko'p uchraydigan `HollandTopLimit` ta.</summary>
-    private async Task<IReadOnlyList<AdminDashboardHollandItemDto>> BuildHollandTopAsync(CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<AdminDashboardHollandItemDto>> BuildHollandTopAsync(
+        DashboardScope scope, CancellationToken cancellationToken)
     {
         var groups = await _executor.ToListAsync(
-            _context.AsNoTracking(_context.Students)
+            ScopedStudents(scope)
                 .Where(s => s.LastHollandCode != null)
                 .GroupBy(s => s.LastHollandCode!)
                 .Select(g => new { Code = g.Key, Count = g.Count() })
@@ -230,10 +303,11 @@ internal sealed class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboa
     /// 2026-09-02, `AdminDashboardStatsEndpointTests`ga qarang) + 2 ta batch (talaba/maktab
     /// nomi, sahifa hajmida — `ListStudentsQueryHandler` naqshi). Jami 3 so'rov.
     /// </summary>
-    private async Task<IReadOnlyList<AdminDashboardRecentAssessmentDto>> BuildRecentAssessmentsAsync(CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<AdminDashboardRecentAssessmentDto>> BuildRecentAssessmentsAsync(
+        DashboardScope scope, CancellationToken cancellationToken)
     {
         var recent = await _executor.ToListAsync(
-            _context.AsNoTracking(_context.Assessments)
+            ScopedAssessments(scope)
                 .Where(a => a.CompletedAt != null)
                 .OrderByDescending(a => a.CompletedAt)
                 .Take(RecentAssessmentsLimit)
@@ -275,23 +349,23 @@ internal sealed class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboa
     /// uchun qayta ishlatiladi (ortiqcha DB so'rovsiz).
     /// </summary>
     private async Task<AdminDashboardFunnelDto> BuildFunnelAsync(
-        DateTimeOffset from, DateTimeOffset to, int registered, int completed, CancellationToken cancellationToken)
+        DateTimeOffset from, DateTimeOffset to, int registered, int completed, DashboardScope scope, CancellationToken cancellationToken)
     {
         var fromDate = DateOnly.FromDateTime(from.UtcDateTime);
         var toDate = DateOnly.FromDateTime(to.UtcDateTime);
 
         var linkViews = await _executor.SumAsync(
-            _context.AsNoTracking(_context.SchoolLinkViews).Where(v => v.DateUtc >= fromDate && v.DateUtc <= toDate),
+            ScopedLinkViews(scope).Where(v => v.DateUtc >= fromDate && v.DateUtc <= toDate),
             v => v.Count,
             cancellationToken).ConfigureAwait(false);
 
         var started = await _executor.CountAsync(
-            _context.AsNoTracking(_context.Assessments)
+            ScopedAssessments(scope)
                 .Where(a => a.StartedAt >= from && a.StartedAt <= to && a.Status != AssessmentStatus.Draft),
             cancellationToken).ConfigureAwait(false);
 
         var analyzed = await _executor.CountAsync(
-            _context.AsNoTracking(_context.Assessments)
+            ScopedAssessments(scope)
                 .Where(a => a.StartedAt >= from && a.StartedAt <= to && a.Status == AssessmentStatus.Analyzed),
             cancellationToken).ConfigureAwait(false);
 
@@ -316,13 +390,21 @@ internal sealed class GetDashboardStatsQueryHandler : IRequestHandler<GetDashboa
     /// (PM'ga savol: agar boshqa ustuvorlik kerak bo'lsa — masalan faqat `completed` — aytilsin).
     /// </summary>
     private async Task<IReadOnlyList<AdminDashboardSchoolBreakdownItemDto>> BuildSchoolBreakdownAsync(
-        DateTimeOffset from, DateTimeOffset to, CancellationToken cancellationToken)
+        DateTimeOffset from, DateTimeOffset to, DashboardScope scope, CancellationToken cancellationToken)
     {
+        // Ommaviy ko'lamda maktablar kesimi MA'NOSIZ (ommaviy makon maktab emas) — bo'sh
+        // ro'yxat qaytariladi va `schools` jadvaliga umuman tegilmaydi.
+        if (scope.IsPublic)
+        {
+            return [];
+        }
+
         var fromDate = DateOnly.FromDateTime(from.UtcDateTime);
         var toDate = DateOnly.FromDateTime(to.UtcDateTime);
 
         var rows = await _executor.ToListAsync(
             _context.AsNoTracking(_context.Schools)
+                .SchoolsOnly()
                 .Select(s => new
                 {
                     s.Id,

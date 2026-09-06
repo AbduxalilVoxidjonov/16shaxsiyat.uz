@@ -25,7 +25,7 @@ internal sealed class GetSchoolByIdQueryHandler : IRequestHandler<GetSchoolByIdQ
     public async Task<Result<AdminSchoolDetailDto>> Handle(GetSchoolByIdQuery request, CancellationToken cancellationToken)
     {
         var school = await _executor.FirstOrDefaultAsync(
-            _context.AsNoTracking(_context.Schools).Where(s => s.Id == request.Id),
+            _context.AsNoTracking(_context.Schools).SchoolsOnly().Where(s => s.Id == request.Id),
             cancellationToken).ConfigureAwait(false);
 
         if (school is null)

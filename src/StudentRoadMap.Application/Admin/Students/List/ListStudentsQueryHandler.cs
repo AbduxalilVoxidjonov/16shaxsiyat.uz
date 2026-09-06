@@ -54,6 +54,13 @@ internal sealed class ListStudentsQueryHandler : IRequestHandler<ListStudentsQue
         // Filtr qurilishi `AdminStudentFilterBuilder`ga chiqarilgan (`prompts/27` MAXSUS DIQQAT #1)
         // — `ExportStudentsQueryHandler` (`Admin/Students/Export`) AYNAN shu metodni chaqiradi,
         // shu bilan ro'yxat va eksport filtri hech qachon bir-biridan ajralib ketmaydi.
+        // Ommaviy makonning `Id`si — MANBA filtri uchun ham, javobdagi `source` ustuni uchun
+        // ham kerak (filtr berilmaganda ham har qator qaysi oqimdan kelganini ko'rsatadi).
+        // BITTA arzon so'rov (`kind` bo'yicha, bazada bitta qator).
+        var publicSpaceId = await AdminSourceFilter
+            .FindPublicSpaceIdAsync(_context, _executor, cancellationToken)
+            .ConfigureAwait(false);
+
         var query = AdminStudentFilterBuilder.Apply(
             _context,
             _context.AsNoTracking(_context.Students),
@@ -65,7 +72,9 @@ internal sealed class ListStudentsQueryHandler : IRequestHandler<ListStudentsQue
             request.ActivityLevel,
             request.From,
             request.To,
-            request.Search);
+            request.Search,
+            AdminSourceFilter.Parse(request.Source),
+            publicSpaceId);
 
         var totalCount = await _executor.CountAsync(query, cancellationToken).ConfigureAwait(false);
 
@@ -139,7 +148,8 @@ internal sealed class ListStudentsQueryHandler : IRequestHandler<ListStudentsQue
                     s.LastActivityLevel?.ToString(),
                     s.NeedsAttention,
                     latestAssessment?.ReliabilityFlag?.ToString(),
-                    s.LastAssessmentAt);
+                    s.LastAssessmentAt,
+                    AdminSourceFilter.SourceOf(s.SchoolId, publicSpaceId));
             })
             .ToList();
 
