@@ -21,7 +21,7 @@ import { DeactivateProgramDialog } from '../components/DeactivateProgramDialog';
 import { AddTestDialog } from '../components/AddTestDialog';
 import { ProgramTestsList } from '../components/ProgramTestsList';
 import { SchoolAssignmentPanel } from '../components/SchoolAssignmentPanel';
-import { PROGRAM_STATUS_BADGE_VARIANT } from '../model/types';
+import { programStateBadgeVariant, programStateLabelKey } from '../model/types';
 import { computeProgramDuration, hasFullMaturityBattery } from '../model/programComputations';
 
 /**
@@ -44,7 +44,7 @@ export default function ProgramDetailPage() {
   const [publishOpen, setPublishOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [addTestOpen, setAddTestOpen] = useState(false);
-  // 2026-09-03: O'CHIRISH endi tasdiq oynasidan o'tadi (nechta maktab havolasiz qolishi
+  // 2026-09-03: TO'XTATISH endi tasdiq oynasidan o'tadi (nechta maktab havolasiz qolishi
   // ko'rsatiladi). QAYTA YOQISH zararsiz — u avvalgidek bir bosishda bajariladi.
   const [deactivateOpen, setDeactivateOpen] = useState(false);
 
@@ -85,6 +85,13 @@ export default function ProgramDetailPage() {
   const duration = computeProgramDuration(program.tests, catalogOptionsQuery.data);
   const hasBattery = hasFullMaturityBattery(program.tests);
 
+  // Yagona holat — barcha amal shartlari SHUNDAN kelib chiqadi (`status`/`isActive`
+  // juftligi endi javobda ham yo'q).
+  const isDraft = program.state === 'Draft';
+  const isActive = program.state === 'Active';
+  const isPaused = program.state === 'Paused';
+  const isArchived = program.state === 'Archived';
+
   return (
     <div className="flex flex-col gap-4">
       <button
@@ -110,19 +117,9 @@ export default function ProgramDetailPage() {
               <p className="mt-2 text-sm text-neutral-600">{program.descriptionUz}</p>
             )}
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <Badge
-                variant={
-                  PROGRAM_STATUS_BADGE_VARIANT[
-                    program.status as keyof typeof PROGRAM_STATUS_BADGE_VARIANT
-                  ] ?? 'neutral'
-                }
-              >
-                {t(`programs.status.${program.status.toLowerCase()}`)}
-              </Badge>
-              <Badge variant={program.isActive ? 'success' : 'neutral'}>
-                {program.isActive
-                  ? t('programs.statusBadge.active')
-                  : t('programs.statusBadge.inactive')}
+              {/* BITTA holat belgisi — `status` + `isActive` juftligi o'rniga (2026-09-06). */}
+              <Badge variant={programStateBadgeVariant(program.state)}>
+                {t(programStateLabelKey(program.state))}
               </Badge>
               <Badge variant="neutral">
                 {program.visibility === 'Public'
@@ -145,23 +142,40 @@ export default function ProgramDetailPage() {
               <Pencil size={14} aria-hidden="true" />
               {t('programs.actions.edit')}
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              isLoading={toggleActive.isPending}
-              onClick={() =>
-                program.isActive ? setDeactivateOpen(true) : void handleToggleActive()
-              }
-            >
-              <Power size={14} aria-hidden="true" />
-              {program.isActive ? t('programs.actions.deactivate') : t('programs.actions.activate')}
-            </Button>
-            {program.status === 'Draft' && (
+            {/*
+              Tugmalar RUXSAT ETILGAN o'tishlarga qat'iy mos: domen `Activate`/`Deactivate`ni
+              faqat `Published` (ya'ni `Active`/`Paused`) doirasida ruxsat etadi, shu sabab
+              qoralama va arxivlangan dasturda bu tugma UMUMAN ko'rsatilmaydi — admin bosib
+              bo'lmaydigan tugmani ko'rmasin (arxivlangan dasturda "Faollashtirish" yo'q).
+            */}
+            {isActive && (
+              <Button
+                variant="outline"
+                size="sm"
+                isLoading={toggleActive.isPending}
+                onClick={() => setDeactivateOpen(true)}
+              >
+                <Power size={14} aria-hidden="true" />
+                {t('programs.actions.pause')}
+              </Button>
+            )}
+            {isPaused && (
+              <Button
+                variant="outline"
+                size="sm"
+                isLoading={toggleActive.isPending}
+                onClick={() => void handleToggleActive()}
+              >
+                <Power size={14} aria-hidden="true" />
+                {t('programs.actions.resume')}
+              </Button>
+            )}
+            {isDraft && (
               <Button size="sm" onClick={() => setPublishOpen(true)}>
                 {t('programs.actions.publish')}
               </Button>
             )}
-            {program.status !== 'Archived' && (
+            {!isArchived && (
               <Button variant="danger" size="sm" onClick={() => setArchiveOpen(true)}>
                 {t('programs.actions.archive')}
               </Button>

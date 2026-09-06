@@ -8,7 +8,7 @@ import { jsonResponse, type Schemas } from '@/test/apiMock';
 import { DeactivateProgramDialog } from './DeactivateProgramDialog';
 
 /**
- * 2026-09-03 jonli hodisasi: admin yagona dasturni o'chirdi, HECH QANDAY ogohlantirish
+ * 2026-09-03 jonli hodisasi: admin yagona dasturni to'xtatdi, HECH QANDAY ogohlantirish
  * ko'rmadi, va barcha maktab havolasi jimgina o'lik bo'lib qoldi. Endi tasdiq oynasi
  * amaldan OLDIN nechta maktab dastursiz qolishini aytadi.
  *
@@ -36,8 +36,7 @@ const PROGRAM_DETAIL = {
   descriptionUz: null,
   kind: 'System',
   visibility: 'Public',
-  status: 'Published',
-  isActive: false,
+  state: 'Paused',
   isSystem: true,
   displayOrder: 1,
   tests: [],
@@ -91,7 +90,7 @@ describe('DeactivateProgramDialog', () => {
     expect(screen.getByText('va yana 10 ta maktab')).toBeInTheDocument();
 
     // Amal TAQIQLANMAYDI — tasdiq tugmasi bosiladigan holatda qoladi.
-    expect(screen.getByText("O'chirish")).toBeEnabled();
+    expect(screen.getByText("To'xtatish")).toBeEnabled();
   });
 
   it("hech kim ta'sirlanmasa aniq \"hech kim\" deyiladi (bo'sh joy emas)", async () => {
@@ -122,14 +121,14 @@ describe('DeactivateProgramDialog', () => {
     ).not.toBeInTheDocument();
   });
 
-  it("tasdiqlansa dastur o'chiriladi (amal taqiqlanmaydi)", async () => {
+  it("tasdiqlansa dastur to'xtatiladi (amal taqiqlanmaydi)", async () => {
     const fetchMock = mockFetch({ action: 'deactivate', affectedSchoolCount: 3, schools: [] });
     const user = userEvent.setup();
 
     renderDialog();
 
     await screen.findByText(/Diqqat: bu amaldan keyin 3 ta maktab/);
-    await user.click(screen.getByText("O'chirish"));
+    await user.click(screen.getByText("To'xtatish"));
 
     await waitFor(() => {
       expect(

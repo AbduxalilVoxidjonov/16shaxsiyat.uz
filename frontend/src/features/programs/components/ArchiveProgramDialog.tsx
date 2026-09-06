@@ -19,6 +19,10 @@ export interface ArchiveProgramDialogProps {
  *
  * **2026-09-03:** tasdiq oynasida amal NECHTA maktabni havolasiz qoldirishi ham ko'rsatiladi
  * (`GET /api/admin/programs/{id}/impact?action=archive`). Amal taqiqlanmaydi — faqat oqibat.
+ *
+ * **2026-09-06:** arxiv — YAKUNIY holat: undan keyin dastur na faollashtiriladi, na
+ * to'xtatiladi (domen `PROGRAM_INVALID_TRANSITION` tashlaydi), shu sabab `ProgramDetailPage`
+ * arxivlangan dasturda hech qanday holat tugmasini ko'rsatmaydi.
  */
 export function ArchiveProgramDialog({
   open,

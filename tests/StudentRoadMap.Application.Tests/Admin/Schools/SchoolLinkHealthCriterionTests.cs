@@ -245,13 +245,21 @@ public sealed class SchoolLinkHealthCriterionTests
                 break;
         }
 
-        if (!isActive)
-        {
-            program.Deactivate(Now);
-        }
+        // `IsActive` ustuni TO'G'RIDAN-TO'G'RI o'rnatiladi: bu test bazada SAQLANISHI mumkin
+        // bo'lgan HAR BIR (`Status`, `IsActive`) juftligini qamrashi kerak, jumladan domen
+        // orqali endi hosil qilib bo'lmaydiganlarini ham (`Deactivate` 2026-09-06 dan faqat
+        // `Published` da ishlaydi, `docs/04` "Dastur holati"). Mezonning ikki shakli eski
+        // qatorlarda ham ajralmasligi shart.
+        ForceIsActive(program, isActive);
 
         return program;
     }
+
+    /// <summary>Faqat test uchun: bazadagi xom ustun qiymatini taqlid qiladi.</summary>
+    private static void ForceIsActive(AssessmentProgram program, bool value) =>
+        typeof(AssessmentProgram)
+            .GetProperty(nameof(AssessmentProgram.IsActive))!
+            .SetValue(program, value);
 
     /// <summary>Nashr qilingan, faol va kamida bitta faol savoli bor metodika.</summary>
     private static (TestDefinition Definition, Question Question) BuildUsableTest()

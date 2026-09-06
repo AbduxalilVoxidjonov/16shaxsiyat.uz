@@ -21,8 +21,7 @@ function programDetail(
     descriptionUz: null,
     kind: 'Custom',
     visibility: 'Public',
-    status: 'Draft',
-    isActive: true,
+    state: 'Draft',
     isSystem: false,
     displayOrder: 1,
     tests: [{ testDefinitionId: 't-1', code: 'MBTI16', nameUz: '16 tip', displayOrder: 1 }],
@@ -97,7 +96,7 @@ describe('ProgramDetailPage', () => {
   });
 
   it("tizim dasturida testlar tarkibi qulflangani haqida xabar ko'rsatiladi", async () => {
-    mockFetch(programDetail({ isSystem: true, kind: 'System', status: 'Published' }));
+    mockFetch(programDetail({ isSystem: true, kind: 'System', state: 'Active' }));
     renderPage();
 
     expect(
@@ -112,7 +111,7 @@ describe('ProgramDetailPage', () => {
   // hamma amal yashiringani uchun shaxsiyat testini ro'yxatda ko'rib turib OCHIB
   // BO'LMASDI. Ko'rish tahrirlash emas — u har doim ochiq bo'lishi kerak.
   it("tizim dasturida ham test nomi katalogdagi sahifasiga havola bo'ladi", async () => {
-    mockFetch(programDetail({ isSystem: true, kind: 'System', status: 'Published' }));
+    mockFetch(programDetail({ isSystem: true, kind: 'System', state: 'Active' }));
     renderPage();
 
     const link = await screen.findByRole('link', { name: '16 tip' });
@@ -125,5 +124,56 @@ describe('ProgramDetailPage', () => {
 
     const link = await screen.findByRole('link', { name: '16 tip' });
     expect(link).toHaveAttribute('href', '/admin/catalog/tests/t-1');
+  });
+
+  // ── YAGONA holat (2026-09-06) ─────────────────────────────────────────────────────────
+  // Egasi ro'yxatda bitta dasturni bir vaqtda "Arxiv" ham, "Faol" ham bo'lib ko'rgan edi.
+  // Endi belgi bitta, tugmalar esa domen ruxsat etgan o'tishlarga qat'iy mos.
+
+  it("faqat BITTA holat belgisi ko'rsatiladi", async () => {
+    mockFetch(programDetail({ state: 'Paused' }));
+    renderPage();
+
+    expect(await screen.findByText("To'xtatilgan")).toBeInTheDocument();
+    expect(screen.queryByText('Nashr etilgan')).not.toBeInTheDocument();
+    expect(screen.queryByText('Nofaol')).not.toBeInTheDocument();
+  });
+
+  it("arxivlangan dasturda \"Faollashtirish\" tugmasi UMUMAN yo'q", async () => {
+    mockFetch(programDetail({ state: 'Archived' }));
+    renderPage();
+
+    expect(await screen.findByText('Arxiv')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Faollashtirish' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: "To'xtatish" })).not.toBeInTheDocument();
+    // Arxiv — yakuniy holat: nashr ham, qayta arxivlash ham taklif qilinmaydi.
+    expect(screen.queryByRole('button', { name: 'Nashr qilish' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Arxivlash' })).not.toBeInTheDocument();
+  });
+
+  it("qoralama dasturda holat tugmalari yo'q, faqat nashr va arxiv taklif qilinadi", async () => {
+    mockFetch(programDetail({ state: 'Draft' }));
+    renderPage();
+
+    expect(await screen.findByText('Qoralama')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Faollashtirish' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: "To'xtatish" })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Nashr qilish' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Arxivlash' })).toBeInTheDocument();
+  });
+
+  it("faol dasturda \"To'xtatish\", to'xtatilganida \"Faollashtirish\" ko'rsatiladi", async () => {
+    mockFetch(programDetail({ state: 'Active' }));
+    const { unmount } = renderPage();
+
+    expect(await screen.findByRole('button', { name: "To'xtatish" })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Nashr qilish' })).not.toBeInTheDocument();
+    unmount();
+
+    mockFetch(programDetail({ state: 'Paused' }));
+    renderPage();
+
+    expect(await screen.findByRole('button', { name: 'Faollashtirish' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: "To'xtatish" })).not.toBeInTheDocument();
   });
 });

@@ -1534,8 +1534,7 @@ export interface paths {
             parameters: {
                 query?: {
                     search?: string;
-                    status?: string;
-                    isActive?: boolean;
+                    state?: string;
                     page?: number;
                     pageSize?: number;
                     sort?: string;
@@ -5460,8 +5459,7 @@ export interface components {
             descriptionUz?: string | null;
             kind: string;
             visibility: string;
-            status: string;
-            isActive: boolean;
+            state: string;
             isSystem: boolean;
             /** Format: int32 */
             displayOrder: number;
@@ -5485,8 +5483,7 @@ export interface components {
             nameUz: string;
             kind: string;
             visibility: string;
-            status: string;
-            isActive: boolean;
+            state: string;
             isSystem: boolean;
             /** Format: int32 */
             displayOrder: number;
@@ -5552,9 +5549,8 @@ export interface components {
             id: string;
             code: string;
             nameUz: string;
-            status: string;
+            state: string;
             visibility: string;
-            isActive: boolean;
             /** Format: int32 */
             testCount: number;
             hasUsableTest: boolean;

@@ -9,8 +9,7 @@ const LIST_STALE_TIME_MS = 30_000;
 function buildQueryString(query: ProgramsListQuery): string {
   const params = new URLSearchParams();
   if (query.search) params.set('search', query.search);
-  if (query.status) params.set('status', query.status);
-  if (query.isActive !== undefined) params.set('isActive', String(query.isActive));
+  if (query.state) params.set('state', query.state);
   params.set('page', String(query.page));
   params.set('pageSize', String(query.pageSize));
   if (query.sort) params.set('sort', query.sort);

@@ -394,6 +394,11 @@ create table assessment_programs (
   updated_at             timestamptz  not null
 );
 create unique index ux_assessment_programs_code on assessment_programs(code);
+-- 2026-09-06: `status` va `is_active` — SAQLASH maydonlari. Admin API va UI ular o'rniga
+-- BITTA hosila holatni ko'radi (`ProgramState`: Draft · Active · Paused · Archived,
+-- `docs/04` 2.13). Domen invarianti: `status = 3` (Archived) bo'lsa `is_active` DOIM `false`;
+-- eski, buzilgan qatorlar seed bosqichida idempotent tuzatiladi
+-- (`DbSeeder.ReconcileProgramStatesAsync`) — migratsiya QO'SHILMAGAN.
 
 create table program_tests (
   program_id         uuid not null references assessment_programs(id) on delete cascade,

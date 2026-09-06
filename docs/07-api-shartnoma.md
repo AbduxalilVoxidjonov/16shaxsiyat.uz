@@ -475,10 +475,34 @@ FAQAT **faol** maktablar hisoblanadi (nofaol maktab havolasi `410 SCHOOL_INACTIV
 ATAYIN ishlamaydi — u yolg'on ogohlantirish bermasligi kerak). `schools[]` — ko'pi bilan
 10 ta namuna; qolgani `brokenSchoolCount - schools.length`.
 
+#### Dastur holati — `state` (2026-09-06)
+
+Dasturlar admin API'si (`/api/admin/programs`, P34/P35) bu hujjatda to'liq yozilmagan; quyida
+faqat 2026-09-06 da o'zgargan qism.
+
+`AdminProgramListItemDto` va `AdminProgramDetailDto` javoblarida ilgari `status`
+(`Draft`/`Published`/`Archived`) va `isActive` (bool) maydonlari **alohida** kelardi. Endi
+ular OLIB TASHLANDI, o'rniga bitta maydon beriladi:
+
+```json
+{ "state": "Paused" }   // "Draft" | "Active" | "Paused" | "Archived"
+```
+
+Ma'nosi va (`Status`, `IsActive`) juftligi bilan bog'liqligi — `docs/04` 2.13-bo'lim.
+`AdminPublicSpaceProgramDto` (`GET /api/admin/public-space`) ham AYNAN shu `state` maydonini
+qaytaradi — ikki bo'lim bitta manbadan (`AssessmentProgram.State`) o'qiydi.
+
+**Ro'yxat filtri:** `GET /api/admin/programs?state=Paused`. Eski `?status=` va `?isActive=`
+parametrlari OLIB TASHLANDI (orqaga moslik saqlanmadi: bu ichki admin API va uning yagona
+mijozi — shu repodagi frontend). Noma'lum yoki raqamli qiymat jimgina e'tiborsiz qoladi —
+ro'yxat filtrsiz qaytadi.
+
+**`POST /api/admin/programs/{id}/toggle-active`** — `Active ⇄ Paused`. Faqat nashr qilingan
+dasturda ishlaydi: `Draft` yoki `Archived` da **`409 PROGRAM_INVALID_TRANSITION`**.
+
 #### `GET /api/admin/programs/{id}/impact?action=…` — amaldan OLDIN oqibat (2026-09-03)
 
-Dasturlar admin API'si (`/api/admin/programs`, P34/P35) bu hujjatda hali to'liq
-yozilmagan; quyidagi endpoint ayni shu hodisa uchun qo'shildi va shu yerda hujjatlashtiriladi.
+Quyidagi endpoint ayni shu hodisa uchun qo'shildi va shu yerda hujjatlashtiriladi.
 
 `action`: `deactivate` (`POST /toggle-active` bilan o'chirish) · `archive` · `makeAssigned`
 (`PUT` orqali `Visibility: Public → Assigned`). Boshqa qiymat — `400 VALIDATION_ERROR`.

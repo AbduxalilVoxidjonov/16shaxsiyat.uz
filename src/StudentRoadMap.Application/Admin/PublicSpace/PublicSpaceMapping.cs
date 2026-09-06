@@ -129,9 +129,8 @@ internal static class PublicSpaceMapping
                 p.Id,
                 p.Code,
                 p.NameUz,
-                p.Status.ToString(),
+                p.State.ToString(),
                 p.Visibility.ToString(),
-                p.IsActive,
                 testCountByProgramId.GetValueOrDefault(p.Id),
                 snapshot.ProgramIdsWithUsableTest.Contains(p.Id)))
             .ToList();

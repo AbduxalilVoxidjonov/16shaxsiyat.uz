@@ -21,10 +21,15 @@ public sealed record AdminPublicSpaceAvailabilityDto(
 /// <summary>
 /// Ommaviy makonga BIRIKTIRILGAN bitta dastur (`school_programs` yozuvi).
 ///
-/// `IsActive == false` yoki `Status != "Published"` — dastur mavjud, lekin ISHLAMAYDI;
-/// UI shuni aniq ogohlantirish sifatida ko'rsatadi (2026-09-03 jonli hodisasi: yagona dastur
-/// o'chirilgan edi, panelda esa hech qanday belgi yo'q edi). `HasUsableTest == false` —
-/// dastur ichida nashr qilingan/faol va savoli bor test yo'q.
+/// `State != "Active"` — dastur mavjud, lekin ISHLAMAYDI; UI shuni aniq ogohlantirish
+/// sifatida ko'rsatadi (2026-09-03 jonli hodisasi: yagona dastur o'chirilgan edi, panelda
+/// esa hech qanday belgi yo'q edi). `HasUsableTest == false` — dastur ichida nashr
+/// qilingan/faol va savoli bor test yo'q.
+///
+/// **2026-09-06:** `status` + `isActive` juftligi o'rniga bitta `state` beriladi —
+/// `AdminProgramListItemDto` bilan AYNAN bir xil hosila holat va bir xil manba
+/// (`AssessmentProgram.State`). Ilgari bu yerda ham ikkita belgi bor edi va ular
+/// "Arxiv + Faol" kabi ziddiyatni ko'rsatishi mumkin edi.
 ///
 /// Dasturni yoqish/o'chirish bu yerda EMAS — u `Admin/Programs` bo'limining ishi
 /// (`POST /api/admin/programs/{id}/toggle-active`); bu bo'lim faqat BIRIKTIRISHNI boshqaradi.
@@ -33,9 +38,8 @@ public sealed record AdminPublicSpaceProgramDto(
     Guid Id,
     string Code,
     string NameUz,
-    string Status,
+    string State,
     string Visibility,
-    bool IsActive,
     int TestCount,
     bool HasUsableTest);
 

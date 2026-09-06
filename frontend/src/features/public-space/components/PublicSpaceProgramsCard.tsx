@@ -5,6 +5,7 @@ import { Badge } from '@/shared/ui/Badge';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
 import { Select } from '@/shared/ui/Select';
+import { programStateBadgeVariant, programStateLabelKey } from '@/shared/lib/programState';
 import { useToast } from '@/shared/ui/useToast';
 import { useAssignPublicSpaceProgram } from '../api/useAssignPublicSpaceProgram';
 import { useProgramOptionsQuery } from '../api/useProgramOptionsQuery';
@@ -20,9 +21,12 @@ export interface PublicSpaceProgramsCardProps {
  * ishlatadi (yangi jadval/mantiq YO'Q), shu sabab bu yerda ham "biriktirish/olib tashlash"
  * dan boshqa amal yo'q.
  *
- * Har qatorda dasturning FAOLLIGI ham ko'rsatiladi: `Published` bo'lsa ham `isActive=false`
- * dastur test boshlashga yaramaydi (2026-09-03 hodisasi), shu sabab bu ikki holat alohida
- * belgilar bilan ajratiladi.
+ * Har qatorda dasturning HOLATI ham ko'rsatiladi — `Active`dan boshqa har qanday holatdagi
+ * dastur test boshlashga yaramaydi (2026-09-03 hodisasi).
+ *
+ * **2026-09-06:** belgi endi BITTA (`state`), `features/programs` bilan AYNAN bir xil
+ * matn va rangda (`@/shared/lib/programState`). Ilgari bu yerda alohida "Faol/O'chirilgan"
+ * belgisi bor edi va u dastur holatidan (`Draft`/`Archived`) mustaqil ravishda chizilardi.
  */
 export function PublicSpaceProgramsCard({ programs }: PublicSpaceProgramsCardProps) {
   const { t } = useTranslation();
@@ -77,10 +81,8 @@ export function PublicSpaceProgramsCard({ programs }: PublicSpaceProgramsCardPro
               <span className="font-mono text-xs text-neutral-500">{program.code}</span>
               <span className="flex-1 font-medium text-neutral-900">{program.nameUz}</span>
 
-              <Badge variant={program.isActive ? 'success' : 'danger'}>
-                {program.isActive
-                  ? t('publicSpace.programs.activeBadge')
-                  : t('publicSpace.programs.inactiveBadge')}
+              <Badge variant={programStateBadgeVariant(program.state)}>
+                {t(programStateLabelKey(program.state))}
               </Badge>
 
               <span className="text-xs text-neutral-500">

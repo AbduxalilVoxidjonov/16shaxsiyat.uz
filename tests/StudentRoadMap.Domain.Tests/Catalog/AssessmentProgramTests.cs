@@ -207,14 +207,144 @@ public sealed class AssessmentProgramTests
     }
 
     [Fact]
-    public void Deactivate_ThenActivate_TogglesIsActive()
+    public void Publish_SetsProgramActive()
     {
         var program = CreateCustomProgram();
+        program.AddTest(Guid.NewGuid(), 1, Now);
+
+        program.Publish(Now);
+
+        program.IsActive.Should().BeTrue();
+        program.State.Should().Be(ProgramState.Active);
+    }
+
+    [Fact]
+    public void Deactivate_ThenActivate_OnPublishedProgram_TogglesBetweenActiveAndPaused()
+    {
+        var program = PublishedProgram();
 
         program.Deactivate(Now);
         program.IsActive.Should().BeFalse();
+        program.State.Should().Be(ProgramState.Paused);
 
         program.Activate(Now);
         program.IsActive.Should().BeTrue();
+        program.State.Should().Be(ProgramState.Active);
     }
+
+    // ── Holat o'tishlari: `Activate`/`Deactivate` faqat `Published` doirasida ────────────
+    // 2026-09-06: ilgari `Activate()` holatni UMUMAN tekshirmasdi va arxivlangan dasturni
+    // faollashtirib, "Arxiv + Faol" ziddiyatini hosil qilish mumkin edi (egasining bazasida
+    // aynan shunday qator bor edi).
+
+    [Fact]
+    public void Activate_ArchivedProgram_ThrowsDomainException()
+    {
+        var program = PublishedProgram();
+        program.Archive(Now);
+
+        var act = () => program.Activate(Now);
+
+        var ex = act.Should().Throw<DomainException>().Which;
+        ex.Code.Should().Be("PROGRAM_INVALID_TRANSITION");
+        program.IsActive.Should().BeFalse();
+        program.State.Should().Be(ProgramState.Archived);
+    }
+
+    [Fact]
+    public void Deactivate_ArchivedProgram_ThrowsDomainException()
+    {
+        var program = PublishedProgram();
+        program.Archive(Now);
+
+        var act = () => program.Deactivate(Now);
+
+        act.Should().Throw<DomainException>().Which.Code.Should().Be("PROGRAM_INVALID_TRANSITION");
+    }
+
+    [Fact]
+    public void Activate_DraftProgram_ThrowsDomainException()
+    {
+        var program = CreateCustomProgram();
+
+        var act = () => program.Activate(Now);
+
+        act.Should().Throw<DomainException>().Which.Code.Should().Be("PROGRAM_INVALID_TRANSITION");
+        program.State.Should().Be(ProgramState.Draft);
+    }
+
+    [Fact]
+    public void Deactivate_DraftProgram_ThrowsDomainException()
+    {
+        var program = CreateCustomProgram();
+
+        var act = () => program.Deactivate(Now);
+
+        act.Should().Throw<DomainException>().Which.Code.Should().Be("PROGRAM_INVALID_TRANSITION");
+        program.State.Should().Be(ProgramState.Draft);
+    }
+
+    // ── Hosila holatning TO'RT kombinatsiyasi ───────────────────────────────────────────
+
+    [Fact]
+    public void State_DraftProgram_IsDraft()
+    {
+        CreateCustomProgram().State.Should().Be(ProgramState.Draft);
+    }
+
+    [Fact]
+    public void State_PublishedAndActive_IsActive()
+    {
+        PublishedProgram().State.Should().Be(ProgramState.Active);
+    }
+
+    [Fact]
+    public void State_PublishedAndNotActive_IsPaused()
+    {
+        var program = PublishedProgram();
+        program.Deactivate(Now);
+
+        program.State.Should().Be(ProgramState.Paused);
+    }
+
+    [Fact]
+    public void State_ArchivedProgram_IsArchived()
+    {
+        var program = PublishedProgram();
+        program.Archive(Now);
+
+        program.State.Should().Be(ProgramState.Archived);
+    }
+
+    /// <summary>
+    /// Bazada qolib ketishi mumkin bo'lgan ESKI ziddiyatli qator (`status = 3 AND
+    /// is_active = true`) — domen endi bunday holatni hosil qila olmaydi, lekin egasining
+    /// bazasida u haqiqatda bor edi. UI yolg'on aytmasligi kerak: `Status` ustuvor.
+    /// </summary>
+    [Fact]
+    public void State_ArchivedButFlaggedActive_StillArchived()
+    {
+        var program = PublishedProgram();
+        program.Archive(Now);
+        ForceIsActive(program, true);
+
+        program.State.Should().Be(ProgramState.Archived);
+    }
+
+    private static AssessmentProgram PublishedProgram()
+    {
+        var program = CreateCustomProgram();
+        program.AddTest(Guid.NewGuid(), 1, Now);
+        program.Publish(Now);
+        return program;
+    }
+
+    /// <summary>
+    /// Domen orqali hosil qilib bo'lmaydigan (lekin bazada uchraydigan) qatorni taqlid
+    /// qilish — faqat shu test uchun. Ishlab chiqarish kodida bunday yo'l YO'Q.
+    /// </summary>
+    private static void ForceIsActive(AssessmentProgram program, bool value) =>
+        typeof(AssessmentProgram)
+            .GetProperty(nameof(AssessmentProgram.IsActive))!
+            .SetValue(program, value);
 }

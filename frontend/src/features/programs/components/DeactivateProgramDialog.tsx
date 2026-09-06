@@ -15,13 +15,19 @@ export interface DeactivateProgramDialogProps {
 }
 
 /**
- * Dasturni O'CHIRISH tasdig'i — 2026-09-03 jonli hodisasi: `toggle-active` ilgari BIRDANIGA,
- * tasdiqsiz ishlardi va yagona dastur o'chirilganda barcha maktab havolasi jimgina o'lik
- * bo'lib qolgan edi.
+ * Dasturni TO'XTATISH tasdig'i (`Active ──▶ Paused`) — 2026-09-03 jonli hodisasi:
+ * `toggle-active` ilgari BIRDANIGA, tasdiqsiz ishlardi va yagona dastur o'chirilganda
+ * barcha maktab havolasi jimgina o'lik bo'lib qolgan edi.
  *
  * Amal TAQIQLANMAYDI — faqat nechta maktab dastursiz qolishi ko'rsatiladi
- * (`GET /api/admin/programs/{id}/impact?action=deactivate`). Dasturni QAYTA YOQISHDA bu
- * dialog umuman ochilmaydi (zararsiz amal).
+ * (`GET /api/admin/programs/{id}/impact?action=deactivate`). Dasturni QAYTA
+ * FAOLLASHTIRISHDA bu dialog umuman ochilmaydi (zararsiz amal).
+ *
+ * **Nom haqida:** komponent, endpoint (`toggle-active`) va `impact` amali (`deactivate`)
+ * API atamasini saqlaydi; foydalanuvchiga ko'rinadigan matn esa YAGONA holat atamasi bilan
+ * ("To'xtatish" ──▶ "To'xtatilgan") yozilgan, `docs/04` "Dastur holati" jadvali bo'yicha.
+ * Dialog faqat `Active` holatda ochiladi — `ProgramDetailPage` boshqa holatda bu tugmani
+ * umuman ko'rsatmaydi (domen ham `409 PROGRAM_INVALID_TRANSITION` bilan rad etadi).
  */
 export function DeactivateProgramDialog({
   open,

@@ -98,6 +98,7 @@ public sealed class DbSeeder
         {
             await SeedTestDefinitionsAsync(cancellationToken).ConfigureAwait(false);
             await SeedSystemProgramAsync(cancellationToken).ConfigureAwait(false);
+            await ReconcileProgramStatesAsync(cancellationToken).ConfigureAwait(false);
             await SeedPublicSpaceAsync(cancellationToken).ConfigureAwait(false);
             await SeedTypeCatalogAsync(cancellationToken).ConfigureAwait(false);
             await SeedCareerMapAsync(cancellationToken).ConfigureAwait(false);
@@ -335,6 +336,50 @@ public sealed class DbSeeder
     /// token oldindan bilinadigan bo'lsa maktab havolalari bilan bir xil xavfsizlik
     /// modelidan chetga chiqardi.
     /// </summary>
+    /// <summary>
+    /// **Ma'lumot tuzatuvchi qadam (2026-09-06).** Arxivlangan, lekin `is_active = true` bo'lib
+    /// qolgan dasturlarni tuzatadi — bu ziddiyatli juftlik egasining bazasida haqiqatda
+    /// mavjud edi (`PERSONALITY_PROFILE`, `status = 3 AND is_active = true`) va ro'yxatda
+    /// bitta dastur bir vaqtda "Arxiv" ham, "Faol" ham bo'lib ko'rinishiga sabab bo'lgan.
+    ///
+    /// Uni domen endi hosil qila olmaydi (`Activate` faqat `Published` da ishlaydi), lekin
+    /// ESKI qatorlar qolgan bo'lishi mumkin. `ProgramStateRules.Resolve` bunday qatorni
+    /// baribir `Archived` deb ko'rsatadi (UI yolg'on aytmaydi), shuning uchun bu qadam —
+    /// ko'rinishni emas, MA'LUMOTNI tozalash: `Application/Public` va
+    /// `SchoolLinkHealthEvaluator` mezonlari xom `IsActive` ustuniga tayanadi.
+    ///
+    /// **Nega migratsiya emas:** bu sxema o'zgarishi emas, ma'lumot tuzatmasi; migratsiya
+    /// bir marta va faqat bitta bazada bajariladi, seeder esa idempotent va har muhitda
+    /// (`--seed`, `App:SeedOnStartup`) qayta ishga tushiriladi. Ikkinchi chaqiruvda `WHERE`
+    /// hech qanday qatorga tegmaydi — natija 0 qator.
+    /// </summary>
+    private async Task ReconcileProgramStatesAsync(CancellationToken cancellationToken)
+    {
+        var now = _dateTime.UtcNow;
+
+        // Filtr DB darajasida — butun jadval o'qilmaydi; odatda 0 qator qaytadi.
+        var broken = await _dbContext.AssessmentPrograms
+            .Where(p => p.Status == ProgramStatus.Archived && p.IsActive)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (broken.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var program in broken)
+        {
+            program.ReconcileArchivedInactive(now);
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        _logger.LogWarning(
+            "{Count} ta arxivlangan dastur 'is_active = true' bo'lib qolgan edi — tuzatildi (Arxiv holati DOIM nofaol).",
+            broken.Count);
+    }
+
     private async Task SeedPublicSpaceAsync(CancellationToken cancellationToken)
     {
         var existing = await _dbContext.Schools

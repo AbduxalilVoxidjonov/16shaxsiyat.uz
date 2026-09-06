@@ -30,6 +30,18 @@ public sealed class AssessmentProgram : AggregateRoot
 
     public bool IsActive { get; private set; }
 
+    /// <summary>
+    /// Tashqariga (admin API va UI'ga) beriladigan YAGONA holat — `Status` va `IsActive`
+    /// dan HOSILA (`ProgramStateRules.Resolve`). EF Core buni ustunga bog'lamaydi: faqat
+    /// o'quvchi (setter'siz, zaxira maydonsiz) xossalar konvensiya bo'yicha xaritalanmaydi.
+    ///
+    /// Ikkita maydon bazada saqlanadi, chunki ommaviy oqim va havola sog'ligi mezoni
+    /// (`ProgramAvailability`, `SchoolLinkHealthEvaluator`) ularga tayanadi; lekin
+    /// "Arxiv + Faol" kabi ziddiyatli JUFTLIK endi ko'rsatilmaydi — bu yerda `Status`
+    /// ustuvor.
+    /// </summary>
+    public ProgramState State => ProgramStateRules.Resolve(Status, IsActive);
+
     public int DisplayOrder { get; private set; }
 
     /// <summary>Seed'dan kelgan tizim dasturi — tarkibi qulflangan (BR-8 ruhida).</summary>
@@ -236,7 +248,17 @@ public sealed class AssessmentProgram : AggregateRoot
         UpdatedAt = now;
     }
 
-    /// <summary>`Draft ──▶ Published`: kamida bitta test biriktirilgan bo'lishi shart.</summary>
+    /// <summary>
+    /// `Draft ──▶ Published`: kamida bitta test biriktirilgan bo'lishi shart.
+    ///
+    /// **`IsActive` nima bo'ladi:** ATAYLAB `true` qilib ANIQ o'rnatiladi, ya'ni nashrdan
+    /// keyin dastur `Active` holatida bo'ladi. Sabab: "nashr qilish" — adminning dasturni
+    /// o'quvchilarga OCHISH qarori; uni nashr qilib, keyin alohida "faollashtirish" bosishni
+    /// talab qilish ikkita maydonli eski chalkashlikni qaytaradi. Bu yerda konstruktordagi
+    /// `IsActive = true` boshlang'ich qiymatiga TAYANMAYMIZ: `Draft` holatida `IsActive`
+    /// ma'nosiz (`ProgramState.Draft` uni umuman o'qimaydi), shu sabab u qanday qolganidan
+    /// qat'i nazar, nashr natijasi DOIM aniq — `Published + IsActive = true`.
+    /// </summary>
     public void Publish(DateTimeOffset now)
     {
         if (Status != ProgramStatus.Draft)
@@ -250,6 +272,7 @@ public sealed class AssessmentProgram : AggregateRoot
         }
 
         Status = ProgramStatus.Published;
+        IsActive = true;
         UpdatedAt = now;
     }
 
@@ -272,14 +295,31 @@ public sealed class AssessmentProgram : AggregateRoot
         UpdatedAt = now;
     }
 
+    /// <summary>
+    /// `Paused ──▶ Active` (`Published` doirasida). FAQAT nashr qilingan dasturda ishlaydi:
+    /// qoralamani ham, arxivlangan dasturni ham "faollashtirib" bo'lmaydi — bu holatlar
+    /// mazmunan mos kelmaydi (qoralama hali nashr qilinmagan, arxiv esa yakuniy holat).
+    ///
+    /// Aynan shu qo'riqchining yo'qligi egasi ko'rgan xatoni tug'dirgan edi: arxivlangan
+    /// dastur `IsActive = true` bo'lib qolib, ro'yxatda bir vaqtda "Arxiv" ham, "Faol" ham
+    /// bo'lib ko'rinardi.
+    /// </summary>
     public void Activate(DateTimeOffset now)
     {
+        GuardPublishedForActivation(nameof(ProgramState.Active));
+
         IsActive = true;
         UpdatedAt = now;
     }
 
+    /// <summary>
+    /// `Active ──▶ Paused` (`Published` doirasida). `Activate` bilan bir xil qo'riqchi:
+    /// nashr qilinmagan yoki arxivlangan dasturni "to'xtatib" bo'lmaydi.
+    /// </summary>
     public void Deactivate(DateTimeOffset now)
     {
+        GuardPublishedForActivation(nameof(ProgramState.Paused));
+
         IsActive = false;
         UpdatedAt = now;
     }
@@ -295,6 +335,37 @@ public sealed class AssessmentProgram : AggregateRoot
         DescriptionUz = descriptionUz;
         DisplayOrder = displayOrder;
         UpdatedAt = now;
+    }
+
+    /// <summary>
+    /// **Ma'lumot tuzatmasi (2026-09-06), seed bosqichi uchun.** Arxivlangan dasturda
+    /// `IsActive` DOIM `false` bo'lishi kerak — bu invariantni `Archive()` ta'minlaydi,
+    /// lekin qo'riqchisiz `Activate()` mavjud bo'lgan davrda buzilgan qatorlar bazada
+    /// qolib ketgan (egasining bazasidagi `PERSONALITY_PROFILE`: `status = 3`,
+    /// `is_active = true`).
+    ///
+    /// IDEMPOTENT: qator allaqachon to'g'ri bo'lsa hech narsa o'zgarmaydi va `false`
+    /// qaytadi. Bu — dasturni FAOLLASHTIRISH emas, aksincha: yakuniy `Archived` holatini
+    /// ma'lumot darajasida ham haqiqiy qilish.
+    /// </summary>
+    public bool ReconcileArchivedInactive(DateTimeOffset now)
+    {
+        if (Status != ProgramStatus.Archived || !IsActive)
+        {
+            return false;
+        }
+
+        IsActive = false;
+        UpdatedAt = now;
+        return true;
+    }
+
+    private void GuardPublishedForActivation(string targetState)
+    {
+        if (Status != ProgramStatus.Published)
+        {
+            throw new DomainException("PROGRAM_INVALID_TRANSITION", $"Dastur '{State}' holatidan '{targetState}' ga o'ta olmaydi.");
+        }
     }
 
     private void GuardNotLocked()

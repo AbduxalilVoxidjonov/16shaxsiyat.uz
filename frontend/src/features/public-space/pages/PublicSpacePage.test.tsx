@@ -11,17 +11,16 @@ import PublicSpacePage from './PublicSpacePage';
  * `GET /api/admin/public-space` javobi — backend `AdminPublicSpaceDto`.
  *
  * Fikstura EGASINING JONLI HOLATIDAN olingan (2026-09-05): yagona `PERSONALITY_PROFILE`
- * dasturi `Published`, lekin `isActive = false` — ya'ni hozir hech kim test boshlay
- * olmaydi. Aynan shu holat panelda ANIQ ko'rinishi kerak (2026-09-03 hodisasining takrori
- * bo'lmasin).
+ * dasturi nashr qilingan, lekin TO'XTATILGAN (`state: 'Paused'`) — ya'ni hozir hech kim
+ * test boshlay olmaydi. Aynan shu holat panelda ANIQ ko'rinishi kerak (2026-09-03
+ * hodisasining takrori bo'lmasin).
  */
-const INACTIVE_PROGRAM = {
+const PAUSED_PROGRAM = {
   id: 'program-1',
   code: 'PERSONALITY_PROFILE',
   nameUz: 'Shaxsiyat profili',
-  status: 'Published',
+  state: 'Paused',
   visibility: 'Assigned',
-  isActive: false,
   testCount: 4,
   hasUsableTest: true,
 } satisfies Schemas['AdminPublicSpaceProgramDto'];
@@ -39,7 +38,7 @@ const BLOCKED_SPACE = {
     availableProgramCount: 0,
     usableProgramCount: 0,
   },
-  programs: [INACTIVE_PROGRAM],
+  programs: [PAUSED_PROGRAM],
   stats: {
     userCount: 128,
     totalAssessments: 96,
@@ -54,7 +53,7 @@ const BLOCKED_SPACE = {
 const HEALTHY_SPACE = {
   ...BLOCKED_SPACE,
   availability: { status: 'Ok', availableProgramCount: 1, usableProgramCount: 1 },
-  programs: [{ ...INACTIVE_PROGRAM, isActive: true }],
+  programs: [{ ...PAUSED_PROGRAM, state: 'Active' }],
 } satisfies Schemas['AdminPublicSpaceDto'];
 
 /** Dastursiz holat — biriktirish oqimini sinash uchun. */
@@ -74,8 +73,7 @@ const PROGRAM_OPTION = {
   nameUz: 'Shaxsiyat profili',
   kind: 'System',
   visibility: 'Assigned',
-  status: 'Published',
-  isActive: false,
+  state: 'Paused',
   isSystem: true,
   displayOrder: 1,
   testCount: 4,
@@ -167,10 +165,10 @@ describe('PublicSpacePage', () => {
   });
 
   /**
-   * Egasining jonli holati: dastur `Published`, lekin `isActive=false` — oqim jimgina
+   * Egasining jonli holati: dastur nashr qilingan, lekin TO'XTATILGAN — oqim jimgina
    * o'lik. 2026-09-03 da aynan shu holat panelda hech qanday belgi bermagan edi.
    */
-  it("dastur o'chirilgan bo'lsa aniq ogohlantirish va o'sha dasturga havola ko'rsatiladi", async () => {
+  it("dastur to'xtatilgan bo'lsa aniq ogohlantirish va o'sha dasturga havola ko'rsatiladi", async () => {
     mockFetch();
     renderPage();
 
@@ -179,7 +177,9 @@ describe('PublicSpacePage', () => {
     expect(
       within(alert).getByText(/Dastur o’chirilgan — hech kim test boshlay olmaydi/),
     ).toBeInTheDocument();
-    expect(within(alert).getByText(/“Shaxsiyat profili” dasturi o’chirilgan/)).toBeInTheDocument();
+    expect(
+      within(alert).getByText(/“Shaxsiyat profili” dasturi hozir faol emas/),
+    ).toBeInTheDocument();
 
     // Havola aynan o'sha dasturning sahifasiga olib boradi (dastur bu yerdan YOQILMAYDI).
     const link = within(alert).getByRole('link', { name: 'Dasturni ochish' });

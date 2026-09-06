@@ -13,7 +13,8 @@ import { ProgramFiltersBar } from '../components/ProgramFiltersBar';
 import { ProgramFormDialog } from '../components/ProgramFormDialog';
 import { readProgramsFilters } from '../model/programsFilters';
 import {
-  PROGRAM_STATUS_BADGE_VARIANT,
+  programStateBadgeVariant,
+  programStateLabelKey,
   type AdminProgramListItem,
   type ProgramsListQuery,
 } from '../model/types';
@@ -47,8 +48,7 @@ export default function ProgramsPage() {
 
   const query: ProgramsListQuery = {
     search: filters.search || undefined,
-    status: filters.status || undefined,
-    isActive: filters.active === '' ? undefined : filters.active === 'true',
+    state: filters.state || undefined,
     page,
     pageSize,
     sort: toSortParam(sort),
@@ -92,26 +92,14 @@ export default function ProgramsPage() {
           : t('programs.visibility.assigned'),
     },
     { id: 'testCount', header: t('programs.table.testCount'), cell: (row) => row.testCount },
+    // BITTA holat ustuni: ilgari bu yerda ikkita mustaqil belgi bor edi (`status` va
+    // `isActive`) va bitta dastur bir vaqtda "Arxiv" ham, "Faol" ham bo'lib ko'rinardi.
     {
-      id: 'status',
-      header: t('programs.table.status'),
+      id: 'state',
+      header: t('programs.table.state'),
       cell: (row) => (
-        <Badge
-          variant={
-            PROGRAM_STATUS_BADGE_VARIANT[row.status as keyof typeof PROGRAM_STATUS_BADGE_VARIANT] ??
-            'neutral'
-          }
-        >
-          {t(`programs.status.${row.status.toLowerCase()}`)}
-        </Badge>
-      ),
-    },
-    {
-      id: 'isActive',
-      header: t('programs.table.active'),
-      cell: (row) => (
-        <Badge variant={row.isActive ? 'success' : 'neutral'}>
-          {row.isActive ? t('programs.statusBadge.active') : t('programs.statusBadge.inactive')}
+        <Badge variant={programStateBadgeVariant(row.state)}>
+          {t(programStateLabelKey(row.state))}
         </Badge>
       ),
     },

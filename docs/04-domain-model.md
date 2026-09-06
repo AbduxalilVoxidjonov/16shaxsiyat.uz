@@ -335,6 +335,65 @@ Ikki marta bekor qilishga urinish — `DomainException("PUBLIC_REFRESH_TOKEN_ALR
 
 ---
 
+### 2.13 `AssessmentProgram` (agregat ildizi) — P34, holat 2026-09-06 da soddalashtirilgan
+
+Dastur — nomlangan, tartiblangan test to'plami. O'quvchi kirishda dasturni tanlaydi va
+sessiyaga faqat shu dasturning testlari qo'shiladi (`Assessment.ProgramId`).
+
+| Maydon | Tip | Izoh |
+|--------|-----|------|
+| `Id` | `Guid` | PK |
+| `Code` | `string(50)` | **Unikal**, yaratilgandan keyin o'zgarmaydi |
+| `NameUz` / `DescriptionUz` | `string` | |
+| `Kind` | `ProgramKind` | `System = 1` · `Custom = 2` |
+| `Visibility` | `ProgramVisibility` | `Public = 1` (barcha maktabda) · `Assigned = 2` (faqat biriktirilganda) |
+| `Status` | `ProgramStatus` | `Draft = 1` · `Published = 2` · `Archived = 3` — **saqlash maydoni** |
+| `IsActive` | `bool` | **saqlash maydoni** |
+| `IsSystem` | `bool` | Seed'dan kelgan tizim dasturi; tarkibi qulflangan (`SYSTEM_PROGRAM_LOCKED`) |
+| `DisplayOrder` | `int` | |
+
+#### Dastur holati — TASHQARIGA BITTA qiymat (`ProgramState`)
+
+`Status` va `IsActive` bazada QOLADI (ommaviy oqim va havola sog'ligi mezoni ularga tayanadi:
+`ProgramAvailability`, `SchoolLinkHealthEvaluator`), lekin **admin API va UI faqat bitta hosila
+holatni ko'radi** — `AssessmentProgram.State` (`ProgramStateRules.Resolve`):
+
+| `ProgramState` | Shart | UI matni |
+|----------------|-------|----------|
+| `Draft` | `Status == Draft` | Qoralama |
+| `Active` | `Status == Published && IsActive` | Faol |
+| `Paused` | `Status == Published && !IsActive` | To'xtatilgan |
+| `Archived` | `Status == Archived` (`IsActive` e'tiborga olinmaydi) | Arxiv |
+
+> **Nima uchun:** 2026-09-06 gacha admin ro'yxatida ikkita mustaqil ustun bor edi va bitta
+> dastur bir vaqtda "Arxiv" ham, "Faol" ham bo'lib ko'rinardi. Sabab — qo'riqchisiz
+> `Activate()`: arxivlangan dasturni faollashtirib, `status = 3 AND is_active = true`
+> qatorini hosil qilish mumkin edi (egasining bazasida shunday qator bor edi).
+
+**Holat mashinasi** (boshqa o'tish YO'Q — `DomainException("PROGRAM_INVALID_TRANSITION")`):
+
+```
+Draft ──Publish()──▶ Active ──Deactivate()──▶ Paused ──Activate()──▶ Active
+  │                    │                        │
+  └──Archive()─────────┴────────────────────────┴──────────▶ Archived (yakuniy)
+```
+
+**Invariantlar**
+- `Publish()` faqat `Draft` dan; kamida bitta test biriktirilgan bo'lishi shart
+  (`PROGRAM_NOT_PUBLISHABLE`). Natija DOIM `Active`: `Publish()` `IsActive`ni ANIQ `true`
+  qiladi — "nashr qilish" adminning dasturni o'quvchilarga ochish qarori.
+- `Activate()` / `Deactivate()` faqat `Status == Published` da. Qoralamani ham, arxivlangan
+  dasturni ham "to'xtatib"/"faollashtirib" bo'lmaydi.
+- `Archive()` `Draft` va `Published` dan; `IsActive`ni `false` qiladi. Arxivdan qaytish yo'q.
+- Tizim dasturida (`IsSystem`) tarkib o'zgartirilmaydi: `AddTest`/`RemoveTest`/`ReorderTests`
+  — `SYSTEM_PROGRAM_LOCKED` (BR-8 ruhida).
+
+**Eski ma'lumot:** `Archived + IsActive` juftligi bazada qolgan bo'lsa, `State` uni baribir
+`Archived` deb ko'rsatadi (`Status` ustuvor), ustunning o'zi esa seed bosqichida idempotent
+tarzda tuzatiladi (`DbSeeder.ReconcileProgramStatesAsync` — migratsiya emas).
+
+---
+
 ## 3. Domen hodisalari
 
 | Hodisa | Qachon | Kim tinglaydi |

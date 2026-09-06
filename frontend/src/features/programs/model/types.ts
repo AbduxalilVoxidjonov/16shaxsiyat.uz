@@ -1,5 +1,11 @@
-import type { BadgeVariant } from '@/shared/ui/Badge';
 import type { components } from '@/shared/api/schema';
+import {
+  PROGRAM_STATE_VALUES,
+  isProgramState,
+  programStateBadgeVariant,
+  programStateLabelKey,
+  type ProgramState,
+} from '@/shared/lib/programState';
 
 /**
  * `AssessmentProgram` admin DTO'lari — `docs/07-api-shartnoma.md` 3.4-bo'limida yozilmagan
@@ -28,20 +34,24 @@ export type ProgramKind = (typeof PROGRAM_KIND_VALUES)[number];
 export const PROGRAM_VISIBILITY_VALUES = ['Public', 'Assigned'] as const;
 export type ProgramVisibility = (typeof PROGRAM_VISIBILITY_VALUES)[number];
 
-export const PROGRAM_STATUS_VALUES = ['Draft', 'Published', 'Archived'] as const;
-export type ProgramStatus = (typeof PROGRAM_STATUS_VALUES)[number];
-
-export const PROGRAM_STATUS_BADGE_VARIANT: Record<ProgramStatus, BadgeVariant> = {
-  Draft: 'neutral',
-  Published: 'success',
-  Archived: 'danger',
-};
+/**
+ * Dasturning YAGONA holati — ta'rifi `@/shared/lib/programState` da (uni
+ * `features/public-space` ham ishlatadi; feature'lar bir-birini import qilmaydi,
+ * `docs/10` §2). Bu yerda faqat qayta eksport, feature ichidagi importlar qisqa bo'lsin.
+ *
+ * **2026-09-06:** ilgari shu faylda `PROGRAM_STATUS_VALUES`
+ * (`Draft`/`Published`/`Archived`) bor edi va UI unga QO'SHIMCHA `isActive` belgisini
+ * ko'rsatardi — natijada bitta dastur bir vaqtda "Arxiv" ham, "Faol" ham bo'lib ko'rinardi
+ * (egasining topilmasi). Endi holat BITTA va u BACKENDDA hisoblanadi: klient
+ * `status`/`isActive` juftligini ko'rmaydi ham, qayta talqin ham qilmaydi.
+ */
+export { PROGRAM_STATE_VALUES, isProgramState, programStateBadgeVariant, programStateLabelKey };
+export type { ProgramState };
 
 /** `GET /api/admin/programs` so'rov parametrlari. */
 export interface ProgramsListQuery {
   search?: string;
-  status?: ProgramStatus;
-  isActive?: boolean;
+  state?: ProgramState;
   page: number;
   pageSize: number;
   sort?: string;

@@ -152,8 +152,7 @@ public sealed class AdminPublicSpaceEndpointTests : IClassFixture<PublicApiTestF
 
         // O'CHIRILGAN dastur: panel buni jim yutmasligi kerak (2026-09-03 hodisasi).
         var assigned = afterAssign.Programs.Single(p => p.Id == programId);
-        assigned.IsActive.Should().BeFalse();
-        assigned.Status.Should().Be(nameof(ProgramStatus.Published));
+        assigned.State.Should().Be(nameof(ProgramState.Paused));
 
         var afterUnassign = await (await client.DeleteAsync(
                 new Uri($"/api/admin/public-space/programs/{programId}", UriKind.Relative)))

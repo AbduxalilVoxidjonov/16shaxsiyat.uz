@@ -57,7 +57,7 @@ public sealed class AdminAssessmentProgramsEndpointTests : IClassFixture<PublicA
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var body = await response.Content.ReadFromJsonAsync<AdminProgramDetailDto>(TestJson.Options);
-        body!.Status.Should().Be("Draft");
+        body!.State.Should().Be("Draft");
         body.Kind.Should().Be("Custom");
         body.IsSystem.Should().BeFalse();
     }
@@ -121,7 +121,8 @@ public sealed class AdminAssessmentProgramsEndpointTests : IClassFixture<PublicA
         var publishResponse = await client.PostAsync(new Uri($"/api/admin/programs/{created.Id}/publish", UriKind.Relative), content: null);
         publishResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var afterPublish = await publishResponse.Content.ReadFromJsonAsync<AdminProgramDetailDto>(TestJson.Options);
-        afterPublish!.Status.Should().Be("Published");
+        // Nashr qilingan dastur DARROV `Active` bo'ladi — `Publish` `IsActive`ni ANIQ `true` qiladi.
+        afterPublish!.State.Should().Be("Active");
     }
 
     [Fact]
@@ -197,7 +198,7 @@ public sealed class AdminAssessmentProgramsEndpointTests : IClassFixture<PublicA
 
         var result = await client.GetFromJsonAsync<PagedResult<AdminProgramListItemDto>>("/api/admin/programs?search=LIST-PROG-1", TestJson.Options);
 
-        result!.Items.Should().ContainSingle(p => p.Code == "LIST-PROG-1" && p.Status == "Draft");
+        result!.Items.Should().ContainSingle(p => p.Code == "LIST-PROG-1" && p.State == "Draft");
     }
 
     [Fact]

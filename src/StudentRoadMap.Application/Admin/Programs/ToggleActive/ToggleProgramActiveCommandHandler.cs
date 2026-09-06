@@ -7,6 +7,10 @@ using StudentRoadMap.Domain.Identity;
 
 namespace StudentRoadMap.Application.Admin.Programs.ToggleActive;
 
+/// <summary>
+/// `POST /api/admin/programs/{id}/toggle-active` — `Active ⇄ Paused` (faqat `Published`
+/// doirasida). `Draft`/`Archived` dasturda domen `PROGRAM_INVALID_TRANSITION` tashlaydi.
+/// </summary>
 internal sealed class ToggleProgramActiveCommandHandler : IRequestHandler<ToggleProgramActiveCommand, Result<AdminProgramDetailDto>>
 {
     private readonly IAppDbContext _context;
@@ -35,9 +39,13 @@ internal sealed class ToggleProgramActiveCommandHandler : IRequestHandler<Toggle
             return Result.Failure<AdminProgramDetailDto>(new Error(ProblemCodes.NotFound, "Dastur topilmadi."));
         }
 
-        var wasActive = program.IsActive;
+        // Domen qo'riqchisi (`Activate`/`Deactivate`): faqat `Published` dasturda ishlaydi —
+        // qoralama yoki arxivlangan dasturda `409 PROGRAM_INVALID_TRANSITION`. UI bunday
+        // tugmani umuman ko'rsatmaydi, lekin API to'g'ridan-to'g'ri chaqirilsa ham
+        // ziddiyatli qator (masalan "Arxiv + Faol") hosil bo'lmasligi kerak.
+        var stateBefore = program.State;
 
-        if (wasActive)
+        if (program.IsActive)
         {
             program.Deactivate(now);
         }
@@ -52,8 +60,8 @@ internal sealed class ToggleProgramActiveCommandHandler : IRequestHandler<Toggle
             request.AdminUserId,
             entityType: "AssessmentProgram",
             entityId: program.Id,
-            beforeJson: AuditSnapshot.Serialize(new { IsActive = wasActive }),
-            afterJson: AuditSnapshot.Serialize(new { program.IsActive }),
+            beforeJson: AuditSnapshot.Serialize(new { State = stateBefore.ToString() }),
+            afterJson: AuditSnapshot.Serialize(new { State = program.State.ToString() }),
             ipHash: _ipHasher.Hash(request.IpAddress),
             userAgent: request.UserAgent));
 

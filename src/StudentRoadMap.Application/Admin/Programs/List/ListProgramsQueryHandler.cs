@@ -36,14 +36,13 @@ internal sealed class ListProgramsQueryHandler : IRequestHandler<ListProgramsQue
             query = query.Where(p => p.NameUz.Contains(term) || p.Code.Contains(term));
         }
 
-        if (!string.IsNullOrWhiteSpace(request.Status) && Enum.TryParse<ProgramStatus>(request.Status, ignoreCase: true, out var status))
+        // Hosila holat bo'yicha filtr — shart DB darajasida bajariladi
+        // (`ProgramStateRules.Filter`, xotirada filtrlash `docs/06` §8 bo'yicha taqiqlangan).
+        // Noma'lum qiymat jimgina e'tiborsiz qoldiriladi — avvalgi `status` filtri bilan
+        // bir xil xatti-harakat.
+        if (ProgramStateRules.TryParse(request.State, out var state))
         {
-            query = query.Where(p => p.Status == status);
-        }
-
-        if (request.IsActive.HasValue)
-        {
-            query = query.Where(p => p.IsActive == request.IsActive.Value);
+            query = query.Where(ProgramStateRules.Filter(state));
         }
 
         var totalCount = await _executor.CountAsync(query, cancellationToken).ConfigureAwait(false);

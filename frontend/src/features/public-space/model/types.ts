@@ -66,12 +66,15 @@ export function availabilityReasonKey(status: string): string {
 }
 
 /**
- * Biriktirilgan, lekin O'CHIRILGAN dasturlar — ogohlantirishda aynan qaysi dastur
- * to'sqinlik qilayotganini ko'rsatish uchun (havola bilan). Egasining 2026-09-05 holati:
- * yagona `PERSONALITY_PROFILE` dasturi `Published`, lekin `isActive = false`.
+ * Biriktirilgan, lekin ISHLAMAYDIGAN dasturlar — ogohlantirishda aynan qaysi dastur
+ * to'sqinlik qilayotganini ko'rsatish uchun (havola bilan).
+ *
+ * **2026-09-06:** mezon endi YAGONA holatga tayanadi — "ishlaydigan" holat faqat bitta:
+ * `Active`. Ilgari bu yerda `!isActive` tekshirilardi va u `Draft`/`Archived` dasturni
+ * "joyida" deb hisoblab yuborardi, garchi ular ham test boshlashga yaramasa ham.
  */
-export function findInactivePrograms(
+export function findBlockedPrograms(
   programs: readonly PublicSpaceProgramDto[],
 ): PublicSpaceProgramDto[] {
-  return programs.filter((program) => !program.isActive);
+  return programs.filter((program) => program.state !== 'Active');
 }

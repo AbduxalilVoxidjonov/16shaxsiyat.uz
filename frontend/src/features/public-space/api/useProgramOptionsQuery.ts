@@ -13,7 +13,8 @@ export interface ProgramOption {
   id: string;
   code: string;
   nameUz: string;
-  isActive: boolean;
+  /** Yagona holat (`ProgramState`) — `Draft` · `Active` · `Paused` · `Archived`. */
+  state: string;
 }
 
 const PROGRAM_OPTIONS_PAGE_SIZE = 100;

@@ -4,7 +4,7 @@ import { Link } from 'react-router';
 import { ROUTES } from '@/shared/config/routes';
 import {
   availabilityReasonKey,
-  findInactivePrograms,
+  findBlockedPrograms,
   isPublicSpaceBlocked,
   type PublicSpaceAvailabilityDto,
   type PublicSpaceProgramDto,
@@ -46,7 +46,7 @@ export function PublicSpaceAvailabilityAlert({
     );
   }
 
-  const inactivePrograms = findInactivePrograms(programs);
+  const blockedPrograms = findBlockedPrograms(programs);
 
   return (
     <div
@@ -61,7 +61,7 @@ export function PublicSpaceAvailabilityAlert({
 
       <p>{t(availabilityReasonKey(availability.status))}</p>
 
-      {inactivePrograms.map((program) => (
+      {blockedPrograms.map((program) => (
         <p key={program.id} className="flex flex-wrap items-center gap-2">
           <span>
             {t('publicSpace.availability.inactiveProgramNotice', { name: program.nameUz })}
@@ -75,7 +75,7 @@ export function PublicSpaceAvailabilityAlert({
         </p>
       ))}
 
-      {inactivePrograms.length === 0 && (
+      {blockedPrograms.length === 0 && (
         <p>
           <Link
             to={ROUTES.admin.programs}

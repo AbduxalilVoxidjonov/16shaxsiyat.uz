@@ -44,21 +44,24 @@ public sealed class AssessmentProgramsController : ControllerBase
         _currentUser = currentUser;
     }
 
-    /// <summary>`GET /api/admin/programs`.</summary>
+    /// <summary>
+    /// `GET /api/admin/programs?search=&amp;state=&amp;page=&amp;pageSize=&amp;sort=`.
+    /// `state` — YAGONA holat filtri (`Draft` · `Active` · `Paused` · `Archived`).
+    /// Eski `status`/`isActive` parametrlari 2026-09-06 da OLIB TASHLANDI (`ListProgramsQuery` izohi).
+    /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<AdminProgramListItemDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden, "application/problem+json")]
     public async Task<ActionResult<PagedResult<AdminProgramListItemDto>>> List(
         [FromQuery] string? search,
-        [FromQuery] string? status,
-        [FromQuery] bool? isActive,
+        [FromQuery] string? state,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? sort = null,
         CancellationToken cancellationToken = default)
     {
-        var result = await _sender.Send(new ListProgramsQuery(search, status, isActive, page, pageSize, sort), cancellationToken).ConfigureAwait(false);
+        var result = await _sender.Send(new ListProgramsQuery(search, state, page, pageSize, sort), cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
     }
@@ -146,10 +149,14 @@ public sealed class AssessmentProgramsController : ControllerBase
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
     }
 
-    /// <summary>`POST /api/admin/programs/{id}/toggle-active`.</summary>
+    /// <summary>
+    /// `POST /api/admin/programs/{id}/toggle-active` — `Active ⇄ Paused`. Faqat nashr
+    /// qilingan (`Published`) dasturda: `Draft`/`Archived` da `409 PROGRAM_INVALID_TRANSITION`.
+    /// </summary>
     [HttpPost("{id:guid}/toggle-active")]
     [ProducesResponseType(typeof(AdminProgramDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
     public async Task<ActionResult<AdminProgramDetailDto>> ToggleActive(Guid id, CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new ToggleProgramActiveCommand(id, RequireAdminUserId(), ClientIp(), UserAgent()), cancellationToken).ConfigureAwait(false);

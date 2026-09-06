@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
@@ -14,8 +14,7 @@ const PROGRAM_1 = {
   nameUz: 'Shaxsiyat profili',
   kind: 'System',
   visibility: 'Public',
-  status: 'Published',
-  isActive: true,
+  state: 'Active',
   isSystem: true,
   displayOrder: 1,
   testCount: 4,
@@ -33,8 +32,7 @@ const CREATED_PROGRAM = {
   descriptionUz: null,
   kind: 'Custom',
   visibility: 'Public',
-  status: 'Draft',
-  isActive: true,
+  state: 'Draft',
   isSystem: false,
   displayOrder: 1,
   tests: [],
@@ -86,6 +84,48 @@ describe('ProgramsPage', () => {
     renderPage();
     expect(await screen.findByText('Shaxsiyat profili')).toBeInTheDocument();
     expect(screen.getByText('Tizim')).toBeInTheDocument();
+  });
+
+  /**
+   * REGRESSIYA (egasining 2026-09-06 topilmasi): ro'yxatda ikkita mustaqil belgi bor edi
+   * ("Nashr etilgan"/"Arxiv" va alohida "Faol"/"Nofaol"), shu sabab bitta dastur bir vaqtda
+   * "Arxiv" ham, "Faol" ham bo'lib ko'rinardi. Endi holat ustuni BITTA.
+   */
+  it("holat BITTA belgi bilan ko'rsatiladi (ikkinchi \"faollik\" ustuni yo'q)", async () => {
+    renderPage();
+    await screen.findByText('Shaxsiyat profili');
+
+    const table = screen.getByRole('table', { name: "Dasturlar ro'yxati" });
+
+    expect(
+      within(table)
+        .getAllByRole('columnheader')
+        .filter((header) => header.textContent?.includes('Holat')),
+    ).toHaveLength(1);
+    expect(within(table).queryByRole('columnheader', { name: 'Faollik' })).not.toBeInTheDocument();
+    expect(within(table).getByText('Faol')).toBeInTheDocument();
+    expect(within(table).queryByText('Nashr etilgan')).not.toBeInTheDocument();
+    expect(within(table).queryByText('Nofaol')).not.toBeInTheDocument();
+  });
+
+  it("holat filtri BITTA — URL'ga `state` yoziladi", async () => {
+    const fetchMock = mockFetch();
+    const user = userEvent.setup();
+    renderPage();
+
+    await screen.findByText('Shaxsiyat profili');
+    expect(screen.queryByLabelText('Faollik')).not.toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText('Holat'), 'Paused');
+
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(([input]) => String(input).includes('state=Paused')),
+      ).toBe(true);
+    });
+    expect(fetchMock.mock.calls.every(([input]) => !String(input).includes('isActive='))).toBe(
+      true,
+    );
   });
 
   it('"Yangi dastur" tugmasi forma ochadi va yaratish so\'rovini yuboradi', async () => {

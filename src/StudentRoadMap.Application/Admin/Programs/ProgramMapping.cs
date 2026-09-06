@@ -6,6 +6,10 @@ namespace StudentRoadMap.Application.Admin.Programs;
 /// <summary>
 /// `AdminProgramDetailDto`/`AdminProgramListItemDto` qurish uchun umumiy mantiq —
 /// `SchoolMapping` naqshiga o'xshash (`prompts/34` E15-band).
+///
+/// Holat bu yerda HISOBLANMAYDI — `AssessmentProgram.State` (ya'ni `ProgramStateRules.Resolve`,
+/// domen) o'qiladi. Mezon bitta joyda tursin: mapping'da qayta yozilsa, `Admin/PublicSpace`
+/// mapping'i bilan darrov ikkiga bo'linardi.
 /// </summary>
 internal static class ProgramMapping
 {
@@ -15,8 +19,7 @@ internal static class ProgramMapping
         program.NameUz,
         program.Kind.ToString(),
         program.Visibility.ToString(),
-        program.Status.ToString(),
-        program.IsActive,
+        program.State.ToString(),
         program.IsSystem,
         program.DisplayOrder,
         testCount);
@@ -56,8 +59,7 @@ internal static class ProgramMapping
             program.DescriptionUz,
             program.Kind.ToString(),
             program.Visibility.ToString(),
-            program.Status.ToString(),
-            program.IsActive,
+            program.State.ToString(),
             program.IsSystem,
             program.DisplayOrder,
             testItems,

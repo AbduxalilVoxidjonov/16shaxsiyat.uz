@@ -981,20 +981,16 @@
       "loadError": "Ta'sirni hisoblab bo'lmadi — davom etishdan oldin dasturlar qamrovini tekshiring."
     },
     "deactivateDialog": {
-      "title": "Dasturni o'chirish",
-      "description": "O'chirilgan dastur o'quvchilarga ko'rinmaydi.",
-      "confirmCta": "O'chirish",
-      "genericError": "Dasturni o'chirib bo'lmadi."
+      "title": "Dasturni to'xtatish",
+      "description": "To'xtatilgan dastur o'quvchilarga ko'rinmaydi. Uni istalgan vaqtda qayta faollashtirish mumkin.",
+      "confirmCta": "To'xtatish",
+      "genericError": "Dasturni to'xtatib bo'lmadi."
     },
     "filters": {
       "searchLabel": "Qidiruv",
       "searchPlaceholder": "Nomi yoki kodi bo'yicha",
-      "statusLabel": "Holat",
-      "statusAll": "Hammasi",
-      "activeLabel": "Faollik",
-      "activeAll": "Hammasi",
-      "activeOnly": "Faqat faol",
-      "inactiveOnly": "Faqat nofaol"
+      "stateLabel": "Holat",
+      "stateAll": "Hammasi"
     },
     "table": {
       "ariaLabel": "Dasturlar ro'yxati",
@@ -1003,8 +999,7 @@
       "kind": "Turi",
       "visibility": "Ko'rinishi",
       "testCount": "Testlar soni",
-      "status": "Holat",
-      "active": "Faollik",
+      "state": "Holat",
       "emptyTitle": "Dastur topilmadi",
       "emptyDescription": "Filtrlarni o'zgartiring yoki yangi dastur yarating."
     },
@@ -1016,22 +1011,20 @@
       "public": "Ommaviy",
       "assigned": "Biriktirilgan"
     },
-    "status": {
+    "state": {
       "draft": "Qoralama",
-      "published": "Nashr etilgan",
-      "archived": "Arxiv"
-    },
-    "statusBadge": {
       "active": "Faol",
-      "inactive": "Nofaol"
+      "paused": "To'xtatilgan",
+      "archived": "Arxiv",
+      "unknown": "Noma'lum"
     },
     "actions": {
       "create": "Yangi dastur",
       "edit": "Tahrirlash",
       "publish": "Nashr qilish",
       "archive": "Arxivlash",
-      "activate": "Faollashtirish",
-      "deactivate": "Nofaollashtirish",
+      "pause": "To'xtatish",
+      "resume": "Faollashtirish",
       "addTest": "Test qo'shish"
     },
     "form": {
@@ -1061,7 +1054,7 @@
     },
     "archiveDialog": {
       "title": "Dasturni arxivlash",
-      "description": "Arxivlangan dastur o'quvchilarga ko'rinmay qoladi. Bu amalni bekor qilib bo'lmaydi.",
+      "description": "Arxivlangan dastur o'quvchilarga ko'rinmay qoladi va uni qayta faollashtirib bo'lmaydi. Bu amalni bekor qilib bo'lmaydi.",
       "confirmCta": "Arxivlash",
       "successTitle": "Dastur arxivlandi",
       "genericError": "Arxivlashda xatolik yuz berdi"
@@ -2245,7 +2238,7 @@
         "ProgramsWithoutTests": "Dastur bor, lekin uning tarkibida nashr qilingan anketa yo’q.",
         "unknown": "Sabab noma’lum — dasturlar bo’limini tekshiring."
       },
-      "inactiveProgramNotice": "“{{name}}” dasturi o’chirilgan. Uni faollashtirmaguningizcha bu makonda test boshlanmaydi.",
+      "inactiveProgramNotice": "“{{name}}” dasturi hozir faol emas. U faollashtirilmaguncha bu makonda test boshlanmaydi.",
       "goToProgram": "Dasturni ochish",
       "goToPrograms": "Dasturlar bo’limi"
     },
@@ -2267,8 +2260,6 @@
       "columnStatus": "Holat",
       "columnTests": "Anketalar",
       "testCount": "{{count}} ta",
-      "inactiveBadge": "O’chirilgan",
-      "activeBadge": "Faol",
       "noUsableTest": "Nashr qilingan anketa yo’q",
       "remove": "Olib tashlash",
       "removeAria": "“{{name}}” dasturini olib tashlash",
