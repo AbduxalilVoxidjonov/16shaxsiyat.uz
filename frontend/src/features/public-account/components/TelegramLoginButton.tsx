@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { env } from '@/shared/config/env';
+import { cn } from '@/shared/lib/cn';
 
 /**
  * Telegram Login Widget (`docs/07` §2a.1, `docs/08` §2a).
@@ -106,7 +107,20 @@ export function TelegramLoginButton({ authUrl, disabled = false }: TelegramLogin
       <div
         ref={containerRef}
         aria-busy={disabled || undefined}
-        className={disabled ? 'pointer-events-none opacity-60' : undefined}
+        /*
+          `[&>iframe]:rounded-full` — Telegram iframe'i o'z hujjati bo'lgani uchun uning
+          FONINI biz boshqara olmaymiz: foydalanuvchi tizimi qorong'i rejimda bo'lsa, widget
+          o'zini qora fonda chizadi va bizning yorug' sahifamizda tugma atrofida QORA
+          TO'RTBURCHAK ko'rinib qoladi (egasi 2026-09-06 da xabar berdi).
+          `color-scheme: light` yordam bermadi — Chrome uni cross-origin iframe'ga
+          uzatmaydi (jonli tekshirildi). Iframe 219x40, ichidagi tugma esa `radius=20`
+          bilan to'liq tabletka shaklida — demak iframe'ning o'zini shu radius bilan
+          qirqsak, qora burchaklar butunlay yo'qoladi va tugma o'z ko'rinishida qoladi.
+        */
+        className={cn(
+          '[&>iframe]:rounded-full [&>iframe]:overflow-hidden',
+          disabled && 'pointer-events-none opacity-60',
+        )}
       />
       <p className="max-w-xs text-center text-[13px] leading-relaxed text-ink-soft">
         {t('account.login.widgetHint')}

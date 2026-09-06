@@ -433,6 +433,22 @@ dialog:modal.dialog-drawer-start {
 @layer base {
   html {
     font-family: var(--font-sans);
+
+    /*
+      Ilovada qorong'i rejim YO'Q — barcha ranglar yorug' fon uchun tanlangan. Lekin
+      `color-scheme` e'lon qilinmasa, brauzer o'zi boshqaradigan qismlarni tizim mavzusiga
+      qarab chizadi. Ikkita ko'rinadigan oqibati bor edi:
+
+      1. Telegram Login Widget (`/kirish`) — u ALOHIDA hujjatdagi iframe va o'z
+         `prefers-color-scheme` iga qarab qora fon bilan chizilardi. Tugmaning o'zi
+         dumaloq bo'lgani uchun atrofida QORA TO'RTBURCHAK ko'rinib qolardi (egasi
+         2026-09-06 da xabar berdi). CSS Color Adjust bo'yicha ota-hujjatning ishlatilgan
+         `color-scheme` i ichki hujjatga uzatiladi — shu sabab bu yerda `light` deyish
+         iframe'ni ham yorug' rejimga majbur qiladi.
+      2. Native boshqaruvlar (scrollbar, `<select>` ro'yxati, sana tanlagich) qorong'i
+         tizimda qora chizilib, yorug' sahifa bilan ziddiyat hosil qilardi.
+    */
+    color-scheme: light;
   }
 
   body {
