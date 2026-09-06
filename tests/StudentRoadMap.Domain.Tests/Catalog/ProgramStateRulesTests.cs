@@ -71,9 +71,98 @@ public sealed class ProgramStateRulesTests
     }
 
     /// <summary>
-    /// Bazada saqlanishi MUMKIN bo'lgan 6 kombinatsiya. Ulardan ikkitasini domen endi hosil
+    /// Holat mashinasining TO'LIQ o'tish jadvali (`docs/04` 2.13): har bir (holat, amal)
+    /// juftligi uchun natija yoki `PROGRAM_INVALID_TRANSITION`. 2026-09-06: `Restore`
+    /// qo'shildi — `Archived` endi yakuniy emas, lekin FAQAT `Paused` ga qaytadi.
+    /// </summary>
+    [Theory]
+    [InlineData(ProgramState.Draft, "Publish", ProgramState.Active)]
+    [InlineData(ProgramState.Draft, "Archive", ProgramState.Archived)]
+    [InlineData(ProgramState.Draft, "Activate", null)]
+    [InlineData(ProgramState.Draft, "Deactivate", null)]
+    [InlineData(ProgramState.Draft, "Restore", null)]
+    [InlineData(ProgramState.Active, "Publish", null)]
+    [InlineData(ProgramState.Active, "Archive", ProgramState.Archived)]
+    [InlineData(ProgramState.Active, "Activate", ProgramState.Active)]
+    [InlineData(ProgramState.Active, "Deactivate", ProgramState.Paused)]
+    [InlineData(ProgramState.Active, "Restore", null)]
+    [InlineData(ProgramState.Paused, "Publish", null)]
+    [InlineData(ProgramState.Paused, "Archive", ProgramState.Archived)]
+    [InlineData(ProgramState.Paused, "Activate", ProgramState.Active)]
+    [InlineData(ProgramState.Paused, "Deactivate", ProgramState.Paused)]
+    [InlineData(ProgramState.Paused, "Restore", null)]
+    [InlineData(ProgramState.Archived, "Publish", null)]
+    [InlineData(ProgramState.Archived, "Archive", null)]
+    [InlineData(ProgramState.Archived, "Activate", null)]
+    [InlineData(ProgramState.Archived, "Deactivate", null)]
+    [InlineData(ProgramState.Archived, "Restore", ProgramState.Paused)]
+    public void Transitions_FollowStateMachine(ProgramState from, string action, ProgramState? expected)
+    {
+        var program = InState(from);
+        Action act = action switch
+        {
+            "Publish" => () => program.Publish(Now),
+            "Archive" => () => program.Archive(Now),
+            "Activate" => () => program.Activate(Now),
+            "Deactivate" => () => program.Deactivate(Now),
+            "Restore" => () => program.Restore(Now),
+            _ => throw new ArgumentOutOfRangeException(nameof(action), action, null),
+        };
+
+        if (expected is null)
+        {
+            act.Should().Throw<Domain.Common.DomainException>().Which.Code.Should().Be("PROGRAM_INVALID_TRANSITION");
+            program.State.Should().Be(from, "rad etilgan o'tish holatni o'zgartirmasligi kerak");
+        }
+        else
+        {
+            act.Should().NotThrow();
+            program.State.Should().Be(expected);
+        }
+    }
+
+    /// <summary>
+    /// Har bir holatda BITTA test biriktirilgan dastur — `Draft ──Publish()──▶ Active` o'tishi
+    /// `PROGRAM_NOT_PUBLISHABLE` shartiga emas, holat mashinasiga tekshirilsin.
+    /// </summary>
+    private static AssessmentProgram InState(ProgramState state)
+    {
+        switch (state)
+        {
+            case ProgramState.Draft:
+            {
+                var draft = Draft();
+                draft.AddTest(Guid.NewGuid(), 1, Now);
+                return draft;
+            }
+
+            case ProgramState.Active:
+                return Published();
+            case ProgramState.Paused:
+            {
+                var paused = Published();
+                paused.Deactivate(Now);
+                return paused;
+            }
+
+            case ProgramState.Archived:
+            {
+                var archived = Published();
+                archived.Archive(Now);
+                return archived;
+            }
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(state), state, null);
+        }
+    }
+
+    /// <summary>
+    /// Bazada saqlanishi MUMKIN bo'lgan kombinatsiyalar. Ulardan ikkitasini domen endi hosil
     /// qila olmaydi (`Draft + !IsActive`, `Archived + IsActive`), lekin eski qatorlar sifatida
-    /// uchrashi mumkin — filtr ularni ham to'g'ri joylashtirishi shart.
+    /// uchrashi mumkin — filtr ularni ham to'g'ri joylashtirishi shart. Arxivdan TIKLANGAN
+    /// qator (`Published + !IsActive`, `Restore()` natijasi) ham alohida kiritilgan: u
+    /// `Deactivate()` bilan to'xtatilgandan bazada farqsiz va `Paused` filtriga tushishi shart.
     /// </summary>
     private static List<AssessmentProgram> AllStoredCombinations()
     {
@@ -94,7 +183,11 @@ public sealed class ProgramStateRulesTests
         archivedButFlaggedActive.Archive(Now);
         ForceIsActive(archivedButFlaggedActive, true);
 
-        return [draftActive, draftInactive, published, paused, archived, archivedButFlaggedActive];
+        var restored = Published();
+        restored.Archive(Now);
+        restored.Restore(Now);
+
+        return [draftActive, draftInactive, published, paused, archived, archivedButFlaggedActive, restored];
     }
 
     private static AssessmentProgram Draft() =>

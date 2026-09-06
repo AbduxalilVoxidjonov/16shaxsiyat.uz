@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, ArrowLeft, Lock, Pencil, Plus, Power } from 'lucide-react';
+import { AlertTriangle, ArchiveRestore, ArrowLeft, Lock, Pencil, Plus, Power } from 'lucide-react';
 import { usePageTitle } from '@/shared/hooks/usePageTitle';
 import { Badge } from '@/shared/ui/Badge';
 import { Button } from '@/shared/ui/Button';
@@ -17,6 +17,7 @@ import { useCatalogTestOptionsQuery } from '../api/useCatalogTestOptionsQuery';
 import { ProgramFormDialog } from '../components/ProgramFormDialog';
 import { PublishProgramDialog } from '../components/PublishProgramDialog';
 import { ArchiveProgramDialog } from '../components/ArchiveProgramDialog';
+import { RestoreProgramDialog } from '../components/RestoreProgramDialog';
 import { DeactivateProgramDialog } from '../components/DeactivateProgramDialog';
 import { AddTestDialog } from '../components/AddTestDialog';
 import { ProgramTestsList } from '../components/ProgramTestsList';
@@ -43,6 +44,9 @@ export default function ProgramDetailPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
+  // 2026-09-06: arxivdan tiklash — tasdiq oynasi orqali; natija `Paused` ("To'xtatilgan"),
+  // keyin admin "Faollashtirish"ni ALOHIDA bosadi (`RestoreProgramDialog` izohi).
+  const [restoreOpen, setRestoreOpen] = useState(false);
   const [addTestOpen, setAddTestOpen] = useState(false);
   // 2026-09-03: TO'XTATISH endi tasdiq oynasidan o'tadi (nechta maktab havolasiz qolishi
   // ko'rsatiladi). QAYTA YOQISH zararsiz — u avvalgidek bir bosishda bajariladi.
@@ -146,7 +150,9 @@ export default function ProgramDetailPage() {
               Tugmalar RUXSAT ETILGAN o'tishlarga qat'iy mos: domen `Activate`/`Deactivate`ni
               faqat `Published` (ya'ni `Active`/`Paused`) doirasida ruxsat etadi, shu sabab
               qoralama va arxivlangan dasturda bu tugma UMUMAN ko'rsatilmaydi — admin bosib
-              bo'lmaydigan tugmani ko'rmasin (arxivlangan dasturda "Faollashtirish" yo'q).
+              bo'lmaydigan tugmani ko'rmasin. Arxivlangan dasturda YAGONA holat amali —
+              "Arxivdan tiklash" (`Archived ──▶ Paused`); "Faollashtirish" tiklangandan
+              KEYIN, `Paused` holatida chiqadi.
             */}
             {isActive && (
               <Button
@@ -178,6 +184,12 @@ export default function ProgramDetailPage() {
             {!isArchived && (
               <Button variant="danger" size="sm" onClick={() => setArchiveOpen(true)}>
                 {t('programs.actions.archive')}
+              </Button>
+            )}
+            {isArchived && (
+              <Button size="sm" onClick={() => setRestoreOpen(true)}>
+                <ArchiveRestore size={14} aria-hidden="true" />
+                {t('programs.actions.restore')}
               </Button>
             )}
           </div>
@@ -254,6 +266,15 @@ export default function ProgramDetailPage() {
           programId={program.id}
           programName={program.nameUz}
           onClose={() => setArchiveOpen(false)}
+        />
+      )}
+
+      {restoreOpen && (
+        <RestoreProgramDialog
+          open
+          programId={program.id}
+          programName={program.nameUz}
+          onClose={() => setRestoreOpen(false)}
         />
       )}
 

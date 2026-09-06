@@ -64,6 +64,7 @@ public static class AuditActions
     public const string ProgramUpdated = "Program.Updated";
     public const string ProgramPublished = "Program.Published";
     public const string ProgramArchived = "Program.Archived";
+    public const string ProgramRestored = "Program.Restored";
     public const string ProgramToggledActive = "Program.ToggledActive";
     public const string ProgramTestAdded = "Program.TestAdded";
     public const string ProgramTestRemoved = "Program.TestRemoved";

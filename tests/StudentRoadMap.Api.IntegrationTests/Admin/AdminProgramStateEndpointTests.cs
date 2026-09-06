@@ -144,6 +144,83 @@ public sealed class AdminProgramStateEndpointTests : IClassFixture<PublicApiTest
         await AssertOnlyStateAsync(client, "Archived", archived.Id, [draft.Id, active.Id, paused.Id]);
     }
 
+    // ── Arxivdan tiklash: `POST /restore` (2026-09-06) ──────────────────────────────────
+    // Egasining asosiy dasturi (`PERSONALITY_PROFILE`) arxivda qolib ketgan edi va uni faqat
+    // nusxa olib "tiklash" mumkin edi.
+
+    /// <summary>
+    /// Tiklash `Paused` ga qaytaradi, `Active` ga EMAS (biriktirishlar arxivda saqlangan —
+    /// bir bosishda jonli bo'lib qolmasin). Keyin `toggle-active` bilan aniq faollashtiriladi.
+    /// </summary>
+    [Fact]
+    public async Task Restore_ArxivlanganDastur_200VaPausedQaytaradi_KeyinFaollashtiriladi()
+    {
+        using var client = await AuthenticatedClientAsync("programs-restore-archived-admin");
+        var archived = await CreateArchivedProgramAsync(client, "RESTORE-ARCHIVED-1", "RSTARC1");
+
+        var response = await client.PostAsync(
+            new Uri($"/api/admin/programs/{archived.Id}/restore", UriKind.Relative), content: null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var restored = await response.Content.ReadFromJsonAsync<AdminProgramDetailDto>(TestJson.Options);
+        restored!.State.Should().Be("Paused");
+        restored.Tests.Should().HaveCount(1, "arxiv tarkibni yo'qotmaydi");
+
+        // Saqlangan holat ham `Paused` — javob emas, baza haqiqati.
+        var after = await client.GetFromJsonAsync<AdminProgramDetailDto>(
+            $"/api/admin/programs/{archived.Id}", TestJson.Options);
+        after!.State.Should().Be("Paused");
+
+        // Ikkinchi, ALOHIDA qaror: faollashtirish.
+        var activated = await (await client.PostAsync(
+                new Uri($"/api/admin/programs/{archived.Id}/toggle-active", UriKind.Relative), content: null))
+            .Content.ReadFromJsonAsync<AdminProgramDetailDto>(TestJson.Options);
+        activated!.State.Should().Be("Active");
+    }
+
+    /// <summary>Arxivda bo'lmagan dasturni "tiklab" bo'lmaydi — `Active` va `Draft` ikkalasida `409`.</summary>
+    [Fact]
+    public async Task Restore_ArxivlanmaganDastur_409PROGRAM_INVALID_TRANSITIONQaytaradi()
+    {
+        using var client = await AuthenticatedClientAsync("programs-restore-invalid-admin");
+        var active = await CreatePublishedProgramAsync(client, "RESTORE-ACTIVE-1", "RSTACT1");
+
+        var response = await client.PostAsync(
+            new Uri($"/api/admin/programs/{active.Id}/restore", UriKind.Relative), content: null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        problem.GetProperty("code").GetString().Should().Be("PROGRAM_INVALID_TRANSITION");
+
+        var after = await client.GetFromJsonAsync<AdminProgramDetailDto>(
+            $"/api/admin/programs/{active.Id}", TestJson.Options);
+        after!.State.Should().Be("Active", "rad etilgan o'tish holatni o'zgartirmaydi");
+
+        var draft = await (await client.PostAsJsonAsync(
+                "/api/admin/programs",
+                new { code = "RESTORE-DRAFT-1", nameUz = "Qoralama dastur", descriptionUz = (string?)null, displayOrder = 1, visibility = "Assigned" },
+                TestJson.Options))
+            .Content.ReadFromJsonAsync<AdminProgramDetailDto>(TestJson.Options);
+
+        var draftResponse = await client.PostAsync(
+            new Uri($"/api/admin/programs/{draft!.Id}/restore", UriKind.Relative), content: null);
+
+        draftResponse.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async Task Restore_MavjudBolmaganDastur_404Qaytaradi()
+    {
+        using var client = await AuthenticatedClientAsync("programs-restore-notfound-admin");
+
+        var response = await client.PostAsync(
+            new Uri($"/api/admin/programs/{Guid.NewGuid()}/restore", UriKind.Relative), content: null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        problem.GetProperty("code").GetString().Should().Be("NOT_FOUND");
+    }
+
     private static async Task AssertOnlyStateAsync(
         HttpClient client, string state, Guid expectedId, IReadOnlyCollection<Guid> unexpectedIds)
     {

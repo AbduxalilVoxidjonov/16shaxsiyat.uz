@@ -44,6 +44,7 @@ export const AUDIT_ACTION_OPTIONS: readonly AuditActionOption[] = [
   { value: 'Program.Updated', labelKey: 'audit.actionLabels.ProgramUpdated' },
   { value: 'Program.Published', labelKey: 'audit.actionLabels.ProgramPublished' },
   { value: 'Program.Archived', labelKey: 'audit.actionLabels.ProgramArchived' },
+  { value: 'Program.Restored', labelKey: 'audit.actionLabels.ProgramRestored' },
   { value: 'Program.ToggledActive', labelKey: 'audit.actionLabels.ProgramToggledActive' },
   { value: 'Program.TestAdded', labelKey: 'audit.actionLabels.ProgramTestAdded' },
   { value: 'Program.TestRemoved', labelKey: 'audit.actionLabels.ProgramTestRemoved' },

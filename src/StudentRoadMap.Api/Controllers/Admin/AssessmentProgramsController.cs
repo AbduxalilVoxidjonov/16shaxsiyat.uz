@@ -17,6 +17,7 @@ using StudentRoadMap.Application.Admin.Programs.List;
 using StudentRoadMap.Application.Admin.Programs.Publish;
 using StudentRoadMap.Application.Admin.Programs.RemoveTest;
 using StudentRoadMap.Application.Admin.Programs.ReorderTests;
+using StudentRoadMap.Application.Admin.Programs.Restore;
 using StudentRoadMap.Application.Admin.Programs.ToggleActive;
 using StudentRoadMap.Application.Admin.Programs.UnassignSchool;
 using StudentRoadMap.Application.Admin.Programs.Update;
@@ -145,6 +146,23 @@ public sealed class AssessmentProgramsController : ControllerBase
     public async Task<ActionResult<AdminProgramDetailDto>> Archive(Guid id, CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new ArchiveProgramCommand(id, RequireAdminUserId(), ClientIp(), UserAgent()), cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>
+    /// `POST /api/admin/programs/{id}/restore` — `Archived ──▶ Paused` (2026-09-06). Tiklangan
+    /// dastur DARHOL jonli bo'lmaydi: keyin admin `toggle-active` bilan aniq faollashtiradi
+    /// (sabab — `AssessmentProgram.Restore` izohi). Arxivda bo'lmagan dasturda
+    /// `409 PROGRAM_INVALID_TRANSITION`.
+    /// </summary>
+    [HttpPost("{id:guid}/restore")]
+    [ProducesResponseType(typeof(AdminProgramDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
+    public async Task<ActionResult<AdminProgramDetailDto>> Restore(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new RestoreProgramCommand(id, RequireAdminUserId(), ClientIp(), UserAgent()), cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
     }

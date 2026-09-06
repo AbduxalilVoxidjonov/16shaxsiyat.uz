@@ -335,7 +335,7 @@ Ikki marta bekor qilishga urinish — `DomainException("PUBLIC_REFRESH_TOKEN_ALR
 
 ---
 
-### 2.13 `AssessmentProgram` (agregat ildizi) — P34, holat 2026-09-06 da soddalashtirilgan
+### 2.13 `AssessmentProgram` (agregat ildizi) — P34, holat 2026-09-06 da soddalashtirilgan, arxivdan tiklash qo'shilgan
 
 Dastur — nomlangan, tartiblangan test to'plami. O'quvchi kirishda dasturni tanlaydi va
 sessiyaga faqat shu dasturning testlari qo'shiladi (`Assessment.ProgramId`).
@@ -374,8 +374,10 @@ holatni ko'radi** — `AssessmentProgram.State` (`ProgramStateRules.Resolve`):
 
 ```
 Draft ──Publish()──▶ Active ──Deactivate()──▶ Paused ──Activate()──▶ Active
-  │                    │                        │
-  └──Archive()─────────┴────────────────────────┴──────────▶ Archived (yakuniy)
+  │                    │                        ▲  │
+  │                    │           Restore()    │  │
+  └──Archive()─────────┴────────────────────────┼──┴──────▶ Archived
+                                                └──────────────┘
 ```
 
 **Invariantlar**
@@ -384,7 +386,15 @@ Draft ──Publish()──▶ Active ──Deactivate()──▶ Paused ──A
   qiladi — "nashr qilish" adminning dasturni o'quvchilarga ochish qarori.
 - `Activate()` / `Deactivate()` faqat `Status == Published` da. Qoralamani ham, arxivlangan
   dasturni ham "to'xtatib"/"faollashtirib" bo'lmaydi.
-- `Archive()` `Draft` va `Published` dan; `IsActive`ni `false` qiladi. Arxivdan qaytish yo'q.
+- `Archive()` `Draft` va `Published` dan; `IsActive`ni `false` qiladi. Tarkib (`Tests`) va
+  maktab biriktirishlari (`school_programs`) **saqlanib qoladi** — arxiv "o'quvchiga
+  ko'rinmaydi" degani, "aloqalar uzildi" degani emas.
+- `Restore()` (2026-09-06) faqat `Archived` dan va **faqat `Paused` ga** (`Published +
+  IsActive = false`). `Active` ga EMAS: biriktirishlar saqlangani uchun bir bosishda `Active`
+  ga tiklash dasturni o'sha maktablar uchun darhol jonli qilib qo'yardi. Tiklash va
+  faollashtirish — ikki alohida admin qarori: `Restore()` → tarkib/biriktirishlarni ko'rib
+  chiqish → `Activate()`. `PROGRAM_NOT_PUBLISHABLE` sharti tiklashda qayta tekshirilmaydi
+  (bo'sh dastur `Paused` bo'lib qoladi — ommaviy oqim uni `ProgramsWithoutTests` deb ko'rsatadi).
 - Tizim dasturida (`IsSystem`) tarkib o'zgartirilmaydi: `AddTest`/`RemoveTest`/`ReorderTests`
   — `SYSTEM_PROGRAM_LOCKED` (BR-8 ruhida).
 

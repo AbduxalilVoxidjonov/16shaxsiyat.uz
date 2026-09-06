@@ -500,6 +500,13 @@ ro'yxat filtrsiz qaytadi.
 **`POST /api/admin/programs/{id}/toggle-active`** — `Active ⇄ Paused`. Faqat nashr qilingan
 dasturda ishlaydi: `Draft` yoki `Archived` da **`409 PROGRAM_INVALID_TRANSITION`**.
 
+**`POST /api/admin/programs/{id}/restore`** — `Archived ──▶ Paused` (2026-09-06, arxivdan
+tiklash). Tanasiz. Javob `200` + `AdminProgramDetailDto` (`"state": "Paused"`). Tiklangan dastur
+o'quvchiga DARHOL ko'rinmaydi — keyin `toggle-active` bilan aniq faollashtiriladi (sabab:
+`Archive()` maktab biriktirishlarini saqlab qoladi; `docs/04` 2.13). Xatolar: `404 NOT_FOUND`;
+arxivda bo'lmagan (`Draft`/`Active`/`Paused`) dasturda **`409 PROGRAM_INVALID_TRANSITION`**.
+Audit: `Program.Restored`.
+
 #### `GET /api/admin/programs/{id}/impact?action=…` — amaldan OLDIN oqibat (2026-09-03)
 
 Quyidagi endpoint ayni shu hodisa uchun qo'shildi va shu yerda hujjatlashtiriladi.

@@ -29,7 +29,11 @@ public enum ProgramState
     /// <summary>`Status == Published && !IsActive` — nashr qilingan, lekin vaqtincha to'xtatilgan.</summary>
     Paused = 3,
 
-    /// <summary>`Status == Archived` — qaytarib bo'lmaydigan yakuniy holat (`IsActive` e'tiborga olinmaydi).</summary>
+    /// <summary>
+    /// `Status == Archived` — o'quvchiga ko'rinmaydi (`IsActive` e'tiborga olinmaydi). Yagona
+    /// chiqish yo'li — `AssessmentProgram.Restore()` ──▶ `Paused` (2026-09-06: arxiv endi
+    /// yakuniy EMAS, lekin tiklash to'g'ridan-to'g'ri `Active` ga OLIB CHIQMAYDI).
+    /// </summary>
     Archived = 4,
 }
 
@@ -44,7 +48,8 @@ public static class ProgramStateRules
     /// <summary>
     /// (`Status`, `IsActive`) ──▶ `ProgramState`. Har qanday juftlik uchun aniqlangan,
     /// shu jumladan bazada qolib ketishi mumkin bo'lgan eski ziddiyatli qator uchun ham
-    /// (`Archived + IsActive` ──▶ `Archived`): `Status` ustuvor, chunki arxiv — yakuniy holat.
+    /// (`Archived + IsActive` ──▶ `Archived`): `Status` ustuvor — arxivdagi dastur `IsActive`
+    /// bayrog'idan qat'i nazar o'quvchiga ko'rinmaydi.
     /// </summary>
     public static ProgramState Resolve(ProgramStatus status, bool isActive) => status switch
     {

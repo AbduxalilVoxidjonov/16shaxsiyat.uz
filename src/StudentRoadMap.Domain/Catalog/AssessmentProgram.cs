@@ -276,7 +276,15 @@ public sealed class AssessmentProgram : AggregateRoot
         UpdatedAt = now;
     }
 
-    /// <summary>`Draft`/`Published` ──▶ `Archived`.</summary>
+    /// <summary>
+    /// `Draft`/`Published` ──▶ `Archived`. Faqat `Status`/`IsActive` o'zgaradi: dasturning
+    /// tarkibi (`Tests`) ham, maktab biriktirishlari (`school_programs`, alohida agregat —
+    /// `SchoolProgram`) ham SAQLANIB QOLADI (tekshirildi 2026-09-06:
+    /// `ArchiveProgramCommandHandler` `SchoolPrograms`ga tegmaydi; `SchoolProgramConfiguration`
+    /// dagi `Cascade` faqat dastur QATORI o'chirilganda ishlaydi, arxivlashda emas).
+    /// Shu sabab arxiv — "o'quvchiga ko'rinmaydi" degani, "aloqalar uzildi" degani emas;
+    /// <see cref="Restore"/> nega `Paused` ga qaytarishini ham aynan bu belgilaydi.
+    /// </summary>
     public void Archive(DateTimeOffset now)
     {
         if (Status is not (ProgramStatus.Draft or ProgramStatus.Published))
@@ -285,6 +293,39 @@ public sealed class AssessmentProgram : AggregateRoot
         }
 
         Status = ProgramStatus.Archived;
+        IsActive = false;
+        UpdatedAt = now;
+    }
+
+    /// <summary>
+    /// `Archived` ──▶ `Paused` (`Published + IsActive = false`) — arxivdan tiklash (egasining
+    /// 2026-09-06 so'rovi: asosiy `PERSONALITY_PROFILE` dasturi arxivda qolib ketgan, uni
+    /// faqat nusxa olib "tiklash" mumkin edi).
+    ///
+    /// **Nega `Paused`, `Active` EMAS:** `Archive()` maktab biriktirishlarini
+    /// (`school_programs`) O'CHIRMAYDI, saqlab qoladi (yuqoridagi izoh). Bir bosishda `Active`
+    /// ga tiklash dasturni o'sha maktablar uchun DARHOL jonli qilib qo'yardi — admin buni
+    /// kutmagan bo'lishi mumkin (dastur arxivga tarkibi eskirgani uchun tushgan bo'lsa-chi?).
+    /// Tiklash va faollashtirish — IKKI alohida qaror: avval `Restore()` (dastur yana
+    /// boshqariladigan holatga qaytadi, lekin o'quvchi ko'rmaydi), keyin admin tarkib va
+    /// biriktirishlarni ko'rib chiqib ANIQ `Activate()` bosadi. `Publish()`dagi "nashr =
+    /// ochish qarori" mantiqi bu yerga ko'chmaydi: nashr — yangi dasturni ochish, tiklash —
+    /// eski dasturni qaytarish, undagi mavjud aloqalar bilan.
+    ///
+    /// Tarkib (`Tests`) arxivda saqlangani uchun `Published` ga qaytishda kamida bitta test
+    /// bo'lishi (`PROGRAM_NOT_PUBLISHABLE` sharti) qayta TEKSHIRILMAYDI: `Draft` dan
+    /// arxivlangan bo'sh dastur tiklansa `Paused` bo'ladi va bo'sh `Published` dastur bo'lib
+    /// qoladi — bu holat allaqachon mumkin (`RemoveTest` nashrdan keyin ham ishlaydi) va
+    /// ommaviy oqim uni `ProgramsWithoutTests` deb to'g'ri ko'rsatadi.
+    /// </summary>
+    public void Restore(DateTimeOffset now)
+    {
+        if (Status != ProgramStatus.Archived)
+        {
+            throw new DomainException("PROGRAM_INVALID_TRANSITION", $"Dastur '{State}' holatidan 'Paused' ga o'ta olmaydi.");
+        }
+
+        Status = ProgramStatus.Published;
         IsActive = false;
         UpdatedAt = now;
     }
@@ -298,7 +339,8 @@ public sealed class AssessmentProgram : AggregateRoot
     /// <summary>
     /// `Paused ──▶ Active` (`Published` doirasida). FAQAT nashr qilingan dasturda ishlaydi:
     /// qoralamani ham, arxivlangan dasturni ham "faollashtirib" bo'lmaydi — bu holatlar
-    /// mazmunan mos kelmaydi (qoralama hali nashr qilinmagan, arxiv esa yakuniy holat).
+    /// mazmunan mos kelmaydi (qoralama hali nashr qilinmagan, arxivlangan dastur esa avval
+    /// <see cref="Restore"/> orqali `Paused` ga qaytarilishi kerak).
     ///
     /// Aynan shu qo'riqchining yo'qligi egasi ko'rgan xatoni tug'dirgan edi: arxivlangan
     /// dastur `IsActive = true` bo'lib qolib, ro'yxatda bir vaqtda "Arxiv" ham, "Faol" ham
@@ -345,8 +387,9 @@ public sealed class AssessmentProgram : AggregateRoot
     /// `is_active = true`).
     ///
     /// IDEMPOTENT: qator allaqachon to'g'ri bo'lsa hech narsa o'zgarmaydi va `false`
-    /// qaytadi. Bu — dasturni FAOLLASHTIRISH emas, aksincha: yakuniy `Archived` holatini
-    /// ma'lumot darajasida ham haqiqiy qilish.
+    /// qaytadi. Bu — dasturni FAOLLASHTIRISH ham, TIKLASH ham emas (tiklash — aniq admin
+    /// amali, <see cref="Restore"/>), aksincha: `Archived` holatini ma'lumot darajasida ham
+    /// haqiqiy qilish.
     /// </summary>
     public bool ReconcileArchivedInactive(DateTimeOffset now)
     {

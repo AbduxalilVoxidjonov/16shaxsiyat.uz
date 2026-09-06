@@ -20,9 +20,13 @@ export interface ArchiveProgramDialogProps {
  * **2026-09-03:** tasdiq oynasida amal NECHTA maktabni havolasiz qoldirishi ham ko'rsatiladi
  * (`GET /api/admin/programs/{id}/impact?action=archive`). Amal taqiqlanmaydi — faqat oqibat.
  *
- * **2026-09-06:** arxiv — YAKUNIY holat: undan keyin dastur na faollashtiriladi, na
- * to'xtatiladi (domen `PROGRAM_INVALID_TRANSITION` tashlaydi), shu sabab `ProgramDetailPage`
- * arxivlangan dasturda hech qanday holat tugmasini ko'rsatmaydi.
+ * **2026-09-06:** arxivlangan dastur na faollashtiriladi, na to'xtatiladi (domen
+ * `PROGRAM_INVALID_TRANSITION` tashlaydi); `ProgramDetailPage` arxivlangan dasturda faqat
+ * "Arxivdan tiklash"ni ko'rsatadi (`RestoreProgramDialog`) — u dasturni `Paused` ga qaytaradi.
+ * Shu sabab bu oynadagi ogohlantirish "bekor qilib bo'lmaydi" DEMAYDI (eski
+ * `archiveDialog.description` matni shunday der edi — u endi ishlatilmaydi):
+ * admin yolg'on qaytmas oqibatdan cho'chimasin, lekin tiklash ham "bir bosishda jonli"
+ * emasligini bilsin.
  */
 export function ArchiveProgramDialog({
   open,
@@ -62,7 +66,7 @@ export function ArchiveProgramDialog({
       onConfirm={() => void handleConfirm()}
       title={t('programs.archiveDialog.title')}
       description={programName}
-      warning={t('programs.archiveDialog.description')}
+      warning={t('programs.archiveDialog.descriptionRestorable')}
       confirmLabel={t('programs.archiveDialog.confirmCta')}
       isConfirming={archiveProgram.isPending}
       error={error ?? undefined}

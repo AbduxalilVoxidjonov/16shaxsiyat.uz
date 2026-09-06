@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
@@ -139,16 +140,104 @@ describe('ProgramDetailPage', () => {
     expect(screen.queryByText('Nofaol')).not.toBeInTheDocument();
   });
 
-  it("arxivlangan dasturda \"Faollashtirish\" tugmasi UMUMAN yo'q", async () => {
+  it("arxivlangan dasturda \"Faollashtirish\" tugmasi yo'q, faqat \"Arxivdan tiklash\" bor", async () => {
     mockFetch(programDetail({ state: 'Archived' }));
     renderPage();
 
     expect(await screen.findByText('Arxiv')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Faollashtirish' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: "To'xtatish" })).not.toBeInTheDocument();
-    // Arxiv — yakuniy holat: nashr ham, qayta arxivlash ham taklif qilinmaydi.
+    // Arxivdan nashr ham, qayta arxivlash ham taklif qilinmaydi — yagona yo'l tiklash.
     expect(screen.queryByRole('button', { name: 'Nashr qilish' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Arxivlash' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Arxivdan tiklash' })).toBeInTheDocument();
+  });
+
+  // ── Arxivdan tiklash (2026-09-06) ────────────────────────────────────────────────────
+  // Egasining asosiy dasturi (`PERSONALITY_PROFILE`) arxivda qolib ketgan edi va uni faqat
+  // nusxa olib "tiklash" mumkin edi.
+
+  it("\"Arxivdan tiklash\" tasdiq oynasi oqibatni aniq aytadi: To'xtatilgan, keyin Faollashtirish", async () => {
+    mockFetch(programDetail({ state: 'Archived', nameUz: 'Shaxsiyat profili' }));
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Arxivdan tiklash' }));
+
+    // jsdom native `<dialog>`ni `open` qilmaydi, shu sabab (mavjud dialog testlaridagidek)
+    // rol emas, MATN bo'yicha so'raladi.
+    expect(await screen.findByText('Dasturni arxivdan tiklash')).toBeInTheDocument();
+    expect(screen.getByText('Shaxsiyat profili', { selector: 'p' })).toBeInTheDocument();
+    expect(screen.getByText(/Dastur 'To'xtatilgan' holatiga qaytadi/)).toBeInTheDocument();
+    expect(screen.getByText(/keyin 'Faollashtirish' bosiladi/)).toBeInTheDocument();
+    expect(screen.getByText('Tiklash')).toBeEnabled();
+  });
+
+  it("tiklash tasdiqlansa POST /restore yuboriladi, holat 'To'xtatilgan' bo'lib \"Faollashtirish\" chiqadi", async () => {
+    // Holatli mock: `restore` dan keyin detal so'rovi `Paused` qaytaradi (sahifa
+    // `invalidateQueries` orqali qayta o'qiydi) — muvaffaqiyatdan keyingi UI shu bilan tekshiriladi.
+    let state: Schemas['AdminProgramDetailDto']['state'] = 'Archived';
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/api/admin/programs/program-1/restore') && init?.method === 'POST') {
+        state = 'Paused';
+        return Promise.resolve(jsonResponse<'AdminProgramDetailDto'>(programDetail({ state })));
+      }
+      if (url.endsWith('/api/admin/programs/program-1')) {
+        return Promise.resolve(jsonResponse<'AdminProgramDetailDto'>(programDetail({ state })));
+      }
+      return Promise.resolve(problemResponse('NOT_FOUND', 404));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Arxivdan tiklash' }));
+    await user.click(await screen.findByText('Tiklash'));
+
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(
+          (call) =>
+            String(call[0]).endsWith('/api/admin/programs/program-1/restore') &&
+            (call[1] as RequestInit | undefined)?.method === 'POST',
+        ),
+      ).toBe(true);
+    });
+
+    // Natija `Paused` — `Active` EMAS: badge "To'xtatilgan", tugma "Faollashtirish".
+    expect(await screen.findByText("To'xtatilgan")).toBeInTheDocument();
+    expect(screen.queryByText('Arxiv')).not.toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Faollashtirish' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Arxivdan tiklash' })).not.toBeInTheDocument();
+    // Tiklangan dasturni yana arxivlash mumkin.
+    expect(screen.getByRole('button', { name: 'Arxivlash' })).toBeInTheDocument();
+  });
+
+  it("tiklash xatosi (409 PROGRAM_INVALID_TRANSITION) oynada ko'rsatiladi, holat o'zgarmaydi", async () => {
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/restore') && init?.method === 'POST') {
+        return Promise.resolve(
+          problemResponse('PROGRAM_INVALID_TRANSITION', 409, "Dastur 'Active' holatidan 'Paused' ga o'ta olmaydi."),
+        );
+      }
+      if (url.endsWith('/api/admin/programs/program-1')) {
+        return Promise.resolve(jsonResponse<'AdminProgramDetailDto'>(programDetail({ state: 'Archived' })));
+      }
+      return Promise.resolve(problemResponse('NOT_FOUND', 404));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Arxivdan tiklash' }));
+    await user.click(await screen.findByText('Tiklash'));
+
+    expect(
+      await screen.findByText("Dastur 'Active' holatidan 'Paused' ga o'ta olmaydi."),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Arxiv')).toBeInTheDocument();
   });
 
   it("qoralama dasturda holat tugmalari yo'q, faqat nashr va arxiv taklif qilinadi", async () => {

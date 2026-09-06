@@ -8,7 +8,7 @@ import { PROGRAMS_QUERY_KEYS } from './programsKeys';
  * shaklida, shu sabab bitta umumiy fabrika bilan yaratiladi (`useToggleSchoolActive.ts`
  * naqshiga o'xshash, faqat 3 xil yo'l uchun takrorlanmasin).
  */
-function useProgramAction(action: 'publish' | 'archive' | 'toggle-active') {
+function useProgramAction(action: 'publish' | 'archive' | 'restore' | 'toggle-active') {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) =>
@@ -28,6 +28,15 @@ export function usePublishProgram() {
 /** `POST /api/admin/programs/{id}/archive`. */
 export function useArchiveProgram() {
   return useProgramAction('archive');
+}
+
+/**
+ * `POST /api/admin/programs/{id}/restore` — `Archived ──▶ Paused` (2026-09-06). Natija
+ * `Paused`, `Active` EMAS: arxiv maktab biriktirishlarini saqlab qolgan, shu sabab tiklash
+ * dasturni darhol jonli qilmaydi — keyin admin "Faollashtirish"ni alohida bosadi.
+ */
+export function useRestoreProgram() {
+  return useProgramAction('restore');
 }
 
 /** `POST /api/admin/programs/{id}/toggle-active`. */

@@ -284,6 +284,119 @@ public sealed class AssessmentProgramTests
         program.State.Should().Be(ProgramState.Draft);
     }
 
+    // ── Arxivdan tiklash: `Archived ──Restore()──▶ Paused` (2026-09-06) ─────────────────
+    // Egasining asosiy dasturi (`PERSONALITY_PROFILE`) arxivda qolib ketgan edi va uni faqat
+    // nusxa olib "tiklash" mumkin edi. Tiklash `Paused` ga qaytaradi, `Active` ga EMAS:
+    // `Archive()` maktab biriktirishlarini saqlab qoladi, shu sabab bir bosishda `Active`
+    // dasturni o'sha maktablar uchun darhol jonli qilib qo'ygan bo'lardi.
+
+    [Fact]
+    public void Restore_ArchivedProgram_BecomesPausedNotActive()
+    {
+        var program = PublishedProgram();
+        program.Archive(Now);
+
+        var later = Now.AddDays(1);
+        program.Restore(later);
+
+        program.Status.Should().Be(ProgramStatus.Published);
+        program.IsActive.Should().BeFalse();
+        program.State.Should().Be(ProgramState.Paused);
+        program.UpdatedAt.Should().Be(later);
+    }
+
+    /// <summary>Tiklash tarkibni (testlarni) yo'qotmaydi — arxivda ular saqlangan edi.</summary>
+    [Fact]
+    public void Restore_ArchivedProgram_KeepsTests()
+    {
+        var program = PublishedProgram();
+        var testDefinitionId = program.Tests.Single().TestDefinitionId;
+        program.Archive(Now);
+
+        program.Restore(Now);
+
+        program.Tests.Should().ContainSingle(t => t.TestDefinitionId == testDefinitionId);
+    }
+
+    /// <summary>Tiklash → faollashtirish — ikki ALOHIDA qaror; ikkinchisi birinchisidan keyin ishlashi shart.</summary>
+    [Fact]
+    public void Restore_ThenActivate_MakesProgramActiveAgain()
+    {
+        var program = PublishedProgram();
+        program.Archive(Now);
+        program.Restore(Now);
+
+        program.Activate(Now);
+
+        program.State.Should().Be(ProgramState.Active);
+        program.IsActive.Should().BeTrue();
+    }
+
+    /// <summary>Tiklangan dasturni yana arxivlash mumkin — sikl yopiq.</summary>
+    [Fact]
+    public void Restore_ThenArchive_Succeeds()
+    {
+        var program = PublishedProgram();
+        program.Archive(Now);
+        program.Restore(Now);
+
+        program.Archive(Now);
+
+        program.State.Should().Be(ProgramState.Archived);
+    }
+
+    [Fact]
+    public void Restore_DraftProgram_ThrowsDomainException()
+    {
+        var program = CreateCustomProgram();
+
+        var act = () => program.Restore(Now);
+
+        var ex = act.Should().Throw<DomainException>().Which;
+        ex.Code.Should().Be("PROGRAM_INVALID_TRANSITION");
+        program.State.Should().Be(ProgramState.Draft);
+    }
+
+    [Fact]
+    public void Restore_ActiveProgram_ThrowsDomainException()
+    {
+        var program = PublishedProgram();
+
+        var act = () => program.Restore(Now);
+
+        act.Should().Throw<DomainException>().Which.Code.Should().Be("PROGRAM_INVALID_TRANSITION");
+        program.State.Should().Be(ProgramState.Active);
+    }
+
+    [Fact]
+    public void Restore_PausedProgram_ThrowsDomainException()
+    {
+        var program = PublishedProgram();
+        program.Deactivate(Now);
+
+        var act = () => program.Restore(Now);
+
+        act.Should().Throw<DomainException>().Which.Code.Should().Be("PROGRAM_INVALID_TRANSITION");
+        program.State.Should().Be(ProgramState.Paused);
+    }
+
+    /// <summary>
+    /// Eski ziddiyatli qator (`Archived + IsActive = true`) tiklansa ham natija `Paused`:
+    /// `Restore()` `IsActive`ni ANIQ `false` qiladi, eski bayroqqa tayanmaydi.
+    /// </summary>
+    [Fact]
+    public void Restore_ArchivedButFlaggedActive_StillBecomesPaused()
+    {
+        var program = PublishedProgram();
+        program.Archive(Now);
+        ForceIsActive(program, true);
+
+        program.Restore(Now);
+
+        program.State.Should().Be(ProgramState.Paused);
+        program.IsActive.Should().BeFalse();
+    }
+
     // ── Hosila holatning TO'RT kombinatsiyasi ───────────────────────────────────────────
 
     [Fact]

@@ -1025,7 +1025,8 @@
       "archive": "Arxivlash",
       "pause": "To'xtatish",
       "resume": "Faollashtirish",
-      "addTest": "Test qo'shish"
+      "addTest": "Test qo'shish",
+      "restore": "Arxivdan tiklash"
     },
     "form": {
       "createTitle": "Yangi dastur",
@@ -1054,10 +1055,10 @@
     },
     "archiveDialog": {
       "title": "Dasturni arxivlash",
-      "description": "Arxivlangan dastur o'quvchilarga ko'rinmay qoladi va uni qayta faollashtirib bo'lmaydi. Bu amalni bekor qilib bo'lmaydi.",
       "confirmCta": "Arxivlash",
       "successTitle": "Dastur arxivlandi",
-      "genericError": "Arxivlashda xatolik yuz berdi"
+      "genericError": "Arxivlashda xatolik yuz berdi",
+      "descriptionRestorable": "Arxivlangan dastur o'quvchilarga ko'rinmay qoladi; testlar tarkibi va maktab biriktirishlari saqlanadi. Keyinchalik \"Arxivdan tiklash\" orqali qaytarish mumkin — dastur 'To'xtatilgan' holatiga qaytadi."
     },
     "toggleActive": {
       "success": "Dastur holati yangilandi",
@@ -1117,6 +1118,13 @@
       "title": "Dastur ommaviy bo'lmay qoladi",
       "description": "Bu dastur endi faqat unga aniq biriktirilgan maktablarda ko'rinadi. Biriktirilmagan maktablarning havolasi ishlamay qolishi mumkin — quyida ta'sir ko'rsatilgan.",
       "confirmCta": "Ha, o'zgartirilsin"
+    },
+    "restoreDialog": {
+      "title": "Dasturni arxivdan tiklash",
+      "description": "Dastur 'To'xtatilgan' holatiga qaytadi — o'quvchilarga hali ko'rinmaydi. Test boshlanishi uchun keyin 'Faollashtirish' bosiladi. Arxivda saqlangan testlar tarkibi va maktab biriktirishlari o'z joyida qoladi.",
+      "confirmCta": "Tiklash",
+      "successTitle": "Dastur arxivdan tiklandi — holati 'To'xtatilgan'",
+      "genericError": "Tiklashda xatolik yuz berdi"
     }
   },
   "catalog": {
@@ -1524,7 +1532,8 @@
       "AiConfigUpdated": "AI sozlamalari yangilandi",
       "AiConfigKeyChanged": "AI API kaliti almashtirildi",
       "CatalogQuestionUpdated": "Katalog savoli tahrirlandi",
-      "ExportStudentsDownloaded": "O'quvchilar ro'yxati eksport qilindi"
+      "ExportStudentsDownloaded": "O'quvchilar ro'yxati eksport qilindi",
+      "ProgramRestored": "Dastur arxivdan tiklandi"
     },
     "entityTypeLabels": {
       "School": "Maktab",
