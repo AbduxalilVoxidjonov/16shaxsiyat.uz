@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { Play, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { usePageTitle } from '@/shared/hooks/usePageTitle';
-import { Button, EmptyState, ErrorState, Skeleton } from '@/shared/ui';
+import { EmptyState, ErrorState, Skeleton } from '@/shared/ui';
 import { useToast } from '@/shared/ui/useToast';
 import { ROUTES } from '@/shared/config/routes';
 import { AppError } from '@/shared/api/AppError';
@@ -15,8 +15,8 @@ import { useResumeOwnSession } from '../hooks/useResumeOwnSession';
 import { usePublicUserStore } from '../store/publicUserStore';
 import { findUnfinishedAssessment } from '../lib/assessmentStatus';
 import { ProfileCard } from '../components/ProfileCard';
-import { SavedProfileCard } from '../components/SavedProfileCard';
 import { ResumeAssessmentCard } from '../components/ResumeAssessmentCard';
+import { SavedProfileCard } from '../components/SavedProfileCard';
 import { AssessmentHistoryList } from '../components/AssessmentHistoryList';
 import { DeleteAccountDialog } from '../components/DeleteAccountDialog';
 
@@ -36,11 +36,14 @@ function HistorySkeleton() {
  * Profil (§5.1) + saqlangan anketa (§5.1a, bo'lsa) + test tarixi (§5.2) + akkauntni o'chirish
  * (§5.5).
  *
- * **Tugallanmagan sessiya** (`Draft`/`InProgress`/`Abandoned` — `lib/assessmentStatus.ts`) bo'lsa:
- * tepada "Sizda tugallanmagan test bor" kartasi, tarix qatorida "Davom ettirish", va "Yangi test
- * boshlash" tugmasi ham "Davom ettirish"ga aylanadi — server bir vaqtda ikkinchi sessiya
- * ochmaydi (`POST /api/me/sessions` baribir eskisini qaytaradi, `docs/07` §5.4), shu sabab
- * "yangi" deb chalg'itmaymiz. Davom ettirish — `hooks/useResumeOwnSession.ts`.
+ * **Tugallanmagan sessiya** (`Draft`/`InProgress`/`Abandoned` — `lib/assessmentStatus.ts`) bo'lsa
+ * tepada "Tugallanmagan test" kartasi chiqadi va "Davom ettirish" tugmasi FAQAT shu kartada
+ * (egasining qarori, 2026-09-07: ilgari tugma uch joyda — karta, sarlavha va tarix qatori —
+ * takrorlanib sahifani chalkashtirardi). Tarix qatori o'sha sessiyani faqat holati bilan
+ * ("Davom etmoqda") ko'rsatadi. "Yangi test boshlash" o'z holicha qoladi: server bir vaqtda
+ * ikkinchi sessiya ochmaydi (`docs/07` §5.4), shu sabab u yo'l ham xavfsiz — anketa sahifasi
+ * eskisini qaytaradi va "davom ettirildi" deb bildiradi.
+ * Davom ettirish — `hooks/useResumeOwnSession.ts`.
  *
  * Guard (`PublicUserRoute`)
  * bu sahifaga faqat kirgan foydalanuvchini kiritadi, shu sabab bu yerda `user` bor deb
@@ -141,22 +144,10 @@ export default function AccountPage() {
             </h2>
             <p className="mt-1 text-sm text-ink-soft">{t('account.history.lead')}</p>
           </div>
-          {unfinished ? (
-            <Button
-              type="button"
-              className="shrink-0"
-              isLoading={resumeSession.isPending}
-              onClick={() => void resumeSession.resume()}
-            >
-              <Play className="size-4" aria-hidden="true" />
-              {t('account.history.resumeCta')}
-            </Button>
-          ) : (
-            <Link to={ROUTES.account.startTest} className="btn btn-md btn-primary shrink-0">
-              <Plus className="size-4" aria-hidden="true" />
-              {t('account.history.startCta')}
-            </Link>
-          )}
+          <Link to={ROUTES.account.startTest} className="btn btn-md btn-primary shrink-0">
+            <Plus className="size-4" aria-hidden="true" />
+            {t('account.history.startCta')}
+          </Link>
         </div>
 
         {assessmentsQuery.isPending && <HistorySkeleton />}
@@ -175,11 +166,7 @@ export default function AccountPage() {
               }
             />
           ) : (
-            <AssessmentHistoryList
-              items={assessmentsQuery.data.items}
-              onResume={() => void resumeSession.resume()}
-              isResuming={resumeSession.isPending}
-            />
+            <AssessmentHistoryList items={assessmentsQuery.data.items} />
           ))}
       </section>
 

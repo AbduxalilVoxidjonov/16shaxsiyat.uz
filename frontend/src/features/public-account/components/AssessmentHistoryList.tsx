@@ -1,8 +1,7 @@
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, Play } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Badge, type BadgeVariant } from '@/shared/ui/Badge';
-import { Button } from '@/shared/ui/Button';
 import { formatDate } from '@/shared/lib/formatDate';
 import { ROUTES } from '@/shared/config/routes';
 import type { MyAssessment } from '@/shared/api/types';
@@ -25,9 +24,7 @@ const STATUS_BADGE_VARIANT: Record<string, BadgeVariant> = {
 export interface AssessmentHistoryListProps {
   items: readonly MyAssessment[];
   /** Tugallanmagan qatordagi "Davom ettirish" — `POST /api/me/sessions` `{}` (sahifa bajaradi). */
-  onResume: (item: MyAssessment) => void;
   /** Sessiya tiklanayotgan payt — tugma yuklanish holatida, qayta bosilmaydi. */
-  isResuming?: boolean;
 }
 
 /**
@@ -45,7 +42,7 @@ export interface AssessmentHistoryListProps {
  * hisoblamaydi (u ikki sozlamaning VA birlashmasi — `docs/07` §5.6), backend aytadi.
  * Ball/indeks/ishonchlilik maydonlari bu ro'yxatda umuman yo'q (`docs/07` §5.2).
  */
-export function AssessmentHistoryList({ items, onResume, isResuming = false }: AssessmentHistoryListProps) {
+export function AssessmentHistoryList({ items }: AssessmentHistoryListProps) {
   const { t } = useTranslation();
 
   return (
@@ -73,20 +70,11 @@ export function AssessmentHistoryList({ items, onResume, isResuming = false }: A
               </p>
             </div>
 
-            {action === 'resume' && (
-              <Button
-                type="button"
-                className="shrink-0"
-                isLoading={isResuming}
-                onClick={() => {
-                  onResume(item);
-                }}
-              >
-                <Play className="size-4" aria-hidden="true" />
-                {t('account.history.resumeCta')}
-              </Button>
-            )}
-
+            {/*
+              Tugallanmagan sessiya — bu yerda TUGMA YO'Q, faqat "Davom etmoqda" belgisi.
+              "Davom ettirish" sahifa tepasidagi "Tugallanmagan test" kartasida (egasining
+              qarori: bitta amal bir joyda). `action === 'resume'` shu sabab hech narsa chizmaydi.
+            */}
             {action === 'result' && (
               <Link to={ROUTES.account.result(item.id)} className="btn btn-md btn-primary shrink-0">
                 {t('account.history.openResult')}

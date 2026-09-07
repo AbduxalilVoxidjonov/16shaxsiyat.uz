@@ -1756,6 +1756,12 @@
       },
       "resumeCta": "Davom ettirish"
     },
+    "resume": {
+      "eyebrow": "Tugallanmagan test",
+      "title": "Sizda tugallanmagan test bor",
+      "lead": "{{programName}} · boshlangan: {{date}}. To'xtagan joyingizdan davom ettirasiz.",
+      "cta": "Davom ettirish"
+    },
     "result": {
       "back": "Kabinetga qaytish",
       "notFoundTitle": "Natija topilmadi",
@@ -1831,12 +1837,6 @@
       "email": "Email",
       "emptyTitle": "Anketa hali to'ldirilmagan",
       "emptyDescription": "Birinchi testni boshlaganingizda F.I.Sh., tug'ilgan sana va telefon bir marta so'raladi — keyin saqlanib qoladi."
-    },
-    "resume": {
-      "eyebrow": "Tugallanmagan test",
-      "title": "Sizda tugallanmagan test bor",
-      "lead": "{{programName}} · boshlangan: {{date}}. To'xtagan joyingizdan davom ettirasiz.",
-      "cta": "Davom ettirish"
     }
   },
   "marketing": {

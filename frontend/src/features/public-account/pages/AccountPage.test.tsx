@@ -81,8 +81,24 @@ const RESUMED_SESSION = {
   expiresAt: '2026-09-12T10:12:00Z',
   resumed: true,
   tests: [
-    { code: 'BIG5', name: 'Xarakter', status: 'InProgress', answered: 17, total: 44, order: 2, estimatedMinutes: 10 },
-    { code: 'MBTI16', name: 'Shaxsiyat', status: 'Completed', answered: 60, total: 60, order: 1, estimatedMinutes: 9 },
+    {
+      code: 'BIG5',
+      name: 'Xarakter',
+      status: 'InProgress',
+      answered: 17,
+      total: 44,
+      order: 2,
+      estimatedMinutes: 10,
+    },
+    {
+      code: 'MBTI16',
+      name: 'Shaxsiyat',
+      status: 'Completed',
+      answered: 60,
+      total: 60,
+      order: 1,
+      estimatedMinutes: 9,
+    },
   ],
 } satisfies Schemas['StartSessionResult'];
 
@@ -116,8 +132,7 @@ function mockResumeApi(sessionResponse: () => Response, assessments = ASSESSMENT
   return {
     sessionCall: () =>
       fetchMock.mock.calls.find(([url]) => String(url).includes('/api/me/sessions')) as
-        | [string, RequestInit]
-        | undefined,
+        [string, RequestInit] | undefined,
   };
 }
 
@@ -200,30 +215,37 @@ describe('AccountPage', () => {
   });
 
   describe('tugallanmagan sessiya', () => {
-    it("`InProgress` qatorida \"Davom ettirish\" bor, natija havolasi yo'q; tepada karta, \"Yangi test\" o'rnida \"Davom ettirish\"", async () => {
+    it('tugallanmagan sessiya: tepada karta va BITTA "Davom ettirish"; tarix qatorida faqat holat', async () => {
       signIn();
       mockResumeApi(() => jsonResponse<'StartSessionResult'>(RESUMED_SESSION));
 
       renderPage();
 
       const [inProgress, analyzed] = await screen.findAllByRole('listitem');
-      expect(
-        within(inProgress as HTMLElement).getByRole('button', { name: /Davom ettirish/ }),
-      ).toBeInTheDocument();
+      // Tarix qatori faqat holatni ko'rsatadi — tugma ham, natija havolasi ham yo'q.
+      expect(within(inProgress as HTMLElement).queryByRole('button')).not.toBeInTheDocument();
       expect(within(inProgress as HTMLElement).queryByRole('link')).not.toBeInTheDocument();
       expect(within(inProgress as HTMLElement).getByText('Davom etmoqda')).toBeInTheDocument();
       // Yakunlangan qator avvalgidek — natija havolasi, "Davom ettirish" yo'q.
-      expect(within(analyzed as HTMLElement).getByRole('link', { name: /Natijani ko'rish/ })).toHaveAttribute(
-        'href',
-        '/kabinet/natijalar/assessment-1',
-      );
+      expect(
+        within(analyzed as HTMLElement).getByRole('link', { name: /Natijani ko'rish/ }),
+      ).toHaveAttribute('href', '/kabinet/natijalar/assessment-1');
       expect(within(analyzed as HTMLElement).queryByRole('button')).not.toBeInTheDocument();
 
-      // Tepadagi karta: dastur nomi va boshlangan sana bilan.
-      expect(screen.getByRole('heading', { name: 'Sizda tugallanmagan test bor' })).toBeInTheDocument();
+      // Egasining qarori: "Davom ettirish" FAQAT tepadagi "Tugallanmagan test" kartasida —
+      // aynan BITTA tugma; sarlavhadagi "Yangi test boshlash" o'zgarmaydi.
+      const card = screen
+        .getByRole('heading', { name: 'Sizda tugallanmagan test bor' })
+        .closest('section');
       expect(screen.getByText(/Shaxsiyat profili · boshlangan: 05\.09\.2026/)).toBeInTheDocument();
-      // Server ikkinchi sessiya ochmaydi — "Yangi test boshlash" havolasi ko'rsatilmaydi.
-      expect(screen.queryByRole('link', { name: /Yangi test boshlash/ })).not.toBeInTheDocument();
+      expect(screen.getAllByRole('button', { name: /Davom ettirish/ })).toHaveLength(1);
+      expect(
+        within(card as HTMLElement).getByRole('button', { name: /Davom ettirish/ }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /Yangi test boshlash/ })).toHaveAttribute(
+        'href',
+        '/kabinet/test',
+      );
     });
 
     it('"Davom ettirish" → `POST /api/me/sessions` `{}`, token `sessionStore` ga, birinchi tugallanmagan blokga', async () => {
@@ -232,11 +254,11 @@ describe('AccountPage', () => {
       const api = mockResumeApi(() => jsonResponse<'StartSessionResult'>(RESUMED_SESSION));
 
       renderPage();
-      const [inProgress] = await screen.findAllByRole('listitem');
-      await user.click(within(inProgress as HTMLElement).getByRole('button', { name: /Davom ettirish/ }));
+      await user.click(await screen.findByRole('button', { name: /Davom ettirish/ }));
 
       // `order` bo'yicha birinchi tugallanmagan blok — BIG5 (MBTI16 tugagan).
       expect(await screen.findByText('TEST_STUB')).toBeInTheDocument();
+      expect(screen.getByText('Tugallanmagan sessiyangiz davom ettirildi.')).toBeInTheDocument();
 
       const [url, init] = api.sessionCall()!;
       expect(String(url)).toContain('/api/me/sessions');
@@ -254,22 +276,7 @@ describe('AccountPage', () => {
       expect(persisted.state?.assessmentId).toBe('assessment-3');
     });
 
-    it("tepadagi kartadan ham davom ettiriladi va \"davom ettirildi\" bildirishnomasi chiqadi", async () => {
-      const user = userEvent.setup();
-      signIn();
-      mockResumeApi(() => jsonResponse<'StartSessionResult'>(RESUMED_SESSION));
-
-      renderPage();
-      const card = (await screen.findByRole('heading', { name: 'Sizda tugallanmagan test bor' })).closest(
-        'section',
-      );
-      await user.click(within(card as HTMLElement).getByRole('button', { name: /Davom ettirish/ }));
-
-      expect(await screen.findByText('TEST_STUB')).toBeInTheDocument();
-      expect(screen.getByText('Tugallanmagan sessiyangiz davom ettirildi.')).toBeInTheDocument();
-    });
-
-    it("`400 VALIDATION_ERROR` (rozilik eskirgan) → anketa sahifasiga (`/kabinet/test`)", async () => {
+    it('`400 VALIDATION_ERROR` (rozilik eskirgan) → anketa sahifasiga (`/kabinet/test`)', async () => {
       const user = userEvent.setup();
       signIn();
       mockResumeApi(() =>
@@ -279,8 +286,7 @@ describe('AccountPage', () => {
       );
 
       renderPage();
-      const [inProgress] = await screen.findAllByRole('listitem');
-      await user.click(within(inProgress as HTMLElement).getByRole('button', { name: /Davom ettirish/ }));
+      await user.click(await screen.findByRole('button', { name: /Davom ettirish/ }));
 
       expect(await screen.findByText('ANKETA_STUB')).toBeInTheDocument();
     });
@@ -291,8 +297,7 @@ describe('AccountPage', () => {
       mockResumeApi(() => problemResponse('NO_PROGRAM_AVAILABLE', 409));
 
       renderPage();
-      const [inProgress] = await screen.findAllByRole('listitem');
-      await user.click(within(inProgress as HTMLElement).getByRole('button', { name: /Davom ettirish/ }));
+      await user.click(await screen.findByRole('button', { name: /Davom ettirish/ }));
 
       expect(await screen.findByRole('alert')).toHaveTextContent(/ochiq test dasturi yo'q/);
       expect(screen.queryByText('TEST_STUB')).not.toBeInTheDocument();
@@ -300,7 +305,7 @@ describe('AccountPage', () => {
     });
   });
 
-  it("saqlangan anketa (F.I.Sh., sana, telefon) va \"O'zgartirish\" havolasi ko'rsatiladi", async () => {
+  it('saqlangan anketa (F.I.Sh., sana, telefon) va "O\'zgartirish" havolasi ko\'rsatiladi', async () => {
     signIn();
     mockApi(PROFILE);
 
