@@ -177,6 +177,55 @@ public sealed class AdminAssessmentProgramsEndpointTests : IClassFixture<PublicA
         afterUnassign!.AssignedSchoolIds.Should().NotContain(school.Id);
     }
 
+    /// <summary>
+    /// 2026-09-07: ommaviy makon `school_programs` da oddiy qator, lekin dastur detalida u
+    /// "maktab" sifatida chiqmasligi kerak — `AssignedSchoolIds` da YO'Q, o'rniga
+    /// `IsAssignedToPublicSpace`. Biriktirish mavjud ommaviy endpoint orqali
+    /// (`POST | DELETE /api/admin/public-space/programs/{programId}`), dastur tomonida yangi
+    /// endpoint yo'q. Dastur `Draft` — endpoint holatni TEKSHIRMAYDI (`200`), bu fakt shu yerda
+    /// qulflanadi: UI "faqat faol dastur" cheklovini o'zi qo'yadi.
+    /// </summary>
+    [Fact]
+    public async Task PublicSpaceAssign_DetalDaAlohidaBayroq_MaktablarRoyxatigaKirmaydi()
+    {
+        Guid spaceId;
+        Guid schoolId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var now = DateTimeOffset.UtcNow;
+            spaceId = (await PublicUserTestDataFactory.GetOrCreatePublicSpaceAsync(db, now)).Id;
+            schoolId = (await TestDataFactory.CreateSchoolAsync(db, now, "maktab-prog-public-space", TestDataFactory.NewAccessToken("prog-public-space"))).Id;
+        }
+
+        using var client = await AuthenticatedClientAsync("programs-public-space-admin");
+        var createResponse = await client.PostAsJsonAsync(
+            "/api/admin/programs",
+            new { code = "PUBLIC-SPACE-PROG-1", nameUz = "Ommaviy makon dasturi", descriptionUz = (string?)null, displayOrder = 1, visibility = "Assigned" },
+            TestJson.Options);
+        var created = await createResponse.Content.ReadFromJsonAsync<AdminProgramDetailDto>(TestJson.Options);
+        created!.IsAssignedToPublicSpace.Should().BeFalse();
+
+        // Oddiy maktab — ro'yxatda qoladi (ajratish faqat ommaviy makonga tegishli).
+        var schoolAssign = await client.PostAsync(new Uri($"/api/admin/programs/{created.Id}/schools/{schoolId}", UriKind.Relative), content: null);
+        schoolAssign.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var assignResponse = await client.PostAsync(new Uri($"/api/admin/public-space/programs/{created.Id}", UriKind.Relative), content: null);
+        assignResponse.StatusCode.Should().Be(HttpStatusCode.OK, "ommaviy endpoint dastur holatini tekshirmaydi — Draft ham biriktiriladi");
+
+        var afterAssign = await client.GetFromJsonAsync<AdminProgramDetailDto>(new Uri($"/api/admin/programs/{created.Id}", UriKind.Relative), TestJson.Options);
+        afterAssign!.IsAssignedToPublicSpace.Should().BeTrue();
+        afterAssign.AssignedSchoolIds.Should().ContainSingle().Which.Should().Be(schoolId);
+        afterAssign.AssignedSchoolIds.Should().NotContain(spaceId, "ommaviy makon maktab emas — u ro'yxatda ko'rinmasligi kerak");
+
+        var unassignResponse = await client.DeleteAsync(new Uri($"/api/admin/public-space/programs/{created.Id}", UriKind.Relative));
+        unassignResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var afterUnassign = await client.GetFromJsonAsync<AdminProgramDetailDto>(new Uri($"/api/admin/programs/{created.Id}", UriKind.Relative), TestJson.Options);
+        afterUnassign!.IsAssignedToPublicSpace.Should().BeFalse();
+        afterUnassign.AssignedSchoolIds.Should().ContainSingle().Which.Should().Be(schoolId);
+    }
+
     [Fact]
     public async Task List_Tokensiz_401Qaytaradi()
     {

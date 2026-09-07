@@ -27,6 +27,7 @@ function programDetail(
     displayOrder: 1,
     tests: [{ testDefinitionId: 't-1', code: 'MBTI16', nameUz: '16 tip', displayOrder: 1 }],
     assignedSchoolIds: [],
+    isAssignedToPublicSpace: false,
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
     ...overrides,

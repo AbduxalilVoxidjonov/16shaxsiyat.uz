@@ -546,6 +546,26 @@ o'quvchiga DARHOL ko'rinmaydi — keyin `toggle-active` bilan aniq faollashtiril
 arxivda bo'lmagan (`Draft`/`Active`/`Paused`) dasturda **`409 PROGRAM_INVALID_TRANSITION`**.
 Audit: `Program.Restored`.
 
+#### Dastur detalida ommaviy makon — `isAssignedToPublicSpace` (2026-09-07)
+
+`GET /api/admin/programs/{id}` (`AdminProgramDetailDto`, shuningdek dastur mutatsiyalarining
+javobi) ommaviy makon biriktirmasini **alohida maydonda** beradi:
+
+```json
+{ "assignedSchoolIds": ["…"], "isAssignedToPublicSpace": true }
+```
+
+`school_programs` da ommaviy makon ham oddiy qator (`schools.kind = PublicSpace`), lekin u
+"maktab" emas: `assignedSchoolIds` da FAQAT `kind = School` makonlar qoladi, ommaviy makon
+esa bayroqqa o'tadi. Aks holda UI uni maktab chipi deb chizardi va
+`GET /api/admin/schools/{id}` (`AdminSchoolScope.SchoolsOnly`) unga `404` qaytarardi.
+
+Dastur tomonidan biriktirish/olib tashlash uchun **yangi endpoint yo'q** — mavjud
+`POST | DELETE /api/admin/public-space/programs/{programId}` ishlatiladi (3.7-bo'lim). Bu
+endpoint dastur holatini **tekshirmaydi** (`Draft` ham `200`, idempotent) — "faqat faol
+dastur biriktiriladi" cheklovi UI tomonida: `Active` bo'lmagan dastur ommaviy foydalanuvchiga
+baribir ko'rinmaydi (`ProgramAvailability`: `Published && IsActive`).
+
 #### `GET /api/admin/programs/{id}/impact?action=…` — amaldan OLDIN oqibat (2026-09-03)
 
 Quyidagi endpoint ayni shu hodisa uchun qo'shildi va shu yerda hujjatlashtiriladi.

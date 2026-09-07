@@ -1133,6 +1133,24 @@
       "assignError": "Biriktirishda xatolik yuz berdi",
       "unassignError": "Olib tashlashda xatolik yuz berdi"
     },
+    "publicSpace": {
+      "heading": "Ommaviy makon",
+      "assignedBadge": "Biriktirilgan",
+      "unassignedBadge": "Biriktirilmagan",
+      "note": "Ommaviy makonga biriktirilgan dasturni Telegram orqali kirgan har kim topshira oladi.",
+      "assignCta": "Ommaviyga biriktirish",
+      "unassignCta": "Ommaviydan olib tashlash",
+      "inactiveReason": "Faqat faol dastur biriktiriladi",
+      "assignSuccess": "Dastur ommaviy makonga biriktirildi",
+      "unassignSuccess": "Dastur ommaviy makondan olib tashlandi",
+      "assignError": "Ommaviy makonga biriktirishda xatolik yuz berdi",
+      "unassignError": "Ommaviy makondan olib tashlashda xatolik yuz berdi",
+      "unassignDialog": {
+        "title": "Ommaviy makondan olib tashlash",
+        "description": "Bu amaldan keyin Telegram orqali kirgan foydalanuvchilar bu dasturni topshira olmaydi. Boshlangan sessiyalar saqlanib qoladi.",
+        "confirmCta": "Olib tashlash"
+      }
+    },
     "errors": {
       "systemProgramLocked": "Tizim dasturining tarkibini o'zgartirib bo'lmaydi"
     },

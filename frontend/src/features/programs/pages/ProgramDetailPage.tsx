@@ -229,7 +229,10 @@ export default function ProgramDetailPage() {
         <Card title={t('programs.detail.schoolsHeading')}>
           <SchoolAssignmentPanel
             programId={program.id}
+            programName={program.nameUz}
+            state={program.state}
             assignedSchoolIds={program.assignedSchoolIds}
+            isAssignedToPublicSpace={program.isAssignedToPublicSpace}
           />
         </Card>
       )}

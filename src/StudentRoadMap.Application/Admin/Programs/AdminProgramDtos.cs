@@ -27,6 +27,16 @@ public sealed record AdminProgramListItemDto(
 /// <summary>
 /// `GET /api/admin/programs/{id}` — batafsil: tarkib (testlar) va biriktirilgan maktablar.
 /// `state` — ro'yxat DTO'sidagi bilan AYNAN bir xil hosila holat (yuqoridagi izohga qarang).
+///
+/// <para>
+/// **2026-09-07 — ommaviy makon ALOHIDA maydonda.** `school_programs` da ommaviy makon ham
+/// oddiy qator (`Kind = PublicSpace`), lekin u "maktab" EMAS: `AssignedSchoolIds` da FAQAT
+/// `Kind = School` qatorlar qoladi, ommaviy makon biriktirmasi esa
+/// `IsAssignedToPublicSpace` bayrog'ida beriladi. Aks holda UI ommaviy makonni maktab chipi
+/// deb chizardi va `GET /api/admin/schools/{id}` (`AdminSchoolScope.SchoolsOnly`) unga `404`
+/// qaytarardi. Biriktirish/olib tashlash — mavjud
+/// `POST | DELETE /api/admin/public-space/programs/{programId}` orqali (yangi endpoint yo'q).
+/// </para>
 /// </summary>
 public sealed record AdminProgramDetailDto(
     Guid Id,
@@ -40,6 +50,7 @@ public sealed record AdminProgramDetailDto(
     int DisplayOrder,
     IReadOnlyList<AdminProgramTestItemDto> Tests,
     IReadOnlyList<Guid> AssignedSchoolIds,
+    bool IsAssignedToPublicSpace,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt);
 

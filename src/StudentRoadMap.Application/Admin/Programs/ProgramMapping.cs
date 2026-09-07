@@ -1,5 +1,6 @@
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Domain.Catalog;
+using StudentRoadMap.Domain.Schools;
 
 namespace StudentRoadMap.Application.Admin.Programs;
 
@@ -26,7 +27,8 @@ internal static class ProgramMapping
 
     /// <summary>
     /// Tarkib (`ProgramTest` + `TestDefinition` proyeksiyasi, `DisplayOrder` bo'yicha DB
-    /// darajasida saralangan) va biriktirilgan maktablar ro'yxati bilan to'ldiradi.
+    /// darajasida saralangan), biriktirilgan maktablar ro'yxati va ommaviy makon bayrog'i
+    /// (`IsAssignedToPublicSpace`) bilan to'ldiradi.
     /// </summary>
     public static async Task<AdminProgramDetailDto> BuildDetailDtoAsync(
         IAppDbContext context,
@@ -45,12 +47,27 @@ internal static class ProgramMapping
                     (pt, t) => new AdminProgramTestItemDto(t.Id, t.Code, t.NameUz, pt.DisplayOrder)),
             cancellationToken).ConfigureAwait(false);
 
-        var assignedSchoolIds = await executor.ToListAsync(
+        // Biriktirmalar makon TURI bilan birga o'qiladi (bitta `JOIN`): ommaviy makon
+        // (`Kind = PublicSpace`) ro'yxatga KIRMAYDI — u alohida bayroqqa o'tadi
+        // (`AdminProgramDetailDto` izohi). `AdminSchoolScope` bu yerda ataylab ishlatilmaydi:
+        // biriktirma OLIB TASHLANMAYDI, faqat ikkiga ajratiladi.
+        var assignments = await executor.ToListAsync(
             context.AsNoTracking(context.SchoolPrograms)
                 .Where(sp => sp.ProgramId == program.Id)
-                .OrderBy(sp => sp.CreatedAt)
-                .Select(sp => sp.SchoolId),
+                .Join(
+                    context.AsNoTracking(context.Schools),
+                    sp => sp.SchoolId,
+                    s => s.Id,
+                    (sp, s) => new { sp.SchoolId, s.Kind, sp.CreatedAt })
+                .OrderBy(x => x.CreatedAt),
             cancellationToken).ConfigureAwait(false);
+
+        var assignedSchoolIds = assignments
+            .Where(a => a.Kind == SchoolKind.School)
+            .Select(a => a.SchoolId)
+            .ToList();
+
+        var isAssignedToPublicSpace = assignments.Any(a => a.Kind == SchoolKind.PublicSpace);
 
         return new AdminProgramDetailDto(
             program.Id,
@@ -64,6 +81,7 @@ internal static class ProgramMapping
             program.DisplayOrder,
             testItems,
             assignedSchoolIds,
+            isAssignedToPublicSpace,
             program.CreatedAt,
             program.UpdatedAt);
     }

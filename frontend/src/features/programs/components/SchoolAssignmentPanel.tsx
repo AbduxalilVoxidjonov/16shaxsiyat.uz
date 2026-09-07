@@ -16,10 +16,16 @@ import {
   useSchoolsByIdsQuery,
 } from '../api/useSchoolOptionsQuery';
 import { useAssignProgramSchool, useUnassignProgramSchool } from '../api/useProgramSchoolMutations';
+import { PublicSpaceAssignmentBlock } from './PublicSpaceAssignmentBlock';
 
 export interface SchoolAssignmentPanelProps {
   programId: string;
+  programName: string;
+  /** `AdminProgramDetailDto.state` — ommaviy blokdagi "faqat faol dastur" cheklovi uchun. */
+  state: string;
+  /** FAQAT `Kind = School` makonlar — ommaviy makon bu ro'yxatga KIRMAYDI (backend ajratadi). */
   assignedSchoolIds: readonly string[];
+  isAssignedToPublicSpace: boolean;
 }
 
 /**
@@ -34,10 +40,19 @@ export interface SchoolAssignmentPanelProps {
  * ilgari u klient tomonda alohida hisoblanardi va ommaviy handler mezonidan farq qilardi
  * (o'chirilgan dasturni ham, testsiz dasturni ham "joyida" deb ko'rsatardi). Ikkinchi mezon
  * OLIB TASHLANDI: panel yolg'on aytmasligi uchun mezon bitta bo'lishi shart.
+ *
+ * **2026-09-07:** panel tepasida maktablardan ALOHIDA "Ommaviy makon" bloki
+ * (`PublicSpaceAssignmentBlock`) — ommaviy makon `AdminSchoolScope.SchoolsOnly` sababli
+ * maktab qidiruvida chiqmaydi va `assignedSchoolIds` da ham yo'q (backend uni
+ * `isAssignedToPublicSpace` bayrog'iga ajratadi), shu sabab u shu yerda o'z bloki bilan
+ * boshqariladi.
  */
 export function SchoolAssignmentPanel({
   programId,
+  programName,
+  state,
   assignedSchoolIds,
+  isAssignedToPublicSpace,
 }: SchoolAssignmentPanelProps) {
   const { t } = useTranslation();
   const toast = useToast();
@@ -85,7 +100,14 @@ export function SchoolAssignmentPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
+      <PublicSpaceAssignmentBlock
+        programId={programId}
+        programName={programName}
+        state={state}
+        isAssignedToPublicSpace={isAssignedToPublicSpace}
+      />
+
+      <div className="border-t border-line pt-4">
         <h3 className="mb-2 text-sm font-medium text-neutral-700">
           {t('programs.schoolPanel.assignedHeading', { count: assignedSchoolIds.length })}
         </h3>

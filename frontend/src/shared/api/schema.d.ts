@@ -6050,6 +6050,7 @@ export interface components {
             displayOrder: number;
             tests: components["schemas"]["AdminProgramTestItemDto"][];
             assignedSchoolIds: string[];
+            isAssignedToPublicSpace: boolean;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
