@@ -59,8 +59,12 @@ export default function ContactPage() {
                   </span>
                   <span
                     className={cn(
-                      'font-display mt-3 block font-extrabold break-words text-firuza-700',
-                      channel.wide ? 'text-lg sm:text-xl' : 'text-xl',
+                      'font-display mt-3 block font-extrabold text-firuza-700',
+                      // Uzun qiymatlar (pochta manzili, `@abduxalilvoxidjonov` kabi Telegram
+                      // username) tor kartaga `text-xl` bilan sig'maydi va `break-words`
+                      // ularni bo'lmaydi — ichida bo'shliq yo'q. Shu sabab 14 belgidan uzuni
+                      // kichikroq shrift + `break-all` (istalgan joyda bo'linadi) oladi.
+                      channel.display.length > 14 ? 'text-base break-all sm:text-lg' : 'text-xl',
                     )}
                   >
                     {channel.display}
