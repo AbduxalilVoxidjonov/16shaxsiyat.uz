@@ -40,11 +40,13 @@ internal sealed class ListStudentsQueryHandler : IRequestHandler<ListStudentsQue
 {
     private readonly IAppDbContext _context;
     private readonly IAsyncQueryExecutor _executor;
+    private readonly IDateTime _dateTime;
 
-    public ListStudentsQueryHandler(IAppDbContext context, IAsyncQueryExecutor executor)
+    public ListStudentsQueryHandler(IAppDbContext context, IAsyncQueryExecutor executor, IDateTime dateTime)
     {
         _context = context;
         _executor = executor;
+        _dateTime = dateTime;
     }
 
     public async Task<Result<PagedResult<AdminStudentListItemDto>>> Handle(ListStudentsQuery request, CancellationToken cancellationToken)
@@ -54,27 +56,20 @@ internal sealed class ListStudentsQueryHandler : IRequestHandler<ListStudentsQue
         // Filtr qurilishi `AdminStudentFilterBuilder`ga chiqarilgan (`prompts/27` MAXSUS DIQQAT #1)
         // — `ExportStudentsQueryHandler` (`Admin/Students/Export`) AYNAN shu metodni chaqiradi,
         // shu bilan ro'yxat va eksport filtri hech qachon bir-biridan ajralib ketmaydi.
-        // Ommaviy makonning `Id`si — MANBA filtri uchun ham, javobdagi `source` ustuni uchun
-        // ham kerak (filtr berilmaganda ham har qator qaysi oqimdan kelganini ko'rsatadi).
-        // BITTA arzon so'rov (`kind` bo'yicha, bazada bitta qator).
+        // Ommaviy makonning `Id`si — uning foydalanuvchilarini DOIM chiqarib tashlash uchun
+        // (bu ro'yxat faqat maktab o'quvchilari). BITTA arzon so'rov (`kind` bo'yicha, bazada
+        // bitta qator).
         var publicSpaceId = await AdminSourceFilter
             .FindPublicSpaceIdAsync(_context, _executor, cancellationToken)
             .ConfigureAwait(false);
 
+        var today = DateOnly.FromDateTime(_dateTime.UtcNow.UtcDateTime);
         var query = AdminStudentFilterBuilder.Apply(
             _context,
             _context.AsNoTracking(_context.Students),
-            request.SchoolId,
-            request.Grade,
-            request.Status,
-            request.NeedsAttention,
-            request.PersonalityType,
-            request.ActivityLevel,
-            request.From,
-            request.To,
-            request.Search,
-            AdminSourceFilter.Parse(request.Source),
-            publicSpaceId);
+            AdminStudentFilterCriteria.Of(request),
+            publicSpaceId,
+            today);
 
         var totalCount = await _executor.CountAsync(query, cancellationToken).ConfigureAwait(false);
 
@@ -148,8 +143,7 @@ internal sealed class ListStudentsQueryHandler : IRequestHandler<ListStudentsQue
                     s.LastActivityLevel?.ToString(),
                     s.NeedsAttention,
                     latestAssessment?.ReliabilityFlag?.ToString(),
-                    s.LastAssessmentAt,
-                    AdminSourceFilter.SourceOf(s.SchoolId, publicSpaceId));
+                    s.LastAssessmentAt);
             })
             .ToList();
 

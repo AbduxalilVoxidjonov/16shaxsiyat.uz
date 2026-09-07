@@ -2,18 +2,25 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/shared/ui/Input';
-import { Select } from '@/shared/ui/Select';
+import { Select, type SelectOption } from '@/shared/ui/Select';
 import { Checkbox } from '@/shared/ui/Checkbox';
 import { useDebounce } from '@/shared/hooks/useDebounce';
 import {
   ACTIVITY_LEVEL_VALUES,
   ASSESSMENT_STATUS_VALUES,
+  GENDER_FILTER_VALUES,
   PERSONALITY_TYPE_CODES,
-  STUDENT_SOURCE_QUERY_VALUES,
 } from '../model/enums';
 import {
+  AGE_RANGE_PRESETS,
+  STUDENTS_FILTER_KEYS,
+  ageRangeOptionValue,
+  formatAgeRange,
   hasActiveStudentsFilters,
+  parseAgeRangeOptionValue,
   readStudentsFilters,
+  type AgeRange,
+  type StudentsChipKey,
   type StudentsFilterKey,
 } from '../model/studentsFilters';
 import { useSchoolNameQuery } from '../api/useSchoolOptionsQuery';
@@ -26,8 +33,12 @@ const GRADES = Array.from({ length: 11 }, (_, index) => index + 1);
 /**
  * O'quvchilar filtr paneli — docs/11-ux-va-ekranlar.md A-4: "maktab (searchable select),
  * sinf, holat, shaxsiyat tipi, aktivlik darajasi, 'faqat e'tibor talab qiladiganlar' toggle,
- * sana oralig'i, qidiruv". Barcha holat URL query'da (`useSearchParams`, CLAUDE.md "MAXSUS
- * DIQQAT" 2) — `SchoolFiltersBar.tsx` (P23) bilan bir xil naqsh.
+ * sana oralig'i, qidiruv" + jins va yosh (egasining talabi, 2026-09-07). Barcha holat URL
+ * query'da (`useSearchParams`, CLAUDE.md "MAXSUS DIQQAT" 2) — `SchoolFiltersBar.tsx` (P23) va
+ * `PublicSpaceUsersSection.tsx` bilan bir xil naqsh.
+ *
+ * Bu bo'limda FAQAT maktab o'quvchilari — ommaviy makon foydalanuvchilari `/admin/ommaviy` da,
+ * shu sabab "Manba" filtri yo'q (backend `?source=` ni endi qabul qilmaydi).
  */
 export function StudentFiltersBar() {
   const { t } = useTranslation();
@@ -65,7 +76,7 @@ export function StudentFiltersBar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);
 
-  function updateFilter(key: Exclude<StudentsFilterKey, 'search'>, value: string) {
+  function updateFilter(key: Exclude<StudentsFilterKey, 'search' | 'ageMin' | 'ageMax'>, value: string) {
     setSearchParams((prev) => {
       const params = new URLSearchParams(prev);
       if (value) {
@@ -78,13 +89,31 @@ export function StudentFiltersBar() {
     });
   }
 
-  function handleRemoveFilter(key: StudentsFilterKey) {
+  /** Yosh — IKKI URL parametri birga yoziladi/o'chadi (`ageMin`/`ageMax`), `docs/07` 3.2. */
+  function updateAgeRange(range: AgeRange | null) {
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      params.delete('ageMin');
+      params.delete('ageMax');
+      if (range?.ageMin !== undefined) params.set('ageMin', String(range.ageMin));
+      if (range?.ageMax !== undefined) params.set('ageMax', String(range.ageMax));
+      params.set('page', '1');
+      return params;
+    });
+  }
+
+  function handleRemoveFilter(key: StudentsChipKey) {
     if (key === 'search') {
       setSearchInput('');
     }
     setSearchParams((prev) => {
       const params = new URLSearchParams(prev);
-      params.delete(key);
+      if (key === 'age') {
+        params.delete('ageMin');
+        params.delete('ageMax');
+      } else {
+        params.delete(key);
+      }
       params.set('page', '1');
       return params;
     });
@@ -94,18 +123,7 @@ export function StudentFiltersBar() {
     setSearchInput('');
     setSearchParams((prev) => {
       const params = new URLSearchParams(prev);
-      for (const key of [
-        'search',
-        'source',
-        'schoolId',
-        'grade',
-        'status',
-        'personalityType',
-        'activityLevel',
-        'needsAttention',
-        'from',
-        'to',
-      ]) {
+      for (const key of STUDENTS_FILTER_KEYS) {
         params.delete(key);
       }
       params.set('page', '1');
@@ -114,6 +132,20 @@ export function StudentFiltersBar() {
   }
 
   const schoolNameQuery = useSchoolNameQuery(filters.schoolId || null);
+
+  // Tayyor oraliqlar + (chuqur havoladan kelgan) ixtiyoriy oraliq, agar u tayyorlardan biri
+  // bo'lmasa — `Select` hech qachon "bo'sh" ko'rinib, aslida filtr faol bo'lib qolmaydi.
+  const currentAgeValue = filters.age ? ageRangeOptionValue(filters.age) : '';
+  const ageOptions: SelectOption[] = [
+    { value: '', label: t('students.filters.ageAll') },
+    ...AGE_RANGE_PRESETS.map((range) => ({
+      value: ageRangeOptionValue(range),
+      label: formatAgeRange(range, t),
+    })),
+  ];
+  if (filters.age && !ageOptions.some((option) => option.value === currentAgeValue)) {
+    ageOptions.push({ value: currentAgeValue, label: formatAgeRange(filters.age, t) });
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -127,27 +159,6 @@ export function StudentFiltersBar() {
             placeholder={t('students.filters.searchPlaceholder')}
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-          />
-        </div>
-
-        {/*
-          Manba filtri (P48) — maktab kombobox'idan OLDIN turadi: avval "qaysi oqim", keyin
-          "qaysi maktab". Ommaviy makon endi maktablar ro'yxatida yo'q, shu sabab ommaviy
-          foydalanuvchilarga tushishning YAGONA yo'li shu filtr.
-        */}
-        <div className="w-full sm:w-44">
-          <Select
-            label={t('students.filters.sourceLabel')}
-            placeholder={t('students.filters.sourceAll')}
-            value={filters.source}
-            onChange={(event) => updateFilter('source', event.target.value)}
-            options={STUDENT_SOURCE_QUERY_VALUES.map((value) => ({
-              value,
-              label:
-                value === 'school'
-                  ? t('students.filters.sourceSchool')
-                  : t('students.filters.sourcePublic'),
-            }))}
           />
         </div>
 
@@ -169,6 +180,30 @@ export function StudentFiltersBar() {
               value: String(grade),
               label: t('students.filters.gradeOption', { grade }),
             }))}
+          />
+        </div>
+
+        <div className="w-full sm:w-36">
+          <Select
+            label={t('students.filters.genderLabel')}
+            value={filters.gender}
+            onChange={(event) => updateFilter('gender', event.target.value)}
+            options={[
+              { value: '', label: t('students.filters.genderAll') },
+              ...GENDER_FILTER_VALUES.map((gender) => ({
+                value: gender,
+                label: t(`students.enums.gender.${gender}`),
+              })),
+            ]}
+          />
+        </div>
+
+        <div className="w-full sm:w-40">
+          <Select
+            label={t('students.filters.ageLabel')}
+            value={currentAgeValue}
+            onChange={(event) => updateAgeRange(parseAgeRangeOptionValue(event.target.value))}
+            options={ageOptions}
           />
         </div>
 

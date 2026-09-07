@@ -1,11 +1,5 @@
 import type { components } from '@/shared/api/schema';
-import type {
-  ActivityLevel,
-  AssessmentStatus,
-  ReliabilityFlag,
-  StudentSource,
-  StudentSourceQuery,
-} from './enums';
+import type { ActivityLevel, AssessmentStatus, GenderFilter, ReliabilityFlag } from './enums';
 
 /**
  * O'quvchilar admin DTO'lari — `docs/07-api-shartnoma.md` 3.2-bo'lim.
@@ -24,25 +18,30 @@ import type {
 /** `GET /api/admin/students` ro'yxat qatori — backend `AdminStudentListItemDto`. */
 export type StudentListItemDto = Omit<
   components['schemas']['AdminStudentListItemDto'],
-  'lastAssessmentStatus' | 'activityLevel' | 'reliabilityFlag' | 'source'
+  'lastAssessmentStatus' | 'activityLevel' | 'reliabilityFlag'
 > & {
   lastAssessmentStatus?: AssessmentStatus | null;
   activityLevel?: ActivityLevel | null;
   reliabilityFlag?: ReliabilityFlag | null;
-  /** Manba (P48): `School` — maktab havolasi; `Public` — ommaviy makon. */
-  source: StudentSource;
 };
 
-/** `GET /api/admin/students` so'rov parametrlari — `docs/07` 3.2 (DTO emas, query shakli). */
+/**
+ * `GET /api/admin/students` so'rov parametrlari — `docs/07` 3.2 (DTO emas, query shakli).
+ * Ro'yxat FAQAT maktab o'quvchilari — ommaviy makon foydalanuvchilari `/admin/ommaviy` da,
+ * shu sabab `source` parametri yo'q (2026-09-07).
+ */
 export interface StudentsListQuery {
-  /** `?source=school|public` — berilmasa ikkala manba ham qaytadi. */
-  source?: StudentSourceQuery;
   schoolId?: string;
   grade?: number;
   status?: AssessmentStatus;
   needsAttention?: boolean;
   personalityType?: string;
   activityLevel?: ActivityLevel;
+  /** `Male` | `Female` — `docs/07` 3.2. */
+  gender?: GenderFilter;
+  /** To'liq yosh, 6..99, `ageMin <= ageMax` (`docs/07` 3.2 — backend `BirthDate` oralig'iga aylantiradi). */
+  ageMin?: number;
+  ageMax?: number;
   from?: string;
   to?: string;
   search?: string;

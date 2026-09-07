@@ -150,9 +150,17 @@ Anketa + sessiya ochish.
 ```
 
 Qoidalar:
-- Dublikat (maktab + normalizatsiyalangan FISH + tug'ilgan sana) topilsa:
-  - tugallanmagan sessiya bor → **o'sha sessiya qaytariladi**, `resumed: true`;
-  - 90 kun ichida yakunlangan sessiya bor → **409** `DUPLICATE_ASSESSMENT`.
+- Avval dastur tanlanadi (`programCode`; bitta dastur bo'lsa avtomatik, bir nechta bo'lsa
+  **400** `PROGRAM_REQUIRED`, mavjud bo'lmasa **404**). Keyingi tekshiruvlar **shu dastur**
+  bo'yicha (BR-1, `(o'quvchi, dastur)` juftligi).
+- Dublikat (maktab + normalizatsiyalangan FISH + tug'ilgan sana) topilsa, **tanlangan dasturda**:
+  - tugallanmagan sessiya bor → **o'sha sessiya qaytariladi**, `200`, `resumed: true`;
+  - 90 kun ichida yakunlangan sessiya bor → **409** `DUPLICATE_ASSESSMENT`;
+  - hech biri yo'q → yangi sessiya, `201`.
+- Boshqa dasturdagi sessiyalar (yarim qolgan yoki yakunlangan) ta'sir qilmaydi: A dasturni
+  yakunlagan (yoki A da yarim qolgan) o'quvchi B dasturni yangi sessiya bilan boshlaydi.
+  Natijada bir o'quvchida bir vaqtda bir nechta (har dasturda ko'pi bilan bitta) tugallanmagan
+  sessiya bo'lishi mumkin — har biri o'z `sessionToken`i bilan.
 - `consentAccepted != true` → 400.
 - Rate limit: IP bo'yicha soatiga 10; maktab kunlik limiti.
 
@@ -588,10 +596,37 @@ to'ldirilgan (tip `string | null` — ustun nullable).
 ### 3.2 O'quvchilar
 | Metod | Yo'l | Izoh |
 |-------|------|------|
-| GET | `/api/admin/students?schoolId=&grade=&status=&needsAttention=&personalityType=&activityLevel=&from=&to=&search=&page=&pageSize=&sort=` | Ro'yxat |
+| GET | `/api/admin/students?schoolId=&grade=&status=&needsAttention=&personalityType=&activityLevel=&gender=&ageMin=&ageMax=&from=&to=&search=&page=&pageSize=&sort=` | Ro'yxat — **faqat maktab o'quvchilari** (pastda) |
 | GET | `/api/admin/students/{id}` | **Individual profil** (pastda) |
 | DELETE | `/api/admin/students/{id}?hard=true` | O'chirish (`hard=true` — o'quvchi so'rovi bo'yicha) |
-| GET | `/api/admin/students/export?…` | `.xlsx` (filtr saqlanadi) |
+| GET | `/api/admin/students/export?…` | `.xlsx` (filtr saqlanadi — ro'yxat bilan AYNAN bir xil parametrlar, `page`/`pageSize`/`sort`siz) |
+
+> **Faqat maktab** (2026-09-07, egasining talabi): ro'yxat va eksport ommaviy makon
+> (`SchoolKind.PublicSpace`) foydalanuvchilarini **shartsiz** chiqarib tashlaydi — ular o'z
+> bo'limida, `GET /api/admin/public-space/users` (3.7). Ilgari bu yerda bo'lgan `?source=`
+> parametri va `source` ustuni **olib tashlandi** (sessiyalar 3.3 va boshqaruv paneli 3.6 da
+> `source` qoladi). Yuborilgan `?source=` jimgina e'tiborsiz qoldiriladi.
+
+**Ro'yxat filtrlari** (barchasi ixtiyoriy; enum qiymatlari — nomi, `docs/05` 3-bo'lim):
+
+| Parametr | Tip / qiymatlar | Izoh |
+|----------|-----------------|------|
+| `schoolId` | `uuid` | Maktab |
+| `grade` | `1..11` | Sinf |
+| `status` | `Draft` \| `InProgress` \| `Completed` \| `Analyzing` \| `Analyzed` \| `AnalysisFailed` \| `Abandoned` | Shu holatdagi sessiyasi BOR o'quvchilar (`EXISTS`) |
+| `needsAttention` | `true`/`false` | Snapshot `needsAttention` |
+| `personalityType` | `INTJ`… | Snapshot `lastPersonalityType` |
+| `activityLevel` | `Passive` \| `LowActive` \| `Moderate` \| `Active` \| `HighlyActive` | Snapshot `lastActivityLevel` |
+| `gender` | `Male` \| `Female` | Boshqa qiymat (`Unspecified`, raqam) → **400** `VALIDATION_ERROR` |
+| `ageMin`, `ageMax` | butun son, `6..99`, `ageMin <= ageMax` | To'liq yosh; aks holda **400** `VALIDATION_ERROR` |
+| `from`, `to` | ISO sana-vaqt | `lastAssessmentAt` oralig'i |
+| `search` | matn | F.I.Sh. bo'yicha (`ix_students_name_trgm`) |
+
+> **Yosh → `birthDate`** (DB darajasida, bugungi sana serverning UTC sanasi):
+> `age >= ageMin` ⇔ `birthDate <= today − ageMin yil`; `age <= ageMax` ⇔
+> `birthDate > today − (ageMax + 1) yil`. Bugun tug'ilgan kuni bo'lgan o'quvchi `ageMin`ga
+> kiradi, bugun `ageMax + 1` yoshga to'lgani kirmaydi (`Student.CalculateAge` bilan bir xil).
+> `status`/`activityLevel` noma'lum qiymatda filtr jimgina qo'llanmaydi (tarixiy xatti-harakat).
 
 `StudentListItemDto`: `id, fullName, schoolName, grade, classLetter, phone, lastAssessmentStatus,
 personalityType, personalityTypeName, maturityIndex, activityLevel, needsAttention, reliabilityFlag,
@@ -1510,7 +1545,7 @@ Xatolar:
 | `VALIDATION_ERROR` | 400 | Format (yosh/telefon/sinf/email) yoki profil holatiga ko'ra yetishmagan maydon — `errors{maydon:[xabar]}` bilan (`fullName`, `birthDate`, `gender`, `phone`, `consentAccepted`, `parentalConsent`) |
 | `PROGRAM_REQUIRED` | 400 | Bir nechta dastur mavjud, `programCode` berilmagan |
 | `NOT_FOUND` | 404 | Berilgan `programCode` ommaviy makonda mavjud emas |
-| `DUPLICATE_ASSESSMENT` | 409 | So'nggi 90 kunda testni allaqachon yakunlagan (BR-1) |
+| `DUPLICATE_ASSESSMENT` | 409 | So'nggi 90 kunda **shu dasturni** allaqachon yakunlagan (BR-1, `(o'quvchi, dastur)` bo'yicha). Boshqa dasturni yakunlagani to'sqinlik qilmaydi — u `201` bilan yangi sessiya oladi; shu dasturda yarim qolgan sessiya bo'lsa `200` `resumed: true` |
 | `NO_PROGRAM_AVAILABLE` | 409 | Ommaviy makonga birorta dastur biriktirilmagan |
 | `PUBLIC_SPACE_NOT_CONFIGURED` | 409 | Ommaviy makon seed qilinmagan (`--seed` bajarilmagan) |
 | `SCHOOL_INACTIVE` | 410 | Ommaviy makon o'chirilgan |

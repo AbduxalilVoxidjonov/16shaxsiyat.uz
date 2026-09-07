@@ -15,15 +15,17 @@ const LIST_STALE_TIME_MS = 30_000;
  */
 export function buildStudentsQueryString(query: StudentsListQuery): string {
   const params = new URLSearchParams();
-  // Manba filtri (P48) — eksport ham AYNAN shu funksiyadan o'tadi, shu sabab ro'yxatda
-  // ko'rilgan kesim bilan eksport qilingan fayl hech qachon farq qilmaydi.
-  if (query.source) params.set('source', query.source);
   if (query.schoolId) params.set('schoolId', query.schoolId);
   if (query.grade !== undefined) params.set('grade', String(query.grade));
   if (query.status) params.set('status', query.status);
   if (query.needsAttention) params.set('needsAttention', 'true');
   if (query.personalityType) params.set('personalityType', query.personalityType);
   if (query.activityLevel) params.set('activityLevel', query.activityLevel);
+  // Jins va yosh (2026-09-07) — eksport ham AYNAN shu funksiyadan o'tadi, shu sabab ro'yxatda
+  // ko'rilgan kesim bilan eksport qilingan fayl hech qachon farq qilmaydi.
+  if (query.gender) params.set('gender', query.gender);
+  if (query.ageMin !== undefined) params.set('ageMin', String(query.ageMin));
+  if (query.ageMax !== undefined) params.set('ageMax', String(query.ageMax));
   if (query.from) params.set('from', query.from);
   if (query.to) params.set('to', query.to);
   if (query.search) params.set('search', query.search);

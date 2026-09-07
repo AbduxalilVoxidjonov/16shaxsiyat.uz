@@ -1,4 +1,3 @@
-using StudentRoadMap.Application.Admin.Common;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Domain.Assessments;
 using StudentRoadMap.Domain.Students;
@@ -13,85 +12,107 @@ namespace StudentRoadMap.Application.Admin.Students.List;
 /// DIQQAT #1: "filtr ikki joyda ajralib ketsa, hisobotlar jimgina bir-biriga mos kelmay
 /// qoladi"). Faqat FILTR (`Where`) — sahifalash/saralash chaqiruvchida qoladi (eksportda
 /// sahifalash yo'q, `ListStudentsQueryHandler`da esa mavjud saralash/sahifalash o'zgarmaydi).
-/// `source`/`publicSpaceId` — MANBA filtri (maktab / ommaviy makon), xuddi shu sababdan shu
-/// yerda: eksport ro'yxatdagi manba tanlovini ham AYNAN takrorlashi shart.
+///
+/// <para>
+/// **Faqat maktab o'quvchilari** (egasining talabi, 2026-09-07): ommaviy makon (`SchoolKind.PublicSpace`)
+/// foydalanuvchilari bu ro'yxatga va eksportga HECH QACHON kirmaydi — ular o'z bo'limida
+/// (`GET /api/admin/public-space/users`, `/admin/ommaviy`) ko'rinadi. Ilgari `?source=`
+/// parametri bilan ixtiyoriy ajratilardi; endi chiqarib tashlash SHARTSIZ, shu sabab
+/// `source` parametri o'quvchilar endpointlaridan olib tashlandi (sessiyalar/panelda qoladi).
+/// </para>
 /// </summary>
 internal static class AdminStudentFilterBuilder
 {
+    /// <param name="publicSpaceId">
+    /// Ommaviy makonning `Id`si (`AdminSourceFilter.FindPublicSpaceIdAsync`). `null` — makon
+    /// bazada yo'q (seed bajarilmagan), chiqarib tashlash uchun hech narsa yo'q.
+    /// </param>
+    /// <param name="today">
+    /// Yosh filtri uchun bugungi sana (UTC, `IDateTime.UtcNow` dan) — `StudentAgeRange` izohi.
+    /// </param>
     public static IQueryable<Student> Apply(
         IAppDbContext context,
         IQueryable<Student> query,
-        Guid? schoolId,
-        int? grade,
-        string? status,
-        bool? needsAttention,
-        string? personalityType,
-        string? activityLevel,
-        DateTimeOffset? from,
-        DateTimeOffset? to,
-        string? search,
-        string? source,
-        Guid? publicSpaceId)
+        AdminStudentFilterCriteria criteria,
+        Guid? publicSpaceId,
+        DateOnly today)
     {
-        // MANBA (`AdminSourceFilter`) — maktab oqimi yoki ommaviy makon. `schoolId` bilan
-        // BIRGA ishlatilsa ikkalasi ham qo'llanadi (mantiqan VA): ommaviy makon ID'si bilan
-        // `source=school` bo'sh natija beradi — bu TO'G'RI, chunki so'rov o'zi ziddiyatli.
-        //
-        // Makon bazada bo'lmasa (seed bajarilmagan) `Guid.Empty` sentinel sifatida ishlatiladi:
-        // hech bir `Student.SchoolId` unga teng emas, ya'ni `source=public` bo'sh, `source=school`
-        // esa HAMMASINI qaytaradi — ikkalasi ham haqiqatga mos.
-        if (source is not null)
+        // Ommaviy makon — DOIM chiqarib tashlanadi (sinf izohiga qarang). `school_id <> @id`
+        // `ix_students_school_*` indekslari bilan mos, JOIN/EXISTS kerak emas.
+        if (publicSpaceId.HasValue)
         {
-            var spaceId = publicSpaceId ?? Guid.Empty;
-            query = source == AdminSourceFilter.Public
-                ? query.Where(s => s.SchoolId == spaceId)
-                : query.Where(s => s.SchoolId != spaceId);
+            var spaceId = publicSpaceId.Value;
+            query = query.Where(s => s.SchoolId != spaceId);
         }
 
-        if (schoolId.HasValue)
+        if (criteria.SchoolId.HasValue)
         {
-            query = query.Where(s => s.SchoolId == schoolId.Value);
+            var schoolId = criteria.SchoolId.Value;
+            query = query.Where(s => s.SchoolId == schoolId);
         }
 
-        if (grade.HasValue)
+        if (criteria.Grade.HasValue)
         {
-            query = query.Where(s => s.Grade == grade.Value);
+            var grade = criteria.Grade.Value;
+            query = query.Where(s => s.Grade == grade);
         }
 
-        if (needsAttention.HasValue)
+        if (criteria.NeedsAttention.HasValue)
         {
-            query = query.Where(s => s.NeedsAttention == needsAttention.Value);
+            var needsAttention = criteria.NeedsAttention.Value;
+            query = query.Where(s => s.NeedsAttention == needsAttention);
         }
 
-        if (!string.IsNullOrWhiteSpace(personalityType))
+        if (!string.IsNullOrWhiteSpace(criteria.PersonalityType))
         {
-            var trimmedPersonalityType = personalityType.Trim();
+            var trimmedPersonalityType = criteria.PersonalityType.Trim();
             query = query.Where(s => s.LastPersonalityType == trimmedPersonalityType);
         }
 
-        if (!string.IsNullOrWhiteSpace(activityLevel) && Enum.TryParse<ActivityLevel>(activityLevel, ignoreCase: true, out var activityLevelValue))
+        if (!string.IsNullOrWhiteSpace(criteria.ActivityLevel) && Enum.TryParse<ActivityLevel>(criteria.ActivityLevel, ignoreCase: true, out var activityLevelValue))
         {
             query = query.Where(s => s.LastActivityLevel == activityLevelValue);
         }
 
-        if (from.HasValue)
+        // Jins — `Male`/`Female` (validator `Unspecified`ni qabul qilmaydi, `ListStudentsQueryValidator`).
+        if (!string.IsNullOrWhiteSpace(criteria.Gender) && Enum.TryParse<Gender>(criteria.Gender, ignoreCase: true, out var genderValue))
         {
-            query = query.Where(s => s.LastAssessmentAt >= from.Value);
+            query = query.Where(s => s.Gender == genderValue);
         }
 
-        if (to.HasValue)
+        // Yosh → `BirthDate` oralig'i (`StudentAgeRange` — formulalar va chegara holatlari o'sha yerda).
+        if (criteria.AgeMin.HasValue)
         {
-            query = query.Where(s => s.LastAssessmentAt <= to.Value);
+            var latestBirthDate = StudentAgeRange.LatestBirthDateInclusive(criteria.AgeMin.Value, today);
+            query = query.Where(s => s.BirthDate <= latestBirthDate);
         }
 
-        if (!string.IsNullOrWhiteSpace(search))
+        if (criteria.AgeMax.HasValue)
+        {
+            var earliestBirthDateExclusive = StudentAgeRange.EarliestBirthDateExclusive(criteria.AgeMax.Value, today);
+            query = query.Where(s => s.BirthDate > earliestBirthDateExclusive);
+        }
+
+        if (criteria.From.HasValue)
+        {
+            var from = criteria.From.Value;
+            query = query.Where(s => s.LastAssessmentAt >= from);
+        }
+
+        if (criteria.To.HasValue)
+        {
+            var to = criteria.To.Value;
+            query = query.Where(s => s.LastAssessmentAt <= to);
+        }
+
+        if (!string.IsNullOrWhiteSpace(criteria.Search))
         {
             // `docs/05` 2-bo'lim `ix_students_name_trgm` — `ListSchoolsQueryHandler`dagi bilan bir xil sabab.
-            var term = search.Trim();
+            var term = criteria.Search.Trim();
             query = query.Where(s => s.FullName.Contains(term));
         }
 
-        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<AssessmentStatus>(status, ignoreCase: true, out var statusValue))
+        if (!string.IsNullOrWhiteSpace(criteria.Status) && Enum.TryParse<AssessmentStatus>(criteria.Status, ignoreCase: true, out var statusValue))
         {
             // Sahifalash/saralashdan OLDIN qo'llanadi — filtr faol bo'lganda umumiy sonni ham
             // to'g'ri hisoblash uchun (`ix_assessments_status_started(status, started_at desc)`

@@ -82,17 +82,9 @@ internal sealed class ExportStudentsQueryHandler : IRequestHandler<ExportStudent
         var filteredQuery = AdminStudentFilterBuilder.Apply(
             _context,
             _context.AsNoTracking(_context.Students),
-            request.SchoolId,
-            request.Grade,
-            request.Status,
-            request.NeedsAttention,
-            request.PersonalityType,
-            request.ActivityLevel,
-            request.From,
-            request.To,
-            request.Search,
-            AdminSourceFilter.Parse(request.Source),
-            publicSpaceId)
+            AdminStudentFilterCriteria.Of(request),
+            publicSpaceId,
+            DateOnly.FromDateTime(now.UtcDateTime))
             .OrderBy(s => s.Id);
 
         var rowCount = 0;
@@ -132,10 +124,12 @@ internal sealed class ExportStudentsQueryHandler : IRequestHandler<ExportStudent
                         request.NeedsAttention,
                         request.PersonalityType,
                         request.ActivityLevel,
+                        request.Gender,
+                        request.AgeMin,
+                        request.AgeMax,
                         request.From,
                         request.To,
                         HasSearch = !string.IsNullOrWhiteSpace(request.Search),
-                        Source = AdminSourceFilter.Parse(request.Source),
                     },
                 }),
                 ipHash: _ipHasher.Hash(request.IpAddress),

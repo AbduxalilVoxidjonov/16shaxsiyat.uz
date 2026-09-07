@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using ClosedXML.Excel;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using StudentRoadMap.Api.IntegrationTests.Testing;
@@ -18,8 +19,9 @@ using StudentRoadMap.Infrastructure.Persistence;
 namespace StudentRoadMap.Api.IntegrationTests.Admin;
 
 /// <summary>
-/// **Manba (`?source=`) bo'yicha ajratish** — o'quvchilar/sessiyalar ro'yxati va boshqaruv
-/// paneli (2026-09-06, `AdminSourceFilter`).
+/// **Manba (`?source=`) bo'yicha ajratish** — sessiyalar ro'yxati va boshqaruv paneli
+/// (2026-09-06, `AdminSourceFilter`); o'quvchilar ro'yxati/eksporti esa (2026-09-07) ommaviy
+/// makonni SHARTSIZ chiqarib tashlaydi — `source` parametri u yerdan olib tashlangan.
 ///
 /// <para>
 /// Muammoning ildizi: ommaviy makon `schools` jadvalidagi qator bo'lgani uchun uning
@@ -97,46 +99,48 @@ public sealed class AdminSourceFilterEndpointTests : IClassFixture<PublicApiTest
     private static Assessment MakeAssessment(Guid studentId, Guid schoolId, DateTimeOffset now, string sessionToken, Guid programId) =>
         Assessment.Create(Guid.NewGuid(), studentId, schoolId, sessionToken, "uz", programId, startedAt: now, expiresAt: now.AddDays(7), now: now);
 
+    /// <summary>
+    /// O'quvchilar ro'yxati — FAQAT maktab (egasining talabi, 2026-09-07): ommaviy makon
+    /// foydalanuvchisi `?source=` parametrisiz ham, `?source=public` bilan ham ro'yxatga
+    /// TUSHMAYDI (parametr endi qabul qilinmaydi va jimgina e'tiborsiz qoldiriladi). Ular o'z
+    /// bo'limida — `GET /api/admin/public-space/users` (`AdminPublicSpaceUsersEndpointTests`).
+    /// </summary>
     [Fact]
-    public async Task Students_SourceFiltri_IkkiOqimniAjratadi()
+    public async Task Students_Royxat_OmmaviyMakonOquvchisiniHechQachonQaytarmaydi()
     {
         var (schoolStudentId, publicStudentId, _, _) = await SeedBothFlowsAsync("source-students", "+9989031110");
 
         using var client = await AuthenticatedClientAsync("source-students-admin");
 
-        var schoolOnly = await client.GetFromJsonAsync<PagedResult<AdminStudentListItemDto>>(
-            "/api/admin/students?source=school&pageSize=100", TestJson.Options);
-        schoolOnly!.Items.Should().Contain(s => s.Id == schoolStudentId);
-        schoolOnly.Items.Should().NotContain(s => s.Id == publicStudentId);
-        schoolOnly.Items.Should().OnlyContain(s => s.Source == "School");
-
-        var publicOnly = await client.GetFromJsonAsync<PagedResult<AdminStudentListItemDto>>(
-            "/api/admin/students?source=public&pageSize=100", TestJson.Options);
-        publicOnly!.Items.Should().Contain(s => s.Id == publicStudentId);
-        publicOnly.Items.Should().NotContain(s => s.Id == schoolStudentId);
-        publicOnly.Items.Should().OnlyContain(s => s.Source == "Public");
-
-        // Filtrsiz — ikkalasi ham, LEKIN har qator o'z manbasini olib yuradi (ustun).
         var all = await client.GetFromJsonAsync<PagedResult<AdminStudentListItemDto>>(
             "/api/admin/students?pageSize=100", TestJson.Options);
-        all!.Items.Should().Contain(s => s.Id == schoolStudentId && s.Source == "School");
-        all.Items.Should().Contain(s => s.Id == publicStudentId && s.Source == "Public");
+        all!.Items.Should().Contain(s => s.Id == schoolStudentId);
+        all.Items.Should().NotContain(s => s.Id == publicStudentId, "ommaviy makon foydalanuvchilari o'quvchilar bo'limiga aralashmasligi kerak");
+
+        // Eskirgan `?source=public` — parametr olib tashlangan, ommaviy o'quvchini "qaytarib" bermaydi.
+        var legacyPublic = await client.GetFromJsonAsync<PagedResult<AdminStudentListItemDto>>(
+            "/api/admin/students?source=public&pageSize=100", TestJson.Options);
+        legacyPublic!.Items.Should().Contain(s => s.Id == schoolStudentId);
+        legacyPublic.Items.Should().NotContain(s => s.Id == publicStudentId);
     }
 
     [Fact]
-    public async Task Students_NotoGriSourceQiymati_FiltrniOchiradi()
+    public async Task Students_Eksport_OmmaviyMakonOquvchisiniChiqarmaydi()
     {
-        var (schoolStudentId, publicStudentId, _, _) = await SeedBothFlowsAsync("source-students-bad", "+9989031120");
+        var (_, _, _, _) = await SeedBothFlowsAsync("source-students-export", "+9989031120");
 
-        using var client = await AuthenticatedClientAsync("source-students-bad-admin");
+        using var client = await AuthenticatedClientAsync("source-students-export-admin");
 
-        // Noto'g'ri qiymat JIMGINA bo'sh ro'yxat bermaydi ("hech narsa topilmadi" degan yolg'on
-        // javob) — filtr shunchaki qo'llanmaydi (`AdminSourceFilter.Parse`).
-        var result = await client.GetFromJsonAsync<PagedResult<AdminStudentListItemDto>>(
-            "/api/admin/students?source=maktab&pageSize=100", TestJson.Options);
+        var response = await client.GetAsync(new Uri("/api/admin/students/export", UriKind.Relative));
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        result!.Items.Should().Contain(s => s.Id == schoolStudentId);
-        result.Items.Should().Contain(s => s.Id == publicStudentId);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        using var workbook = new XLWorkbook(new MemoryStream(bytes));
+        var worksheet = workbook.Worksheets.First();
+        var names = worksheet.Column(1).CellsUsed().Skip(1).Select(c => c.GetString()).ToList();
+
+        names.Should().Contain("Maktab Oquvchisi source-students-export");
+        names.Should().NotContain("Ommaviy Foydalanuvchi source-students-export", "eksport ro'yxat bilan AYNAN bir xil filtrni ishlatadi");
     }
 
     [Fact]

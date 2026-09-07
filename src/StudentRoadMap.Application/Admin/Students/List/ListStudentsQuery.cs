@@ -6,11 +6,15 @@ using StudentRoadMap.Domain.Common;
 namespace StudentRoadMap.Application.Admin.Students.List;
 
 /// <summary>
-/// `GET /api/admin/students?schoolId=&grade=&status=&needsAttention=&personalityType=&activityLevel=&from=&to=&search=&page=&pageSize=&sort=`
+/// `GET /api/admin/students?schoolId=&grade=&status=&needsAttention=&personalityType=&activityLevel=&gender=&ageMin=&ageMax=&from=&to=&search=&page=&pageSize=&sort=`
 /// — `docs/07-api-shartnoma.md` 3.2-bo'lim. `Status` — `AssessmentStatus` nomi (masalan
-/// `"Analyzed"`); boshqa filtrlar `Student` snapshot ustunlariga to'g'ridan-to'g'ri mos keladi.
-/// `source` — 2026-09-06 kengaytmasi: o'quvchi maktab havolasi orqali kelganmi yoki ommaviy
-/// makondan (`?source=school|public`).
+/// `"Analyzed"`); `ActivityLevel` — `ActivityLevel` nomi; `Gender` — `Male`/`Female`
+/// (`ListStudentsQueryValidator`); `AgeMin`/`AgeMax` — to'liq yosh, `BirthDate` oralig'iga
+/// aylantiriladi (`StudentAgeRange`). Boshqa filtrlar `Student` snapshot ustunlariga
+/// to'g'ridan-to'g'ri mos keladi.
+///
+/// Ro'yxat FAQAT maktab o'quvchilarini qaytaradi — ommaviy makon foydalanuvchilari
+/// `GET /api/admin/public-space/users` da (`AdminStudentFilterBuilder` izohi, 2026-09-07).
 /// </summary>
 public sealed record ListStudentsQuery(
     Guid? SchoolId,
@@ -19,12 +23,12 @@ public sealed record ListStudentsQuery(
     bool? NeedsAttention,
     string? PersonalityType,
     string? ActivityLevel,
+    string? Gender,
+    int? AgeMin,
+    int? AgeMax,
     DateTimeOffset? From,
     DateTimeOffset? To,
     string? Search,
     int Page,
     int PageSize,
-    string? Sort,
-    // MANBA filtri: "school" (maktab havolasi oqimi) yoki "public" (ommaviy makon).
-    // `null` yoki noma'lum qiymat — filtr yo'q (hammasi), `AdminSourceFilter.Parse` ga qarang.
-    string? Source = null) : IRequest<Result<PagedResult<AdminStudentListItemDto>>>;
+    string? Sort) : IRequest<Result<PagedResult<AdminStudentListItemDto>>>;

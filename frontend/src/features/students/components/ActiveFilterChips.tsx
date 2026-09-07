@@ -1,10 +1,14 @@
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/ui/Button';
-import type { StudentsFilterKey, StudentsFilterValues } from '../model/studentsFilters';
+import {
+  formatAgeRange,
+  type StudentsChipKey,
+  type StudentsFilterValues,
+} from '../model/studentsFilters';
 
 export interface ActiveFilterChip {
-  key: StudentsFilterKey;
+  key: StudentsChipKey;
   label: string;
 }
 
@@ -12,7 +16,7 @@ export interface ActiveFilterChipsProps {
   filters: StudentsFilterValues;
   /** `schoolId` tanlangan bo'lsa uning nomi (chip matni uchun) — kombobox allaqachon oladi. */
   schoolName: string;
-  onRemove: (key: StudentsFilterKey) => void;
+  onRemove: (key: StudentsChipKey) => void;
   onClearAll: () => void;
 }
 
@@ -27,17 +31,6 @@ export function ActiveFilterChips({ filters, schoolName, onRemove, onClearAll }:
   const chips: ActiveFilterChip[] = [];
   if (filters.search) {
     chips.push({ key: 'search', label: t('students.chips.search', { value: filters.search }) });
-  }
-  if (filters.source) {
-    chips.push({
-      key: 'source',
-      label: t('students.chips.source', {
-        value:
-          filters.source === 'school'
-            ? t('students.filters.sourceSchool')
-            : t('students.filters.sourcePublic'),
-      }),
-    });
   }
   if (filters.schoolId) {
     chips.push({
@@ -67,6 +60,15 @@ export function ActiveFilterChips({ filters, schoolName, onRemove, onClearAll }:
         value: t(`students.enums.activityLevel.${filters.activityLevel}`),
       }),
     });
+  }
+  if (filters.gender) {
+    chips.push({
+      key: 'gender',
+      label: t('students.chips.gender', { value: t(`students.enums.gender.${filters.gender}`) }),
+    });
+  }
+  if (filters.age) {
+    chips.push({ key: 'age', label: t('students.chips.age', { value: formatAgeRange(filters.age, t) }) });
   }
   if (filters.needsAttention) {
     chips.push({ key: 'needsAttention', label: t('students.chips.needsAttention') });

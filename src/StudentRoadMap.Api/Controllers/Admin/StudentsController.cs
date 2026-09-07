@@ -33,8 +33,10 @@ public sealed class StudentsController : ControllerBase
     }
 
     /// <summary>
-    /// `GET /api/admin/students` — `docs/07` 3.2-bo'lim. `source` (2026-09-06) — MANBA filtri:
-    /// `school` (maktab havolasi oqimi) yoki `public` (ommaviy makon). Berilmasa — hammasi.
+    /// `GET /api/admin/students` — `docs/07` 3.2-bo'lim. FAQAT maktab o'quvchilari (ommaviy makon
+    /// foydalanuvchilari — `GET /api/admin/public-space/users`). Filtrlar: `status`
+    /// (`AssessmentStatus` nomi), `activityLevel` (`Passive|LowActive|Moderate|Active|HighlyActive`),
+    /// `gender` (`Male|Female`), `ageMin`/`ageMax` (6–99, `ageMin &lt;= ageMax`; noto'g'ri → 400).
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<AdminStudentListItemDto>), StatusCodes.Status200OK)]
@@ -46,17 +48,20 @@ public sealed class StudentsController : ControllerBase
         [FromQuery] bool? needsAttention,
         [FromQuery] string? personalityType,
         [FromQuery] string? activityLevel,
+        [FromQuery] string? gender,
+        [FromQuery] int? ageMin,
+        [FromQuery] int? ageMax,
         [FromQuery] DateTimeOffset? from,
         [FromQuery] DateTimeOffset? to,
         [FromQuery] string? search,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? sort = null,
-        [FromQuery] string? source = null,
         CancellationToken cancellationToken = default)
     {
         var query = new ListStudentsQuery(
-            schoolId, grade, status, needsAttention, personalityType, activityLevel, from, to, search, page, pageSize, sort, source);
+            schoolId, grade, status, needsAttention, personalityType, activityLevel, gender, ageMin, ageMax,
+            from, to, search, page, pageSize, sort);
         var result = await _sender.Send(query, cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);

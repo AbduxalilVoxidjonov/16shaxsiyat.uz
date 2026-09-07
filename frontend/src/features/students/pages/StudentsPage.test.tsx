@@ -21,7 +21,6 @@ const STUDENT_1 = {
   needsAttention: true,
   reliabilityFlag: 'Reliable',
   lastAssessmentAt: '2026-08-30T10:00:00Z',
-  source: 'School',
 } satisfies Schemas['AdminStudentListItemDto'];
 
 const STUDENT_2 = {
@@ -38,7 +37,6 @@ const STUDENT_2 = {
   needsAttention: false,
   reliabilityFlag: null,
   lastAssessmentAt: null,
-  source: 'Public',
 } satisfies Schemas['AdminStudentListItemDto'];
 
 /**
@@ -409,25 +407,29 @@ describe('StudentsPage', () => {
   });
 
   /**
-   * P48 — manba bo'yicha ajratish. Ommaviy makon endi maktablar ro'yxatida YO'Q, shu sabab
-   * ommaviy foydalanuvchilarga tushishning yagona yo'li shu filtr; ustun esa filtr
-   * tanlanmagan bo'lsa ham har qatorning manbasini oshkor qiladi.
+   * Egasining talabi (2026-09-07): o'quvchilar bo'limi FAQAT maktab o'quvchilari — ommaviy
+   * makon foydalanuvchilari `/admin/ommaviy` da. Shu sabab "Manba" ustuni/filtri YO'Q va
+   * so'rovga `source` parametri hech qachon qo'shilmaydi.
    */
-  it("har qatorda manba ustuni ko'rsatiladi (maktab / ommaviy)", async () => {
-    mockFetch();
-    renderStudentsPage();
+  it('"Manba" ustuni va filtri yo\'q, so\'rovga `source` yuborilmaydi', async () => {
+    const fetchMock = mockFetch();
+    renderStudentsPage('/admin/students?source=public');
 
     await screen.findByText('Aliyev Sardor');
+
     const table = within(screen.getByRole('table'));
-
-    const schoolRow = within(table.getByText('Aliyev Sardor').closest('tr')!);
-    expect(schoolRow.getByText('Maktab')).toBeInTheDocument();
-
-    const publicRow = within(table.getByText('Karimova Nilufar').closest('tr')!);
-    expect(publicRow.getByText('Ommaviy makon')).toBeInTheDocument();
+    expect(table.queryByRole('columnheader', { name: 'Manba' })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Manba')).not.toBeInTheDocument();
+    expect(screen.queryByText('Ommaviy makon')).not.toBeInTheDocument();
+    expect(
+      fetchMock.mock.calls.some(
+        ([input]) =>
+          String(input).includes('/api/admin/students?') && String(input).includes('source='),
+      ),
+    ).toBe(false);
   });
 
-  it("manba filtri URL'ga yoziladi va so'rovga `source` parametri qo'shiladi", async () => {
+  it("jins, yosh, holat va aktivlik filtrlari URL'ga va so'rovga to'g'ri yoziladi", async () => {
     const fetchMock = mockFetch();
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderStudentsPage();
@@ -435,37 +437,101 @@ describe('StudentsPage', () => {
     await screen.findByText('Aliyev Sardor');
     fetchMock.mockClear();
 
-    await user.selectOptions(screen.getByLabelText('Manba'), 'public');
+    const filtersBar = within(screen.getByTestId('students-filters'));
+    await user.selectOptions(filtersBar.getByLabelText('Jins'), 'Erkak');
+    await user.selectOptions(filtersBar.getByLabelText('Yosh'), '11–14 yosh');
+    await user.selectOptions(filtersBar.getByLabelText('Holat'), 'Tahlil qilingan');
+    await user.selectOptions(filtersBar.getByLabelText('Aktivlik darajasi'), 'Faol');
 
     await waitFor(() => {
-      expect(screen.getByTestId('url-probe').textContent).toContain('source=public');
+      const url = screen.getByTestId('url-probe').textContent ?? '';
+      expect(url).toContain('gender=Male');
+      expect(url).toContain('ageMin=11');
+      expect(url).toContain('ageMax=14');
+      expect(url).toContain('status=Analyzed');
+      expect(url).toContain('activityLevel=Active');
     });
+
+    // Backend `docs/07` 3.2 parametr nomlari — eksport ham aynan shu satrni ishlatadi.
     await waitFor(() => {
-      expect(fetchMock.mock.calls.some(([input]) => String(input).includes('source=public'))).toBe(
-        true,
-      );
+      expect(
+        fetchMock.mock.calls.some(([input]) =>
+          String(input).includes(
+            '/api/admin/students?status=Analyzed&activityLevel=Active&gender=Male&ageMin=11&ageMax=14&page=1',
+          ),
+        ),
+      ).toBe(true);
     });
+
+    // Faol filtr chiplari va natija soni ko'rinadi.
+    expect(screen.getByText('Jins: Erkak')).toBeInTheDocument();
+    expect(screen.getByText('Yosh: 11–14 yosh')).toBeInTheDocument();
+    expect(screen.getByText('Jami: 2 ta')).toBeInTheDocument();
   });
 
-  it("chuqur havoladan `source` o'qiladi va faol filtr chipi ko'rsatiladi", async () => {
+  it("chuqur havoladan `ageMin`/`ageMax` o'qiladi — tayyor bo'lmagan oraliq ham `Select`da ko'rinadi", async () => {
     const fetchMock = mockFetch();
-    renderStudentsPage('/admin/students?source=public');
+    renderStudentsPage('/admin/students?gender=Female&ageMin=12&ageMax=13');
 
     await screen.findByText('Aliyev Sardor');
 
-    expect(screen.getByLabelText('Manba')).toHaveValue('public');
-    expect(screen.getByText('Manba: Ommaviy makon')).toBeInTheDocument();
+    const filtersBar = within(screen.getByTestId('students-filters'));
+    expect(filtersBar.getByLabelText('Jins')).toHaveValue('Female');
+    expect(filtersBar.getByLabelText('Yosh')).toHaveValue('12-13');
+    expect(filtersBar.getByRole('option', { name: '12–13 yosh' })).toBeInTheDocument();
+    expect(screen.getByText('Yosh: 12–13 yosh')).toBeInTheDocument();
+
     await waitFor(() => {
-      expect(fetchMock.mock.calls.some(([input]) => String(input).includes('source=public'))).toBe(
-        true,
-      );
+      expect(
+        fetchMock.mock.calls.some(
+          ([input]) =>
+            String(input).includes('/api/admin/students?') &&
+            String(input).includes('gender=Female&ageMin=12&ageMax=13'),
+        ),
+      ).toBe(true);
     });
   });
 
-  it('eksport ham joriy manba filtri bilan yuboriladi', async () => {
+  it("buzilgan yosh oralig'i (`ageMin > ageMax`) URL'dan e'tiborsiz qoldiriladi — backendga yuborilmaydi", async () => {
+    const fetchMock = mockFetch();
+    renderStudentsPage('/admin/students?ageMin=15&ageMax=11');
+
+    await screen.findByText('Aliyev Sardor');
+
+    expect(within(screen.getByTestId('students-filters')).getByLabelText('Yosh')).toHaveValue('');
+    expect(fetchMock.mock.calls.some(([input]) => String(input).includes('ageMin='))).toBe(false);
+  });
+
+  it("yosh chipi olib tashlanganda ikkala parametr birga o'chadi; 'Hammasini tozalash' jins va yoshni ham tozalaydi", async () => {
+    mockFetch();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderStudentsPage('/admin/students?gender=Male&ageMin=18&status=Analyzed');
+
+    await screen.findByText('Aliyev Sardor');
+    expect(screen.getByText('Yosh: 18+ yosh')).toBeInTheDocument();
+
+    await user.click(screen.getByLabelText('Yosh: 18+ yosh filtrini olib tashlash'));
+    await waitFor(() => {
+      const url = screen.getByTestId('url-probe').textContent ?? '';
+      expect(url).not.toContain('ageMin=');
+      expect(url).not.toContain('ageMax=');
+      expect(url).toContain('gender=Male');
+    });
+
+    await user.click(screen.getByText('Hammasini tozalash'));
+    await waitFor(() => {
+      const url = screen.getByTestId('url-probe').textContent ?? '';
+      expect(url).not.toContain('gender=');
+      expect(url).not.toContain('status=');
+    });
+    expect(within(screen.getByTestId('students-filters')).getByLabelText('Jins')).toHaveValue('');
+    expect(screen.queryByText('Hammasini tozalash')).not.toBeInTheDocument();
+  });
+
+  it('eksport ham joriy jins/yosh filtri bilan yuboriladi', async () => {
     const fetchMock = mockFetch();
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    renderStudentsPage('/admin/students?source=public');
+    renderStudentsPage('/admin/students?gender=Female&ageMin=15&ageMax=17');
 
     await screen.findByText('Aliyev Sardor');
     await user.click(screen.getByRole('button', { name: "Excel'ga eksport" }));
@@ -475,7 +541,7 @@ describe('StudentsPage', () => {
         fetchMock.mock.calls.some(
           ([input]) =>
             String(input).includes('/api/admin/students/export') &&
-            String(input).includes('source=public'),
+            String(input).includes('gender=Female&ageMin=15&ageMax=17'),
         ),
       ).toBe(true);
     });

@@ -492,10 +492,13 @@
       "needsAttentionLabel": "Faqat e'tibor talab qiladiganlar",
       "fromLabel": "Sanadan",
       "toLabel": "Sanagacha",
-      "sourceLabel": "Manba",
-      "sourceAll": "Hammasi",
-      "sourceSchool": "Maktab",
-      "sourcePublic": "Ommaviy makon"
+      "genderLabel": "Jins",
+      "genderAll": "Hammasi",
+      "ageLabel": "Yosh",
+      "ageAll": "Hammasi",
+      "ageRange": "{{min}}–{{max}} yosh",
+      "ageFrom": "{{min}}+ yosh",
+      "ageTo": "{{max}} yoshgacha"
     },
     "chips": {
       "ariaLabel": "Faol filtrlar",
@@ -510,7 +513,8 @@
       "to": "Sanagacha: {{value}}",
       "remove": "{{value}} filtrini olib tashlash",
       "clearAll": "Hammasini tozalash",
-      "source": "Manba: {{value}}"
+      "gender": "Jins: {{value}}",
+      "age": "Yosh: {{value}}"
     },
     "table": {
       "ariaLabel": "O'quvchilar jadvali",
@@ -525,8 +529,7 @@
       "lastAssessmentAt": "Sana",
       "needsAttentionLabel": "E'tibor talab qiladi",
       "emptyTitle": "Hali o'quvchi yo'q",
-      "emptyDescription": "Hali o'quvchi yo'q — maktab havolasini ulashing.",
-      "source": "Manba"
+      "emptyDescription": "Hali o'quvchi yo'q — maktab havolasini ulashing."
     },
     "enums": {
       "status": {
@@ -550,9 +553,9 @@
         "Questionable": "Shubhali",
         "Unreliable": "Ishonchsiz"
       },
-      "source": {
-        "School": "Maktab",
-        "Public": "Ommaviy makon"
+      "gender": {
+        "Male": "Erkak",
+        "Female": "Ayol"
       }
     }
   },

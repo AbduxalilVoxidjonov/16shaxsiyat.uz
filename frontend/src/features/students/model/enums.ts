@@ -23,27 +23,13 @@ export const RELIABILITY_FLAG_VALUES = ['Reliable', 'Questionable', 'Unreliable'
 export type ReliabilityFlag = (typeof RELIABILITY_FLAG_VALUES)[number];
 
 /**
- * O'quvchi yozuvining MANBASI (P48) — backend `AdminStudentListItemDto.source`.
- *
- * `School` — klassik maktab havolasi orqali kirgan o'quvchi; `Public` — Telegram orqali
- * kirgan, ommaviy makondagi foydalanuvchi. Ikkalasi bir jadvalda saqlanadi (`Student.SchoolId`
- * domenda majburiy — bu SAQLASH qarori), lekin admin panelda ATAYLAB ajratiladi: aralashib
- * ketgan ro'yxat "maktabda 5000 o'quvchi bor" degan yolg'on taassurot berardi.
- *
- * Sxemada oddiy `string` (backend `ToString()`), shu sabab union bu yerda qo'lda saqlanadi —
- * `ASSESSMENT_STATUS_VALUES` bilan bir xil naqsh.
+ * Jins filtri qiymatlari — backend `?gender=` faqat `Male`/`Female` qabul qiladi
+ * (`Unspecified` → 400, `docs/07` 3.2). Domain enum'i `docs/05` 3-bo'lim: "Gender | 0 Unspecified,
+ * 1 Male, 2 Female" — filtrda `Unspecified` yo'q, chunki "jinsi ko'rsatilmaganlar" kesimi
+ * admin uchun ma'nosiz.
  */
-export const STUDENT_SOURCE_VALUES = ['School', 'Public'] as const;
-export type StudentSource = (typeof STUDENT_SOURCE_VALUES)[number];
-
-/** URL query'da ishlatiladigan qiymatlar (backend `?source=` parametri). */
-export const STUDENT_SOURCE_QUERY_VALUES = ['school', 'public'] as const;
-export type StudentSourceQuery = (typeof STUDENT_SOURCE_QUERY_VALUES)[number];
-
-/** `source` — haqiqiy `StudentSource` qiymatimi (backend `string` yuboradi). */
-export function isStudentSource(value: string | null | undefined): value is StudentSource {
-  return typeof value === 'string' && (STUDENT_SOURCE_VALUES as readonly string[]).includes(value);
-}
+export const GENDER_FILTER_VALUES = ['Male', 'Female'] as const;
+export type GenderFilter = (typeof GENDER_FILTER_VALUES)[number];
 
 /** `docs/05`: "ActivityLevel | 1 Passive, 2 LowActive, 3 Moderate, 4 Active, 5 HighlyActive". */
 export const ACTIVITY_LEVEL_VALUES = [

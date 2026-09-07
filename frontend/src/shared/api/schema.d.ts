@@ -3167,10 +3167,12 @@ export interface paths {
                     needsAttention?: boolean;
                     personalityType?: string;
                     activityLevel?: string;
+                    gender?: string;
+                    ageMin?: number;
+                    ageMax?: number;
                     from?: string;
                     to?: string;
                     search?: string;
-                    source?: string;
                 };
                 header?: never;
                 path?: never;
@@ -5446,13 +5448,15 @@ export interface paths {
                     needsAttention?: boolean;
                     personalityType?: string;
                     activityLevel?: string;
+                    gender?: string;
+                    ageMin?: number;
+                    ageMax?: number;
                     from?: string;
                     to?: string;
                     search?: string;
                     page?: number;
                     pageSize?: number;
                     sort?: string;
-                    source?: string;
                 };
                 header?: never;
                 path?: never;
@@ -6360,7 +6364,6 @@ export interface components {
             reliabilityFlag?: string | null;
             /** Format: date-time */
             lastAssessmentAt?: string | null;
-            source: string;
         };
         AdminStudentListItemDtoPagedResult: {
             items: components["schemas"]["AdminStudentListItemDto"][];
