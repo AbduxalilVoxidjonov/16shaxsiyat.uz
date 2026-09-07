@@ -28,28 +28,6 @@ export const ASSESSMENT_STATUS_VALUES = [
 ] as const;
 export type AssessmentStatus = (typeof ASSESSMENT_STATUS_VALUES)[number];
 
-/**
- * Sessiya MANBASI (P48) — backend `AdminAssessmentListItemDto.source`.
- *
- * `School` — maktab havolasi orqali boshlangan sessiya; `Public` — ommaviy makonda
- * (Telegram orqali kirgan foydalanuvchi) boshlangan sessiya. `features/students` dagi
- * bir xil union ATAYLAB takrorlangan — `docs/10` 2-bo'lim: feature'lar bir-birini import
- * qilmaydi.
- */
-export const ASSESSMENT_SOURCE_VALUES = ['School', 'Public'] as const;
-export type AssessmentSource = (typeof ASSESSMENT_SOURCE_VALUES)[number];
-
-/** URL query'da ishlatiladigan qiymatlar (backend `?source=` parametri). */
-export const ASSESSMENT_SOURCE_QUERY_VALUES = ['school', 'public'] as const;
-export type AssessmentSourceQuery = (typeof ASSESSMENT_SOURCE_QUERY_VALUES)[number];
-
-/** `value` — haqiqiy `AssessmentSource` qiymatimi (backend `string` yuboradi). */
-export function isAssessmentSource(value: string | null | undefined): value is AssessmentSource {
-  return (
-    typeof value === 'string' && (ASSESSMENT_SOURCE_VALUES as readonly string[]).includes(value)
-  );
-}
-
 /** `docs/05`: "ReliabilityFlag | 1 Reliable, 2 Questionable, 3 Unreliable". */
 export const RELIABILITY_FLAG_VALUES = ['Reliable', 'Questionable', 'Unreliable'] as const;
 export type ReliabilityFlag = (typeof RELIABILITY_FLAG_VALUES)[number];
@@ -272,19 +250,14 @@ export function isReliabilityFlag(value: string | null | undefined): value is Re
  * `GET /api/admin/assessments` ro'yxat elementi — backend `AdminAssessmentListItemDto`
  * (`Application/Admin/Assessments/AdminAssessmentDtos.cs`) dan to'liq re-export.
  * `programId`/`programName` endi sxemada BOR — qo'lda qo'shilgan `&` bloki olib tashlandi.
+ *
+ * Ro'yxat FAQAT maktab sessiyalarini qaytaradi (egasining qarori, 2026-09-07; ommaviy makon
+ * sessiyalari `/admin/ommaviy` bo'limida), shu sabab 2026-09-06 dagi `source` ustuni yo'q.
  */
-export type AssessmentListItemDto = Omit<
-  components['schemas']['AdminAssessmentListItemDto'],
-  'source'
-> & {
-  /** Manba (P48): `School` — maktab havolasi; `Public` — ommaviy makon. */
-  source: AssessmentSource;
-};
+export type AssessmentListItemDto = components['schemas']['AdminAssessmentListItemDto'];
 
 /** `GET /api/admin/assessments` query parametrlari — `ListAssessmentsQuery` bilan bir xil. */
 export interface AssessmentsListQuery {
-  /** `?source=school|public` — berilmasa ikkala manba ham qaytadi. */
-  source?: AssessmentSourceQuery;
   schoolId?: string;
   status?: string;
   from?: string;

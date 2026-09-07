@@ -2321,7 +2321,6 @@ export interface paths {
                     page?: number;
                     pageSize?: number;
                     sort?: string;
-                    source?: string;
                 };
                 header?: never;
                 path?: never;
@@ -5802,7 +5801,6 @@ export interface components {
             /** Format: uuid */
             programId: string;
             programName?: string | null;
-            source: string;
         };
         AdminAssessmentListItemDtoPagedResult: {
             items: components["schemas"]["AdminAssessmentListItemDto"][];

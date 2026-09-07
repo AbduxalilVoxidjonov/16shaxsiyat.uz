@@ -46,7 +46,6 @@ export default function AssessmentsPage() {
   });
 
   const query: AssessmentsListQuery = {
-    source: filters.source || undefined,
     schoolId: filters.schoolId || undefined,
     status: filters.status || undefined,
     from: filters.from || undefined,
@@ -65,16 +64,6 @@ export default function AssessmentsPage() {
       cell: (row) => <span className="font-medium text-neutral-900">{row.studentName}</span>,
     },
     { id: 'schoolName', header: t('assessments.table.school'), cell: (row) => row.schoolName },
-    {
-      // Manba ustuni (P48) — har qator qaysi oqimdan kelganini o'zi oshkor qiladi.
-      id: 'source',
-      header: t('assessments.table.source'),
-      cell: (row) => (
-        <Badge variant={row.source === 'Public' ? 'primary' : 'neutral'}>
-          {t(`assessments.enums.source.${row.source}`)}
-        </Badge>
-      ),
-    },
     {
       id: 'programName',
       header: t('assessments.table.program'),

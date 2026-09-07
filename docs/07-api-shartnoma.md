@@ -624,8 +624,8 @@ to'ldirilgan (tip `string | null` — ustun nullable).
 > **Faqat maktab** (2026-09-07, egasining talabi): ro'yxat va eksport ommaviy makon
 > (`SchoolKind.PublicSpace`) foydalanuvchilarini **shartsiz** chiqarib tashlaydi — ular o'z
 > bo'limida, `GET /api/admin/public-space/users` (3.7). Ilgari bu yerda bo'lgan `?source=`
-> parametri va `source` ustuni **olib tashlandi** (sessiyalar 3.3 va boshqaruv paneli 3.6 da
-> `source` qoladi). Yuborilgan `?source=` jimgina e'tiborsiz qoldiriladi.
+> parametri va `source` ustuni **olib tashlandi** (sessiyalar 3.3 da ham shu qoida; faqat
+> boshqaruv paneli 3.6 da `source` qoladi). Yuborilgan `?source=` jimgina e'tiborsiz qoldiriladi.
 
 **Ro'yxat filtrlari** (barchasi ixtiyoriy; enum qiymatlari — nomi, `docs/05` 3-bo'lim):
 
@@ -784,13 +784,25 @@ O'girish backend'da bir joyda: `StudentProfileMapping.RiasecScaleToLetter`
 ### 3.3 Sessiyalar
 | Metod | Yo'l | Izoh |
 |-------|------|------|
-| GET | `/api/admin/assessments?schoolId=&status=&from=&to=&page=&pageSize=` | Ro'yxat |
-| GET | `/api/admin/assessments/{id}` | To'liq detal (`latestAssessment` yadrosi + sessiya sarlavhasi + `tests[]`) |
+| GET | `/api/admin/assessments?schoolId=&status=&from=&to=&page=&pageSize=&sort=` | Ro'yxat — **faqat maktab sessiyalari** (pastda) |
+| GET | `/api/admin/assessments/{id}` | To'liq detal (`latestAssessment` yadrosi + sessiya sarlavhasi + `tests[]`) — ommaviy sessiya uchun ham ochiq (pastda) |
 | GET | `/api/admin/assessments/{id}/answers?testCode=` | Savolma-savol javoblar va tahlili (audit uchun) |
 | POST | `/api/admin/assessments/{id}/rerun-analysis` | `{ "provider": "Anthropic", "promptVersion": "v1.1" }` → 202 |
 | POST | `/api/admin/assessments/{id}/recalculate-scores` | Scoring versiyasi o'zgargan bo'lsa |
 | GET | `/api/admin/assessments/{id}/report.pdf` | PDF hisobot |
 | DELETE | `/api/admin/assessments/{id}` | Soft delete |
+
+> **Faqat maktab** (2026-09-07, egasining qarori — 3.2 bilan bir xil): ro'yxat ommaviy makon
+> (`SchoolKind.PublicSpace`) sessiyalarini **shartsiz** chiqarib tashlaydi — ular
+> `GET /api/admin/public-space/users` (3.7) → foydalanuvchi profili (3.2 `{id}`) orqali
+> ko'rinadi. 2026-09-06 da qo'shilgan `?source=` parametri va `source` ustuni **olib tashlandi**;
+> yuborilgan `?source=` jimgina e'tiborsiz qoldiriladi. Boshqaruv paneli (3.6) ataylab ikki
+> kesimli — u yerda `source` qoladi.
+>
+> **`{id}` amallari 404 QILINMAYDI.** Ro'yxatdan yashirish ≠ yozuvni yo'q qilish: ommaviy
+> foydalanuvchi profili (`/admin/students/{id}`) `{id}/answers`, `rerun-analysis`,
+> `report.pdf` endpointlarini ommaviy sessiya uchun ishlatadi; detal ham shu qatorda. Qulf:
+> `AdminSourceFilterEndpointTests.Assessments_Royxat_OmmaviyMakonSessiyasiniHechQachonQaytarmaydi`.
 
 **`GET /api/admin/assessments` — ro'yxat elementi** (`AdminAssessmentListItemDto`)
 ```json

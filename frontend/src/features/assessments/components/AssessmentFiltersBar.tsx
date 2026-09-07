@@ -10,13 +10,16 @@ import {
   readAssessmentsFilters,
   type AssessmentsFilterKey,
 } from '../model/assessmentsFilters';
-import { ASSESSMENT_SOURCE_QUERY_VALUES, ASSESSMENT_STATUS_VALUES } from '../model/types';
+import { ASSESSMENT_STATUS_VALUES } from '../model/types';
 
 /**
  * Sessiyalar filtr paneli — `docs/11` A-6 ("Ro'yxat + holat filtri") va `prompts/15`
  * filtrlari: holat, maktab, sana oralig'i. Barcha holat URL query'da (`CLAUDE.md`
  * "MAXSUS DIQQAT" 2) — shu sabab boshqaruv panelidagi `?status=Analyzing` havolasi
  * darhol filtr sifatida qo'llanadi va orqaga tugmasi ishlaydi.
+ *
+ * Manba filtri YO'Q (2026-09-07): ro'yxat faqat maktab sessiyalarini ko'rsatadi, ommaviy
+ * makon sessiyalari o'z bo'limida (`/admin/ommaviy`) — `features/students` bilan bir xil.
  */
 export function AssessmentFiltersBar() {
   const { t } = useTranslation();
@@ -51,7 +54,7 @@ export function AssessmentFiltersBar() {
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Select
           label={t('assessments.filters.status')}
           value={filters.status}
@@ -61,25 +64,6 @@ export function AssessmentFiltersBar() {
             ...ASSESSMENT_STATUS_VALUES.map((status) => ({
               value: status,
               label: t(`assessmentDetail.enums.status.${status}`),
-            })),
-          ]}
-        />
-        {/*
-          Manba filtri (P48) — ommaviy makon endi maktablar ro'yxatida yo'q, shu sabab
-          ommaviy sessiyalarga tushishning yagona yo'li shu filtr.
-        */}
-        <Select
-          label={t('assessments.filters.source')}
-          value={filters.source}
-          onChange={(event) => updateFilter('source', event.target.value)}
-          options={[
-            { value: '', label: t('assessments.filters.allSources') },
-            ...ASSESSMENT_SOURCE_QUERY_VALUES.map((value) => ({
-              value,
-              label:
-                value === 'school'
-                  ? t('assessments.filters.sourceSchool')
-                  : t('assessments.filters.sourcePublic'),
             })),
           ]}
         />

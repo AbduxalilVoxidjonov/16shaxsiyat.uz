@@ -10,6 +10,15 @@ namespace StudentRoadMap.Application.Admin.Assessments.List;
 /// `"Analyzed"`). `From`/`To` — `StartedAt` bo'yicha filtr (sessiya boshlangan sana oralig'i).
 /// `Sort` — doc jadvalida yo'q, lekin §4 umumiy konvensiyasi (`Students`/`Schools` ro'yxatlari
 /// bilan bir xil uslub) — ixtiyoriy, standart `-startedAt`.
+///
+/// <para>
+/// **Faqat maktab sessiyalari** (egasining qarori, 2026-09-07): ommaviy makon
+/// (`SchoolKind.PublicSpace`) sessiyalari bu ro'yxatga SHARTSIZ kirmaydi — ular o'z bo'limida
+/// (`/admin/ommaviy` → foydalanuvchi profili) ko'rinadi. Ilgari (2026-09-06) `Source`
+/// parametri bilan ixtiyoriy ajratilardi; `ListStudentsQuery` bilan bir xil sabab bilan
+/// olib tashlandi. Yuborilgan `?source=` jimgina e'tiborsiz qoldiriladi (ASP.NET Core
+/// noma'lum query parametrlarini xato hisoblamaydi).
+/// </para>
 /// </summary>
 public sealed record ListAssessmentsQuery(
     Guid? SchoolId,
@@ -18,7 +27,4 @@ public sealed record ListAssessmentsQuery(
     DateTimeOffset? To,
     int Page,
     int PageSize,
-    string? Sort,
-    // MANBA filtri (2026-09-06): "school" (maktab havolasi oqimi) yoki "public" (ommaviy makon).
-    // `null`/noma'lum qiymat — filtr yo'q. `AdminSourceFilter.Parse` ga qarang.
-    string? Source = null) : IRequest<Result<PagedResult<AdminAssessmentListItemDto>>>;
+    string? Sort) : IRequest<Result<PagedResult<AdminAssessmentListItemDto>>>;

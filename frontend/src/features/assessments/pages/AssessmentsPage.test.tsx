@@ -36,7 +36,6 @@ const ROW = {
   reliabilityFlag: 'Reliable',
   programId: 'program-1',
   programName: null,
-  source: 'School',
 } satisfies AssessmentListItemDto;
 
 const UNFINISHED_ROW = {
@@ -48,7 +47,6 @@ const UNFINISHED_ROW = {
   durationMinutes: null,
   reliabilityScore: null,
   reliabilityFlag: null,
-  source: 'Public',
 } satisfies AssessmentListItemDto;
 
 /** Maktab filtri ro'yxati — backend `AdminSchoolListItemDto` ning TO'LIQ qatori. */
@@ -167,40 +165,24 @@ describe('AssessmentsPage', () => {
     expect(lastRequest).toContain('page=1');
   });
 
-  /** P48 — sessiya qaysi oqimdan kelganini har qator o'zi oshkor qiladi. */
-  it("har qatorda manba ustuni ko'rsatiladi (maktab / ommaviy)", async () => {
-    renderPage([ROW, UNFINISHED_ROW]);
+  /**
+   * Egasining qarori (2026-09-07): sessiyalar bo'limi faqat maktab sessiyalarini ko'rsatadi,
+   * ommaviy makon sessiyalari `/admin/ommaviy` da — shu sabab "Manba" ustuni/filtri yo'q va
+   * so'rovga `source` parametri yuborilmaydi (`features/students` bilan bir xil).
+   */
+  it("jadvalda va filtrlarda manba ustuni/filtri YO'Q, so'rovda `source` parametri yo'q", async () => {
+    const fetchMock = renderPage([ROW, UNFINISHED_ROW], '/admin/assessments?source=public');
 
     await screen.findByText('Aliyev Sardor Bekzodovich');
-    const table = within(screen.getByRole('table', { name: "Sessiyalar ro'yxati" }));
+    const table = screen.getByRole('table', { name: "Sessiyalar ro'yxati" });
+    expect(within(table).queryByRole('columnheader', { name: 'Manba' })).not.toBeInTheDocument();
+    expect(within(table).queryByText('Ommaviy makon')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Manba')).not.toBeInTheDocument();
 
-    const schoolRow = within(table.getByText('Aliyev Sardor Bekzodovich').closest('tr')!);
-    expect(schoolRow.getByText('Maktab')).toBeInTheDocument();
-
-    const publicRow = within(table.getByText('Karimova Nilufar').closest('tr')!);
-    expect(publicRow.getByText('Ommaviy makon')).toBeInTheDocument();
-  });
-
-  it("manba filtri so'rovga `source` parametrini qo'shadi", async () => {
-    const user = userEvent.setup();
-    const fetchMock = renderPage([ROW]);
-
-    await screen.findByText('Aliyev Sardor Bekzodovich');
-    await user.selectOptions(screen.getByLabelText('Manba'), 'public');
-
-    await waitFor(() => {
-      expect(
-        assessmentRequests(fetchMock.requestedUrls).some((url) => url.includes('source=public')),
-      ).toBe(true);
-    });
-  });
-
-  it("chuqur havoladan `?source=public` DARHOL qo'llanadi", async () => {
-    const fetchMock = renderPage([UNFINISHED_ROW], '/admin/assessments?source=public');
-
-    await screen.findByText('Karimova Nilufar');
-    expect(assessmentRequests(fetchMock.requestedUrls)[0]).toContain('source=public');
-    expect(screen.getByLabelText('Manba')).toHaveValue('public');
+    // Eskirgan `?source=public` chuqur havolasi API so'roviga o'tmaydi.
+    for (const url of assessmentRequests(fetchMock.requestedUrls)) {
+      expect(new URL(url, 'http://localhost').searchParams.has('source')).toBe(false);
+    }
   });
 
   it("qatorga bosilganda detal sahifasiga sessiya qatori bilan o'tiladi", async () => {

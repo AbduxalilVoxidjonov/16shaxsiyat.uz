@@ -17,6 +17,10 @@ namespace StudentRoadMap.Application.Admin.Assessments.List;
 /// Sahifa hajmidagi (≤100) o'quvchi/maktab nomlari — IKKITA batch so'rov (JOIN emas), xuddi
 /// `ListStudentsQueryHandler`dagi `schoolName` yechimi kabi.
 ///
+/// **Faqat maktab sessiyalari** (2026-09-07, `AdminStudentFilterBuilder` naqshi): ommaviy makon
+/// `Id`si bir marta o'qiladi (`AdminSourceFilter.FindPublicSpaceIdAsync`) va `school_id <> @id`
+/// SHARTSIZ qo'llanadi — `ix_assessments_school_status` indeksiga mos, JOIN/EXISTS yo'q.
+///
 /// **SQLite (faqat sinov muhiti) eslatmasi:** standart saralash (`-startedAt`, `DateTimeOffset`)
 /// avval SQLite'da `ORDER BY`ni tarjima qila olmasdi — `AppDbContext.ApplySqliteDateTimeOffsetConversion`
 /// (`DateTimeOffset` → `long` UTC tick, faqat SQLite'da) bilan yopildi (`prompts/15` 2-bosqich,
@@ -39,22 +43,15 @@ internal sealed class ListAssessmentsQueryHandler : IRequestHandler<ListAssessme
 
         var query = _context.AsNoTracking(_context.Assessments);
 
-        // Ommaviy makon `Id`si — MANBA filtri uchun ham, javobdagi `source` uchun ham
-        // (`ListStudentsQueryHandler` bilan bir xil naqsh: bitta arzon so'rov).
+        // Ommaviy makon sessiyalari — DOIM chiqarib tashlanadi (sinf izohiga qarang). Makon
+        // bazada topilmasa (seed bajarilmagan) `Guid.Empty` sentinel: hech bir `SchoolId` unga
+        // teng emas, shart hamma qatorni o'tkazadi — `AdminStudentFilterBuilder` dagi bilan
+        // bir xil sabab.
         var publicSpaceId = await AdminSourceFilter
             .FindPublicSpaceIdAsync(_context, _executor, cancellationToken)
             .ConfigureAwait(false);
-
-        var source = AdminSourceFilter.Parse(request.Source);
-        if (source is not null)
-        {
-            // Makon topilmasa `Guid.Empty` sentinel — `AdminStudentFilterBuilder` dagi bilan
-            // bir xil sabab (hech bir `SchoolId` unga teng emas).
-            var spaceId = publicSpaceId ?? Guid.Empty;
-            query = source == AdminSourceFilter.Public
-                ? query.Where(a => a.SchoolId == spaceId)
-                : query.Where(a => a.SchoolId != spaceId);
-        }
+        var spaceId = publicSpaceId ?? Guid.Empty;
+        query = query.Where(a => a.SchoolId != spaceId);
 
         if (request.SchoolId.HasValue)
         {
@@ -126,8 +123,7 @@ internal sealed class ListAssessmentsQueryHandler : IRequestHandler<ListAssessme
                 a.ReliabilityFlag?.ToString(),
                 a.ProgramId,
                 // Dastur yozuvi topilmasa `null` — soxta nom yoki bo'sh satr EMAS.
-                programNameById.GetValueOrDefault(a.ProgramId),
-                AdminSourceFilter.SourceOf(a.SchoolId, publicSpaceId)))
+                programNameById.GetValueOrDefault(a.ProgramId)))
             .ToList();
 
         return Result.Success(PagedResult<AdminAssessmentListItemDto>.Create(items, page, pageSize, totalCount));

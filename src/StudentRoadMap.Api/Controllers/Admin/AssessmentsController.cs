@@ -41,8 +41,9 @@ public sealed class AssessmentsController : ControllerBase
     }
 
     /// <summary>
-    /// `GET /api/admin/assessments` — `docs/07` 3.3-bo'lim. `source` (2026-09-06) — MANBA
-    /// filtri: `school` yoki `public` (ommaviy makon). Berilmasa — hammasi.
+    /// `GET /api/admin/assessments` — `docs/07` 3.3-bo'lim. Faqat maktab sessiyalari
+    /// (2026-09-07): ommaviy makon sessiyalari shartsiz chiqariladi, `?source=` parametri
+    /// endi yo'q (`ListAssessmentsQuery` izohi).
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<AdminAssessmentListItemDto>), StatusCodes.Status200OK)]
@@ -55,10 +56,9 @@ public sealed class AssessmentsController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? sort = null,
-        [FromQuery] string? source = null,
         CancellationToken cancellationToken = default)
     {
-        var query = new ListAssessmentsQuery(schoolId, status, from, to, page, pageSize, sort, source);
+        var query = new ListAssessmentsQuery(schoolId, status, from, to, page, pageSize, sort);
         var result = await _sender.Send(query, cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);

@@ -19,15 +19,16 @@ using StudentRoadMap.Infrastructure.Persistence;
 namespace StudentRoadMap.Api.IntegrationTests.Admin;
 
 /// <summary>
-/// **Manba (`?source=`) bo'yicha ajratish** — sessiyalar ro'yxati va boshqaruv paneli
-/// (2026-09-06, `AdminSourceFilter`); o'quvchilar ro'yxati/eksporti esa (2026-09-07) ommaviy
-/// makonni SHARTSIZ chiqarib tashlaydi — `source` parametri u yerdan olib tashlangan.
+/// **Maktab va ommaviy oqimlarni ajratish** (`AdminSourceFilter`). Boshqaruv paneli
+/// (2026-09-06) `?source=` bilan ikki kesimli qoladi; o'quvchilar ro'yxati/eksporti va
+/// sessiyalar ro'yxati esa (2026-09-07, egasining qarori) ommaviy makonni SHARTSIZ chiqarib
+/// tashlaydi — `source` parametri va ustuni u yerlardan olib tashlangan.
 ///
 /// <para>
 /// Muammoning ildizi: ommaviy makon `schools` jadvalidagi qator bo'lgani uchun uning
 /// foydalanuvchilari va sessiyalari admin ro'yxatlarida oddiy maktab qatorlari bilan
-/// ARALASHIB ketardi — `schoolName` ustuni ikki oqimni ajratmasdi. Endi har qator o'z
-/// `source` qiymatini olib yuradi va ro'yxat/panel manba bo'yicha filtrlanadi.
+/// ARALASHIB ketardi — `schoolName` ustuni ikki oqimni ajratmasdi. Endi maktab bo'limlari
+/// faqat maktabni ko'rsatadi, ommaviylar o'z bo'limida (`/admin/ommaviy`).
 /// </para>
 /// <para>
 /// Dashboard uchun eng muhim qulf: `?source=school` javobiga ommaviy foydalanuvchilar
@@ -143,24 +144,40 @@ public sealed class AdminSourceFilterEndpointTests : IClassFixture<PublicApiTest
         names.Should().NotContain("Ommaviy Foydalanuvchi source-students-export", "eksport ro'yxat bilan AYNAN bir xil filtrni ishlatadi");
     }
 
+    /// <summary>
+    /// Sessiyalar ro'yxati — FAQAT maktab (egasining qarori, 2026-09-07): ommaviy makon
+    /// sessiyasi parametrsiz ham, eskirgan `?source=public` bilan ham ro'yxatga TUSHMAYDI.
+    /// `source` ustuni javobda yo'q (xom JSON ustidan — `ReadFromJsonAsync` ortiqcha kalitni
+    /// ko'rmaydi). Ommaviy sessiya DETALI esa ochiq qoladi: admin unga ommaviy foydalanuvchi
+    /// profilidan (`/admin/ommaviy` → `/admin/students/{id}`) boradi, va o'sha profil
+    /// `{id}/answers`, `rerun-analysis`, `report.pdf` endpointlarini ham ishlatadi — ro'yxatdan
+    /// yashirish ≠ yozuvni yo'q qilish.
+    /// </summary>
     [Fact]
-    public async Task Assessments_SourceFiltri_IkkiOqimniAjratadi()
+    public async Task Assessments_Royxat_OmmaviyMakonSessiyasiniHechQachonQaytarmaydi()
     {
         var (_, _, schoolAssessmentId, publicAssessmentId) = await SeedBothFlowsAsync("source-assess", "+9989031130");
 
         using var client = await AuthenticatedClientAsync("source-assessments-admin");
 
-        var schoolOnly = await client.GetFromJsonAsync<PagedResult<AdminAssessmentListItemDto>>(
-            "/api/admin/assessments?source=school&pageSize=100", TestJson.Options);
-        schoolOnly!.Items.Should().Contain(a => a.Id == schoolAssessmentId);
-        schoolOnly.Items.Should().NotContain(a => a.Id == publicAssessmentId);
-        schoolOnly.Items.Should().OnlyContain(a => a.Source == "School");
+        var all = await client.GetFromJsonAsync<PagedResult<AdminAssessmentListItemDto>>(
+            "/api/admin/assessments?pageSize=100", TestJson.Options);
+        all!.Items.Should().Contain(a => a.Id == schoolAssessmentId);
+        all.Items.Should().NotContain(a => a.Id == publicAssessmentId, "ommaviy makon sessiyalari sessiyalar bo'limiga aralashmasligi kerak");
 
-        var publicOnly = await client.GetFromJsonAsync<PagedResult<AdminAssessmentListItemDto>>(
+        // Eskirgan `?source=public` — parametr olib tashlangan, ommaviy sessiyani "qaytarib" bermaydi.
+        var legacyPublic = await client.GetFromJsonAsync<PagedResult<AdminAssessmentListItemDto>>(
             "/api/admin/assessments?source=public&pageSize=100", TestJson.Options);
-        publicOnly!.Items.Should().Contain(a => a.Id == publicAssessmentId);
-        publicOnly.Items.Should().NotContain(a => a.Id == schoolAssessmentId);
-        publicOnly.Items.Should().OnlyContain(a => a.Source == "Public");
+        legacyPublic!.Items.Should().Contain(a => a.Id == schoolAssessmentId);
+        legacyPublic.Items.Should().NotContain(a => a.Id == publicAssessmentId);
+
+        // `source` ustuni javobdan olib tashlangan — xom JSON ustidan.
+        var rawJson = await client.GetStringAsync(new Uri("/api/admin/assessments?pageSize=100", UriKind.Relative));
+        rawJson.Should().NotContain("\"source\"", "ro'yxat faqat maktab sessiyalarini qaytargani uchun manba ustuni ma'nosiz");
+
+        // Ommaviy sessiya detali ro'yxatdan yashirilgan bo'lsa ham OCHIQ (yuqoridagi izoh).
+        var detail = await client.GetAsync(new Uri($"/api/admin/assessments/{publicAssessmentId}", UriKind.Relative));
+        detail.StatusCode.Should().Be(HttpStatusCode.OK, "ommaviy foydalanuvchi profili shu sessiyaning detali/javoblariga tayanadi");
     }
 
     [Fact]
