@@ -1752,8 +1752,9 @@
         "Analyzing": "Tahlil qilinmoqda",
         "Analyzed": "Tayyor",
         "AnalysisFailed": "Tahlil bajarilmadi",
-        "Abandoned": "Tashlab ketilgan"
-      }
+        "Abandoned": "To'xtatilgan"
+      },
+      "resumeCta": "Davom ettirish"
     },
     "result": {
       "back": "Kabinetga qaytish",
@@ -1830,6 +1831,12 @@
       "email": "Email",
       "emptyTitle": "Anketa hali to'ldirilmagan",
       "emptyDescription": "Birinchi testni boshlaganingizda F.I.Sh., tug'ilgan sana va telefon bir marta so'raladi — keyin saqlanib qoladi."
+    },
+    "resume": {
+      "eyebrow": "Tugallanmagan test",
+      "title": "Sizda tugallanmagan test bor",
+      "lead": "{{programName}} · boshlangan: {{date}}. To'xtagan joyingizdan davom ettirasiz.",
+      "cta": "Davom ettirish"
     }
   },
   "marketing": {

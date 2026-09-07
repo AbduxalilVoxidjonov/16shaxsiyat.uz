@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { Plus } from 'lucide-react';
+import { Play, Plus } from 'lucide-react';
 import { usePageTitle } from '@/shared/hooks/usePageTitle';
-import { EmptyState, ErrorState, Skeleton } from '@/shared/ui';
+import { Button, EmptyState, ErrorState, Skeleton } from '@/shared/ui';
 import { useToast } from '@/shared/ui/useToast';
 import { ROUTES } from '@/shared/config/routes';
 import { AppError } from '@/shared/api/AppError';
@@ -11,9 +11,12 @@ import { usePublicSession, usePublicLogout } from '../api/usePublicSession';
 import { useMyAssessments } from '../api/useMyAssessments';
 import { useMyProfile } from '../api/useMyProfile';
 import { useDeleteMyAccount } from '../api/useDeleteMyAccount';
+import { useResumeOwnSession } from '../hooks/useResumeOwnSession';
 import { usePublicUserStore } from '../store/publicUserStore';
+import { findUnfinishedAssessment } from '../lib/assessmentStatus';
 import { ProfileCard } from '../components/ProfileCard';
 import { SavedProfileCard } from '../components/SavedProfileCard';
+import { ResumeAssessmentCard } from '../components/ResumeAssessmentCard';
 import { AssessmentHistoryList } from '../components/AssessmentHistoryList';
 import { DeleteAccountDialog } from '../components/DeleteAccountDialog';
 
@@ -31,7 +34,15 @@ function HistorySkeleton() {
  * `/kabinet` — ommaviy foydalanuvchining shaxsiy kabineti (`docs/07` §5).
  *
  * Profil (§5.1) + saqlangan anketa (§5.1a, bo'lsa) + test tarixi (§5.2) + akkauntni o'chirish
- * (§5.5). Guard (`PublicUserRoute`)
+ * (§5.5).
+ *
+ * **Tugallanmagan sessiya** (`Draft`/`InProgress`/`Abandoned` — `lib/assessmentStatus.ts`) bo'lsa:
+ * tepada "Sizda tugallanmagan test bor" kartasi, tarix qatorida "Davom ettirish", va "Yangi test
+ * boshlash" tugmasi ham "Davom ettirish"ga aylanadi — server bir vaqtda ikkinchi sessiya
+ * ochmaydi (`POST /api/me/sessions` baribir eskisini qaytaradi, `docs/07` §5.4), shu sabab
+ * "yangi" deb chalg'itmaymiz. Davom ettirish — `hooks/useResumeOwnSession.ts`.
+ *
+ * Guard (`PublicUserRoute`)
  * bu sahifaga faqat kirgan foydalanuvchini kiritadi, shu sabab bu yerda `user` bor deb
  * hisoblanadi — `null` bo'lsa ham sahifa yiqilmaydi (yuklanish holati ko'rsatiladi).
  */
@@ -46,6 +57,11 @@ export default function AccountPage() {
   const assessmentsQuery = useMyAssessments();
   const profileQuery = useMyProfile();
   const deleteAccount = useDeleteMyAccount();
+  const resumeSession = useResumeOwnSession();
+
+  const unfinished = assessmentsQuery.isSuccess
+    ? findUnfinishedAssessment(assessmentsQuery.data.items)
+    : null;
 
   const [isDeleteOpen, setDeleteOpen] = useState(false);
   const [isLoggingOut, setLoggingOut] = useState(false);
@@ -92,6 +108,15 @@ export default function AccountPage() {
         <Skeleton className="h-32 w-full rounded-4xl bg-line/70" />
       )}
 
+      {unfinished && (
+        <ResumeAssessmentCard
+          assessment={unfinished}
+          onResume={() => void resumeSession.resume()}
+          isResuming={resumeSession.isPending}
+          error={resumeSession.error}
+        />
+      )}
+
       {/*
         Saqlangan anketa (`GET /api/me/profile`) — Telegram kartasidan ALOHIDA: u akkaunt,
         bu test uchun berilgan rasmiy ma'lumot. Profil yo'q bo'lsa karta ko'rsatilmaydi —
@@ -116,10 +141,22 @@ export default function AccountPage() {
             </h2>
             <p className="mt-1 text-sm text-ink-soft">{t('account.history.lead')}</p>
           </div>
-          <Link to={ROUTES.account.startTest} className="btn btn-md btn-primary shrink-0">
-            <Plus className="size-4" aria-hidden="true" />
-            {t('account.history.startCta')}
-          </Link>
+          {unfinished ? (
+            <Button
+              type="button"
+              className="shrink-0"
+              isLoading={resumeSession.isPending}
+              onClick={() => void resumeSession.resume()}
+            >
+              <Play className="size-4" aria-hidden="true" />
+              {t('account.history.resumeCta')}
+            </Button>
+          ) : (
+            <Link to={ROUTES.account.startTest} className="btn btn-md btn-primary shrink-0">
+              <Plus className="size-4" aria-hidden="true" />
+              {t('account.history.startCta')}
+            </Link>
+          )}
         </div>
 
         {assessmentsQuery.isPending && <HistorySkeleton />}
@@ -138,7 +175,11 @@ export default function AccountPage() {
               }
             />
           ) : (
-            <AssessmentHistoryList items={assessmentsQuery.data.items} />
+            <AssessmentHistoryList
+              items={assessmentsQuery.data.items}
+              onResume={() => void resumeSession.resume()}
+              isResuming={resumeSession.isPending}
+            />
           ))}
       </section>
 

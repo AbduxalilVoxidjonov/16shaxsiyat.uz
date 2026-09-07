@@ -1,37 +1,51 @@
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Play } from 'lucide-react';
 import { Badge, type BadgeVariant } from '@/shared/ui/Badge';
+import { Button } from '@/shared/ui/Button';
 import { formatDate } from '@/shared/lib/formatDate';
 import { ROUTES } from '@/shared/config/routes';
 import type { MyAssessment } from '@/shared/api/types';
+import { historyActionFor } from '../lib/assessmentStatus';
 
 /**
  * Holat → belgi rangi (`docs/05` `AssessmentStatus` enumi). Noma'lum qiymat kelsa
  * `neutral`ga tushadi — ro'yxat yiqilmaydi.
  */
 const STATUS_BADGE_VARIANT: Record<string, BadgeVariant> = {
-  Draft: 'neutral',
+  Draft: 'primary',
   InProgress: 'primary',
   Completed: 'primary',
   Analyzing: 'warning',
   Analyzed: 'success',
   AnalysisFailed: 'danger',
-  Abandoned: 'neutral',
+  Abandoned: 'warning',
 };
 
 export interface AssessmentHistoryListProps {
   items: readonly MyAssessment[];
+  /** Tugallanmagan qatordagi "Davom ettirish" — `POST /api/me/sessions` `{}` (sahifa bajaradi). */
+  onResume: (item: MyAssessment) => void;
+  /** Sessiya tiklanayotgan payt — tugma yuklanish holatida, qayta bosilmaydi. */
+  isResuming?: boolean;
 }
 
 /**
- * Kabinetdagi test tarixi (`docs/07` §5.2) — holat, sana, dastur nomi va natijaga o'tish.
+ * Kabinetdagi test tarixi (`docs/07` §5.2) — holat, sana, dastur nomi va holatga mos amal
+ * (`lib/assessmentStatus.ts`):
+ *
+ * | Holat | Amal |
+ * |---|---|
+ * | `Draft` / `InProgress` / `Abandoned` | **"Davom ettirish"** — natija havolasi YO'Q |
+ * | `Analyzed` + `resultAvailable` | "Natijani ko'rish" → `/kabinet/natijalar/:id` |
+ * | `Completed` / `Analyzing` / `Analyzed` (natija yopiq) / `AnalysisFailed` | "Natija hali ochilmagan" |
+ * | noma'lum | amal yo'q |
  *
  * Natija tugmasi FAQAT `resultAvailable` bo'lganda ko'rsatiladi: bayroqni frontend o'zi
  * hisoblamaydi (u ikki sozlamaning VA birlashmasi — `docs/07` §5.6), backend aytadi.
  * Ball/indeks/ishonchlilik maydonlari bu ro'yxatda umuman yo'q (`docs/07` §5.2).
  */
-export function AssessmentHistoryList({ items }: AssessmentHistoryListProps) {
+export function AssessmentHistoryList({ items, onResume, isResuming = false }: AssessmentHistoryListProps) {
   const { t } = useTranslation();
 
   return (
@@ -40,6 +54,7 @@ export function AssessmentHistoryList({ items }: AssessmentHistoryListProps) {
         const statusLabel = t(`account.history.status.${item.status}`, {
           defaultValue: item.status,
         });
+        const action = historyActionFor(item);
 
         return (
           <li key={item.id} className="card flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
@@ -58,12 +73,28 @@ export function AssessmentHistoryList({ items }: AssessmentHistoryListProps) {
               </p>
             </div>
 
-            {item.resultAvailable ? (
+            {action === 'resume' && (
+              <Button
+                type="button"
+                className="shrink-0"
+                isLoading={isResuming}
+                onClick={() => {
+                  onResume(item);
+                }}
+              >
+                <Play className="size-4" aria-hidden="true" />
+                {t('account.history.resumeCta')}
+              </Button>
+            )}
+
+            {action === 'result' && (
               <Link to={ROUTES.account.result(item.id)} className="btn btn-md btn-primary shrink-0">
                 {t('account.history.openResult')}
                 <ArrowRight className="size-4" aria-hidden="true" />
               </Link>
-            ) : (
+            )}
+
+            {action === 'pending' && (
               <p className="shrink-0 text-[13px] text-ink-muted">
                 {t('account.history.resultUnavailable')}
               </p>

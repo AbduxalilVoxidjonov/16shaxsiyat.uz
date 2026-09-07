@@ -7,14 +7,12 @@ import { usePageTitle } from '@/shared/hooks/usePageTitle';
 import { Button, ErrorState, Skeleton } from '@/shared/ui';
 import { useToast } from '@/shared/ui/useToast';
 import { ROUTES } from '@/shared/config/routes';
-import { PUBLIC_SPACE_SLUG } from '@/shared/config/publicSpace';
 import { AppError } from '@/shared/api/AppError';
-import { adoptSession } from '@/shared/api/sessionToken';
-import { pickNextTestCode } from '@/shared/lib/nextTest';
 import type { StartSessionResponse } from '@/shared/api/types';
 import { MY_PROFILE_QUERY_KEY, useMyProfile } from '../api/useMyProfile';
 import type { MyStudentProfile } from '../model/types';
 import { useStartOwnSession } from '../api/useStartOwnSession';
+import { useEnterSession } from '../hooks/useEnterSession';
 import { PublicRegistrationForm } from '../components/PublicRegistrationForm';
 import { SavedProfileCard } from '../components/SavedProfileCard';
 import { buildReadyPayload, resolveProfileState, type ProfileFormState } from '../lib/profileState';
@@ -50,7 +48,8 @@ const HEADING_KEYS: Record<ProfileFormState, { title: string; lead: string }> = 
  * ixtiyoriy, 18 yoshgacha ota-ona roziligi majburiy. Maktab anketasi O'ZGARMAGAN.
  *
  * Sessiya ochilgach foydalanuvchi **mavjud** test oqimida davom etadi
- * (`/t/ommaviy/test/:testCode`, `X-Session-Token`) — parallel oqim yo'q.
+ * (`/t/ommaviy/test/:testCode`, `X-Session-Token`) — parallel oqim yo'q. O'tish mantiqi
+ * `hooks/useEnterSession.ts` da — kabinetdagi "Davom ettirish" ham aynan shundan foydalanadi.
  */
 export default function PublicRegistrationPage() {
   const { t } = useTranslation();
@@ -60,6 +59,7 @@ export default function PublicRegistrationPage() {
   const [searchParams] = useSearchParams();
   const profileQuery = useMyProfile();
   const quickStart = useStartOwnSession();
+  const enterSession = useEnterSession();
 
   // `/kabinet` dagi "O'zgartirish" havolasi `?edit=1` bilan keladi — saqlagach o'sha yerga qaytamiz.
   const cameFromAccount = searchParams.get('edit') === '1';
@@ -76,24 +76,7 @@ export default function PublicRegistrationPage() {
   function handleStarted(result: StartSessionResponse): void {
     // Profil yaratildi/tahrirlandi — kabinet va keyingi kirish yangi qiymatni ko'rsin.
     void queryClient.invalidateQueries({ queryKey: MY_PROFILE_QUERY_KEY });
-
-    // Sessiyani o'quvchi oqimiga uzatamiz (`shared/api/sessionToken.ts` izohiga qarang).
-    adoptSession({
-      sessionToken: result.sessionToken,
-      slug: PUBLIC_SPACE_SLUG,
-      assessmentId: result.assessmentId,
-    });
-
-    if (result.resumed) {
-      toast.show({ variant: 'info', title: t('account.register.resumedNotice') });
-    }
-
-    const nextTestCode = pickNextTestCode(result.tests);
-    navigate(
-      nextTestCode
-        ? ROUTES.public.test(PUBLIC_SPACE_SLUG, nextTestCode)
-        : ROUTES.public.finish(PUBLIC_SPACE_SLUG),
-    );
+    enterSession(result);
   }
 
   function handleSaved(profile: MyStudentProfile): void {
