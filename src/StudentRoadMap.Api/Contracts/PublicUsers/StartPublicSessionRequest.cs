@@ -10,17 +10,27 @@ namespace StudentRoadMap.Api.Contracts.PublicUsers;
 ///
 /// `ConsentVersion` ham ATAYLAB YO'Q — uni server qo'yadi (`PublicConsent.CurrentVersion`),
 /// aks holda foydalanuvchi "qaysi matnga rozilik berdim" yozuvini soxtalashtira olardi.
+///
+/// **Barcha shaxsiy maydonlar IXTIYORIY** (`docs/07` §5.4, 2026-09-07): profil bazada bo'lsa
+/// bo'sh tana `{}` (yoki faqat `programCode`) yetarli. Majburiylik profil holatiga qarab
+/// handlerda aniqlanadi (`StartPublicSessionCommand` izohi).
 /// </summary>
 public sealed record StartPublicSessionRequest(
-    string FullName,
-    DateOnly BirthDate,
-    Gender Gender,
-    string Phone,
-    bool ConsentAccepted,
-    /// <summary>18 yoshgacha bo'lganlar uchun `true` bo'lishi SHART.</summary>
-    bool ParentalConsent = false,
-    /// <summary>`null` — maktabda o'qimaydi; aks holda 1..11.</summary>
+    string? FullName = null,
+    DateOnly? BirthDate = null,
+    Gender? Gender = null,
+    string? Phone = null,
+    /// <summary>
+    /// Yangi profilda yoki roziliknoma versiyasi eskirganda `true` bo'lishi SHART. `bool?` —
+    /// swagger'da ixtiyoriy bo'lib chiqishi uchun: profil bor mijoz `{}`/`{programCode}`
+    /// yuboradi, `null` server uchun `false` bilan bir xil (rozilik bu safar berilmadi).
+    /// </summary>
+    bool? ConsentAccepted = null,
+    /// <summary>18 yoshgacha bo'lganlar uchun `true` bo'lishi SHART; `null` — mavjud qiymat qoladi.</summary>
+    bool? ParentalConsent = null,
+    /// <summary>`null` — yangi profilda "sinf yo'q", mavjud profilda "o'zgarmasin"; `0` — sinfni aniq "yo'q" qilish; aks holda 1..11.</summary>
     int? Grade = null,
+    /// <summary>`null` — o'zgarmasin/yo'q; bo'sh satr — mavjud emailni tozalash.</summary>
     string? Email = null,
     string? LanguageCode = null,
     /// <summary>Ommaviy makonda bitta dastur bo'lsa ixtiyoriy (maktab oqimidagi bilan bir xil qoida).</summary>
@@ -33,7 +43,7 @@ public sealed record StartPublicSessionRequest(
             BirthDate,
             Gender,
             Phone,
-            ConsentAccepted,
+            ConsentAccepted ?? false,
             ParentalConsent,
             Grade,
             Email,

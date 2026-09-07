@@ -11,6 +11,7 @@ using StudentRoadMap.Application.Public.StartSession;
 using StudentRoadMap.Application.PublicUsers.DeleteAccount;
 using StudentRoadMap.Application.PublicUsers.GetAssessmentResult;
 using StudentRoadMap.Application.PublicUsers.GetProfile;
+using StudentRoadMap.Application.PublicUsers.GetStudentProfile;
 using StudentRoadMap.Application.PublicUsers.ListAssessments;
 using StudentRoadMap.Application.PublicUsers.TelegramLogin;
 
@@ -49,6 +50,23 @@ public sealed class MeController : ControllerBase
     public async Task<ActionResult<PublicUserDto>> Me(CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetMyProfileQuery(RequirePublicUserId()), cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>
+    /// `GET /api/me/profile` — saqlangan test anketasi (`docs/07` §5.1a): F.I.Sh., tug'ilgan
+    /// sana, telefon, rozilik holati. `GET /api/me` (Telegram akkaunti) dan FARQ QILADI.
+    /// Profil hali yo'q bo'lsa `hasProfile: false` + Telegram ismidan F.I.Sh. taklifi — `404` EMAS,
+    /// chunki "anketa hali to'ldirilmagan" oddiy holat, xato emas.
+    /// </summary>
+    [HttpGet("profile")]
+    [ProducesResponseType(typeof(MyStudentProfileDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests, "application/problem+json")]
+    public async Task<ActionResult<MyStudentProfileDto>> Profile(CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new GetMyStudentProfileQuery(RequirePublicUserId()), cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
     }

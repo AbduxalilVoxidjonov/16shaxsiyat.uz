@@ -47,7 +47,72 @@ export function ageFromFormValue(
   return calculateAge(new Date(Date.UTC(year, month - 1, day)), now);
 }
 
-export const publicRegistrationSchema = z
+/**
+ * Sxema PROFIL HOLATIGA bog'liq (`lib/profileState.ts`): rozilik joriy bo'lsa (`ready`/`edit`
+ * profil bilan) blok ko'rsatilmaydi va `consentAccepted` talab qilinmaydi — server ham shu
+ * holatda talab qilmaydi (`docs/07` §5.4). Qolgan qoidalar (F.I.Sh., sana, jins, telefon,
+ * 18 yoshgacha ota-ona roziligi) uchala holatda bir xil — mavjud profil tahririda ham forma
+ * to'liq yuboriladi.
+ */
+export interface PublicRegistrationSchemaOptions {
+  /** `false` — rozilik joriy, checkbox ko'rsatilmaydi va tekshirilmaydi. */
+  requireConsent: boolean;
+}
+
+export function createPublicRegistrationSchema({ requireConsent }: PublicRegistrationSchemaOptions) {
+  return baseSchema
+    .extend({
+      consentAccepted: requireConsent
+        ? z
+            .boolean()
+            .refine((value) => value === true, { message: "Roziliksiz testni boshlab bo'lmaydi." })
+        : z.boolean(),
+    })
+    .superRefine(refineBirthDateAndParentalConsent);
+}
+
+function refineBirthDateAndParentalConsent(
+  values: { birthDate: { day: string; month: string; year: string }; parentalConsent: boolean },
+  ctx: z.RefinementCtx,
+): void {
+  const { day, month, year } = values.birthDate;
+  if (!day || !month || !year) {
+    return; // Bo'sh maydonlar allaqachon `min(1)` orqali xabar bergan.
+  }
+
+  if (!isValidCalendarDate(Number(day), Number(month), Number(year))) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Bunday sana mavjud emas.',
+      path: ['birthDate', 'day'],
+    });
+    return;
+  }
+
+  const age = ageFromFormValue(values.birthDate);
+  if (age === null) return;
+
+  if (age < MIN_AGE || age > MAX_AGE) {
+    ctx.addIssue({
+      code: 'custom',
+      message: `Tug'ilgan sana ${String(MIN_AGE)}-${String(MAX_AGE)} yosh oralig'iga to'g'ri kelishi kerak.`,
+      path: ['birthDate', 'year'],
+    });
+    return;
+  }
+
+  // `docs/07` §5.4: 18 yoshgacha ota-ona roziligi SHART. Kattalarda maydon umuman
+  // ko'rsatilmaydi va `false` bo'lib ketaveradi.
+  if (age < PARENTAL_CONSENT_AGE && !values.parentalConsent) {
+    ctx.addIssue({
+      code: 'custom',
+      message: '18 yoshgacha ota-ona (qonuniy vakil) roziligi majburiy.',
+      path: ['parentalConsent'],
+    });
+  }
+}
+
+const baseSchema = z
   .object({
     fullName: z
       .string()
@@ -74,48 +139,12 @@ export const publicRegistrationSchema = z
       .refine((value) => value === '' || z.string().email().safeParse(value).success, {
         message: "Email formati noto'g'ri.",
       }),
-    consentAccepted: z
-      .boolean()
-      .refine((value) => value === true, { message: "Roziliksiz testni boshlab bo'lmaydi." }),
+    consentAccepted: z.boolean(),
     parentalConsent: z.boolean(),
-  })
-  .superRefine((values, ctx) => {
-    const { day, month, year } = values.birthDate;
-    if (!day || !month || !year) {
-      return; // Bo'sh maydonlar allaqachon `min(1)` orqali xabar bergan.
-    }
-
-    if (!isValidCalendarDate(Number(day), Number(month), Number(year))) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Bunday sana mavjud emas.',
-        path: ['birthDate', 'day'],
-      });
-      return;
-    }
-
-    const age = ageFromFormValue(values.birthDate);
-    if (age === null) return;
-
-    if (age < MIN_AGE || age > MAX_AGE) {
-      ctx.addIssue({
-        code: 'custom',
-        message: `Tug'ilgan sana ${String(MIN_AGE)}-${String(MAX_AGE)} yosh oralig'iga to'g'ri kelishi kerak.`,
-        path: ['birthDate', 'year'],
-      });
-      return;
-    }
-
-    // `docs/07` §5.4: 18 yoshgacha ota-ona roziligi SHART. Kattalarda maydon umuman
-    // ko'rsatilmaydi va `false` bo'lib ketaveradi.
-    if (age < PARENTAL_CONSENT_AGE && !values.parentalConsent) {
-      ctx.addIssue({
-        code: 'custom',
-        message: '18 yoshgacha ota-ona (qonuniy vakil) roziligi majburiy.',
-        path: ['parentalConsent'],
-      });
-    }
   });
+
+/** Birinchi ro'yxatdan o'tish sxemasi (rozilik MAJBURIY) — ilgarigi xatti-harakat aynan saqlangan. */
+export const publicRegistrationSchema = createPublicRegistrationSchema({ requireConsent: true });
 
 export type PublicRegistrationFormValues = z.infer<typeof publicRegistrationSchema>;
 

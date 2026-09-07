@@ -9,9 +9,11 @@ import { ROUTES } from '@/shared/config/routes';
 import { AppError } from '@/shared/api/AppError';
 import { usePublicSession, usePublicLogout } from '../api/usePublicSession';
 import { useMyAssessments } from '../api/useMyAssessments';
+import { useMyProfile } from '../api/useMyProfile';
 import { useDeleteMyAccount } from '../api/useDeleteMyAccount';
 import { usePublicUserStore } from '../store/publicUserStore';
 import { ProfileCard } from '../components/ProfileCard';
+import { SavedProfileCard } from '../components/SavedProfileCard';
 import { AssessmentHistoryList } from '../components/AssessmentHistoryList';
 import { DeleteAccountDialog } from '../components/DeleteAccountDialog';
 
@@ -28,7 +30,8 @@ function HistorySkeleton() {
 /**
  * `/kabinet` — ommaviy foydalanuvchining shaxsiy kabineti (`docs/07` §5).
  *
- * Profil (§5.1) + test tarixi (§5.2) + akkauntni o'chirish (§5.5). Guard (`PublicUserRoute`)
+ * Profil (§5.1) + saqlangan anketa (§5.1a, bo'lsa) + test tarixi (§5.2) + akkauntni o'chirish
+ * (§5.5). Guard (`PublicUserRoute`)
  * bu sahifaga faqat kirgan foydalanuvchini kiritadi, shu sabab bu yerda `user` bor deb
  * hisoblanadi — `null` bo'lsa ham sahifa yiqilmaydi (yuklanish holati ko'rsatiladi).
  */
@@ -41,6 +44,7 @@ export default function AccountPage() {
   const logout = usePublicLogout();
   const clearSession = usePublicUserStore((state) => state.clear);
   const assessmentsQuery = useMyAssessments();
+  const profileQuery = useMyProfile();
   const deleteAccount = useDeleteMyAccount();
 
   const [isDeleteOpen, setDeleteOpen] = useState(false);
@@ -86,6 +90,19 @@ export default function AccountPage() {
         />
       ) : (
         <Skeleton className="h-32 w-full rounded-4xl bg-line/70" />
+      )}
+
+      {/*
+        Saqlangan anketa (`GET /api/me/profile`) — Telegram kartasidan ALOHIDA: u akkaunt,
+        bu test uchun berilgan rasmiy ma'lumot. Profil yo'q bo'lsa karta ko'rsatilmaydi —
+        bo'sh tarix holati o'zi "birinchi testni boshlang" deb taklif qiladi. Yuklanish/xato
+        holati jimgina o'tkaziladi: bu bo'lim ixtiyoriy, kabinetning asosiy mazmuni tarix.
+      */}
+      {profileQuery.isSuccess && profileQuery.data.hasProfile && (
+        <SavedProfileCard
+          profile={profileQuery.data}
+          editHref={`${ROUTES.account.startTest}?edit=1`}
+        />
       )}
 
       <section className="flex flex-col gap-5" aria-labelledby="account-history-heading">

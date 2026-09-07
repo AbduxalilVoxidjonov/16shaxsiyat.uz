@@ -164,6 +164,64 @@ public sealed class StudentPublicFlowTests
     }
 
     [Fact]
+    public void UpdateProfile_BarchaMaydonlarniYangilaydiVaNormalizedNameQaytaHisoblanadi()
+    {
+        var student = CreateStudent(grade: 9, consentVersion: "1.0", parentalConsent: true);
+        var later = Now.AddDays(30);
+        var newPhone = PhoneNumber.Create("+998911112233").Value;
+
+        student.UpdateProfile("  Valiyeva   Malika ", new DateOnly(1995, 4, 12), Gender.Female, Student.NoGrade, newPhone, "  malika@example.com ", later);
+
+        student.FullName.Should().Be("  Valiyeva   Malika ", "F.I.Sh. `Create` dagidek xom saqlanadi");
+        student.NormalizedName.Should().Be("VALIYEVA MALIKA", "admin qidiruvi yangi F.I.Sh. bilan ishlashi kerak");
+        student.BirthDate.Should().Be(new DateOnly(1995, 4, 12));
+        student.Gender.Should().Be(Gender.Female);
+        student.Grade.Should().Be(Student.NoGrade, "9-sinfdan \"maktabda o'qimayman\"ga o'tish mumkin");
+        student.Phone.Should().Be(newPhone);
+        student.Email.Should().Be("malika@example.com");
+        student.UpdatedAt.Should().Be(later);
+
+        // Rozilik maydonlari TEGILMAYDI — ular `RecordConsent` vakolatida.
+        student.ConsentVersion.Should().Be("1.0");
+        student.ParentalConsent.Should().BeTrue();
+        student.ConsentGivenAt.Should().Be(Now);
+    }
+
+    [Fact]
+    public void UpdateProfile_BoshEmail_NullQiladi()
+    {
+        var student = CreateStudent();
+
+        student.UpdateProfile("Aliyev Sardor", student.BirthDate, student.Gender, student.Grade, Phone, "   ", Now);
+
+        student.Email.Should().BeNull("bo'sh satr — emailni tozalash");
+    }
+
+    [Theory]
+    [InlineData("   ")]
+    [InlineData("")]
+    public void UpdateProfile_BoshFish_ArgumentExceptionOtadi(string fullName)
+    {
+        var student = CreateStudent();
+
+        var act = () => student.UpdateProfile(fullName, student.BirthDate, student.Gender, student.Grade, Phone, null, Now);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Theory]
+    [InlineData(12)]
+    [InlineData(-1)]
+    public void UpdateProfile_SinfChegaradanTashqarida_ArgumentOutOfRangeExceptionOtadi(int grade)
+    {
+        var student = CreateStudent();
+
+        var act = () => student.UpdateProfile("Aliyev Sardor", student.BirthDate, student.Gender, grade, Phone, null, Now);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
     public void RecordConsent_VaqtsizChaqiruv_ArgumentExceptionOtadi()
     {
         var student = CreateStudent();

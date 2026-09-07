@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ageFromFormValue,
+  createPublicRegistrationSchema,
   publicRegistrationSchema,
   type PublicRegistrationFormValues,
 } from './publicRegistrationSchema';
@@ -105,6 +106,35 @@ describe('publicRegistrationSchema', () => {
       values({ birthDate: { day: '31', month: '2', year: '2000' } }),
     );
     expect(firstIssuePath(result)).toContain('birthDate.day');
+  });
+
+  describe('createPublicRegistrationSchema — rozilik profil holatiga bog\'liq', () => {
+    it("`requireConsent: false` (rozilik joriy): `consentAccepted: false` bilan ham o'tadi", () => {
+      const schema = createPublicRegistrationSchema({ requireConsent: false });
+
+      expect(schema.safeParse(values({ consentAccepted: false })).success).toBe(true);
+    });
+
+    it("`requireConsent: false` bo'lsa ham qolgan qoidalar (telefon, ota-ona roziligi) saqlanadi", () => {
+      const schema = createPublicRegistrationSchema({ requireConsent: false });
+
+      expect(firstIssuePath(schema.safeParse(values({ phone: '9012345' })))).toContain('phone');
+      expect(
+        firstIssuePath(
+          schema.safeParse(
+            values({ birthDate: { day: '1', month: '1', year: '2012' }, parentalConsent: false }),
+          ),
+        ),
+      ).toContain('parentalConsent');
+    });
+
+    it('`requireConsent: true` — standart `publicRegistrationSchema` bilan bir xil', () => {
+      const schema = createPublicRegistrationSchema({ requireConsent: true });
+
+      expect(firstIssuePath(schema.safeParse(values({ consentAccepted: false })))).toContain(
+        'consentAccepted',
+      );
+    });
   });
 
   it("`ageFromFormValue` to'liq bo'lmagan sanada `null` qaytaradi", () => {

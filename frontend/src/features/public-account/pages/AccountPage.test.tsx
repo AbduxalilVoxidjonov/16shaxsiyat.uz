@@ -42,6 +42,33 @@ const ASSESSMENTS = {
   ],
 } satisfies Schemas['ListMyAssessmentsResult'];
 
+const PROFILE = {
+  hasProfile: true,
+  fullName: 'Karimov Sardor Alisherovich',
+  birthDate: '1995-04-12',
+  gender: 'Male',
+  phone: '+998901234567',
+  grade: null,
+  email: null,
+  consentVersion: '1.0',
+  consentCurrent: true,
+  parentalConsent: false,
+  isMinor: false,
+  suggestedFullName: 'Valiyev Ali',
+} satisfies Schemas['MyStudentProfileDto'];
+
+/** `fetch` ni URL bo'yicha yo'naltiradi: profil → `profile`, qolgani → tarix. */
+function mockApi(profile: Schemas['MyStudentProfileDto'], assessments = ASSESSMENTS) {
+  const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+    if (String(input).includes('/api/me/profile')) {
+      return Promise.resolve(jsonResponse<'MyStudentProfileDto'>(profile));
+    }
+    return Promise.resolve(jsonResponse<'ListMyAssessmentsResult'>(assessments));
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  return fetchMock;
+}
+
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
@@ -109,6 +136,36 @@ describe('AccountPage', () => {
     ).toHaveAttribute('href', '/kabinet/natijalar/assessment-1');
     expect(within(pending as HTMLElement).queryByRole('link')).not.toBeInTheDocument();
     expect(within(pending as HTMLElement).getByText('Natija hali ochilmagan')).toBeInTheDocument();
+  });
+
+  it("saqlangan anketa (F.I.Sh., sana, telefon) va \"O'zgartirish\" havolasi ko'rsatiladi", async () => {
+    signIn();
+    mockApi(PROFILE);
+
+    renderPage();
+
+    expect(
+      await screen.findByRole('heading', { name: "Sizning ma'lumotlaringiz" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Karimov Sardor Alisherovich')).toBeInTheDocument();
+    expect(screen.getByText('12.04.1995')).toBeInTheDocument();
+    expect(screen.getByText('+998 (90) 123-45-67')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /O'zgartirish/ })).toHaveAttribute(
+      'href',
+      '/kabinet/test?edit=1',
+    );
+  });
+
+  it("anketa hali to'ldirilmagan bo'lsa karta ko'rsatilmaydi", async () => {
+    signIn();
+    mockApi({ ...PROFILE, hasProfile: false, fullName: null, birthDate: null, phone: null });
+
+    renderPage();
+    await screen.findAllByRole('listitem');
+
+    expect(
+      screen.queryByRole('heading', { name: "Sizning ma'lumotlaringiz" }),
+    ).not.toBeInTheDocument();
   });
 
   it("bo'sh tarixda tushunarli holat va test boshlash taklifi chiqadi", async () => {

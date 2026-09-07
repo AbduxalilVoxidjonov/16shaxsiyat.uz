@@ -246,6 +246,44 @@ public sealed class Student : AggregateRoot
         UpdatedAt = now;
     }
 
+    /// <summary>
+    /// Ommaviy foydalanuvchi o'z anketasini tahrirlaydi (`POST /api/me/sessions` mavjud
+    /// `Student` bilan chaqirilganda). Barcha qiymatlar TO'LIQ keladi — "kelmagan maydon
+    /// bazadagidek qoladi" birlashtirish Application qatlamida (`request ?? mavjud`), domen
+    /// qisman yangilashning noaniqligini (null = "o'zgarmasin"mi yoki "tozalansin"mi) ko'tarib
+    /// yurmaydi. Qoidalar `Create` bilan bir xil: F.I.Sh. bo'sh emas, sinf `NoGrade` yoki
+    /// `MinGrade..MaxGrade`. `NormalizedName` qayta hisoblanadi — admin qidiruvi yangi F.I.Sh.
+    /// bilan ishlashi uchun. Rozilik maydonlari bu yerda TEGILMAYDI (`RecordConsent`).
+    /// </summary>
+    public void UpdateProfile(
+        string fullName,
+        DateOnly birthDate,
+        Gender gender,
+        int grade,
+        PhoneNumber phone,
+        string? email,
+        DateTimeOffset now)
+    {
+        if (string.IsNullOrWhiteSpace(fullName))
+        {
+            throw new ArgumentException("F.I.Sh. bo'sh bo'lishi mumkin emas.", nameof(fullName));
+        }
+
+        if (grade != NoGrade && grade is < MinGrade or > MaxGrade)
+        {
+            throw new ArgumentOutOfRangeException(nameof(grade), $"Sinf {MinGrade}..{MaxGrade} oralig'ida yoki {NoGrade} (sinf yo'q) bo'lishi kerak.");
+        }
+
+        FullName = fullName;
+        NormalizedName = NameNormalizer.Normalize(fullName);
+        BirthDate = birthDate;
+        Gender = gender;
+        Grade = grade;
+        Phone = phone;
+        Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim();
+        UpdatedAt = now;
+    }
+
     /// <summary>Roziliknomani yangilaydi (matn versiyasi o'zgarganda qayta so'raladi).</summary>
     public void RecordConsent(DateTimeOffset consentGivenAt, string? consentVersion, bool parentalConsent, DateTimeOffset now)
     {

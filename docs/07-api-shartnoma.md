@@ -1157,7 +1157,8 @@ alohida JWT `aud` bilan ajratilgan (`docs/08` §2a).
 
 | Metod | Yo'l | Izoh |
 |-------|------|------|
-| GET | `/api/me` | Profil |
+| GET | `/api/me` | Profil (Telegram akkaunti) |
+| GET | `/api/me/profile` | Saqlangan test anketasi (F.I.Sh., sana, telefon, rozilik holati) |
 | GET | `/api/me/assessments` | Test sessiyalari tarixi |
 | GET | `/api/me/assessments/{id}/result` | Bitta sessiyaning qisqartirilgan natijasi |
 | POST | `/api/me/sessions` | Ommaviy (maktabsiz) sessiya ochish |
@@ -1169,6 +1170,39 @@ Umumiy xatolar: `401 UNAUTHORIZED` (token yo'q/yaroqsiz/akkaunt o'chirilgan),
 ### 5.1 `GET /api/me`
 
 `200 OK` — `2a.1` dagi `user` obyektining aynan o'zi.
+
+### 5.1a `GET /api/me/profile` — saqlangan anketa (2026-09-07)
+
+`GET /api/me` dan FARQ QILADI: u Telegram akkaunti (ism, rasm), bu — test uchun berilgan
+rasmiy anketa (`Student`, `students.public_user_id` bo'yicha; bitta akkaunt → bitta profil).
+Frontend `/kabinet/test` ni ochishda avval shuni o'qiydi va anketani **qayta so'ramaydi**.
+
+```json
+{
+  "hasProfile": true,
+  "fullName": "Karimov Sardor Alisherovich",
+  "birthDate": "1995-04-12",
+  "gender": "Male",
+  "phone": "+998901234567",
+  "grade": null,
+  "email": null,
+  "consentVersion": "1.0",
+  "consentCurrent": true,
+  "parentalConsent": false,
+  "isMinor": false,
+  "suggestedFullName": "Valiyev Ali"
+}
+```
+
+| Maydon | Izoh |
+|--------|------|
+| `hasProfile` | `false` — anketa hali to'ldirilmagan (**`200`**, `404` EMAS: bu oddiy holat). Shaxsiy maydonlar `null`. |
+| `grade` | `null` — maktabda o'qimaydi (`Student.NoGrade` mijozga chiqmaydi) |
+| `consentCurrent` | `consentVersion` joriy roziliknoma versiyasiga tengmi; `false` — anketa rozilikni qayta so'raydi |
+| `isMinor` | yosh < 18 (`Student.CalculateAge`) — `parentalConsent` shu holatda talab qilinadi |
+| `suggestedFullName` | Telegram `LastName + FirstName` (ikkalasi bo'lsa; bo'lmasa bori; hech biri yo'q — `null`). Bu **taklif**: yangi anketada F.I.Sh. maydoni shu bilan oldindan to'ldiriladi, foydalanuvchi tahrirlaydi (Telegram ismi ko'pincha rasmiy F.I.Sh. emas). AI'ga tushmaydi. |
+
+Hech qanday identifikator (`Student.Id`, `TelegramId`) qaytarilmaydi — egalik JWT bilan.
 
 ### 5.2 `GET /api/me/assessments`
 
@@ -1225,7 +1259,23 @@ Ball/indeks/bayroq maydonlari bu yerda **hech qachon** bo'lmaydi.
 
 ### 5.4 `POST /api/me/sessions`
 
-So'rov:
+**Barcha shaxsiy maydonlar IXTIYORIY (2026-09-07).** Qaysi biri majburiy — profil (§5.1a)
+holatiga bog'liq va server `Student` topilganidan KEYIN hal qiladi (validator faqat format):
+
+| Holat | Talab qilinadi | Ixtiyoriy |
+|-------|----------------|-----------|
+| Profil YO'Q (birinchi sessiya) | `fullName`, `birthDate`, `gender`, `phone`, `consentAccepted: true`; 18 yoshgacha `parentalConsent: true` | `grade` (`null` = maktabda o'qimaydi), `email`, `programCode` |
+| Profil BOR, rozilik joriy | **hech narsa** — `{}` yoki `{ "programCode": "…" }` yetarli | kelgan shaxsiy maydon TAHRIR sifatida qo'llanadi, kelmagani (`null`) o'zgarmaydi |
+| Profil BOR, rozilik eskirgan (`consentCurrent: false`) | `consentAccepted: true` | qolgani yuqoridagidek |
+| Profil BOR, voyaga yetmagan, bazada `parentalConsent: false` | `parentalConsent: true` | — |
+
+Tahrir semantikasi (`null` = "o'zgarmasin" bo'lgani uchun bo'sh qiymat ANIQ yuboriladi):
+`grade: 0` — sinfni "yo'q" qilish (`Student.NoGrade`), `email: ""` — emailni tozalash.
+`consentAccepted: true` kelsa rozilik joriy versiya va hozirgi vaqt bilan qayta yoziladi;
+kelmasa `consentGivenAt` (rozilik isboti sanasi) tegilmaydi. Tahrir tugallanmagan sessiya
+davom ettirilganda (`200`) ham saqlanadi.
+
+To'liq so'rov (profil yo'q holati):
 
 ```json
 {
@@ -1250,8 +1300,9 @@ Maktab oqimidagi §1.2 dan farqlari:
 | yosh (`birthDate`) | 6–20 | **6–99** |
 | `grade` | majburiy 1–11 | **ixtiyoriy** (`null` = maktabda o'qimaydi) |
 | `classLetter`/`parentPhone` | bor | **yo'q** |
-| `parentalConsent` | yo'q | **18 yoshgacha `true` bo'lishi SHART** |
+| `parentalConsent` | yo'q | **18 yoshgacha `true` bo'lishi SHART** (bazada bor bo'lsa qayta so'ralmaydi) |
 | `consentVersion` | — | server qo'yadi, mijozdan qabul qilinmaydi |
+| shaxsiy maydonlar | har safar majburiy | **profil bor bo'lsa ixtiyoriy** (yuqoridagi jadval) |
 
 Javob — §1.2 bilan **aynan bir xil** (`StartSessionResult`):
 
@@ -1278,7 +1329,7 @@ Xatolar:
 
 | Kod | HTTP | Qachon |
 |-----|------|--------|
-| `VALIDATION_ERROR` | 400 | Yosh/telefon/sinf/rozilik qoidalari |
+| `VALIDATION_ERROR` | 400 | Format (yosh/telefon/sinf/email) yoki profil holatiga ko'ra yetishmagan maydon — `errors{maydon:[xabar]}` bilan (`fullName`, `birthDate`, `gender`, `phone`, `consentAccepted`, `parentalConsent`) |
 | `PROGRAM_REQUIRED` | 400 | Bir nechta dastur mavjud, `programCode` berilmagan |
 | `NOT_FOUND` | 404 | Berilgan `programCode` ommaviy makonda mavjud emas |
 | `DUPLICATE_ASSESSMENT` | 409 | So'nggi 90 kunda testni allaqachon yakunlagan (BR-1) |

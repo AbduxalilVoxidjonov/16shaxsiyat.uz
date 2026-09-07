@@ -31,6 +31,15 @@ namespace StudentRoadMap.Application.Public.StartPublicSession;
 /// aniqlanadi), bu yerda esa `(SchoolId, PublicUserId)` — akkaunt allaqachon shaxsni
 /// aniqlaydi va F.I.Sh. o'zgarishi (masalan familiya almashishi) yangi "o'quvchi" yaratib
 /// tarixni ikkiga bo'lib yubormasligi kerak.
+///
+/// **Anketa qayta so'ralmaydi (2026-09-07).** Shaxsiy maydonlar buyruqda ixtiyoriy; qaysi
+/// biri MAJBURIY — `Student` topilganidan keyin <see cref="RequireProfileFields"/> hal qiladi
+/// (validator DB ko'rmaydi — `StartPublicSessionCommandValidator` izohi). Xato shakli
+/// `ValidationBehavior` bilan AYNAN bir xil: `400 VALIDATION_ERROR` + `errors{maydon:[xabar]}`,
+/// frontend ikkalasini bir xil kodda maydonlarga bog'laydi. Mavjud `Student` da kelgan
+/// maydonlar tahrir sifatida qo'llanadi (`Student.UpdateProfile`), rozilik faqat
+/// `ConsentVersion` eskirgan bo'lsa qayta so'raladi — `ConsentGivenAt` (rozilik isboti sanasi)
+/// har sessiyada qayta yozilmaydi.
 /// </summary>
 internal sealed class StartPublicSessionCommandHandler : IRequestHandler<StartPublicSessionCommand, Result<StartSessionResult>>
 {
@@ -93,21 +102,32 @@ internal sealed class StartPublicSessionCommandHandler : IRequestHandler<StartPu
             return Result.Failure<StartSessionResult>(new Error(ProblemCodes.SchoolInactive, "Ommaviy testlar hozircha faol emas."));
         }
 
-        var phoneResult = PhoneNumber.Create(request.Phone);
-        if (phoneResult.IsFailure)
-        {
-            return Result.Failure<StartSessionResult>(phoneResult.Error);
-        }
-
         var existingStudent = await _executor.FirstOrDefaultAsync(
             _context.Students.Where(s => s.SchoolId == space.Id && s.PublicUserId == request.PublicUserId),
             cancellationToken).ConfigureAwait(false);
+
+        var today = DateOnly.FromDateTime(now.UtcDateTime);
+
+        var profileErrors = RequireProfileFields(request, existingStudent, today);
+        if (profileErrors.Count > 0)
+        {
+            return Result.Failure<StartSessionResult>(ValidationFailure(profileErrors));
+        }
 
         Student student;
         var isNewStudent = existingStudent is null;
 
         if (existingStudent is not null)
         {
+            // Tahrir va rozilik sessiya holatidan OLDIN qo'llanadi: foydalanuvchi "O'zgartirish"
+            // bosgan bo'lsa, tugallanmagan sessiya davom etayotganida ham yangi F.I.Sh./telefon
+            // saqlanishi kerak (davom ettirish shoxida `SaveChangesAsync` shu sabab bor).
+            var applyResult = ApplyProfileChanges(request, existingStudent, now);
+            if (applyResult.IsFailure)
+            {
+                return Result.Failure<StartSessionResult>(applyResult.Error);
+            }
+
             // TODO(P30): mijoz tomonida saralash — SQLite `DateTimeOffset` bo'yicha ORDER BY'ni
             // tarjima qila olmaydi (`StartSessionCommandHandler` dagi bir xil izoh/texnik qarz).
             var unfinishedCandidates = await _executor.ToListAsync(
@@ -122,6 +142,9 @@ internal sealed class StartPublicSessionCommandHandler : IRequestHandler<StartPu
                 if (unfinished.ExpiresAt > now)
                 {
                     var resumedTests = await BuildTestSummariesAsync(unfinished.Id, cancellationToken).ConfigureAwait(false);
+
+                    // Profil tahriri (bo'lsa) davom ettirishda ham saqlanadi — `Student` kuzatuvda.
+                    await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
                     return Result.Success(new StartSessionResult(
                         unfinished.SessionToken,
@@ -148,26 +171,31 @@ internal sealed class StartPublicSessionCommandHandler : IRequestHandler<StartPu
             }
 
             student = existingStudent;
-
-            // Roziliknoma HAR sessiyada qayta olinadi (matn versiyasi o'zgargan bo'lishi mumkin).
-            student.RecordConsent(now, PublicConsent.CurrentVersion, request.ParentalConsent, now);
         }
         else
         {
+            // `RequireProfileFields` yangi profil uchun to'liq to'plamni tekshirib bo'ldi —
+            // bu yerda `!`/`.Value` xavfsiz.
+            var phoneResult = PhoneNumber.Create(request.Phone!);
+            if (phoneResult.IsFailure)
+            {
+                return Result.Failure<StartSessionResult>(phoneResult.Error);
+            }
+
             student = Student.Create(
                 Guid.NewGuid(),
                 space.Id,
-                request.FullName,
-                request.BirthDate,
-                request.Gender,
+                request.FullName!,
+                request.BirthDate!.Value,
+                request.Gender!.Value,
                 request.Grade ?? Student.NoGrade,
                 phoneResult.Value,
                 consentGivenAt: now,
                 now: now,
-                email: request.Email,
+                email: string.IsNullOrWhiteSpace(request.Email) ? null : request.Email,
                 publicUserId: request.PublicUserId,
                 consentVersion: PublicConsent.CurrentVersion,
-                parentalConsent: request.ParentalConsent);
+                parentalConsent: request.ParentalConsent ?? false);
         }
 
         var programResult = await ResolveProgramAsync(space.Id, request.ProgramCode, cancellationToken).ConfigureAwait(false);
@@ -226,6 +254,129 @@ internal sealed class StartPublicSessionCommandHandler : IRequestHandler<StartPu
             Resumed: false,
             tests));
     }
+
+    /// <summary>
+    /// Profil holatiga qarab MAJBURIY maydonlarni tekshiradi (format validatorda tekshirilgan).
+    /// • `Student` yo'q — to'liq to'plam: F.I.Sh., tug'ilgan sana, jins, telefon, rozilik;
+    ///   voyaga yetmagan bo'lsa ota-ona roziligi;
+    /// • `Student` bor — rozilik faqat `ConsentVersion` eskirgan bo'lsa; ota-ona roziligi —
+    ///   (kelgan yoki bazadagi) sana bo'yicha voyaga yetmagan VA (kelgan ?? bazadagi) qiymat
+    ///   `false` bo'lsa.
+    /// Kalitlar `ValidationException` chiqishidagidek camelCase — frontend `setError(key)` qiladi.
+    /// </summary>
+    private static Dictionary<string, string[]> RequireProfileFields(StartPublicSessionCommand request, Student? existing, DateOnly today)
+    {
+        var errors = new Dictionary<string, string[]>();
+
+        if (existing is null)
+        {
+            if (string.IsNullOrWhiteSpace(request.FullName))
+            {
+                errors["fullName"] = ["F.I.Sh. kiritilishi shart."];
+            }
+
+            if (request.BirthDate is null)
+            {
+                errors["birthDate"] = ["Tug'ilgan sana kiritilishi shart."];
+            }
+
+            if (request.Gender is null)
+            {
+                errors["gender"] = ["Jins tanlanishi shart."];
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Phone))
+            {
+                errors["phone"] = ["Telefon raqami kiritilishi shart."];
+            }
+
+            if (!request.ConsentAccepted)
+            {
+                errors["consentAccepted"] = ["Roziliksiz ro'yxatdan o'tib bo'lmaydi."];
+            }
+        }
+        else if (existing.ConsentVersion != PublicConsent.CurrentVersion && !request.ConsentAccepted)
+        {
+            errors["consentAccepted"] = ["Roziliknoma matni yangilangan — davom etish uchun qayta rozilik kerak."];
+        }
+
+        var effectiveBirthDate = request.BirthDate ?? existing?.BirthDate;
+        var effectiveParentalConsent = request.ParentalConsent ?? existing?.ParentalConsent ?? false;
+
+        // Kelajakdagi sana — yosh qoidasi bu yerda tekshirilmaydi (validator allaqachon rad
+        // etgan); ota-ona roziligi sharti esa bunday holatda qo'llanmaydi.
+        if (effectiveBirthDate is { } birthDate
+            && birthDate <= today
+            && Student.CalculateAge(birthDate, today) < PublicConsent.ParentalConsentRequiredBelowAge
+            && !effectiveParentalConsent)
+        {
+            errors["parentalConsent"] = [$"{PublicConsent.ParentalConsentRequiredBelowAge} yoshgacha bo'lganlar uchun ota-ona roziligi shart."];
+        }
+
+        return errors;
+    }
+
+    /// <summary>
+    /// Mavjud `Student` ga kelgan maydonlarni tahrir sifatida qo'llaydi (`null` — o'zgarmasin).
+    /// Rozilik: `ConsentAccepted = true` kelsa joriy versiya bilan qayta yoziladi; kelmasa
+    /// va faqat ota-ona roziligi o'zgargan bo'lsa — versiya/sana saqlanib, bayroq yangilanadi.
+    /// </summary>
+    private static Result ApplyProfileChanges(StartPublicSessionCommand request, Student student, DateTimeOffset now)
+    {
+        var hasProfileChanges = request.FullName is not null
+            || request.BirthDate is not null
+            || request.Gender is not null
+            || request.Phone is not null
+            || request.Grade is not null
+            || request.Email is not null;
+
+        if (hasProfileChanges)
+        {
+            PhoneNumber phone;
+            if (request.Phone is not null)
+            {
+                var phoneResult = PhoneNumber.Create(request.Phone);
+                if (phoneResult.IsFailure)
+                {
+                    return Result.Failure(phoneResult.Error);
+                }
+
+                phone = phoneResult.Value;
+            }
+            else
+            {
+                phone = student.Phone;
+            }
+
+            student.UpdateProfile(
+                request.FullName ?? student.FullName,
+                request.BirthDate ?? student.BirthDate,
+                request.Gender ?? student.Gender,
+                request.Grade ?? student.Grade,
+                phone,
+                request.Email ?? student.Email,
+                now);
+        }
+
+        var parentalConsent = request.ParentalConsent ?? student.ParentalConsent;
+
+        if (request.ConsentAccepted)
+        {
+            student.RecordConsent(now, PublicConsent.CurrentVersion, parentalConsent, now);
+        }
+        else if (parentalConsent != student.ParentalConsent)
+        {
+            student.RecordConsent(student.ConsentGivenAt, student.ConsentVersion, parentalConsent, now);
+        }
+
+        return Result.Success();
+    }
+
+    private static Error ValidationFailure(Dictionary<string, string[]> errors) =>
+        new(
+            ProblemCodes.ValidationError,
+            "Kiritilgan ma'lumotlar noto'g'ri.",
+            new Dictionary<string, object> { ["errors"] = errors });
 
     private async Task<IReadOnlyList<PublicTestSummaryDto>> BuildTestSummariesAsync(Guid assessmentId, CancellationToken cancellationToken)
     {

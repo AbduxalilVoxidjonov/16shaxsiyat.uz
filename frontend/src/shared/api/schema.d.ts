@@ -1906,6 +1906,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/programs/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
+                        "application/json": components["schemas"]["AdminProgramDetailDto"];
+                        "text/json": components["schemas"]["AdminProgramDetailDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/programs/{id}/toggle-active": {
         parameters: {
             query?: never;
@@ -1939,6 +1996,15 @@ export interface paths {
                 };
                 /** @description Not Found */
                 404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -2255,6 +2321,7 @@ export interface paths {
                     page?: number;
                     pageSize?: number;
                     sort?: string;
+                    source?: string;
                 };
                 header?: never;
                 path?: never;
@@ -3046,6 +3113,7 @@ export interface paths {
                 query?: {
                     from?: string;
                     to?: string;
+                    source?: string;
                 };
                 header?: never;
                 path?: never;
@@ -3102,6 +3170,7 @@ export interface paths {
                     from?: string;
                     to?: string;
                     search?: string;
+                    source?: string;
                 };
                 header?: never;
                 path?: never;
@@ -3264,6 +3333,61 @@ export interface paths {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MyStudentProfileDto"];
+                        "application/json": components["schemas"]["MyStudentProfileDto"];
+                        "text/json": components["schemas"]["MyStudentProfileDto"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -4460,6 +4584,220 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/public-space": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminPublicSpaceDto"];
+                        "application/json": components["schemas"]["AdminPublicSpaceDto"];
+                        "text/json": components["schemas"]["AdminPublicSpaceDto"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/public-space/programs/{programId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    programId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminPublicSpaceDto"];
+                        "application/json": components["schemas"]["AdminPublicSpaceDto"];
+                        "text/json": components["schemas"]["AdminPublicSpaceDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    programId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminPublicSpaceDto"];
+                        "application/json": components["schemas"]["AdminPublicSpaceDto"];
+                        "text/json": components["schemas"]["AdminPublicSpaceDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/public-space/show-result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["SetPublicSpaceShowResultRequest"];
+                    "text/json": components["schemas"]["SetPublicSpaceShowResultRequest"];
+                    "application/*+json": components["schemas"]["SetPublicSpaceShowResultRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminPublicSpaceDto"];
+                        "application/json": components["schemas"]["AdminPublicSpaceDto"];
+                        "text/json": components["schemas"]["AdminPublicSpaceDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/schools": {
         parameters: {
             query?: never;
@@ -4872,6 +5210,7 @@ export interface paths {
                     page?: number;
                     pageSize?: number;
                     sort?: string;
+                    source?: string;
                 };
                 header?: never;
                 path?: never;
@@ -6106,6 +6445,22 @@ export interface components {
             programName: string;
             resultAvailable: boolean;
         };
+        MyStudentProfileDto: {
+            hasProfile: boolean;
+            fullName?: string | null;
+            /** Format: date */
+            birthDate?: string | null;
+            gender?: components["schemas"]["Gender"];
+            phone?: string | null;
+            /** Format: int32 */
+            grade?: number | null;
+            email?: string | null;
+            consentVersion?: string | null;
+            consentCurrent: boolean;
+            parentalConsent: boolean;
+            isMinor: boolean;
+            suggestedFullName?: string | null;
+        };
         ParseCatalogExcelResultDto: {
             data?: components["schemas"]["CatalogExcelTestDto"];
             issues: components["schemas"]["CatalogExcelIssueDto"][];
@@ -6266,13 +6621,13 @@ export interface components {
             enabled: boolean;
         };
         StartPublicSessionRequest: {
-            fullName: string;
+            fullName?: string | null;
             /** Format: date */
-            birthDate: string;
-            gender: components["schemas"]["Gender"];
-            phone: string;
-            consentAccepted: boolean;
-            parentalConsent: boolean;
+            birthDate?: string | null;
+            gender?: components["schemas"]["Gender"];
+            phone?: string | null;
+            consentAccepted?: boolean | null;
+            parentalConsent?: boolean | null;
             /** Format: int32 */
             grade?: number | null;
             email?: string | null;
