@@ -124,7 +124,8 @@ internal sealed class ListSchoolsQueryHandler : IRequestHandler<ListSchoolsQuery
                     aggregate?.StudentCount ?? 0,
                     aggregate?.CompletedCount ?? 0,
                     aggregate?.LastActivityAt,
-                    linkHealthBySchoolId[s.Id]);
+                    linkHealthBySchoolId[s.Id],
+                    s.EntryCode is null ? null : SchoolEntryCode.Format(s.EntryCode));
             })
             .ToList();
 

@@ -26,6 +26,8 @@ const SCHOOL_1 = {
   lastActivityAt: '2026-08-30T10:00:00Z',
   // `docs/07` 3.1 (2026-09-03): havola sog'ligi — bu fikstura "sog'lom" maktab.
   linkHealth: { status: 'Ok', availableProgramCount: 1, usableProgramCount: 1 },
+  // `docs/07` 3.1 (2026-09-07): maktab kodi — backend FORMATLANGAN holda (`ABCD-2345`) qaytaradi.
+  entryCode: 'PGMY-95MP',
 } satisfies Schemas['AdminSchoolListItemDto'];
 
 /**
@@ -94,11 +96,16 @@ function mockFetch(options: FetchMockOptions = {}) {
     }
     if (url.includes('/api/admin/schools/school-1/toggle-active')) {
       return Promise.resolve(
-        jsonResponse<'AdminSchoolDetailDto'>({ ...SCHOOL_DETAIL, isActive: !SCHOOL_DETAIL.isActive }),
+        jsonResponse<'AdminSchoolDetailDto'>({
+          ...SCHOOL_DETAIL,
+          isActive: !SCHOOL_DETAIL.isActive,
+        }),
       );
     }
     if (url.includes('/api/admin/schools/school-1') && method === 'DELETE') {
-      return Promise.resolve(options.deleteResponse ? options.deleteResponse() : emptyResponse(204));
+      return Promise.resolve(
+        options.deleteResponse ? options.deleteResponse() : emptyResponse(204),
+      );
     }
     if (url.includes('/api/admin/schools/school-1') && method === 'PUT') {
       return Promise.resolve(jsonResponse<'AdminSchoolDetailDto'>(SCHOOL_DETAIL));
@@ -189,7 +196,7 @@ describe('SchoolsPage', () => {
     });
   });
 
-  it('viloyat va faollik filtrlari URL query da saqlanadi (chuqur havoladan ham to\'g\'ri o\'qiladi)', async () => {
+  it("viloyat va faollik filtrlari URL query da saqlanadi (chuqur havoladan ham to'g'ri o'qiladi)", async () => {
     const fetchMock = mockFetch();
     renderSchoolsPage("/admin/schools?region=Farg'ona&active=true");
 
@@ -263,9 +270,9 @@ describe('SchoolsPage', () => {
     await user.click(screen.getByText('Ha, yangilash'));
 
     await waitFor(() => {
-      expect(fetchMock.mock.calls.some(([input]) => String(input).includes('regenerate-link'))).toBe(
-        true,
-      );
+      expect(
+        fetchMock.mock.calls.some(([input]) => String(input).includes('regenerate-link')),
+      ).toBe(true);
     });
     expect(await screen.findByText('Havola yangilandi')).toBeInTheDocument();
   });
@@ -295,11 +302,15 @@ describe('SchoolsPage', () => {
    * 2026-09-03 jonli hodisasi: yagona dastur o'chirilgan edi, barcha maktab havolasi jimgina
    * o'lik bo'lib qoldi, panelda esa HECH QANDAY belgi yo'q edi.
    */
-  it("dastursiz maktabda \"havola ishlamaydi\" belgisi va SABAB ko'rsatiladi", async () => {
+  it('dastursiz maktabda "havola ishlamaydi" belgisi va SABAB ko\'rsatiladi', async () => {
     mockFetch({
       listItem: {
         ...SCHOOL_1,
-        linkHealth: { status: 'NoProgramAssigned', availableProgramCount: 0, usableProgramCount: 0 },
+        linkHealth: {
+          status: 'NoProgramAssigned',
+          availableProgramCount: 0,
+          usableProgramCount: 0,
+        },
       },
     });
     renderSchoolsPage();
@@ -309,14 +320,10 @@ describe('SchoolsPage', () => {
     expect(await screen.findByText('Havola ishlamaydi')).toBeInTheDocument();
 
     // Umumiy "xato" yetarli emas — admin NIMA QILISHNI bilishi kerak.
-    expect(
-      screen.getByText(/Maktabga dastur biriktirilmagan/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Maktabga dastur biriktirilmagan/)).toBeInTheDocument();
 
     // Havolani nusxalash/QR yonida ham ogohlantirish bo'lishi kerak.
-    expect(
-      screen.getByText(/Bu havolani hozir tarqatish foydasiz/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Bu havolani hozir tarqatish foydasiz/)).toBeInTheDocument();
   });
 
   it("dasturi bor maktabda ogohlantirish CHIQMAYDI (yolg'on signal bermaslik)", async () => {
@@ -345,7 +352,7 @@ describe('SchoolsPage', () => {
 
     await screen.findByText('12-son maktab');
 
-    expect(await screen.findByText('Test yo\'q')).toBeInTheDocument();
+    expect(await screen.findByText("Test yo'q")).toBeInTheDocument();
     expect(screen.getByText(/Dasturda faol test yo'q/)).toBeInTheDocument();
   });
 
@@ -364,5 +371,15 @@ describe('SchoolsPage', () => {
     );
     expect(screen.getByText('Chop etish')).toBeInTheDocument();
     expect(screen.getByText('PNG yuklab olish')).toBeInTheDocument();
+  });
+
+  it('ro\'yxatda "Maktab kodi" ustuni bor va kod formatlangan holda ko\'rinadi', async () => {
+    mockFetch();
+    renderSchoolsPage();
+
+    expect(await screen.findByRole('columnheader', { name: 'Maktab kodi' })).toBeInTheDocument();
+    expect(screen.getByText('PGMY-95MP')).toBeInTheDocument();
+    // Ro'yxatda "qayta yaratish" YO'Q — bu amal faqat detal sahifasida (tasdiq bilan).
+    expect(screen.queryByRole('button', { name: /qayta yaratish/i })).not.toBeInTheDocument();
   });
 });

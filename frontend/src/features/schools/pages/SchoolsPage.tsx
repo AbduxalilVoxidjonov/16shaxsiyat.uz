@@ -14,6 +14,7 @@ import { useSchoolDetailQuery } from '../api/useSchoolDetailQuery';
 import { useToggleSchoolActive } from '../api/useToggleSchoolActive';
 import { SchoolFiltersBar } from '../components/SchoolFiltersBar';
 import { readSchoolsFilters } from '../model/schoolsFilters';
+import { SchoolEntryCodeCell } from '../components/SchoolEntryCodeCell';
 import { SchoolLinkCell } from '../components/SchoolLinkCell';
 import { SchoolLinkHealthBadge } from '../components/SchoolLinkHealthBadge';
 import { SchoolFormDialog } from '../components/SchoolFormDialog';
@@ -37,7 +38,9 @@ type QrModalState =
   | { kind: 'byId'; schoolId: string; schoolName: string; slug: string }
   | { kind: 'manual'; data: SchoolQrModalData };
 
-function toSortParam(sort: { columnId: string; direction: 'asc' | 'desc' } | null): string | undefined {
+function toSortParam(
+  sort: { columnId: string; direction: 'asc' | 'desc' } | null,
+): string | undefined {
   if (!sort) return undefined;
   return sort.direction === 'desc' ? `-${sort.columnId}` : sort.columnId;
 }
@@ -177,6 +180,14 @@ export default function SchoolsPage() {
       ),
     },
     {
+      // Maktab kodi — 2026-09-07: egasi kodni ro'yxatda topa olmadi (u faqat detal sahifasida
+      // edi). Ro'yxatda "qayta yaratish" YO'Q (`onRegenerate` berilmaydi) — bu qaytarib
+      // bo'lmaydigan amal, faqat detal sahifasida tasdiq bilan.
+      id: 'entryCode',
+      header: t('schools.table.entryCode'),
+      cell: (row) => <SchoolEntryCodeCell entryCode={row.entryCode} />,
+    },
+    {
       // "Havola ishlaydimi" ustuni — 2026-09-03 hodisasi: dastur o'chirilganda maktab havolasi
       // jimgina o'lik bo'lib qolgan edi, panelda esa hech qanday belgi yo'q edi.
       id: 'linkHealth',
@@ -184,7 +195,11 @@ export default function SchoolsPage() {
       cell: (row) => <SchoolLinkHealthBadge linkHealth={row.linkHealth} />,
     },
     { id: 'studentCount', header: t('schools.table.students'), cell: (row) => row.studentCount },
-    { id: 'completedCount', header: t('schools.table.completed'), cell: (row) => row.completedCount },
+    {
+      id: 'completedCount',
+      header: t('schools.table.completed'),
+      cell: (row) => row.completedCount,
+    },
     {
       id: 'isActive',
       header: t('schools.table.status'),

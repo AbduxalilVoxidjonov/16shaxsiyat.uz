@@ -83,9 +83,22 @@ function SchoolFormFields({
     await onValidSubmit(values);
   });
 
+  /*
+    Ikki ustunli tartib (egasining talabi: "uzun ustun emas, ikkitalik ustun qil"). `sm:` dan
+    yuqorida ikki ustun, mobilda bitta. Mantiqan juft maydonlar yonma-yon: viloyat/tuman,
+    raqam/limit, mas'ul/telefon. Nomi, kirish kodi (uzun hint) va izoh — to'liq kenglik.
+    Xato/hint matnlari `Input`/`Select`/`Textarea` ichida, maydon ostida chiziladi.
+  */
   return (
-    <form id={FORM_ID} onSubmit={(event) => void onSubmit(event)} noValidate className="flex flex-col gap-4">
-      <Input label={t('schools.form.nameLabel')} error={errors.name?.message} {...register('name')} />
+    <form
+      id={FORM_ID}
+      onSubmit={(event) => void onSubmit(event)}
+      noValidate
+      className="grid grid-cols-1 gap-4 sm:grid-cols-2"
+    >
+      <div className="sm:col-span-2">
+        <Input label={t('schools.form.nameLabel')} error={errors.name?.message} {...register('name')} />
+      </div>
       <Select
         label={t('schools.form.regionLabel')}
         placeholder={t('schools.form.regionPlaceholder')}
@@ -105,6 +118,12 @@ function SchoolFormFields({
         {...register('schoolNumber')}
       />
       <Input
+        type="number"
+        label={t('schools.form.dailyLimitLabel')}
+        error={errors.dailyRegistrationLimit?.message}
+        {...register('dailyRegistrationLimit', { valueAsNumber: true })}
+      />
+      <Input
         label={t('schools.form.contactPersonLabel')}
         hint={t('schools.form.contactPersonHint')}
         error={errors.contactPerson?.message}
@@ -116,26 +135,24 @@ function SchoolFormFields({
         error={errors.contactPhone?.message}
         {...register('contactPhone')}
       />
-      <Input
-        type="number"
-        label={t('schools.form.dailyLimitLabel')}
-        error={errors.dailyRegistrationLimit?.message}
-        {...register('dailyRegistrationLimit', { valueAsNumber: true })}
-      />
-      <Input
-        label={t('schools.form.accessCodeLabel')}
-        hint={t('schools.form.accessCodeHint')}
-        inputMode="numeric"
-        maxLength={6}
-        error={errors.accessCode?.message}
-        {...register('accessCode')}
-      />
-      <Textarea
-        label={t('schools.form.notesLabel')}
-        hint={t('schools.form.notesHint')}
-        error={errors.notes?.message}
-        {...register('notes')}
-      />
+      <div className="sm:col-span-2">
+        <Input
+          label={t('schools.form.accessCodeLabel')}
+          hint={t('schools.form.accessCodeHint')}
+          inputMode="numeric"
+          maxLength={6}
+          error={errors.accessCode?.message}
+          {...register('accessCode')}
+        />
+      </div>
+      <div className="sm:col-span-2">
+        <Textarea
+          label={t('schools.form.notesLabel')}
+          hint={t('schools.form.notesHint')}
+          error={errors.notes?.message}
+          {...register('notes')}
+        />
+      </div>
     </form>
   );
 }
@@ -202,6 +219,8 @@ export function SchoolFormDialog({ open, schoolId, onClose }: SchoolFormDialogPr
       open={open}
       onClose={onClose}
       title={isEdit ? t('schools.form.editTitle') : t('schools.form.createTitle')}
+      // Ikki ustunli forma uchun standart `max-w-md` tor — `Dialog`ning o'zi o'zgarmaydi, faqat prop.
+      className="max-w-2xl"
       footer={
         <>
           <Button variant="outline" onClick={onClose} disabled={isMutating}>
@@ -224,7 +243,7 @@ export function SchoolFormDialog({ open, schoolId, onClose }: SchoolFormDialogPr
         `key` — bir oynadan ikkinchi maktabga o'tilganda ham yangi mount kafolati.
       */}
       {!open ? null : isLoadingDetail ? (
-        <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {Array.from({ length: 6 }, (_, index) => (
             <Skeleton key={index} className="h-11 w-full" />
           ))}

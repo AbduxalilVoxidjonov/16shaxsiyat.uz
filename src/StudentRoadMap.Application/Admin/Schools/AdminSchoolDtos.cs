@@ -23,7 +23,7 @@ public sealed record AdminSchoolLinkHealthDto(
 /// <summary>
 /// `GET /api/admin/schools` ro'yxat elementi — `docs/07-api-shartnoma.md` 3.1-bo'lim:
 /// `id, name, region, district, slug, publicUrl, isActive, studentCount, completedCount,
-/// lastActivityAt`. `linkHealth` — 2026-09-03 kengaytmasi (yuqoriga qarang).
+/// lastActivityAt, entryCode`. `linkHealth` — 2026-09-03 kengaytmasi (yuqoriga qarang).
 /// </summary>
 public sealed record AdminSchoolListItemDto(
     Guid Id,
@@ -36,7 +36,10 @@ public sealed record AdminSchoolListItemDto(
     int StudentCount,
     int CompletedCount,
     DateTimeOffset? LastActivityAt,
-    AdminSchoolLinkHealthDto LinkHealth);
+    AdminSchoolLinkHealthDto LinkHealth,
+    // Maktab kodi (`ABCD-2345` ko'rinishida) — 2026-09-07: egasi kodni ro'yxatda topa olmadi,
+    // u faqat detal sahifasida edi. Ommaviy makon ro'yxatga chiqmaydi, lekin `null` ehtiyot uchun.
+    string? EntryCode = null);
 
 /// <summary>
 /// `GET /api/admin/schools/{id}` — batafsil + statistika (`docs/07` 3.1-bo'lim: "o'quvchi soni,

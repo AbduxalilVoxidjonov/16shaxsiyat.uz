@@ -1,11 +1,21 @@
 import { Copy, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { cn } from '@/shared/lib/cn';
 import { useToast } from '@/shared/ui/useToast';
 
 export interface SchoolEntryCodeCellProps {
   /** Formatlangan kod (`XXXX-XXXX`, backend beradi) yoki `null` (ommaviy makon). */
   entryCode: string | null | undefined;
-  onRegenerate: () => void;
+  /**
+   * "Kodni qayta yaratish" tugmasi — berilmasa tugma CHIQMAYDI (zich joylarda faqat kod +
+   * nusxalash; qayta yaratish detal sahifasida qoladi).
+   */
+  onRegenerate?: () => void;
+  /**
+   * `lg` — detal sahifasidagi ko'zga tashlanadigan variant (egasi kodni topa olmagan edi):
+   * katta shrift. `md` (standart) — jadval katakchasi / zich qator.
+   */
+  size?: 'md' | 'lg';
 }
 
 /**
@@ -13,7 +23,7 @@ export interface SchoolEntryCodeCellProps {
  * bilan bir xil darajada tarqatiladi, shu sabab `SchoolLinkCell` naqshi: kod + nusxalash
  * (toast) + qayta yaratish (tasdiq dialogi chaqiruvchida). `accessCode` (sinf kodi) EMAS.
  */
-export function SchoolEntryCodeCell({ entryCode, onRegenerate }: SchoolEntryCodeCellProps) {
+export function SchoolEntryCodeCell({ entryCode, onRegenerate, size = 'md' }: SchoolEntryCodeCellProps) {
   const { t } = useTranslation();
   const toast = useToast();
 
@@ -40,25 +50,36 @@ export function SchoolEntryCodeCell({ entryCode, onRegenerate }: SchoolEntryCode
     }
   }
 
+  const isLarge = size === 'lg';
+
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="font-mono text-sm font-semibold tracking-widest text-neutral-900">{entryCode}</span>
+    <div className={cn('flex flex-wrap items-center', isLarge ? 'gap-2' : 'gap-1.5')}>
+      <span
+        className={cn(
+          'font-mono font-semibold tracking-widest text-neutral-900',
+          isLarge ? 'text-2xl font-bold sm:text-3xl' : 'text-sm',
+        )}
+      >
+        {entryCode}
+      </span>
       <button
         type="button"
         onClick={() => void handleCopy()}
         aria-label={t('schools.actions.copyEntryCode')}
         className="shrink-0 rounded-md p-1.5 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
       >
-        <Copy size={16} aria-hidden="true" />
+        <Copy size={isLarge ? 20 : 16} aria-hidden="true" />
       </button>
-      <button
-        type="button"
-        onClick={onRegenerate}
-        className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
-      >
-        <RefreshCw size={14} aria-hidden="true" />
-        {t('schools.actions.regenerateEntryCode')}
-      </button>
+      {onRegenerate && (
+        <button
+          type="button"
+          onClick={onRegenerate}
+          className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
+        >
+          <RefreshCw size={14} aria-hidden="true" />
+          {t('schools.actions.regenerateEntryCode')}
+        </button>
+      )}
     </div>
   );
 }

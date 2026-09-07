@@ -6291,6 +6291,7 @@ export interface components {
             /** Format: date-time */
             lastActivityAt?: string | null;
             linkHealth: components["schemas"]["AdminSchoolLinkHealthDto"];
+            entryCode?: string | null;
         };
         AdminSchoolListItemDtoPagedResult: {
             items: components["schemas"]["AdminSchoolListItemDto"][];

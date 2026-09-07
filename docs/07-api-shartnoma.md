@@ -473,7 +473,7 @@ Tana bo'sh. Har doim `204 No Content` (idempotent), cookie tozalanadi.
 | DELETE | `/api/admin/schools/{id}` | Soft delete (o'quvchisi bo'lsa 409) |
 | GET | `/api/admin/schools/link-health` | Tizim bo'yicha "nechta maktab havolasi ishlamaydi" (dashboard banneri) |
 
-`SchoolListItemDto`: `id, name, region, district, slug, publicUrl, isActive, studentCount, completedCount, lastActivityAt, linkHealth`
+`SchoolListItemDto`: `id, name, region, district, slug, publicUrl, isActive, studentCount, completedCount, lastActivityAt, linkHealth, entryCode`
 
 #### `linkHealth` — "bu havola ishlaydimi" (2026-09-03)
 

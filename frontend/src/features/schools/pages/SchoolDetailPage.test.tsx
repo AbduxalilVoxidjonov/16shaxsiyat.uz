@@ -82,8 +82,9 @@ function renderDetailPage() {
 }
 
 /**
- * "Maktab kodi" `InfoRow` ining qiymat qismi. Kod QR modalda ham (yopiq, lekin DOM'da —
- * jsdom `showModal` yo'q) turadi, shu sabab sahifa bo'ylab `getByText` ikkitasini topardi.
+ * "Maktab kodi" `InfoRow` ining qiymat qismi ("Havola va maktab kodi" kartasida). Kod QR
+ * modalda ham (yopiq, lekin DOM'da — jsdom `showModal` yo'q) turadi, shu sabab sahifa bo'ylab
+ * `getByText` ikkitasini topardi.
  */
 function entryCodeRow(): HTMLElement {
   const label = screen.getByText('Maktab kodi', { selector: 'dt' });
@@ -201,6 +202,34 @@ describe('SchoolDetailPage', () => {
       expect(within(row).getByRole('button', { name: 'Maktab kodini nusxalash' })).toBeInTheDocument();
       // `accessCode` (ixtiyoriy sinf kodi) qatori o'zgarmagan — bu yerda `null` → `—`.
       expect(screen.getByText('Kirish kodi')).toBeInTheDocument();
+    });
+
+    /**
+     * Egasi: "Maktab kodini qayerda? Topa olmadim" — kod endi sarlavha ostidagi alohida
+     * "Havola va maktab kodi" kartasida, havola bilan YONMA-YON va katta shriftda turadi
+     * (ma'lumotlar kartasining pastida, kichik qator ichida EMAS).
+     */
+    it("kod havola bilan bir kartada, ko'zga tashlanadigan (katta) ko'rinishda turadi", async () => {
+      mockFetch();
+      renderDetailPage();
+
+      await screen.findByRole('heading', { name: '12-son maktab' });
+
+      const shareHeading = screen.getByRole('heading', { name: 'Havola va maktab kodi' });
+      const shareCard = shareHeading.closest('div.rounded-2xl');
+      expect(shareCard).not.toBeNull();
+      const card = within(shareCard as HTMLElement);
+
+      // Havola ham, kod ham shu kartada.
+      expect(card.getByText('12-maktab-qokon', { exact: false })).toBeInTheDocument();
+      expect(card.getByText('ABCD-2345')).toHaveClass('text-2xl');
+      expect(card.getByText('Kodni qayta yaratish')).toBeInTheDocument();
+      // Kod nimaga kerakligi yozilgan — egasi "bu nima?" deb qolmasin.
+      expect(card.getByText(/«Maktab uchun» bo'limiga shu kodni kiritadi/)).toBeInTheDocument();
+
+      // Karta statistikadan OLDIN keladi (sarlavha ostida).
+      const statsSection = screen.getByRole('region', { name: 'Maktab ishtirok statistikasi' });
+      expect(shareHeading.compareDocumentPosition(statsSection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
 
     it("'Kodni qayta yaratish' → tasdiq → POST regenerate-entry-code → yangi kod DARHOL ko'rinadi", async () => {

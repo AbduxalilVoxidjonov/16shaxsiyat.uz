@@ -137,6 +137,37 @@ export default function SchoolDetailPage() {
         </div>
       </div>
 
+      {/*
+        Havola va maktab kodi — sarlavha ostida, statistikadan OLDIN, alohida kartada.
+        Sabab: egasi kodni topa olmadi ("Maktab kodini qayerda?") — ilgari u ma'lumotlar
+        kartasining pastida, 10 qator ichida kichik shriftda edi. Bu ikkisi maktabga
+        TARQATILADIGAN yagona narsalar, shu sabab bir joyda va ko'zga tashlanadigan.
+      */}
+      <Card title={t('schools.detail.share.heading')}>
+        <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <InfoRow label={t('schools.detail.info.link')}>
+            <div className="flex flex-col gap-2">
+              <SchoolLinkCell
+                publicUrl={school.publicUrl}
+                linkHealth={school.linkHealth}
+                onShowQr={() => setQrOpen(true)}
+              />
+              <SchoolLinkHealthBadge linkHealth={school.linkHealth} showReason />
+            </div>
+          </InfoRow>
+          <InfoRow label={t('schools.detail.info.entryCode')}>
+            <div className="flex flex-col gap-1">
+              <SchoolEntryCodeCell
+                entryCode={entryCode}
+                size="lg"
+                onRegenerate={() => setRegenerateCodeOpen(true)}
+              />
+              <p className="text-xs text-neutral-500">{t('schools.detail.share.entryCodeHint')}</p>
+            </div>
+          </InfoRow>
+        </dl>
+      </Card>
+
       <SchoolStatsCards stats={school.stats} />
 
       <Card title={t('schools.detail.info.heading')}>
@@ -158,19 +189,6 @@ export default function SchoolDetailPage() {
           </InfoRow>
           <InfoRow label={t('schools.detail.info.createdAt')}>
             {formatDate(school.createdAt)}
-          </InfoRow>
-          <InfoRow label={t('schools.detail.info.link')}>
-            <SchoolLinkCell
-              publicUrl={school.publicUrl}
-              linkHealth={school.linkHealth}
-              onShowQr={() => setQrOpen(true)}
-            />
-          </InfoRow>
-          <InfoRow label={t('schools.detail.info.entryCode')}>
-            <SchoolEntryCodeCell entryCode={entryCode} onRegenerate={() => setRegenerateCodeOpen(true)} />
-          </InfoRow>
-          <InfoRow label={t('schools.linkHealth.detailHeading')}>
-            <SchoolLinkHealthBadge linkHealth={school.linkHealth} showReason />
           </InfoRow>
           <InfoRow label={t('schools.detail.info.notes')}>{orDash(school.notes)}</InfoRow>
         </dl>

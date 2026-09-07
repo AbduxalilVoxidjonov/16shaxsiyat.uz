@@ -61,4 +61,34 @@ describe('SchoolEntryCodeCell', () => {
     expect(screen.getByText('—')).toBeInTheDocument();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
+
+  it("`onRegenerate` berilmasa faqat kod + nusxalash — 'qayta yaratish' tugmasi CHIQMAYDI", () => {
+    render(
+      <ToastProvider>
+        <SchoolEntryCodeCell entryCode="ABCD-2345" />
+      </ToastProvider>,
+    );
+
+    expect(screen.getByText('ABCD-2345')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Maktab kodini nusxalash' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Kodni qayta yaratish' })).not.toBeInTheDocument();
+  });
+
+  it('`size="lg"` — katta variantda ham kod, nusxalash va qayta yaratish joyida', async () => {
+    const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    stubClipboard({ writeText });
+    const onRegenerate = vi.fn();
+    render(
+      <ToastProvider>
+        <SchoolEntryCodeCell entryCode="ABCD-2345" size="lg" onRegenerate={onRegenerate} />
+      </ToastProvider>,
+    );
+
+    expect(screen.getByText('ABCD-2345')).toHaveClass('text-2xl');
+    await user.click(screen.getByRole('button', { name: 'Maktab kodini nusxalash' }));
+    expect(writeText).toHaveBeenCalledWith('ABCD-2345');
+    await user.click(screen.getByRole('button', { name: 'Kodni qayta yaratish' }));
+    expect(onRegenerate).toHaveBeenCalledTimes(1);
+  });
 });

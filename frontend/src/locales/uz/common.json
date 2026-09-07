@@ -354,6 +354,10 @@
         "notes": "Izoh",
         "entryCode": "Maktab kodi"
       },
+      "share": {
+        "heading": "Havola va maktab kodi",
+        "entryCodeHint": "O'quvchi kirish sahifasida «Maktab uchun» bo'limiga shu kodni kiritadi."
+      },
       "students": {
         "heading": "O'quvchilar",
         "description": "Bu maktabda {{count}} ta o'quvchi ro'yxatdan o'tgan.",
@@ -375,6 +379,7 @@
       "name": "Nomi",
       "location": "Viloyat/Tuman",
       "link": "Havola",
+      "entryCode": "Maktab kodi",
       "students": "O'quvchi",
       "completed": "Yakunlangan",
       "status": "Holat",

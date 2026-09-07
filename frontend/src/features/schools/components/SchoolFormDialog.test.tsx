@@ -89,6 +89,68 @@ describe('SchoolFormDialog', () => {
     expect(screen.getByLabelText('Tuman')).toHaveValue('');
   });
 
+  /**
+   * Ikki ustunli tartibga o'tishda regressiya himoyasi: barcha 9 maydon hamon render bo'ladi
+   * va to'ldirilgan forma `POST /api/admin/schools` ga to'g'ri tana bilan ketadi.
+   */
+  it("yaratish: barcha maydonlar bor, to'ldirilgach POST ketadi va oyna yopiladi", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        jsonResponse<'AdminSchoolDetailDto'>({ ...SCHOOL_DETAIL, id: 'school-2' }, 201),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <SchoolFormDialog open schoolId={null} onClose={onClose} />
+        </ToastProvider>
+      </QueryClientProvider>,
+    );
+
+    for (const label of [
+      'Nomi',
+      'Viloyat',
+      'Tuman',
+      'Maktab raqami',
+      "Kunlik ro'yxatdan o'tish limiti",
+      "Mas'ul shaxs (F.I.Sh.)",
+      'Telefon raqami',
+      'Kirish kodi',
+      'Izoh',
+    ]) {
+      expect(screen.getByLabelText(label)).toBeInTheDocument();
+    }
+
+    await user.type(screen.getByLabelText('Nomi'), '12-son maktab');
+    await user.selectOptions(screen.getByLabelText('Viloyat'), "Farg'ona");
+    await user.type(screen.getByLabelText('Tuman'), "Qo'qon");
+    await user.type(screen.getByLabelText('Maktab raqami'), '12');
+    await user.click(screen.getByText('Yaratish'));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    const postCall = fetchMock.mock.calls.find(
+      ([, init]) => (init as RequestInit | undefined)?.method === 'POST',
+    );
+    expect(postCall).toBeDefined();
+    expect(String(postCall![0])).toContain('/api/admin/schools');
+    const body = JSON.parse(String((postCall![1] as RequestInit).body)) as Record<string, unknown>;
+    expect(body).toMatchObject({
+      name: '12-son maktab',
+      region: "Farg'ona",
+      district: "Qo'qon",
+      schoolNumber: '12',
+      dailyRegistrationLimit: 500,
+    });
+    // Bo'sh ixtiyoriy maydonlar `""` sifatida YUBORILMAYDI (`emptyToUndefined`).
+    expect(body).not.toHaveProperty('contactPerson');
+    expect(body).not.toHaveProperty('notes');
+    expect(await screen.findByText('Maktab yaratildi')).toBeInTheDocument();
+  });
+
   it("tahrirlashda maydonlar ma'lumot kelgach to'ldirilgan holda mount bo'ladi", async () => {
     vi.stubGlobal(
       'fetch',
