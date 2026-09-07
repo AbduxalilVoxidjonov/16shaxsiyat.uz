@@ -5,8 +5,9 @@ import { useTranslation } from 'react-i18next';
 import { BirthDateSelect, Button, Checkbox, ConsentBlock, Input, PhoneField, Select } from '@/shared/ui';
 import { AppError } from '@/shared/api/AppError';
 import { cn } from '@/shared/lib/cn';
-import type { StartPublicSessionRequestBody, StartSessionResponse } from '@/shared/api/types';
+import type { StartSessionResponse } from '@/shared/api/types';
 import { useStartOwnSession } from '../api/useStartOwnSession';
+import { useUpdateMyProfile } from '../api/useUpdateMyProfile';
 import type { MyStudentProfile } from '../model/types';
 import {
   MAX_AGE,
@@ -17,7 +18,14 @@ import {
   createPublicRegistrationSchema,
   type PublicRegistrationFormValues,
 } from '../schemas/publicRegistrationSchema';
-import { buildStartSessionPayload, needsConsent, profileToFormValues } from '../lib/profileState';
+import {
+  buildProfilePayload,
+  buildStartSessionPayload,
+  needsConsent,
+  profileToFormValues,
+  submitActionFor,
+  type ProfileFormMode,
+} from '../lib/profileState';
 import { mapStartSessionErrorCode } from '../lib/startSessionErrors';
 
 /** Sinf tanlovi — bo'sh qiymat "maktabda o'qimayman" degani. */
@@ -36,26 +44,52 @@ function isFieldKey(key: string): key is keyof PublicRegistrationFormValues {
 
 export interface PublicRegistrationFormProps {
   profile: MyStudentProfile;
-  /** `new` — birinchi anketa (to'liq to'plam), `edit` — mavjud profil tahriri (`lib/profileState.ts`). */
-  mode: 'new' | 'edit';
+  /**
+   * `new` — birinchi anketa (to'liq to'plam, test boshlanadi), `consent` — profil bor, rozilik/
+   * maydon yetishmaydi (test boshlanadi), `edit` — foydalanuvchi "O'zgartirish" bosdi (FAQAT
+   * saqlanadi). Qoida — `submitActionFor` (`lib/profileState.ts`).
+   */
+  mode: ProfileFormMode;
   programCode?: string;
+  /** Sessiya ochildi (`new`/`consent`). */
   onStarted: (result: StartSessionResponse) => void;
+  /** Profil saqlandi, sessiya OCHILMADI (`edit`) — yangilangan profil bilan. */
+  onSaved: (profile: MyStudentProfile) => void;
   onCancel?: () => void;
 }
 
 /**
- * Anketa formasi — `new` va `edit` rejimlarida. Boshlang'ich qiymatlar profildan
- * (`profileToFormValues`): `new` da F.I.Sh. Telegram taklifi, `edit` da hamma maydon
+ * Anketa formasi — `new`, `consent` va `edit` rejimlarida. Boshlang'ich qiymatlar profildan
+ * (`profileToFormValues`): `new` da F.I.Sh. Telegram taklifi, qolganida hamma maydon
  * to'ldirilgan. Rozilik bloki faqat `needsConsent(profile)` bo'lganda (yangi profil yoki
  * eskirgan versiya) — sxema ham shunga mos (`createPublicRegistrationSchema`).
+ *
+ * Submit `submitActionFor(mode)` ga bog'liq: `edit` → `PUT /api/me/profile` (test
+ * boshlanmaydi), aks holda `POST /api/me/sessions`. Tugma matni ham shu amalga mos —
+ * "Saqlash" yoki "Testni boshlash".
  *
  * Komponent alohida: `useForm` `defaultValues` ni faqat mount'da o'qiydi, profil esa
  * asinxron keladi — sahifa formani profil yuklangach mount qiladi.
  */
-export function PublicRegistrationForm({ profile, mode, programCode, onStarted, onCancel }: PublicRegistrationFormProps) {
+export function PublicRegistrationForm({
+  profile,
+  mode,
+  programCode,
+  onStarted,
+  onSaved,
+  onCancel,
+}: PublicRegistrationFormProps) {
   const { t } = useTranslation();
   const startSession = useStartOwnSession();
+  const updateProfile = useUpdateMyProfile();
   const [formError, setFormError] = useState<string | null>(null);
+
+  const submitAction = submitActionFor(mode);
+  const genericErrorMessage = t(
+    submitAction === 'saveProfile'
+      ? 'account.register.errors.saveGeneric'
+      : 'account.register.errors.generic',
+  );
 
   const consentRequired = needsConsent(profile);
   const schema = useMemo(
@@ -100,30 +134,36 @@ export function PublicRegistrationForm({ profile, mode, programCode, onStarted, 
         }
       }
       if (!mappedAny) {
-        setFormError(error.message || t('account.register.errors.generic'));
+        setFormError(error.message || genericErrorMessage);
       }
       return;
     }
 
-    setFormError(mapStartSessionErrorCode(error, t));
+    setFormError(mapStartSessionErrorCode(error, t, genericErrorMessage));
   }
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
 
-    const payload: StartPublicSessionRequestBody = buildStartSessionPayload(values, mode, {
-      needsConsent: consentRequired,
-      programCode,
-    });
-
     try {
-      const result = await startSession.mutateAsync(payload);
+      if (submitAction === 'saveProfile') {
+        // `edit`: FAQAT saqlash — `POST /api/me/sessions` bu shoxda hech qachon chaqirilmaydi.
+        const saved = await updateProfile.mutateAsync(
+          buildProfilePayload(values, mode, { needsConsent: consentRequired }),
+        );
+        onSaved(saved);
+        return;
+      }
+
+      const result = await startSession.mutateAsync(
+        buildStartSessionPayload(values, mode, { needsConsent: consentRequired, programCode }),
+      );
       onStarted(result);
     } catch (error) {
       if (error instanceof AppError) {
         applyServerError(error);
       } else {
-        setFormError(t('account.register.errors.generic'));
+        setFormError(genericErrorMessage);
       }
     }
   });
@@ -137,7 +177,7 @@ export function PublicRegistrationForm({ profile, mode, programCode, onStarted, 
       noValidate
       className="card flex flex-col gap-5 p-5 sm:p-7"
     >
-      {mode === 'edit' && !profile.consentCurrent && (
+      {mode !== 'new' && !profile.consentCurrent && (
         <p
           role="status"
           className="rounded-2xl border border-zarhal-200 bg-zarhal-50 px-4 py-3 text-sm text-ink-soft"
@@ -286,6 +326,11 @@ export function PublicRegistrationForm({ profile, mode, programCode, onStarted, 
         </p>
       )}
 
+      {submitAction === 'startSession' && (
+        // Foydalanuvchi bosishdan oldin bilsin: bu tugma anketani saqlaydi VA testni boshlaydi.
+        <p className="text-center text-sm text-ink-muted">{t('account.register.startNote')}</p>
+      )}
+
       <div className="flex flex-col gap-3 sm:flex-row-reverse">
         <Button
           type="submit"
@@ -294,7 +339,11 @@ export function PublicRegistrationForm({ profile, mode, programCode, onStarted, 
           isLoading={isSubmitting}
           disabled={submitDisabled}
         >
-          {t('account.register.submitCta')}
+          {t(
+            submitAction === 'saveProfile'
+              ? 'account.register.saveProfile'
+              : 'account.register.submitCta',
+          )}
         </Button>
         {onCancel && (
           <Button type="button" size="lg" variant="ghost" className="w-full sm:w-auto" onClick={onCancel}>

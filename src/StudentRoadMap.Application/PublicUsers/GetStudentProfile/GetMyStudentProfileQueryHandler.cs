@@ -1,10 +1,7 @@
 using MediatR;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
-using StudentRoadMap.Application.Public.StartPublicSession;
 using StudentRoadMap.Domain.Common;
-using StudentRoadMap.Domain.PublicUsers;
-using StudentRoadMap.Domain.Students;
 
 namespace StudentRoadMap.Application.PublicUsers.GetStudentProfile;
 
@@ -46,56 +43,9 @@ internal sealed class GetMyStudentProfileQueryHandler : IRequestHandler<GetMyStu
             _context.AsNoTracking(_context.Students).Where(s => s.PublicUserId == request.PublicUserId),
             cancellationToken).ConfigureAwait(false);
 
-        var suggestedFullName = SuggestFullName(user);
-
-        if (student is null)
-        {
-            return Result.Success(new MyStudentProfileDto(
-                HasProfile: false,
-                FullName: null,
-                BirthDate: null,
-                Gender: null,
-                Phone: null,
-                Grade: null,
-                Email: null,
-                ConsentVersion: null,
-                ConsentCurrent: false,
-                ParentalConsent: false,
-                IsMinor: false,
-                SuggestedFullName: suggestedFullName));
-        }
-
         var today = DateOnly.FromDateTime(_dateTime.UtcNow.UtcDateTime);
-        var isMinor = student.BirthDate <= today
-            && Student.CalculateAge(student.BirthDate, today) < PublicConsent.ParentalConsentRequiredBelowAge;
 
-        return Result.Success(new MyStudentProfileDto(
-            HasProfile: true,
-            FullName: student.FullName,
-            BirthDate: student.BirthDate,
-            Gender: student.Gender,
-            Phone: student.Phone.Value,
-            Grade: student.Grade == Student.NoGrade ? null : student.Grade,
-            Email: student.Email,
-            ConsentVersion: student.ConsentVersion,
-            ConsentCurrent: student.ConsentVersion == PublicConsent.CurrentVersion,
-            ParentalConsent: student.ParentalConsent,
-            IsMinor: isMinor,
-            SuggestedFullName: suggestedFullName));
-    }
-
-    /// <summary>
-    /// Telegram ismidan F.I.Sh. TAKLIFI: `Familiya Ism` tartibida (o'zbek rasmiy yozuvi);
-    /// biri yo'q bo'lsa bori; ikkalasi yo'q — `null`. Bu qiymat AI'ga hech qachon
-    /// tushmaydi (`CLAUDE.md` 5-qoida) — faqat anketa maydonini oldindan to'ldirish uchun.
-    /// </summary>
-    private static string? SuggestFullName(PublicUser user)
-    {
-        var parts = new[] { user.LastName, user.FirstName }
-            .Where(p => !string.IsNullOrWhiteSpace(p))
-            .Select(p => p!.Trim());
-
-        var joined = string.Join(' ', parts);
-        return joined.Length == 0 ? null : joined;
+        // Xaritalash `PUT /api/me/profile` bilan umumiy (`MyStudentProfileMapper`).
+        return Result.Success(MyStudentProfileMapper.ToDto(user, student, today));
     }
 }

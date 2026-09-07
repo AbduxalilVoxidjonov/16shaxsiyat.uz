@@ -1,7 +1,7 @@
 import type { Gender, StartPublicSessionRequestBody } from '@/shared/api/types';
 import { birthDateToIso, calculateAge } from '@/shared/lib/birthDate';
 import { extractUzLocalDigits, toE164UzPhone } from '@/shared/lib/formatPhone';
-import type { MyStudentProfile } from '../model/types';
+import type { MyStudentProfile, UpdateStudentProfileRequestBody } from '../model/types';
 import {
   PARENTAL_CONSENT_AGE,
   PUBLIC_REGISTRATION_DEFAULT_VALUES,
@@ -10,17 +10,39 @@ import {
 } from '../schemas/publicRegistrationSchema';
 
 /**
- * `/kabinet/test` anketasining UCH holati (`docs/07` §5.4, 2026-09-07):
+ * `/kabinet/test` anketasining holatlari (`docs/07` §5.1b, §5.4, 2026-09-07):
  *
- * | Holat | Qachon | Ekran |
- * |---|---|---|
- * | `new` | profil yo'q (birinchi test) | to'liq forma, F.I.Sh. Telegram ismidan taklif |
- * | `ready` | profil to'liq, rozilik joriy, (voyaga yetmagan bo'lsa) ota-ona roziligi bor | forma YO'Q — karta + "Testni boshlash" |
- * | `edit` | profil bor, lekin rozilik eskirgan / yetishmayotgan maydon / foydalanuvchi "O'zgartirish" bosdi | forma to'ldirilgan holda |
+ * | Holat | Qachon | Ekran | Submit |
+ * |---|---|---|---|
+ * | `new` | profil yo'q (birinchi test) | to'liq forma, F.I.Sh. Telegram ismidan taklif | `POST /api/me/sessions` — saqlanadi VA test boshlanadi (ataylab bir qadam) |
+ * | `ready` | profil to'liq, rozilik joriy, (voyaga yetmagan bo'lsa) ota-ona roziligi bor | forma YO'Q — karta + "Testni boshlash" | `POST /api/me/sessions` `{}` |
+ * | `consent` | profil bor, lekin rozilik eskirgan / ota-ona roziligi yo'q / maydon yetishmaydi | forma to'ldirilgan, faqat yetishmagani so'raladi | `POST /api/me/sessions` — foydalanuvchi test boshlamoqchi edi |
+ * | `edit` | foydalanuvchi "O'zgartirish" bosdi (kartada yoki `/kabinet` dan `?edit=1`) | forma to'ldirilgan, "Saqlash" | **`PUT /api/me/profile` — FAQAT saqlash, test boshlanmaydi** |
+ *
+ * `edit` va `consent` ilgari bitta holat edi va ikkalasi sessiya ochardi — egasi ko'rgan xato:
+ * "O'zgartirish" bosib telefonini to'g'rilagan odamda test boshlanib ketardi. Endi qoida
+ * `submitActionFor` da BITTA joyda: `edit` → saqlash, qolgani → sessiya.
  *
  * Bu mantiq ATAYLAB komponentdan tashqarida — sof funksiya, to'g'ridan-to'g'ri sinaladi.
  */
-export type ProfileFormState = 'new' | 'ready' | 'edit';
+export type ProfileFormState = 'new' | 'ready' | 'edit' | 'consent';
+
+/** Forma ko'rsatiladigan holatlar (`ready` da forma yo'q). */
+export type ProfileFormMode = Exclude<ProfileFormState, 'ready'>;
+
+/** Forma submit'i nima qiladi: faqat profilni saqlaydi yoki sessiya (test) ochadi. */
+export type ProfileSubmitAction = 'saveProfile' | 'startSession';
+
+/**
+ * **Rejim → amal qoidasi.** `edit` (foydalanuvchi o'zi "O'zgartirish" bosgan) — FAQAT saqlash
+ * (`PUT /api/me/profile`); `new` va `consent` — sessiya (`POST /api/me/sessions`), chunki bu
+ * holatlarda foydalanuvchi "Testni boshlash" niyati bilan kelgan va anketa uning yo'lidagi
+ * to'siq. Tugma matni ham shu funksiyaga bog'liq ("Saqlash" / "Testni boshlash") —
+ * foydalanuvchi bosishdan oldin nima bo'lishini biladi.
+ */
+export function submitActionFor(mode: ProfileFormMode): ProfileSubmitAction {
+  return mode === 'edit' ? 'saveProfile' : 'startSession';
+}
 
 /** Barcha majburiy shaxsiy maydonlar bazada bormi (server `Student.Create` da talab qiladi, lekin himoya uchun tekshiriladi). */
 export function isProfileComplete(profile: MyStudentProfile): boolean {
@@ -37,7 +59,7 @@ export function resolveProfileState(profile: MyStudentProfile, forceEdit: boolea
   if (forceEdit) return 'edit';
 
   const parentalOk = !profile.isMinor || profile.parentalConsent;
-  return isProfileComplete(profile) && profile.consentCurrent && parentalOk ? 'ready' : 'edit';
+  return isProfileComplete(profile) && profile.consentCurrent && parentalOk ? 'ready' : 'consent';
 }
 
 /** `YYYY-MM-DD` → `BirthDateSelect` qiymati (kun/oy `String(n)` — `padStart`siz, select option'lari shunday). */
@@ -85,28 +107,27 @@ export function profileToFormValues(profile: MyStudentProfile): PublicRegistrati
 }
 
 /**
- * Forma qiymatlari → `POST /api/me/sessions` tanasi. Ikki rejim farqi (`docs/07` §5.4):
+ * Forma qiymatlari → anketa tanasi (`PUT /api/me/profile` va `POST /api/me/sessions` uchun
+ * UMUMIY qism). Ikki semantika (`docs/07` §5.4):
  *
- * - `new`: hozirgidek to'liq to'plam; `grade: null` = "maktabda o'qimayman", `email: null`.
- * - `edit`: server `null` ni "o'zgarmasin" deb tushunadi, shu sabab bo'sh tanlov ANIQ
- *   yuboriladi — `grade: 0` (`Student.NoGrade`), `email: ''` (tozalash). Rozilik joriy bo'lsa
- *   `consentAccepted` YUBORILMAYDI (aks holda server rozilik sanasini qayta yozardi);
- *   `parentalConsent` faqat voyaga yetmaganda.
+ * - `new`: to'liq to'plam; `grade: null` = "maktabda o'qimayman", `email: null`.
+ * - `edit`/`consent` (profil bor): server `null` ni "o'zgarmasin" deb tushunadi, shu sabab
+ *   bo'sh tanlov ANIQ yuboriladi — `grade: 0` (`Student.NoGrade`), `email: ''` (tozalash).
+ *   Rozilik joriy bo'lsa `consentAccepted` YUBORILMAYDI (aks holda server rozilik sanasini
+ *   qayta yozardi); `parentalConsent` faqat voyaga yetmaganda.
  */
-export function buildStartSessionPayload(
+export function buildProfilePayload(
   values: PublicRegistrationFormValues,
-  mode: 'new' | 'edit',
-  options: { needsConsent: boolean; programCode?: string },
-): StartPublicSessionRequestBody {
+  mode: ProfileFormMode,
+  options: { needsConsent: boolean },
+): UpdateStudentProfileRequestBody {
   const age = ageFromFormValue(values.birthDate);
   const isMinor = age !== null && age < PARENTAL_CONSENT_AGE;
-  const base: StartPublicSessionRequestBody = {
+  const base: UpdateStudentProfileRequestBody = {
     fullName: values.fullName,
     birthDate: birthDateToIso(values.birthDate),
     gender: values.gender as Gender,
     phone: toE164UzPhone(values.phone) ?? '',
-    languageCode: 'uz',
-    ...(options.programCode ? { programCode: options.programCode } : {}),
   };
 
   if (mode === 'new') {
@@ -126,6 +147,22 @@ export function buildStartSessionPayload(
     ...(isMinor ? { parentalConsent: values.parentalConsent } : {}),
     grade: values.grade ? Number(values.grade) : 0,
     email: values.email,
+  };
+}
+
+/**
+ * Forma qiymatlari → `POST /api/me/sessions` tanasi: anketa qismi `buildProfilePayload` bilan
+ * AYNAN bir xil + sessiyaga tegishli `languageCode`/`programCode`.
+ */
+export function buildStartSessionPayload(
+  values: PublicRegistrationFormValues,
+  mode: ProfileFormMode,
+  options: { needsConsent: boolean; programCode?: string },
+): StartPublicSessionRequestBody {
+  return {
+    ...buildProfilePayload(values, mode, { needsConsent: options.needsConsent }),
+    languageCode: 'uz',
+    ...(options.programCode ? { programCode: options.programCode } : {}),
   };
 }
 

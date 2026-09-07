@@ -1800,7 +1800,8 @@
         "inactive": "Ommaviy test vaqtincha to'xtatilgan.",
         "duplicate": "Siz bu testni yaqinda yakunlagansiz. Yangi test biroz vaqtdan keyin ochiladi.",
         "rateLimited": "Juda ko'p urinish bo'ldi. Bir soatdan so'ng qayta urinib ko'ring.",
-        "profileLoad": "Saqlangan ma'lumotlarni yuklab bo'lmadi."
+        "profileLoad": "Saqlangan ma'lumotlarni yuklab bo'lmadi.",
+        "saveGeneric": "Ma'lumotlarni saqlashda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
       },
       "readyTitle": "Testni boshlash",
       "readyLead": "Ma'lumotlaringiz saqlangan — anketani qayta to'ldirish shart emas.",
@@ -1809,7 +1810,11 @@
       "cancelEdit": "Bekor qilish",
       "suggestedNameHint": "Telegram ismingizdan olindi — rasmiy F.I.Sh. ga to'g'rilang.",
       "consentOutdated": "Roziliknoma matni yangilangan — davom etish uchun qayta tasdiqlang.",
-      "parentalConsentMissing": "18 yoshgacha bo'lganlar uchun ota-ona roziligi hali berilmagan."
+      "parentalConsentMissing": "18 yoshgacha bo'lganlar uchun ota-ona roziligi hali berilmagan.",
+      "saveProfile": "Saqlash",
+      "savedToast": "Ma'lumotlar saqlandi",
+      "editLeadSave": "Kerakli maydonlarni to'g'rilang va saqlang — test boshlanmaydi.",
+      "startNote": "Ma'lumotlar saqlanadi va test boshlanadi."
     },
     "profileDetails": {
       "heading": "Sizning ma'lumotlaringiz",

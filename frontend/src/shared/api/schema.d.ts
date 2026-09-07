@@ -3385,7 +3385,70 @@ export interface paths {
                 };
             };
         };
-        put?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateStudentProfileRequest"];
+                    "text/json": components["schemas"]["UpdateStudentProfileRequest"];
+                    "application/*+json": components["schemas"]["UpdateStudentProfileRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MyStudentProfileDto"];
+                        "application/json": components["schemas"]["MyStudentProfileDto"];
+                        "text/json": components["schemas"]["MyStudentProfileDto"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
         post?: never;
         delete?: never;
         options?: never;
@@ -6860,6 +6923,18 @@ export interface components {
             /** Format: int32 */
             dailyRegistrationLimit?: number | null;
             notes?: string | null;
+        };
+        UpdateStudentProfileRequest: {
+            fullName?: string | null;
+            /** Format: date */
+            birthDate?: string | null;
+            gender?: components["schemas"]["Gender"];
+            phone?: string | null;
+            consentAccepted?: boolean | null;
+            parentalConsent?: boolean | null;
+            /** Format: int32 */
+            grade?: number | null;
+            email?: string | null;
         };
         UpdateTestQuestionRequest: {
             textUz: string;

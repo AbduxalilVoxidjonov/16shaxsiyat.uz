@@ -1,5 +1,6 @@
 using MediatR;
 using StudentRoadMap.Application.Public.StartSession;
+using StudentRoadMap.Application.PublicUsers.Common;
 using StudentRoadMap.Domain.Common;
 using StudentRoadMap.Domain.Students;
 
@@ -35,6 +36,10 @@ namespace StudentRoadMap.Application.Public.StartPublicSession;
 /// handlerda (`StartPublicSessionCommandValidator` izohi).
 ///
 /// `PublicUserId`/`IpAddress`/`UserAgent` mijozdan kelmaydi — kontroller to'ldiradi.
+///
+/// Anketa maydonlari <see cref="IPublicProfileInput"/> orqali `UpdateStudentProfileCommand`
+/// (`PUT /api/me/profile`, faqat saqlash) bilan UMUMIY — majburiylik/tahrir/yaratish qoidalari
+/// `PublicStudentProfile` da bitta.
 /// </summary>
 public sealed record StartPublicSessionCommand(
     Guid PublicUserId,
@@ -59,4 +64,4 @@ public sealed record StartPublicSessionCommand(
     string? LanguageCode = null,
     string? ProgramCode = null,
     string? IpAddress = null,
-    string? UserAgent = null) : IRequest<Result<StartSessionResult>>;
+    string? UserAgent = null) : IRequest<Result<StartSessionResult>>, IPublicProfileInput;

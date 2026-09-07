@@ -14,6 +14,7 @@ using StudentRoadMap.Application.PublicUsers.GetProfile;
 using StudentRoadMap.Application.PublicUsers.GetStudentProfile;
 using StudentRoadMap.Application.PublicUsers.ListAssessments;
 using StudentRoadMap.Application.PublicUsers.TelegramLogin;
+using StudentRoadMap.Application.PublicUsers.UpdateStudentProfile;
 
 namespace StudentRoadMap.Api.Controllers;
 
@@ -67,6 +68,27 @@ public sealed class MeController : ControllerBase
     public async Task<ActionResult<MyStudentProfileDto>> Profile(CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetMyStudentProfileQuery(RequirePublicUserId()), cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>
+    /// `PUT /api/me/profile` — anketani FAQAT saqlash (`docs/07` §5.1b). `POST /api/me/sessions`
+    /// dan farqi: sessiya OCHILMAYDI. Kabinetdagi "O'zgartirish" shu endpointga boradi —
+    /// foydalanuvchi telefonini to'g'rilaganda test boshlanib ketmasligi uchun. Majburiylik
+    /// qoidalari sessiya ochish bilan AYNAN bir xil (profil yo'q → to'liq to'plam va yangi
+    /// profil yaratiladi; bor → kelgan maydon tahrir). Javob — `GET /api/me/profile` shakli.
+    /// Rate limit — umumiy `PublicUserApi` (sessiya ochishning 10/soat kvotasi bu yerga tegmaydi).
+    /// </summary>
+    [HttpPut("profile")]
+    [ProducesResponseType(typeof(MyStudentProfileDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests, "application/problem+json")]
+    public async Task<ActionResult<MyStudentProfileDto>> UpdateProfile([FromBody] UpdateStudentProfileRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(request.ToCommand(RequirePublicUserId()), cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
     }

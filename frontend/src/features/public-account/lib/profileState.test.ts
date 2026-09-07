@@ -1,12 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Schemas } from '@/test/apiMock';
 import {
+  buildProfilePayload,
   buildReadyPayload,
   buildStartSessionPayload,
   isProfileComplete,
   needsConsent,
   profileToFormValues,
   resolveProfileState,
+  submitActionFor,
+  type ProfileFormMode,
 } from './profileState';
 import type { PublicRegistrationFormValues } from '../schemas/publicRegistrationSchema';
 
@@ -53,7 +56,7 @@ const ADULT_VALUES: PublicRegistrationFormValues = {
   parentalConsent: false,
 };
 
-describe('resolveProfileState (A/B/C holatlari)', () => {
+describe('resolveProfileState (A/B/C/D holatlari)', () => {
   it("A: profil yo'q → `new`, `?edit=1` bo'lsa ham", () => {
     expect(resolveProfileState(NO_PROFILE, false)).toBe('new');
     expect(resolveProfileState(NO_PROFILE, true)).toBe('new');
@@ -63,23 +66,27 @@ describe('resolveProfileState (A/B/C holatlari)', () => {
     expect(resolveProfileState(FULL_PROFILE, false)).toBe('ready');
   });
 
-  it("B → C: \"O'zgartirish\" bosilganda (`forceEdit`) forma → `edit`", () => {
+  it("B → D: \"O'zgartirish\" bosilganda (`forceEdit`) forma → `edit` (faqat saqlash)", () => {
     expect(resolveProfileState(FULL_PROFILE, true)).toBe('edit');
   });
 
-  it('C: rozilik eskirgan → `edit`', () => {
-    expect(resolveProfileState({ ...FULL_PROFILE, consentCurrent: false }, false)).toBe('edit');
+  it("D: rozilik eskirgan bo'lsa ham `forceEdit` → `edit` — foydalanuvchi niyati ustun", () => {
+    expect(resolveProfileState({ ...FULL_PROFILE, consentCurrent: false }, true)).toBe('edit');
   });
 
-  it("C: voyaga yetmagan, ota-ona roziligi yo'q → `edit`; bor bo'lsa → `ready`", () => {
+  it('C: rozilik eskirgan → `consent` (`edit` EMAS — bu holatda test boshlanadi)', () => {
+    expect(resolveProfileState({ ...FULL_PROFILE, consentCurrent: false }, false)).toBe('consent');
+  });
+
+  it("C: voyaga yetmagan, ota-ona roziligi yo'q → `consent`; bor bo'lsa → `ready`", () => {
     const minor = { ...FULL_PROFILE, birthDate: '2012-01-01', isMinor: true };
-    expect(resolveProfileState({ ...minor, parentalConsent: false }, false)).toBe('edit');
+    expect(resolveProfileState({ ...minor, parentalConsent: false }, false)).toBe('consent');
     expect(resolveProfileState({ ...minor, parentalConsent: true }, false)).toBe('ready');
   });
 
-  it("C: majburiy maydon yetishmasa → `edit` (server bunday holatni bermaydi, lekin himoya)", () => {
+  it("C: majburiy maydon yetishmasa → `consent` (server bunday holatni bermaydi, lekin himoya)", () => {
     expect(isProfileComplete({ ...FULL_PROFILE, phone: null })).toBe(false);
-    expect(resolveProfileState({ ...FULL_PROFILE, phone: null }, false)).toBe('edit');
+    expect(resolveProfileState({ ...FULL_PROFILE, phone: null }, false)).toBe('consent');
   });
 
   it("rozilik: yangi profilda har doim, mavjudida faqat eskirgan bo'lsa so'raladi", () => {
@@ -87,6 +94,23 @@ describe('resolveProfileState (A/B/C holatlari)', () => {
     expect(needsConsent(FULL_PROFILE)).toBe(false);
     expect(needsConsent({ ...FULL_PROFILE, consentCurrent: false })).toBe(true);
   });
+});
+
+/**
+ * Egasi ko'rgan xatoning QULFI: "O'zgartirish" (`edit`) hech qachon sessiya ochmaydi.
+ * Bu qoida o'zgarsa — shu test qizaradi.
+ */
+describe('submitActionFor (rejim → amal qoidasi)', () => {
+  it("`edit` → FAQAT saqlash (`PUT /api/me/profile`)", () => {
+    expect(submitActionFor('edit')).toBe('saveProfile');
+  });
+
+  it.each<ProfileFormMode>(['new', 'consent'])(
+    '`%s` → sessiya (`POST /api/me/sessions`) — foydalanuvchi test boshlamoqchi',
+    (mode) => {
+      expect(submitActionFor(mode)).toBe('startSession');
+    },
+  );
 });
 
 describe('profileToFormValues', () => {
@@ -190,6 +214,22 @@ describe('buildStartSessionPayload', () => {
       buildStartSessionPayload(ADULT_VALUES, 'new', { needsConsent: true, programCode: 'P1' })
         .programCode,
     ).toBe('P1');
+  });
+
+  it('`consent` rejimi tanasi `edit` bilan bir xil shaklda (profil bor semantikasi)', () => {
+    expect(buildStartSessionPayload(ADULT_VALUES, 'consent', { needsConsent: true })).toEqual(
+      buildStartSessionPayload(ADULT_VALUES, 'edit', { needsConsent: true }),
+    );
+  });
+
+  it("sessiya tanasi = profil tanasi (`buildProfilePayload`) + `languageCode`/`programCode`", () => {
+    const profilePayload = buildProfilePayload(ADULT_VALUES, 'edit', { needsConsent: false });
+
+    expect(profilePayload).not.toHaveProperty('languageCode');
+    expect(profilePayload).not.toHaveProperty('programCode');
+    expect(
+      buildStartSessionPayload(ADULT_VALUES, 'edit', { needsConsent: false, programCode: 'P1' }),
+    ).toEqual({ ...profilePayload, languageCode: 'uz', programCode: 'P1' });
   });
 
   it("`ready`: shaxsiy ma'lumot yuborilmaydi — `{}` yoki faqat `programCode`", () => {

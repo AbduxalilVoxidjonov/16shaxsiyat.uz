@@ -13,17 +13,22 @@ import { adoptSession } from '@/shared/api/sessionToken';
 import { pickNextTestCode } from '@/shared/lib/nextTest';
 import type { StartSessionResponse } from '@/shared/api/types';
 import { MY_PROFILE_QUERY_KEY, useMyProfile } from '../api/useMyProfile';
+import type { MyStudentProfile } from '../model/types';
 import { useStartOwnSession } from '../api/useStartOwnSession';
 import { PublicRegistrationForm } from '../components/PublicRegistrationForm';
 import { SavedProfileCard } from '../components/SavedProfileCard';
 import { buildReadyPayload, resolveProfileState, type ProfileFormState } from '../lib/profileState';
 import { mapStartSessionErrorCode } from '../lib/startSessionErrors';
 
-/** Sarlavha/kirish matni holatga qarab — `new`: anketa, `ready`: boshlash, `edit`: tahrir. */
+/**
+ * Sarlavha/kirish matni holatga qarab — `new`: anketa, `ready`: boshlash, `consent`: to'g'rilash
+ * (test boshlanadi), `edit`: tahrir (FAQAT saqlanadi — kirish matni shuni aytadi).
+ */
 const HEADING_KEYS: Record<ProfileFormState, { title: string; lead: string }> = {
   new: { title: 'account.register.title', lead: 'account.register.lead' },
   ready: { title: 'account.register.readyTitle', lead: 'account.register.readyLead' },
-  edit: { title: 'account.register.editTitle', lead: 'account.register.editLead' },
+  consent: { title: 'account.register.editTitle', lead: 'account.register.editLead' },
+  edit: { title: 'account.register.editTitle', lead: 'account.register.editLeadSave' },
 };
 
 /**
@@ -34,8 +39,11 @@ const HEADING_KEYS: Record<ProfileFormState, { title: string; lead: string }> = 
  * - **A `new`** — profil yo'q: to'liq forma, F.I.Sh. Telegram ismidan taklif bilan;
  * - **B `ready`** — profil to'liq, rozilik joriy: forma YO'Q, "Sizning ma'lumotlaringiz"
  *   kartasi + "Testni boshlash" (`{}` yuboriladi — shaxsiy ma'lumot ketmaydi) + "O'zgartirish";
- * - **C `edit`** — profil bor, lekin rozilik eskirgan / foydalanuvchi "O'zgartirish" bosdi
- *   (`?edit=1` ham): forma to'ldirilgan holda, rozilik bloki faqat eskirgan bo'lsa.
+ * - **C `consent`** — profil bor, lekin rozilik eskirgan / ota-ona roziligi yo'q: forma
+ *   to'ldirilgan holda, faqat yetishmagani so'raladi, submit → sessiya (test boshlanadi);
+ * - **D `edit`** — foydalanuvchi "O'zgartirish" bosdi (kartada yoki `/kabinet` dan `?edit=1`):
+ *   forma to'ldirilgan, tugma "Saqlash", submit → **`PUT /api/me/profile`, test BOSHLANMAYDI**.
+ *   `?edit=1` bilan kelgan bo'lsa saqlashdan keyin `/kabinet` ga qaytadi, aks holda `ready` kartaga.
  *
  * Maktab anketasidan (`features/public-assessment/pages/RegistrationPage`) farqi:
  * `slug`/`accessToken`/`accessCode`/`classLetter`/`parentPhone` YO'Q, yosh 6–99, `grade`
@@ -53,7 +61,9 @@ export default function PublicRegistrationPage() {
   const profileQuery = useMyProfile();
   const quickStart = useStartOwnSession();
 
-  const [editing, setEditing] = useState(searchParams.get('edit') === '1');
+  // `/kabinet` dagi "O'zgartirish" havolasi `?edit=1` bilan keladi — saqlagach o'sha yerga qaytamiz.
+  const cameFromAccount = searchParams.get('edit') === '1';
+  const [editing, setEditing] = useState(cameFromAccount);
   const [quickStartError, setQuickStartError] = useState<string | null>(null);
 
   const state: ProfileFormState | null = profileQuery.isSuccess
@@ -84,6 +94,20 @@ export default function PublicRegistrationPage() {
         ? ROUTES.public.test(PUBLIC_SPACE_SLUG, nextTestCode)
         : ROUTES.public.finish(PUBLIC_SPACE_SLUG),
     );
+  }
+
+  function handleSaved(profile: MyStudentProfile): void {
+    // Server yangilangan profilni qaytardi — qayta so'rov shart emas, kesh to'g'ridan-to'g'ri yangilanadi.
+    queryClient.setQueryData(MY_PROFILE_QUERY_KEY, profile);
+    toast.show({ variant: 'success', title: t('account.register.savedToast') });
+
+    if (cameFromAccount) {
+      navigate(ROUTES.account.home);
+      return;
+    }
+
+    // Kartadan kelgan — yangilangan ma'lumot bilan `ready` kartaga qaytadi, test boshlanmaydi.
+    setEditing(false);
   }
 
   async function handleQuickStart(): Promise<void> {
@@ -174,6 +198,7 @@ export default function PublicRegistrationPage() {
           profile={profileQuery.data}
           mode={state}
           onStarted={handleStarted}
+          onSaved={handleSaved}
           onCancel={
             canCancelEdit
               ? () => {

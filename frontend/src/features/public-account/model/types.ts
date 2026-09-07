@@ -6,3 +6,9 @@ import type { components } from '@/shared/api/schema';
  * `schema.d.ts` dan olinadi (`npm run generate:api`).
  */
 export type MyStudentProfile = components['schemas']['MyStudentProfileDto'];
+
+/**
+ * `PUT /api/me/profile` tanasi (`docs/07` §5.1b) — `StartPublicSessionRequest` bilan bir xil
+ * anketa maydonlari, lekin `languageCode`/`programCode` YO'Q (ular sessiyaga tegishli).
+ */
+export type UpdateStudentProfileRequestBody = components['schemas']['UpdateStudentProfileRequest'];

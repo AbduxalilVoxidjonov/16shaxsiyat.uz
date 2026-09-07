@@ -67,6 +67,7 @@ function renderPage(path = '/kabinet/test') {
       <ToastProvider>
         <MemoryRouter initialEntries={[path]}>
           <Routes>
+            <Route path="/kabinet" element={<p>KABINET_STUB</p>} />
             <Route path="/kabinet/test" element={<PublicRegistrationPage />} />
             <Route path="/t/:slug/test/:testCode" element={<p>TEST_STUB</p>} />
           </Routes>
@@ -77,25 +78,48 @@ function renderPage(path = '/kabinet/test') {
 }
 
 /**
- * `fetch` ni URL bo'yicha yo'naltiradi: `GET /api/me/profile` → profil, qolgani (sessiya)
- * → `sessionResponse`. Sessiya chaqiruvi `sessionCall()` bilan olinadi.
+ * `fetch` ni URL/metod bo'yicha yo'naltiradi: `GET /api/me/profile` → profil,
+ * `PUT /api/me/profile` → `updateResponse` (berilmasa — yuborilgan tanadan yig'ilgan profil),
+ * qolgani (sessiya) → `sessionResponse`. Chaqiruvlar `sessionCall()` / `updateCall()` bilan olinadi.
  */
-function mockApi(profile: Schemas['MyStudentProfileDto'], sessionResponse: () => Response) {
-  const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+function mockApi(
+  profile: Schemas['MyStudentProfileDto'],
+  sessionResponse: () => Response,
+  updateResponse?: () => Response,
+) {
+  const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
     if (String(input).includes('/api/me/profile')) {
+      if (init?.method === 'PUT') {
+        if (updateResponse) return Promise.resolve(updateResponse());
+        const sent = JSON.parse(String(init.body)) as Schemas['UpdateStudentProfileRequest'];
+        return Promise.resolve(
+          jsonResponse<'MyStudentProfileDto'>({
+            ...profile,
+            hasProfile: true,
+            fullName: sent.fullName ?? profile.fullName,
+            phone: sent.phone ?? profile.phone,
+            consentVersion: '1.0',
+            consentCurrent: true,
+          }),
+        );
+      }
       return Promise.resolve(jsonResponse<'MyStudentProfileDto'>(profile));
     }
     return Promise.resolve(sessionResponse());
   });
   vi.stubGlobal('fetch', fetchMock);
 
+  function findCall(path: string, method?: string): [string, RequestInit] | undefined {
+    return fetchMock.mock.calls.find(
+      ([url, init]) =>
+        String(url).includes(path) && (method === undefined || (init as RequestInit | undefined)?.method === method),
+    ) as [string, RequestInit] | undefined;
+  }
+
   return {
     fetchMock,
-    sessionCall(): [string, RequestInit] | undefined {
-      return fetchMock.mock.calls.find(([url]) => String(url).includes('/api/me/sessions')) as
-        | [string, RequestInit]
-        | undefined;
-    },
+    sessionCall: () => findCall('/api/me/sessions'),
+    updateCall: () => findCall('/api/me/profile', 'PUT'),
   };
 }
 
@@ -170,6 +194,16 @@ describe('PublicRegistrationPage (maktabsiz anketa)', () => {
       await user.clear(fullName);
       await user.type(fullName, 'Valiyev Ali Akmalovich');
       expect(fullName).toHaveValue('Valiyev Ali Akmalovich');
+    });
+
+    it('tugma "Testni boshlash" va ustida "saqlanadi va test boshlanadi" izohi', async () => {
+      mockApi(NO_PROFILE, () => jsonResponse<'StartSessionResult'>(START_RESULT));
+
+      renderPage();
+
+      expect(await screen.findByRole('button', { name: 'Testni boshlash' })).toBeInTheDocument();
+      expect(screen.getByText("Ma'lumotlar saqlanadi va test boshlanadi.")).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Saqlash' })).not.toBeInTheDocument();
     });
 
     it("to'ldirilgan anketa `POST /api/me/sessions` ga shartnomadagi tanani yuboradi", async () => {
@@ -321,7 +355,7 @@ describe('PublicRegistrationPage (maktabsiz anketa)', () => {
       expect(JSON.parse(String(init.body))).toEqual({});
     });
 
-    it("\"O'zgartirish\" → forma TO'LDIRILGAN holda, rozilik bloki YO'Q, \"Bekor qilish\" bor", async () => {
+    it("\"O'zgartirish\" → forma TO'LDIRILGAN holda, rozilik bloki YO'Q, tugma \"Saqlash\", \"Bekor qilish\" bor", async () => {
       const user = userEvent.setup();
       mockApi(FULL_PROFILE, () => jsonResponse<'StartSessionResult'>(START_RESULT));
 
@@ -335,7 +369,12 @@ describe('PublicRegistrationPage (maktabsiz anketa)', () => {
       expect(screen.getByLabelText('Erkak')).toBeChecked();
       expect(screen.getByLabelText('Telefon raqami')).toHaveValue('(90) 123-45-67');
       expect(screen.queryByLabelText(/roziman/)).not.toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Testni boshlash' })).toBeEnabled();
+      // Tugma "Saqlash" — foydalanuvchi test boshlanmasligini oldindan biladi.
+      expect(screen.getByRole('button', { name: 'Saqlash' })).toBeEnabled();
+      expect(screen.queryByRole('button', { name: 'Testni boshlash' })).not.toBeInTheDocument();
+      expect(screen.queryByText("Ma'lumotlar saqlanadi va test boshlanadi.")).not.toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent("Ma'lumotlarni o'zgartirish");
+      expect(screen.getByText(/test boshlanmaydi/)).toBeInTheDocument();
 
       // Bekor qilish — kartaga qaytadi.
       await user.click(screen.getByRole('button', { name: 'Bekor qilish' }));
@@ -343,7 +382,7 @@ describe('PublicRegistrationPage (maktabsiz anketa)', () => {
       expect(screen.queryByLabelText('F.I.Sh.')).not.toBeInTheDocument();
     });
 
-    it("tahrir yuborilganda `consentAccepted` YO'Q, bo'sh sinf `0`, bo'sh email `''`", async () => {
+    it("tahrir \"Saqlash\" → `PUT /api/me/profile`, `POST /api/me/sessions` CHAQIRILMAYDI, karta yangilanadi", async () => {
       const user = userEvent.setup();
       const api = mockApi(FULL_PROFILE, () => jsonResponse<'StartSessionResult'>(START_RESULT));
 
@@ -352,18 +391,67 @@ describe('PublicRegistrationPage (maktabsiz anketa)', () => {
       const fullName = await screen.findByLabelText('F.I.Sh.');
       await user.clear(fullName);
       await user.type(fullName, 'Karimova Malika Alisherovna');
-      await user.click(screen.getByRole('button', { name: 'Testni boshlash' }));
+      await user.click(screen.getByRole('button', { name: 'Saqlash' }));
 
-      expect(await screen.findByText('TEST_STUB')).toBeInTheDocument();
-      expect(JSON.parse(String(api.sessionCall()![1].body))).toEqual({
+      // Egasi ko'rgan xatoning ASOSIY tasdig'i: test boshlanmaydi, sessiya so'rovi yo'q.
+      expect(await screen.findByText("Ma'lumotlar saqlandi")).toBeInTheDocument();
+      expect(api.sessionCall()).toBeUndefined();
+      expect(screen.queryByText('TEST_STUB')).not.toBeInTheDocument();
+
+      const [, init] = api.updateCall()!;
+      expect(init.method).toBe('PUT');
+      // Tana — `POST /api/me/sessions` dagi tahrir semantikasi bilan bir xil, lekin `languageCode` YO'Q.
+      expect(JSON.parse(String(init.body))).toEqual({
         fullName: 'Karimova Malika Alisherovna',
         birthDate: '1995-04-12',
         gender: 'Male',
         phone: '+998901234567',
         grade: 0,
         email: '',
-        languageCode: 'uz',
       });
+
+      // `ready` kartaga qaytdi — yangilangan F.I.Sh. bilan, forma yo'q.
+      expect(await screen.findByRole('heading', { name: "Sizning ma'lumotlaringiz" })).toBeInTheDocument();
+      expect(screen.getByText('Karimova Malika Alisherovna')).toBeInTheDocument();
+      expect(screen.queryByLabelText('F.I.Sh.')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Testni boshlash' })).toBeInTheDocument();
+    });
+
+    it("`?edit=1` (kabinetdan) → \"Saqlash\" `/kabinet` ga qaytaradi, sessiya ochilmaydi", async () => {
+      const user = userEvent.setup();
+      const api = mockApi(FULL_PROFILE, () => jsonResponse<'StartSessionResult'>(START_RESULT));
+
+      renderPage('/kabinet/test?edit=1');
+      const phone = await screen.findByLabelText('Telefon raqami');
+      await user.clear(phone);
+      await user.type(phone, '911112233');
+      await user.click(screen.getByRole('button', { name: 'Saqlash' }));
+
+      expect(await screen.findByText('KABINET_STUB')).toBeInTheDocument();
+      expect(screen.getByText("Ma'lumotlar saqlandi")).toBeInTheDocument();
+      expect(api.sessionCall()).toBeUndefined();
+      const sent = JSON.parse(String(api.updateCall()![1].body)) as { phone: string };
+      expect(sent.phone).toBe('+998911112233');
+    });
+
+    it("saqlashda 400 VALIDATION_ERROR maydon xatosi o'z maydoniga bog'lanadi, karta ochilmaydi", async () => {
+      const user = userEvent.setup();
+      const api = mockApi(
+        FULL_PROFILE,
+        () => jsonResponse<'StartSessionResult'>(START_RESULT),
+        () =>
+          problemResponse('VALIDATION_ERROR', 400, undefined, {
+            errors: { phone: ["Telefon raqami noto'g'ri formatda (+998XXXXXXXXX)."] },
+          }),
+      );
+
+      renderPage();
+      await user.click(await screen.findByRole('button', { name: "O'zgartirish" }));
+      await user.click(await screen.findByRole('button', { name: 'Saqlash' }));
+
+      expect(await screen.findByText(/noto'g'ri formatda/)).toBeInTheDocument();
+      expect(screen.getByLabelText('F.I.Sh.')).toBeInTheDocument();
+      expect(api.sessionCall()).toBeUndefined();
     });
 
     it('`?edit=1` bilan ochilsa darhol forma (kabinetdagi "O\'zgartirish" havolasi)', async () => {
@@ -375,6 +463,7 @@ describe('PublicRegistrationPage (maktabsiz anketa)', () => {
       expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
         "Ma'lumotlarni o'zgartirish",
       );
+      expect(screen.getByRole('button', { name: 'Saqlash' })).toBeInTheDocument();
     });
 
     it("tez boshlashda 409 DUPLICATE_ASSESSMENT — xabar kartada ko'rsatiladi", async () => {
@@ -409,9 +498,11 @@ describe('PublicRegistrationPage (maktabsiz anketa)', () => {
       await user.click(consent);
       await user.click(screen.getByRole('button', { name: 'Testni boshlash' }));
 
+      // C rejimi — foydalanuvchi test boshlamoqchi: sessiya ochiladi, `PUT` chaqirilmaydi.
       expect(await screen.findByText('TEST_STUB')).toBeInTheDocument();
       const body = JSON.parse(String(api.sessionCall()![1].body)) as { consentAccepted: boolean };
       expect(body.consentAccepted).toBe(true);
+      expect(api.updateCall()).toBeUndefined();
     });
 
     it("voyaga yetmagan, ota-ona roziligi yo'q — forma va ota-ona checkbox'i ko'rsatiladi", async () => {

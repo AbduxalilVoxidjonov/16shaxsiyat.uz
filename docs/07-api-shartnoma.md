@@ -1244,6 +1244,7 @@ alohida JWT `aud` bilan ajratilgan (`docs/08` §2a).
 |-------|------|------|
 | GET | `/api/me` | Profil (Telegram akkaunti) |
 | GET | `/api/me/profile` | Saqlangan test anketasi (F.I.Sh., sana, telefon, rozilik holati) |
+| PUT | `/api/me/profile` | Anketani FAQAT saqlash — sessiya ochilmaydi |
 | GET | `/api/me/assessments` | Test sessiyalari tarixi |
 | GET | `/api/me/assessments/{id}/result` | Bitta sessiyaning qisqartirilgan natijasi |
 | POST | `/api/me/sessions` | Ommaviy (maktabsiz) sessiya ochish |
@@ -1288,6 +1289,61 @@ Frontend `/kabinet/test` ni ochishda avval shuni o'qiydi va anketani **qayta so'
 | `suggestedFullName` | Telegram `LastName + FirstName` (ikkalasi bo'lsa; bo'lmasa bori; hech biri yo'q — `null`). Bu **taklif**: yangi anketada F.I.Sh. maydoni shu bilan oldindan to'ldiriladi, foydalanuvchi tahrirlaydi (Telegram ismi ko'pincha rasmiy F.I.Sh. emas). AI'ga tushmaydi. |
 
 Hech qanday identifikator (`Student.Id`, `TelegramId`) qaytarilmaydi — egalik JWT bilan.
+
+### 5.1b `PUT /api/me/profile` — anketani FAQAT saqlash (2026-09-07)
+
+**Nima uchun alohida.** §5.4 (`POST /api/me/sessions`) profilni yangilaydi **va** sessiya
+ochadi. Kabinetdagi "O'zgartirish" ilgari shu endpoint orqali ishlardi — foydalanuvchi faqat
+telefonini to'g'rilamoqchi bo'lsa ham test boshlanib ketardi (egasi ko'rgan xato). Bu endpoint
+o'sha anketa qoidalarini **aynan** qayta ishlatadi (backendda bitta umumiy modul), lekin
+`Assessment` yaratmaydi, kunlik hisoblagichni oshirmaydi, dastur tanlamaydi.
+
+So'rov tanasi — §5.4 dagi anketa maydonlari, **`languageCode`/`programCode` YO'Q**:
+
+```json
+{
+  "fullName": "Karimova Malika Alisherovna",
+  "birthDate": "1995-04-12",
+  "gender": "Female",
+  "phone": "+998911112233",
+  "consentAccepted": true,
+  "parentalConsent": null,
+  "grade": 0,
+  "email": ""
+}
+```
+
+Majburiylik va tahrir semantikasi §5.4 jadvali bilan **bir xil**:
+
+| Holat | Talab qilinadi | Natija |
+|-------|----------------|--------|
+| Profil YO'Q | `fullName`, `birthDate`, `gender`, `phone`, `consentAccepted: true`; 18 yoshgacha `parentalConsent: true` | ommaviy makonda yangi `Student` (`public_user_id` bilan), **sessiya yo'q** |
+| Profil BOR, rozilik joriy | hech narsa — `{}` ham `200` | kelgan maydon tahrir, `null` o'zgarmaydi; `grade: 0` — sinf yo'q, `email: ""` — tozalash |
+| Profil BOR, rozilik eskirgan | `consentAccepted: true` | rozilik joriy versiya bilan qayta yoziladi |
+| Profil BOR, voyaga yetmagan, bazada `parentalConsent: false` | `parentalConsent: true` | — |
+
+`200 OK` — yangilangan anketa, §5.1a bilan **aynan bir xil** shakl (`hasProfile: true`).
+Frontend javobni `GET /api/me/profile` keshiga to'g'ridan-to'g'ri yozadi.
+
+Xatolar:
+
+| Kod | HTTP | Qachon |
+|-----|------|--------|
+| `VALIDATION_ERROR` | 400 | Format yoki profil holatiga ko'ra yetishmagan maydon — `errors{maydon:[xabar]}` (§5.4 bilan bir shakl) |
+| `PUBLIC_SPACE_NOT_CONFIGURED` | 409 | Ommaviy makon seed qilinmagan |
+| `RATE_LIMITED` | 429 | Umumiy `PublicUserApi` kvotasi (120/daqiqa); §5.4 dagi 10/soat bu yerga tegmaydi |
+
+Makon faol emasligi (`SCHOOL_INACTIVE`) bu yerda **tekshirilmaydi**: o'z ma'lumotini
+to'g'rilash test o'tkazish emas.
+
+**Frontend qoidasi (`/kabinet/test`, `features/public-account/lib/profileState.ts`):**
+
+| Rejim | Qachon | Tugma | Submit |
+|-------|--------|-------|--------|
+| `new` | profil yo'q | "Testni boshlash" (ustida: "Ma'lumotlar saqlanadi va test boshlanadi") | `POST /api/me/sessions` |
+| `ready` | profil to'liq, rozilik joriy | "Testni boshlash" | `POST /api/me/sessions` `{}` |
+| `consent` | profil bor, rozilik eskirgan / ota-ona roziligi yo'q | "Testni boshlash" | `POST /api/me/sessions` |
+| `edit` | foydalanuvchi "O'zgartirish" bosdi (`?edit=1` ham) | **"Saqlash"** | **`PUT /api/me/profile`** — test boshlanmaydi; `/kabinet` dan kelgan bo'lsa u yerga qaytadi, aks holda `ready` kartaga |
 
 ### 5.2 `GET /api/me/assessments`
 

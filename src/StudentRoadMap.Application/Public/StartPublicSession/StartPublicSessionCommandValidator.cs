@@ -1,6 +1,6 @@
 using FluentValidation;
 using StudentRoadMap.Application.Common.Interfaces;
-using StudentRoadMap.Domain.Students;
+using StudentRoadMap.Application.PublicUsers.Common;
 
 namespace StudentRoadMap.Application.Public.StartPublicSession;
 
@@ -23,35 +23,18 @@ namespace StudentRoadMap.Application.Public.StartPublicSession;
 ///   `StartPublicSessionCommandHandler`, `Student` topilganidan keyin, o'sha
 ///   `400 VALIDATION_ERROR` + `errors{maydon: [xabar]}` shaklida.
 ///
+/// Qoidalarning o'zi `PublicProfileFormatRules` da — `PUT /api/me/profile` validatori bilan umumiy.
+///
 /// `public` — `AssemblyScanner` faqat ochiq validatorlarni topadi (`StartSessionCommandValidator` izohi).
 /// </summary>
 public sealed class StartPublicSessionCommandValidator : AbstractValidator<StartPublicSessionCommand>
 {
-    public const int MinFullNameLength = 5;
+    public const int MinFullNameLength = PublicProfileFormatRules.MinFullNameLength;
 
     public StartPublicSessionCommandValidator(IDateTime dateTime)
     {
-        RuleFor(x => x.FullName)
-            .MinimumLength(MinFullNameLength)
-            .When(x => x.FullName is not null)
-            .WithMessage($"F.I.Sh. kamida {MinFullNameLength} belgidan iborat bo'lishi kerak.");
-
-        RuleFor(x => x.BirthDate)
-            .Must(birthDate => Student.IsAgeAllowed(birthDate!.Value, DateOnly.FromDateTime(dateTime.UtcNow.UtcDateTime)))
-            .When(x => x.BirthDate.HasValue)
-            .WithMessage($"Tug'ilgan sana {Student.MinAge}-{Student.MaxAge} yosh oralig'iga to'g'ri kelishi kerak.");
-
-        RuleFor(x => x.Grade)
-            .Must(grade => grade is null || grade == Student.NoGrade || grade is >= Student.MinGrade and <= Student.MaxGrade)
-            .WithMessage($"Sinf {Student.MinGrade}-{Student.MaxGrade} oralig'ida bo'lishi yoki ko'rsatilmasligi kerak.");
-
-        RuleFor(x => x.Phone)
-            .Must(phone => PhoneNumber.Create(phone!).IsSuccess)
-            .When(x => x.Phone is not null)
-            .WithMessage("Telefon raqami noto'g'ri formatda (+998XXXXXXXXX).");
-
-        RuleFor(x => x.Email)
-            .EmailAddress().When(x => !string.IsNullOrWhiteSpace(x.Email))
-            .WithMessage("Email formati noto'g'ri.");
+        // Format qoidalari `UpdateStudentProfileCommandValidator` bilan BIR manbadan —
+        // ikkala endpoint bir xil anketani qabul qiladi.
+        this.AddPublicProfileFormatRules(dateTime);
     }
 }
