@@ -21,7 +21,13 @@ function schoolInfoBody(
     district: "Qo'qon",
     requiresAccessCode: false,
     tests: [
-      { code: 'MBTI16', name: '16 tipli shaxsiyat modeli', questionCount: 60, estimatedMinutes: 9, order: 1 },
+      {
+        code: 'MBTI16',
+        name: '16 tipli shaxsiyat modeli',
+        questionCount: 60,
+        estimatedMinutes: 9,
+        order: 1,
+      },
     ],
     totalEstimatedMinutes: 9,
     consentText: CONSENT_TEXT,
@@ -146,7 +152,7 @@ describe('RegistrationPage', () => {
     useSessionStore.getState().clear();
   });
 
-  it('rozilik matnini API javobidan (consentText) ko\'rsatadi', async () => {
+  it("rozilik matnini API javobidan (consentText) ko'rsatadi", async () => {
     mockFetch({});
     renderRegistration();
 
@@ -195,10 +201,26 @@ describe('RegistrationPage', () => {
     await waitFor(() => {
       expect(useSessionStore.getState().sessionToken).toBe('sess-token-1');
     });
+    // Havola tokeni (`?k=`) sessiya bilan birga saqlanadi — `LandingPage` qayta kelganda
+    // "xuddi shu havolaniki"mi deb ajratadi (`sessionStore.startFresh`).
+    expect(useSessionStore.getState().accessToken).toBe('tok123');
     expect(await screen.findByText('TEST_STUB')).toBeInTheDocument();
   });
 
-  it('Enter tugmasi formani yuboradi (klaviatura bilan to\'ldirish)', async () => {
+  // 2026-09-07: havola bilan kelganda anketa BO'SH ochiladi, davom ettirish serverda
+  // (`resumed: true`) — o'quvchiga buni bir jumla bilan aytish kerak.
+  it("anketada 'avval boshlagan bo'lsangiz — xuddi shu ma'lumotlarni kiriting' eslatmasi ko'rsatiladi", async () => {
+    mockFetch({});
+    renderRegistration();
+
+    expect(
+      await screen.findByText(
+        "Avval boshlagan bo'lsangiz, xuddi shu ma'lumotlarni kiriting — test davom etadi.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("Enter tugmasi formani yuboradi (klaviatura bilan to'ldirish)", async () => {
     mockFetch({});
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderRegistration();
@@ -242,7 +264,9 @@ describe('RegistrationPage', () => {
     await user.click(screen.getByLabelText(CONSENT_LABEL));
     await user.click(screen.getByRole('button', { name: 'Testni boshlash' }));
 
-    expect(await screen.findByText('Juda ko\'p urinish bo\'ldi. Birozdan keyin qayta urinib ko\'ring.')).toBeInTheDocument();
+    expect(
+      await screen.findByText("Juda ko'p urinish bo'ldi. Birozdan keyin qayta urinib ko'ring."),
+    ).toBeInTheDocument();
   });
 
   it("400 VALIDATION_ERROR maydon xatolarini tegishli maydon ostida ko'rsatadi (backend camelCase kalitlar)", async () => {
@@ -332,10 +356,11 @@ describe('RegistrationPage', () => {
     expect(useSessionStore.getState().sessionToken).toBe('resumed-token');
   });
 
-  it('requiresAccessCode=true bo\'lsa kirish kodi maydonini ko\'rsatadi va ACCESS_CODE_INVALID xatosini bog\'laydi', async () => {
+  it("requiresAccessCode=true bo'lsa kirish kodi maydonini ko'rsatadi va ACCESS_CODE_INVALID xatosini bog'laydi", async () => {
     mockFetch({
       schoolInfo: schoolInfoBody({ requiresAccessCode: true }),
-      postSessionResponse: () => problemResponse('ACCESS_CODE_INVALID', 400, "Kirish kodi noto'g'ri."),
+      postSessionResponse: () =>
+        problemResponse('ACCESS_CODE_INVALID', 400, "Kirish kodi noto'g'ri."),
     });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderRegistration();
@@ -388,7 +413,9 @@ describe('RegistrationPage', () => {
     await user.click(screen.getByLabelText(CONSENT_LABEL));
     await user.click(screen.getByRole('button', { name: 'Testni boshlash' }));
 
-    expect(await screen.findByText(/6-20 yosh oralig'iga to'g'ri kelishi kerak/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/6-20 yosh oralig'iga to'g'ri kelishi kerak/),
+    ).toBeInTheDocument();
   });
 
   // `prompts/36` — dastur tanlovi.
@@ -416,9 +443,13 @@ describe('RegistrationPage', () => {
 
     const sessionCall = fetchMock.mock.calls.find(
       ([input, init]) =>
-        String(input).includes('/api/public/sessions') && (init as RequestInit | undefined)?.method === 'POST',
+        String(input).includes('/api/public/sessions') &&
+        (init as RequestInit | undefined)?.method === 'POST',
     );
-    const body = JSON.parse((sessionCall?.[1] as RequestInit).body as string) as Record<string, unknown>;
+    const body = JSON.parse((sessionCall?.[1] as RequestInit).body as string) as Record<
+      string,
+      unknown
+    >;
     expect(body.programCode).toBe('CAREER_SURVEY');
   });
 
@@ -438,13 +469,17 @@ describe('RegistrationPage', () => {
 
     const sessionCall = fetchMock.mock.calls.find(
       ([input, init]) =>
-        String(input).includes('/api/public/sessions') && (init as RequestInit | undefined)?.method === 'POST',
+        String(input).includes('/api/public/sessions') &&
+        (init as RequestInit | undefined)?.method === 'POST',
     );
-    const body = JSON.parse((sessionCall?.[1] as RequestInit).body as string) as Record<string, unknown>;
+    const body = JSON.parse((sessionCall?.[1] as RequestInit).body as string) as Record<
+      string,
+      unknown
+    >;
     expect(body.programCode).toBeUndefined();
   });
 
-  it("400 PROGRAM_REQUIRED kelsa tanlov ekraniga (landing) qaytaradi", async () => {
+  it('400 PROGRAM_REQUIRED kelsa tanlov ekraniga (landing) qaytaradi', async () => {
     mockFetch({ postSessionResponse: () => problemResponse('PROGRAM_REQUIRED', 400) });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderRegistration();

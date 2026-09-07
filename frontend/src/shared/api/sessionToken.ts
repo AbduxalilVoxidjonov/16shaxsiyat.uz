@@ -6,6 +6,7 @@ interface PersistedSessionState {
     sessionToken?: string | null;
     slug?: string | null;
     assessmentId?: string | null;
+    accessToken?: string | null;
   };
 }
 
@@ -33,6 +34,12 @@ export interface SessionSnapshot {
   sessionToken: string;
   slug: string;
   assessmentId: string;
+  /**
+   * Sessiya ochilgan maktab havolasining tokeni (`?k=`). Kabinet (Telegram) sessiyasida
+   * havola yo'q — berilmaydi va `null` sifatida yoziladi (eski qiymat QOLMAYDI: aks holda
+   * keyingi maktab havolasi Telegram sessiyasini "shu havolaniki" deb o'ylab qolardi).
+   */
+  accessToken?: string | null;
 }
 
 /**
@@ -61,7 +68,12 @@ export function setSessionAdopter(adopter: ((snapshot: SessionSnapshot) => void)
  *    persist uni AVTOMATIK o'qiydi (hydration) va bir xil holatga keladi.
  *
  * Yozuvda mavjud maydonlar saqlanadi (`selectedProgramCode` va h.k.) — faqat sessiya
- * bilan bog'liq uchta maydon almashtiriladi.
+ * bilan bog'liq maydonlar (token, slug, assessmentId, accessToken) almashtiriladi.
+ *
+ * Boshqa token = boshqa sessiya: javob navbati (`STORAGE_KEYS.pendingAnswers`) sessiyaga emas,
+ * `questionId`ga bog'langan, shu sabab eski navbat yangi sessiyaga sizib ketmasligi uchun
+ * tozalanadi (`sessionStore.setSession` ham xuddi shunday qiladi — bu 2-yo'lning ko'zgusi).
+ * Bir xil token (`resumed: true`) bo'lsa navbat saqlanib qoladi.
  */
 export function adoptSession(snapshot: SessionSnapshot): void {
   if (sessionAdopter) {
@@ -72,10 +84,13 @@ export function adoptSession(snapshot: SessionSnapshot): void {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.session);
     const parsed = raw ? (JSON.parse(raw) as PersistedSessionState) : {};
+    if (parsed.state?.sessionToken !== snapshot.sessionToken) {
+      localStorage.removeItem(STORAGE_KEYS.pendingAnswers);
+    }
     const next: PersistedSessionState = {
       ...parsed,
       version: parsed.version ?? 0,
-      state: { ...parsed.state, ...snapshot },
+      state: { ...parsed.state, ...snapshot, accessToken: snapshot.accessToken ?? null },
     };
     localStorage.setItem(STORAGE_KEYS.session, JSON.stringify(next));
   } catch {

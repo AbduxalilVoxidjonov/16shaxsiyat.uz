@@ -167,6 +167,7 @@
       "duplicateAssessment": "Sen allaqachon testni topshirgansan. Qayta topshirish uchun o'qituvchingga murojaat qil.",
       "rateLimited": "Juda ko'p urinish bo'ldi. Birozdan keyin qayta urinib ko'ring.",
       "resumedNotice": "Boshlagan testingni davom ettiramiz.",
+      "resumeHint": "Avval boshlagan bo'lsangiz, xuddi shu ma'lumotlarni kiriting — test davom etadi.",
       "genericSubmitError": "Yuborishda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
     },
     "test": {

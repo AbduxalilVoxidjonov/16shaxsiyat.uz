@@ -199,7 +199,10 @@ export default function RegistrationPage() {
 
     try {
       const result = await startSession.mutateAsync(payload);
-      setSession(result.sessionToken, slug, result.assessmentId);
+      // `accessToken` (`?k=`) ham saqlanadi — havola bilan qayta kelganda `LandingPage` shu
+      // sessiya "xuddi shu havolaniki"mi deb ajrata olishi uchun (`sessionStore.startFresh`).
+      // Yangi token bo'lsa `setSession` eski javob navbatini o'zi tozalaydi.
+      setSession(result.sessionToken, slug, result.assessmentId, accessToken);
       if (result.resumed) {
         toast.show({ variant: 'info', title: t('pages.register.resumedNotice') });
       }
@@ -260,6 +263,12 @@ export default function RegistrationPage() {
         <h1 className="font-display text-2xl font-extrabold tracking-tight text-balance text-ink">
           {t('pages.register.title')}
         </h1>
+        {/*
+          Havola bilan kelganda anketa har doim BO'SH ochiladi (`LandingPage` toza boshlanish),
+          davom ettirish esa SERVERDA: xuddi shu F.I.Sh. + tug'ilgan sana → `POST /sessions`
+          `resumed: true` va yarim qolgan sessiya javoblari bilan qaytadi (`docs/07` 1.2).
+        */}
+        <p className="text-sm text-ink-soft text-balance">{t('pages.register.resumeHint')}</p>
       </header>
 
       <form

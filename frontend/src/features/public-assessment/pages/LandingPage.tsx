@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { usePageTitle } from '@/shared/hooks/usePageTitle';
 import { Button, EmptyState, ErrorState, Skeleton } from '@/shared/ui';
@@ -9,6 +10,7 @@ import { AppError } from '@/shared/api/AppError';
 import { useSchoolInfo } from '../api/useSchoolInfo';
 import { useSessionState } from '../api/useSessionState';
 import { useSessionStore } from '../store/sessionStore';
+import { beginFreshVisit } from '../lib/freshVisit';
 import { TestIntroCard } from '../components/TestIntroCard';
 import { ProgramSelectCard } from '../components/ProgramSelectCard';
 import { publicButtonClass } from '../components/publicStyles';
@@ -74,24 +76,62 @@ function FlowSteps() {
  *   `programCode` sifatida uzatadi.
  * - **Hech qanday dastur yo'q bo'lsa** — tushunarli xabar (CLAUDE.md MAXSUS DIQQAT 4-band),
  *   "Boshlash" umuman ko'rsatilmaydi.
+ *
+ * **Havola/kod bilan yangi kirish = toza boshlanish (2026-09-07, egasining qarori):**
+ * `?k=` bilan kelish (`/kirish` → maktab kodi → `/t/:slug?k=`, SMS/Telegram'dagi havola) —
+ * bu YANGI odam: bir qurilmadan (maktab kompyuteri) ketma-ket bir necha o'quvchi kiradi.
+ * Mount'da `beginFreshVisit` oldingi sessiyani (qaysi maktab/Telegram bo'lishidan qat'i
+ * nazar), javob navbatini va sessiya keshini tozalaydi — anketa va test BO'SH ochiladi.
+ * Ilgari store tozalanmasdi: shu maktabning oldingi o'quvchisi uchun "Davom ettirish"
+ * chiqardi, javob navbati (`questionId` bo'yicha, sessiyaga bog'lanmagan) esa keyingi
+ * o'quvchida "belgilangan savollar" bo'lib ko'rinardi.
+ *
+ * "Davom ettirish" IXTIYORIY taklif sifatida qoladi, lekin faqat oldingi sessiya xuddi shu
+ * maktab va xuddi shu havola (`k`) ostida ochilgan bo'lsa (`sessionStore.resumable`) va server
+ * uni hali tirik desa (`GET /sessions/me` aniq token bilan). `?k=` BO'LMAGAN kelish (test
+ * ichidan "orqaga") hech narsani tozalamaydi — eski xatti-harakat: o'z sessiyasi bo'lsa
+ * "Davom ettirish" ko'rsatiladi.
  */
 export default function LandingPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { slug = '' } = useParams<{ slug: string }>();
   const [searchParams] = useSearchParams();
   const accessToken = searchParams.get('k') ?? '';
+  const isLinkArrival = accessToken !== '';
 
   const schoolInfoQuery = useSchoolInfo(slug, accessToken);
 
   const sessionToken = useSessionStore((state) => state.sessionToken);
   const storedSlug = useSessionStore((state) => state.slug);
+  const resumable = useSessionStore((state) => state.resumable);
+  const restoreResumable = useSessionStore((state) => state.restoreResumable);
   const clearSession = useSessionStore((state) => state.clear);
   const storedSelectedProgramSlug = useSessionStore((state) => state.selectedProgramSlug);
   const storedSelectedProgramCode = useSessionStore((state) => state.selectedProgramCode);
   const setSelectedProgram = useSessionStore((state) => state.setSelectedProgram);
-  const hasResumableSession = Boolean(sessionToken) && storedSlug === slug;
-  const sessionStateQuery = useSessionState(hasResumableSession);
+
+  // Toza boshlanish — faqat `k` bilan kelganda (yuqoridagi izoh). Effekt ichida, chunki bu
+  // tashqi holatni (store, `localStorage`, query keshi) o'zgartiradi; `startFresh` idempotent,
+  // StrictMode'da ikki marta ishlashi xavfsiz.
+  useEffect(() => {
+    if (!isLinkArrival) return;
+    beginFreshVisit(queryClient, slug, accessToken);
+  }, [isLinkArrival, queryClient, slug, accessToken]);
+
+  // `k` bilan kelganda faol sessiya BO'SH (tozalangan) — davom ettirish faqat shu havolaga
+  // mos `resumable` taklifi orqali va uning tokeni so'rovga aniq uzatiladi. `k`siz kelganda
+  // — eski yo'l: store'dagi faol sessiya shu maktabniki bo'lsa.
+  const resumeCandidate =
+    isLinkArrival && resumable && resumable.slug === slug && resumable.accessToken === accessToken
+      ? resumable
+      : null;
+  const hasStoredSession = !isLinkArrival && Boolean(sessionToken) && storedSlug === slug;
+  const sessionStateQuery = useSessionState(
+    hasStoredSession || resumeCandidate !== null,
+    resumeCandidate ? { sessionToken: resumeCandidate.sessionToken } : {},
+  );
 
   // Bu maktab uchun avval tanlangan dastur bo'lsa (sahifa yangilanishi) tiklanadi — boshqa
   // maktab havolasi ochilgan bo'lsa (`selectedProgramSlug !== slug`) e'tiborga olinmaydi.
@@ -102,6 +142,7 @@ export default function LandingPage() {
   usePageTitle(schoolInfoQuery.data?.name ?? t('pages.landing.title'));
 
   // docs/10, 4.1-bo'lim: "410 kelsa store tozalanadi" — sessiya muddati tugagan bo'lsa.
+  // `clear()` "Davom ettirish" taklifini (`resumable`) ham olib tashlaydi.
   useEffect(() => {
     if (sessionStateQuery.error instanceof AppError && sessionStateQuery.error.status === 410) {
       clearSession();
@@ -206,7 +247,13 @@ export default function LandingPage() {
           </p>
           <Button
             className={publicButtonClass('primary', 'md', 'w-full')}
-            onClick={() => navigate(continueHref)}
+            onClick={() => {
+              // `k` bilan kelinganda oldingi sessiya faol o'rindan chetlatilgan — o'quvchi
+              // ATAYLAB davom ettirishni tanladi, shunda u yana faol sessiyaga qaytariladi.
+              // Javoblar serverdan (`currentValue`) keladi — mahalliy navbat allaqachon tozalangan.
+              if (resumeCandidate) restoreResumable();
+              navigate(continueHref);
+            }}
           >
             {t('pages.landing.resumeCta')}
           </Button>
