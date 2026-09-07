@@ -47,8 +47,12 @@ public sealed record AdminPublicSpaceProgramDto(
 /// Ommaviy makon statistikasi. Atamalar ATAYLAB maktabnikidan farq qiladi
 /// (`AdminSchoolStatsDto` da "o'quvchi") — bu yerda ular MAKTABSIZ tashqi FOYDALANUVCHILAR.
 ///
-/// - `UserCount` — ommaviy makonda ro'yxatdan o'tgan foydalanuvchilar (soft-delete
-///   qilinganlar hisobga olinmaydi — `Student` global query filtri).
+/// - `UserCount` — ro'yxatdan o'tgan (Telegram orqali kirgan) FAOL akkauntlar —
+///   `public_users`, `Student` EMAS (2026-09-07: ilgari makondagi `Student`lar sanalardi, bu
+///   hali anketa to'ldirmaganlarni tashlab ketardi va foydalanuvchilar ro'yxatining
+///   `totalCount`i bilan mos kelmasdi). O'chirilganlar KIRMAYDI (`PublicUsers` global filtri).
+/// - `DeletedUserCount` — "ma'lumotimni o'chiring" qilgan (anonimlashtirilgan) akkauntlar;
+///   ular ro'yxatda ko'rinmaydi, faqat shu son bilan hisobga olinadi.
 /// - `TotalAssessments` — shu makondagi barcha sessiyalar (`Draft` ham).
 /// - `InProgressCount` — hozir jarayonda (`Status == InProgress`).
 /// - `CompletedCount` — yakunlangan (`CompletedAt != null`).
@@ -58,6 +62,7 @@ public sealed record AdminPublicSpaceProgramDto(
 /// </summary>
 public sealed record AdminPublicSpaceStatsDto(
     int UserCount,
+    int DeletedUserCount,
     int TotalAssessments,
     int InProgressCount,
     int CompletedCount,
@@ -97,3 +102,75 @@ public sealed record AdminPublicSpaceDto(
     AdminPublicSpaceAvailabilityDto Availability,
     IReadOnlyList<AdminPublicSpaceProgramDto> Programs,
     AdminPublicSpaceStatsDto Stats);
+
+/// <summary>Foydalanuvchining Telegram profili — hammasi ixtiyoriy (Telegram `username`/`last_name`ni har doim bermaydi).</summary>
+public sealed record AdminPublicUserTelegramDto(
+    string? FirstName,
+    string? LastName,
+    string? Username);
+
+/// <summary>
+/// Foydalanuvchi sessiyalari soni. `Completed` — `CompletedAt != null` (`Completed`/`Analyzing`/
+/// `Analyzed`/`AnalysisFailed`), `InProgress` — `Draft`/`InProgress` (hali yakunlanmagan va
+/// tashlab ketilmagan). `Total - Completed - InProgress` = `Abandoned`.
+/// </summary>
+public sealed record AdminPublicUserAssessmentCountsDto(
+    int Total,
+    int Completed,
+    int InProgress);
+
+/// <summary>
+/// Yakunlanmagan sessiyada foydalanuvchi QAYERDA to'xtagan — `SessionProgressCalculator`
+/// (ommaviy `GET /api/public/sessions/me` bilan BIR XIL qoida) bo'yicha:
+/// <list type="bullet">
+///   <item>`TestsTotal`/`TestsCompleted` — sessiyadagi bloklar va yakunlanganlari;</item>
+///   <item>`CurrentTestNumber` — joriy blokning 1 dan boshlanadigan tartib raqami
+///   ("4 dan 2-blok"), `CurrentTestCode`/`CurrentTestName` — o'sha blok; hamma blok yakunlangan
+///   (lekin sessiya hali `Complete` qilinmagan) bo'lsa uchalasi `null`;</item>
+///   <item>`Answered`/`QuestionsTotal` — JORIY blokdagi javoblar (masalan `17/44`).</item>
+/// </list>
+/// </summary>
+public sealed record AdminPublicUserProgressDto(
+    int TestsTotal,
+    int TestsCompleted,
+    int? CurrentTestNumber,
+    string? CurrentTestCode,
+    string? CurrentTestName,
+    int Answered,
+    int QuestionsTotal);
+
+/// <summary>
+/// Foydalanuvchining OXIRGI (`StartedAt` bo'yicha) sessiyasi. `Progress` faqat yakunlanmagan
+/// sessiyada (`CompletedAt == null` — `Draft`/`InProgress`/`Abandoned`); yakunlanganda `null`.
+/// </summary>
+public sealed record AdminPublicUserLastAssessmentDto(
+    Guid Id,
+    string Status,
+    DateTimeOffset StartedAt,
+    DateTimeOffset? CompletedAt,
+    AdminPublicUserProgressDto? Progress);
+
+/// <summary>
+/// `GET /api/admin/public-space/users` qatori (2026-09-07). Ro'yxat MANBAI — `public_users`
+/// (Telegram akkaunti), `Student` EMAS: ro'yxatdan o'tgan, lekin hali anketa to'ldirmagan
+/// foydalanuvchi ham ko'rinishi kerak (egasining talabi). Shu sabab `StudentId`/`FullName`/
+/// `Age`/`Grade` NULLABLE — anketa yo'q bo'lsa `null`. `Grade` — `Student.NoGrade` (0) bo'lsa
+/// ham `null` ("sinf yo'q" — kattalar/talabalar).
+///
+/// <para>
+/// O'chirilgan (anonimlashtirilgan, `DeletedAt != null`) akkauntlar ro'yxatga KIRMAYDI —
+/// `PublicUsers` global filtri; soni `AdminPublicSpaceStatsDto.DeletedUserCount` da.
+/// Bu ADMIN API — `Id`lar qaytariladi (`CLAUDE.md` 8-qoida faqat ommaviy API uchun).
+/// </para>
+/// </summary>
+public sealed record AdminPublicUserListItemDto(
+    Guid PublicUserId,
+    AdminPublicUserTelegramDto Telegram,
+    DateTimeOffset RegisteredAt,
+    DateTimeOffset LastLoginAt,
+    Guid? StudentId,
+    string? FullName,
+    int? Age,
+    int? Grade,
+    AdminPublicUserAssessmentCountsDto Assessments,
+    AdminPublicUserLastAssessmentDto? LastAssessment);

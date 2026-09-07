@@ -8,9 +8,11 @@ using StudentRoadMap.Api.Extensions;
 using StudentRoadMap.Application.Admin.PublicSpace;
 using StudentRoadMap.Application.Admin.PublicSpace.AssignProgram;
 using StudentRoadMap.Application.Admin.PublicSpace.Get;
+using StudentRoadMap.Application.Admin.PublicSpace.ListUsers;
 using StudentRoadMap.Application.Admin.PublicSpace.SetShowResult;
 using StudentRoadMap.Application.Admin.PublicSpace.UnassignProgram;
 using StudentRoadMap.Application.Common.Interfaces;
+using StudentRoadMap.Application.Common.Models;
 
 namespace StudentRoadMap.Api.Controllers.Admin;
 
@@ -50,6 +52,30 @@ public sealed class PublicSpaceController : ControllerBase
     public async Task<ActionResult<AdminPublicSpaceDto>> Get(CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetPublicSpaceQuery(), cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>
+    /// `GET /api/admin/public-space/users` — ro'yxatdan o'tgan foydalanuvchilar: kim, qachon,
+    /// nechta sessiya, oxirgi sessiya va (yakunlanmagan bo'lsa) qayerda to'xtagan
+    /// (`docs/07` 3.7-bo'lim). `status`: `all|never_started|in_progress|completed`;
+    /// `sort`: `registeredAt` (standart `-registeredAt`) yoki `lastLoginAt`.
+    /// </summary>
+    [HttpGet("users")]
+    [ProducesResponseType(typeof(PagedResult<AdminPublicUserListItemDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
+    public async Task<ActionResult<PagedResult<AdminPublicUserListItemDto>>> ListUsers(
+        [FromQuery] string? search,
+        [FromQuery] string? status,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? sort = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new ListPublicSpaceUsersQuery(search, status, page, pageSize, sort);
+        var result = await _sender.Send(query, cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
     }

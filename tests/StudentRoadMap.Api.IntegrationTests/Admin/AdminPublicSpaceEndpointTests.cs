@@ -10,6 +10,7 @@ using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Identity.Login;
 using StudentRoadMap.Domain.Assessments;
 using StudentRoadMap.Domain.Catalog;
+using StudentRoadMap.Domain.PublicUsers;
 using StudentRoadMap.Domain.Schools;
 using StudentRoadMap.Domain.Students;
 using StudentRoadMap.Infrastructure.Persistence;
@@ -107,9 +108,13 @@ public sealed class AdminPublicSpaceEndpointTests : IClassFixture<PublicApiTestF
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var now = DateTimeOffset.UtcNow;
 
+            // `UserCount` — `public_users` (Telegram akkauntlari), `Student` emas (2026-09-07).
+            var account = PublicUser.Create(Guid.NewGuid(), 910_000_001, now, username: "stats_user", firstName: "Ommaviy");
+            db.PublicUsers.Add(account);
+
             var user = Student.Create(
                 Guid.NewGuid(), space.Id, "Ommaviy Foydalanuvchi Testovich", new DateOnly(2005, 5, 5),
-                Gender.Male, 11, PhoneNumber.Create("+998905550001").Value, now, now);
+                Gender.Male, 11, PhoneNumber.Create("+998905550001").Value, now, now, publicUserId: account.Id);
             db.Students.Add(user);
             await db.SaveChangesAsync();
 
@@ -130,7 +135,8 @@ public sealed class AdminPublicSpaceEndpointTests : IClassFixture<PublicApiTestF
         dto.IsActive.Should().BeTrue();
         dto.ShowResultToStudent.Should().BeTrue("ommaviy makonda foydalanuvchi o'z natijasini ko'rmasa kabinetning ma'nosi qolmaydi");
         dto.PublicUrl.Should().EndWith("/kirish", "ommaviy oqim maxfiy havolaga emas, kirish sahifasiga tayanadi");
-        dto.Stats.UserCount.Should().BeGreaterThanOrEqualTo(1);
+        dto.Stats.UserCount.Should().BeGreaterThanOrEqualTo(1, "ro'yxatdan o'tgan Telegram akkauntlari");
+        dto.Stats.DeletedUserCount.Should().Be(0, "bu sinfda hech kim o'chirilmagan");
         dto.Stats.TotalAssessments.Should().BeGreaterThanOrEqualTo(1);
         dto.Availability.Should().NotBeNull();
     }

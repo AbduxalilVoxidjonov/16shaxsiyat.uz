@@ -10,6 +10,7 @@ import { PublicSpaceProgramsCard } from '../components/PublicSpaceProgramsCard';
 import { PublicSpaceShowResultCard } from '../components/PublicSpaceShowResultCard';
 import { PublicSpaceStatsCards } from '../components/PublicSpaceStatsCards';
 import { PublicSpaceStatusCard } from '../components/PublicSpaceStatusCard';
+import { PublicSpaceUsersSection } from '../components/PublicSpaceUsersSection';
 
 /** Backend `ProblemCodes.PublicSpaceNotConfigured` — seed bajarilmagan baza. */
 const NOT_CONFIGURED_CODE = 'PUBLIC_SPACE_NOT_CONFIGURED';
@@ -96,6 +97,13 @@ export default function PublicSpacePage() {
           </div>
         </>
       )}
+
+      {/*
+        Foydalanuvchilar ro'yxati (2026-09-07) — alohida so'rov, makon holatiga bog'liq emas:
+        kartalar xato bersa ham ro'yxat ishlaydi. Faqat makon umuman sozlanmagan bo'lsa
+        (seed yo'q) ma'nosi yo'q — yashiriladi.
+      */}
+      {!isNotConfigured && <PublicSpaceUsersSection />}
     </div>
   );
 }

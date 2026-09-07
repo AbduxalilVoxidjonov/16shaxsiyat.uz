@@ -41,6 +41,7 @@ const BLOCKED_SPACE = {
   programs: [PAUSED_PROGRAM],
   stats: {
     userCount: 128,
+    deletedUserCount: 3,
     totalAssessments: 96,
     inProgressCount: 7,
     completedCount: 74,
@@ -94,6 +95,11 @@ function mockFetch(options: FetchMockOptions = {}) {
 
     if (url.includes('/api/admin/programs')) {
       return Promise.resolve(pagedResponse<'AdminProgramListItemDto'>([PROGRAM_OPTION]));
+    }
+
+    // Foydalanuvchilar ro'yxati — `/api/admin/public-space` prefiksidan OLDIN ushlanadi.
+    if (url.includes('/api/admin/public-space/users')) {
+      return Promise.resolve(pagedResponse<'AdminPublicUserListItemDto'>([]));
     }
 
     if (url.includes('/api/admin/public-space')) {

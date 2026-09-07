@@ -66,8 +66,13 @@ internal sealed class GetSessionStateQueryHandler : IRequestHandler<GetSessionSt
             .ToDictionary(x => x.Id, x => x);
 
         var tests = new List<PublicTestSummaryDto>(assessmentTests.Count);
-        string? currentTestCode = null;
-        var locked = false;
+
+        // Joriy test / "Locked" qoidasi — `SessionProgressCalculator` (admin ommaviy makon
+        // ro'yxati ham AYNAN shu yordamchidan "qayerda to'xtagan"ni hisoblaydi, 2026-09-07).
+        var currentIndex = SessionProgressCalculator.FindCurrentIndex(assessmentTests);
+        var currentTestCode = currentIndex.HasValue
+            ? definitionLookup.GetValueOrDefault(assessmentTests[currentIndex.Value].TestDefinitionId)?.Code ?? "?"
+            : null;
 
         // `docs/06` 8-bo'lim (2026-09-02): dasturda shaxsiyat batareyasi BO'LMASLIGI mumkin.
         // Mezon — `Domain.Catalog.PersonalityBattery` (kod satri emas); ta'rif topilmasa
@@ -75,45 +80,28 @@ internal sealed class GetSessionStateQueryHandler : IRequestHandler<GetSessionSt
         // "bor" bilan almashtirmaymiz.
         var hasPersonalityBattery = false;
 
-        foreach (var test in assessmentTests)
+        for (var index = 0; index < assessmentTests.Count; index++)
         {
+            var test = assessmentTests[index];
             var definition = definitionLookup.GetValueOrDefault(test.TestDefinitionId);
             var code = definition?.Code ?? "?";
-            string status;
 
             if (definition is not null && PersonalityBattery.Includes(definition.Kind, definition.ScoringMode))
             {
                 hasPersonalityBattery = true;
             }
 
-            if (locked)
-            {
-                status = "Locked";
-            }
-            else if (test.Status == TestStatus.Completed)
-            {
-                status = TestStatus.Completed.ToString();
-            }
-            else
-            {
-                status = test.Status.ToString();
-                currentTestCode ??= code;
-                locked = true; // Birinchi tugallanmagan testdan keyingilari qulflangan (`docs/07` 1.3 namunasi).
-            }
-
             tests.Add(new PublicTestSummaryDto(
                 code,
                 definition?.NameUz ?? code,
-                status,
+                SessionProgressCalculator.ProjectStatus(assessmentTests, index, currentIndex),
                 test.AnsweredCount,
                 test.TotalCount,
                 test.DisplayOrder,
                 definition?.EstimatedMinutes ?? 0));
         }
 
-        var totalAnswered = assessmentTests.Sum(t => t.AnsweredCount);
-        var totalQuestions = assessmentTests.Sum(t => t.TotalCount);
-        var progressPercent = totalQuestions == 0 ? 0 : (int)Math.Round(100.0 * totalAnswered / totalQuestions, MidpointRounding.AwayFromZero);
+        var progressPercent = SessionProgressCalculator.ProgressPercent(assessmentTests);
 
         var result = new GetSessionStateResult(
             assessment.Id,

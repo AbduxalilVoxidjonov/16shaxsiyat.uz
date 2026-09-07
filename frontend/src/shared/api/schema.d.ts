@@ -4639,6 +4639,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/public-space/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    search?: string;
+                    status?: string;
+                    page?: number;
+                    pageSize?: number;
+                    sort?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminPublicUserListItemDtoPagedResult"];
+                        "application/json": components["schemas"]["AdminPublicUserListItemDtoPagedResult"];
+                        "text/json": components["schemas"]["AdminPublicUserListItemDtoPagedResult"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/public-space/programs/{programId}": {
         parameters: {
             query?: never;
@@ -5898,6 +5959,8 @@ export interface components {
             /** Format: int32 */
             userCount: number;
             /** Format: int32 */
+            deletedUserCount: number;
+            /** Format: int32 */
             totalAssessments: number;
             /** Format: int32 */
             inProgressCount: number;
@@ -5907,6 +5970,74 @@ export interface components {
             analyzedCount: number;
             /** Format: date-time */
             lastActivityAt?: string | null;
+        };
+        AdminPublicUserAssessmentCountsDto: {
+            /** Format: int32 */
+            total: number;
+            /** Format: int32 */
+            completed: number;
+            /** Format: int32 */
+            inProgress: number;
+        };
+        AdminPublicUserLastAssessmentDto: {
+            /** Format: uuid */
+            id: string;
+            status: string;
+            /** Format: date-time */
+            startedAt: string;
+            /** Format: date-time */
+            completedAt?: string | null;
+            progress?: components["schemas"]["AdminPublicUserProgressDto"];
+        };
+        AdminPublicUserListItemDto: {
+            /** Format: uuid */
+            publicUserId: string;
+            telegram: components["schemas"]["AdminPublicUserTelegramDto"];
+            /** Format: date-time */
+            registeredAt: string;
+            /** Format: date-time */
+            lastLoginAt: string;
+            /** Format: uuid */
+            studentId?: string | null;
+            fullName?: string | null;
+            /** Format: int32 */
+            age?: number | null;
+            /** Format: int32 */
+            grade?: number | null;
+            assessments: components["schemas"]["AdminPublicUserAssessmentCountsDto"];
+            lastAssessment?: components["schemas"]["AdminPublicUserLastAssessmentDto"];
+        };
+        AdminPublicUserListItemDtoPagedResult: {
+            items: components["schemas"]["AdminPublicUserListItemDto"][];
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** Format: int32 */
+            totalCount: number;
+            /** Format: int32 */
+            readonly totalPages: number;
+            readonly hasNext: boolean;
+            readonly hasPrevious: boolean;
+        };
+        AdminPublicUserProgressDto: {
+            /** Format: int32 */
+            testsTotal: number;
+            /** Format: int32 */
+            testsCompleted: number;
+            /** Format: int32 */
+            currentTestNumber?: number | null;
+            currentTestCode?: string | null;
+            currentTestName?: string | null;
+            /** Format: int32 */
+            answered: number;
+            /** Format: int32 */
+            questionsTotal: number;
+        };
+        AdminPublicUserTelegramDto: {
+            firstName?: string | null;
+            lastName?: string | null;
+            username?: string | null;
         };
         AdminRecalculateScoresResultDto: {
             /** Format: uuid */

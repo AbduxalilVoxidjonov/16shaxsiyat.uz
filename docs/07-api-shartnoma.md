@@ -1112,6 +1112,91 @@ prefiksi yo'q. Zaxira shablon hisobotlar (`IsFallbackReport = true`) statistikag
 }
 ```
 
+### 3.7 Ommaviy makon (`/api/admin/public-space`) — 2026-09-06/07
+
+Ommaviy makon (`SchoolKind.PublicSpace`, bazada AYNAN BITTA yozuv) maktablar bo'limidan
+TO'LIQ ajratilgan: `GET /api/admin/schools` uni qaytarmaydi, boshqarishning yagona joyi shu
+bo'lim. `id` hech qayerda qabul qilinmaydi — makon bitta, handler uni o'zi topadi. Makonni
+o'chirish/faolsizlantirish endpointi YO'Q (domen taqiqlaydi).
+
+| Metod | Yo'l | Izoh |
+|-------|------|------|
+| GET | `/api/admin/public-space` | holat, biriktirilgan dasturlar, sozlamalar, statistika |
+| GET | `/api/admin/public-space/users?search=&status=&page=&pageSize=&sort=` | ro'yxatdan o'tgan foydalanuvchilar |
+| POST | `/api/admin/public-space/programs/{programId}` | dastur biriktirish (idempotent) |
+| DELETE | `/api/admin/public-space/programs/{programId}` | biriktirishni olib tashlash (idempotent) |
+| PUT | `/api/admin/public-space/show-result` | `{ "enabled": true }` — natija foydalanuvchiga ko'rinadimi |
+
+Xato: makon seed qilinmagan bo'lsa barcha endpointlar `409 PUBLIC_SPACE_NOT_CONFIGURED`.
+
+**`GET /api/admin/public-space` — `stats` bloki**
+```jsonc
+"stats": {
+  "userCount": 128,          // ro'yxatdan o'tgan FAOL Telegram akkauntlari (`public_users`,
+                             // `Student` EMAS — anketa to'ldirmaganlar ham kiradi)
+  "deletedUserCount": 3,     // "ma'lumotimni o'chiring" qilgan (anonimlashtirilgan) akkauntlar —
+                             // ro'yxatda KO'RINMAYDI, faqat shu son
+  "totalAssessments": 96, "inProgressCount": 7, "completedCount": 74, "analyzedCount": 61,
+  "lastActivityAt": "2026-09-04T12:00:00Z"   // sessiya bo'lmasa `null`
+}
+```
+
+**`GET /api/admin/public-space/users` — 200**
+
+Manba — `public_users` (LEFT JOIN `students` orqali `public_user_id`; bitta akkaunt → 0..1 profil).
+Ro'yxatdan o'tgan, lekin hali anketa to'ldirmagan/test boshlamagan foydalanuvchi ham chiqadi.
+
+Parametrlar:
+- `search` — F.I.Sh. (anketa), Telegram ism/familiya/`username` bo'yicha, katta-kichik harf farqsiz (≤200 belgi).
+- `status` — OXIRGI sessiya bo'yicha: `all` (standart) · `never_started` (sessiya yo'q — anketa
+  bo'lmasa ham) · `in_progress` (oxirgi sessiya yakunlanmagan: `Draft`/`InProgress`/`Abandoned`) ·
+  `completed` (`completedAt != null`: `Completed`/`Analyzing`/`Analyzed`/`AnalysisFailed`).
+  Noma'lum qiymat → `400 VALIDATION_ERROR` (jimgina "hammasi"ga tushmaydi).
+- `sort` — `registeredAt` (standart `-registeredAt`) yoki `lastLoginAt`; boshqa maydon → standart.
+- `page`/`pageSize` — 4-bo'lim konvensiyasi (`pageSize` ≤ 100).
+
+```jsonc
+{
+  "items": [
+    {
+      "publicUserId": "…",
+      "telegram": { "firstName": "Bobur", "lastName": "Toshev", "username": "bobur_t" },   // hammasi nullable
+      "registeredAt": "2026-09-01T09:00:00Z",   // `public_users.created_at`
+      "lastLoginAt":  "2026-09-06T18:20:00Z",
+      "studentId": "…",                // anketa to'ldirilmagan bo'lsa `null` (fullName/age/grade ham)
+      "fullName": "Toshev Bobur",
+      "age": 17,
+      "grade": 9,                      // `Student.NoGrade` (0 — "sinf yo'q") bo'lsa `null`
+      "assessments": { "total": 3, "completed": 2, "inProgress": 1 },   // inProgress = Draft|InProgress;
+                                                                        // total − completed − inProgress = Abandoned
+      "lastAssessment": {              // sessiya bo'lmasa `null`; oxirgisi — `startedAt` bo'yicha
+        "id": "…", "status": "InProgress",
+        "startedAt": "2026-09-06T18:21:00Z", "completedAt": null,
+        "progress": {                  // FAQAT yakunlanmagan sessiyada (`completedAt == null`), aks holda `null`
+          "testsTotal": 4, "testsCompleted": 1,
+          "currentTestNumber": 2,      // 1 dan — "4 dan 2-blok"; hamma blok yakunlangan bo'lsa `null`
+          "currentTestCode": "BIG5", "currentTestName": "Katta beshlik",
+          "answered": 17, "questionsTotal": 44   // JORIY blokdagi javoblar
+        }
+      }
+    }
+  ],
+  "page": 1, "pageSize": 20, "totalCount": 1, "totalPages": 1, "hasNext": false, "hasPrevious": false
+}
+```
+
+"Qayerda to'xtagan" qoidasi ommaviy `GET /api/public/sessions/me` (1.3) bilan BITTA manbadan
+hisoblanadi (`Application/Public/GetSession/SessionProgressCalculator`): `displayOrder` bo'yicha
+birinchi `Completed` bo'lmagan blok — joriy blok. Bu ADMIN API — `id`lar qaytariladi
+(8-qoida faqat ommaviy API uchun). O'chirilgan (anonimlashtirilgan) akkauntlar ro'yxatga
+kirmaydi — ularda shaxsni aniqlovchi ma'lumot qolmagan, "qayerda to'xtagan" esa ma'nosiz
+(qayta kira olmaydi); soni `stats.deletedUserCount`da.
+
+**Ish unumi:** N+1 yo'q — jami ≤5 so'rov, sahifa hajmiga bog'liq emas: `COUNT`, sahifa
+(`ORDER BY … OFFSET/LIMIT`, holat filtri — oxirgi sessiya bo'yicha korrelyatsiyalangan
+sub-so'rov), sahifadagi o'quvchilarning sessiyalari (`student_id IN`), yakunlanmagan oxirgi
+sessiyalarning bloklari (`assessment_id IN`), anketa nomlari (`id IN`).
+
 ---
 
 ## 4. Umumiy konvensiyalar

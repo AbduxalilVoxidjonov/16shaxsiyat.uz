@@ -2282,7 +2282,8 @@
       "inProgressCount": "Jarayonda",
       "completedCount": "Tugallangan",
       "analyzedCount": "Tahlil qilingan",
-      "lastActivityAt": "Oxirgi faollik"
+      "lastActivityAt": "Oxirgi faollik",
+      "deletedUserHint": "shundan {{count}} tasi o’chirilgan"
     },
     "programs": {
       "title": "Biriktirilgan dasturlar",
@@ -2326,6 +2327,52 @@
       "description": "Ma’lumotni olishda xato yuz berdi.",
       "notConfiguredTitle": "Ommaviy makon sozlanmagan",
       "notConfiguredDescription": "Bazada ommaviy makon yozuvi topilmadi — seed bajarilmagan bo’lishi mumkin."
+    },
+    "users": {
+      "title": "Foydalanuvchilar",
+      "unnamed": "Nomsiz",
+      "age": "{{count}} yosh",
+      "grade": "{{grade}}-sinf",
+      "assessmentsSummary": "{{completed}} / {{total}} tugallangan",
+      "filters": {
+        "searchLabel": "Qidiruv",
+        "searchPlaceholder": "F.I.Sh., Telegram ism yoki @username",
+        "statusLabel": "Holat",
+        "status": {
+          "all": "Hammasi",
+          "never_started": "Boshlamagan",
+          "in_progress": "Jarayonda",
+          "completed": "Tugallangan"
+        }
+      },
+      "table": {
+        "ariaLabel": "Foydalanuvchilar jadvali",
+        "user": "Foydalanuvchi",
+        "registeredAt": "Ro’yxatdan o’tgan",
+        "lastLoginAt": "Oxirgi kirish",
+        "assessments": "Testlar",
+        "status": "Holat",
+        "progress": "Qayerda to’xtagan"
+      },
+      "status": {
+        "NotStarted": "Boshlamagan",
+        "InProgress": "Jarayonda",
+        "Completed": "Tugallangan",
+        "Analyzed": "Tahlil qilingan",
+        "AnalysisFailed": "Tahlil muvaffaqiyatsiz",
+        "Abandoned": "Tashlab ketilgan",
+        "Unknown": "Noma’lum"
+      },
+      "progress": {
+        "position": "{{block}}-blok · {{answered}}/{{total}} savol",
+        "allBlocksDone": "{{completed}}/{{total}} blok"
+      },
+      "empty": {
+        "title": "Hali hech kim ro’yxatdan o’tmagan",
+        "description": "Foydalanuvchilar Telegram orqali kirgach shu yerda ko’rinadi.",
+        "filteredTitle": "Hech kim topilmadi",
+        "filteredDescription": "Qidiruv yoki holat filtrini o’zgartirib ko’ring."
+      }
     }
   }
 }

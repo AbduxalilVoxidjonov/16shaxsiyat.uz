@@ -7,11 +7,12 @@ export interface PublicSpaceStatsCardsProps {
   stats: PublicSpaceStatsDto;
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <Card className="flex flex-col gap-1">
       <span className="text-xs font-medium text-neutral-500">{label}</span>
       <span className="text-2xl font-bold text-neutral-900">{value}</span>
+      {hint && <span className="text-xs text-ink-muted">{hint}</span>}
     </Card>
   );
 }
@@ -29,7 +30,16 @@ export function PublicSpaceStatsCards({ stats }: PublicSpaceStatsCardsProps) {
         {t('publicSpace.stats.title')}
       </h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <StatCard label={t('publicSpace.stats.userCount')} value={String(stats.userCount)} />
+        <StatCard
+          label={t('publicSpace.stats.userCount')}
+          value={String(stats.userCount)}
+          // O'chirilgan (anonimlashtirilgan) akkauntlar ro'yxatda YO'Q — faqat shu son.
+          hint={
+            stats.deletedUserCount > 0
+              ? t('publicSpace.stats.deletedUserHint', { count: stats.deletedUserCount })
+              : undefined
+          }
+        />
         <StatCard
           label={t('publicSpace.stats.totalAssessments')}
           value={String(stats.totalAssessments)}

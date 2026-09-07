@@ -12,6 +12,7 @@
  * `School` jadvalida turadi (`SchoolKind.PublicSpace`) — bu SAQLASH qarori, atama emas.
  */
 import type { components } from '@/shared/api/schema';
+import type { BadgeVariant } from '@/shared/ui/Badge';
 
 /** `GET /api/admin/public-space` javobi — backend `AdminPublicSpaceDto`. */
 export type PublicSpaceDto = components['schemas']['AdminPublicSpaceDto'];
@@ -78,3 +79,107 @@ export function findBlockedPrograms(
 ): PublicSpaceProgramDto[] {
   return programs.filter((program) => program.state !== 'Active');
 }
+
+// ————— Foydalanuvchilar ro'yxati (`GET /api/admin/public-space/users`, 2026-09-07) —————
+
+/** Ro'yxat qatori — backend `AdminPublicUserListItemDto`. */
+export type PublicSpaceUserDto = components['schemas']['AdminPublicUserListItemDto'];
+
+/** Telegram profili — backend `AdminPublicUserTelegramDto`. */
+export type PublicSpaceUserTelegramDto = components['schemas']['AdminPublicUserTelegramDto'];
+
+/** Sessiyalar soni — backend `AdminPublicUserAssessmentCountsDto`. */
+export type PublicSpaceUserAssessmentCountsDto =
+  components['schemas']['AdminPublicUserAssessmentCountsDto'];
+
+/** Oxirgi sessiya — backend `AdminPublicUserLastAssessmentDto`. */
+export type PublicSpaceUserLastAssessmentDto =
+  components['schemas']['AdminPublicUserLastAssessmentDto'];
+
+/**
+ * "Qayerda to'xtagan" — backend `AdminPublicUserProgressDto`. Hisob ommaviy
+ * `GET /api/public/sessions/me` bilan BIR XIL qoidadan (`SessionProgressCalculator`):
+ * `DisplayOrder` bo'yicha birinchi yakunlanmagan blok joriy, `answered/questionsTotal`
+ * — shu blokdagi javoblar. Frontend buni qayta HISOBLAMAYDI, faqat ko'rsatadi.
+ */
+export type PublicSpaceUserProgressDto = components['schemas']['AdminPublicUserProgressDto'];
+
+/**
+ * `?status=` filtri qiymatlari (backend `PublicUserStatusFilter`) — OXIRGI sessiya bo'yicha:
+ * `never_started` — birorta sessiya yo'q (anketa to'ldirilmagan bo'lsa ham); `in_progress` —
+ * oxirgi sessiya yakunlanmagan (`Draft`/`InProgress`/`Abandoned`); `completed` — yakunlangan.
+ */
+export const PUBLIC_USER_STATUS_FILTERS = [
+  'all',
+  'never_started',
+  'in_progress',
+  'completed',
+] as const;
+export type PublicUserStatusFilter = (typeof PUBLIC_USER_STATUS_FILTERS)[number];
+
+/** URL'dan kelgan qiymat haqiqiy filtrmi (noma'lum → `all`). */
+export function parsePublicUserStatusFilter(value: string | null): PublicUserStatusFilter {
+  return value && (PUBLIC_USER_STATUS_FILTERS as readonly string[]).includes(value)
+    ? (value as PublicUserStatusFilter)
+    : 'all';
+}
+
+/** `GET /api/admin/public-space/users` so'rov parametrlari (DTO emas, query shakli). */
+export interface PublicSpaceUsersQuery {
+  search?: string;
+  /** `all` yoki bo'sh — parametr yuborilmaydi. */
+  status?: PublicUserStatusFilter;
+  page: number;
+  pageSize: number;
+  sort?: string;
+}
+
+/**
+ * Qatorning ko'rinadigan holati — `lastAssessment.status` (`AssessmentStatus` nomi, sxemada
+ * oddiy `string`) dan hosila. `features/students` dagi jadval ATAYLAB import qilinmaydi
+ * (`docs/10` 2-bo'lim: feature'lar bir-birini import qilmaydi) — bu yerda o'z guruhlashi:
+ * admin uchun "Tugallangan" va "Tahlil qilingan" farqi muhim, qolgan tafsilot esa emas.
+ */
+export const PUBLIC_USER_DISPLAY_STATUSES = [
+  'NotStarted',
+  'InProgress',
+  'Completed',
+  'Analyzed',
+  'AnalysisFailed',
+  'Abandoned',
+  'Unknown',
+] as const;
+export type PublicUserDisplayStatus = (typeof PUBLIC_USER_DISPLAY_STATUSES)[number];
+
+export function toPublicUserDisplayStatus(
+  lastAssessment: PublicSpaceUserLastAssessmentDto | null | undefined,
+): PublicUserDisplayStatus {
+  if (!lastAssessment) return 'NotStarted';
+  switch (lastAssessment.status) {
+    case 'Draft':
+    case 'InProgress':
+      return 'InProgress';
+    case 'Completed':
+    case 'Analyzing':
+      return 'Completed';
+    case 'Analyzed':
+      return 'Analyzed';
+    case 'AnalysisFailed':
+      return 'AnalysisFailed';
+    case 'Abandoned':
+      return 'Abandoned';
+    default:
+      // Noma'lum qiymat jimgina "Boshlamagan" bo'lib qolmasin — "ma'lumot yo'q ≠ nol".
+      return 'Unknown';
+  }
+}
+
+export const PUBLIC_USER_STATUS_BADGE_VARIANT: Record<PublicUserDisplayStatus, BadgeVariant> = {
+  NotStarted: 'neutral',
+  InProgress: 'primary',
+  Completed: 'success',
+  Analyzed: 'success',
+  AnalysisFailed: 'danger',
+  Abandoned: 'warning',
+  Unknown: 'neutral',
+};

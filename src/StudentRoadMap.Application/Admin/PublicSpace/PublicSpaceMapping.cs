@@ -15,7 +15,7 @@ namespace StudentRoadMap.Application.Admin.PublicSpace;
 ///
 /// <para>
 /// **N+1 YO'Q:** butun DTO uchun katalog snapshoti (`SchoolLinkHealthEvaluator.LoadCatalogAsync`
-/// — 4 so'rov) + biriktirmalar (1) + dastur tarkibi soni (1) + statistika (3) = 9 ta so'rov,
+/// — 4 so'rov) + biriktirmalar (1) + dastur tarkibi soni (1) + statistika (5) = 11 ta so'rov,
 /// dastur yoki foydalanuvchi bo'yicha SIKL ichida so'rov yo'q.
 /// </para>
 /// </summary>
@@ -137,7 +137,7 @@ internal static class PublicSpaceMapping
     }
 
     /// <summary>
-    /// 3 ta so'rov: foydalanuvchilar (`COUNT`), sessiyalar holat bo'yicha (`GROUP BY status`
+    /// 4 ta so'rov: foydalanuvchilar (`COUNT` ×2 — faol va o'chirilgan), sessiyalar holat bo'yicha (`GROUP BY status`
     /// — bitta so'rovda jami/jarayonda/tahlil qilingan) va yakunlanganlar (`COUNT`,
     /// `completed_at IS NOT NULL` — `Status` bilan bir xil emas: `Analyzed` ham yakunlangan,
     /// lekin `Abandoned` yakunlanmagan) + eng so'nggi harakat (`ORDER BY ... LIMIT 1`).
@@ -153,8 +153,14 @@ internal static class PublicSpaceMapping
         Guid spaceId,
         CancellationToken cancellationToken)
     {
+        // Ro'yxatdan o'tganlar — `public_users` (global filtr o'chirilganlarni yashiradi);
+        // o'chirilganlar ALOHIDA sanaladi (`IgnoreQueryFilters` + `DeletedAt != null`).
         var userCount = await executor.CountAsync(
-            context.AsNoTracking(context.Students).Where(s => s.SchoolId == spaceId),
+            context.AsNoTracking(context.PublicUsers),
+            cancellationToken).ConfigureAwait(false);
+
+        var deletedUserCount = await executor.CountAsync(
+            context.IgnoreQueryFilters(context.AsNoTracking(context.PublicUsers)).Where(u => u.DeletedAt != null),
             cancellationToken).ConfigureAwait(false);
 
         var spaceAssessments = context.AsNoTracking(context.Assessments).Where(a => a.SchoolId == spaceId);
@@ -182,6 +188,7 @@ internal static class PublicSpaceMapping
 
         return new AdminPublicSpaceStatsDto(
             userCount,
+            deletedUserCount,
             totalAssessments,
             inProgressCount,
             completedCount,
