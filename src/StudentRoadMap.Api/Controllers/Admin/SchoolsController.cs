@@ -12,6 +12,7 @@ using StudentRoadMap.Application.Admin.Schools.Delete;
 using StudentRoadMap.Application.Admin.Schools.GetById;
 using StudentRoadMap.Application.Admin.Schools.LinkHealth;
 using StudentRoadMap.Application.Admin.Schools.List;
+using StudentRoadMap.Application.Admin.Schools.RegenerateEntryCode;
 using StudentRoadMap.Application.Admin.Schools.RegenerateLink;
 using StudentRoadMap.Application.Admin.Schools.ToggleActive;
 using StudentRoadMap.Application.Admin.Schools.Update;
@@ -126,6 +127,21 @@ public sealed class SchoolsController : ControllerBase
     public async Task<ActionResult<RegenerateSchoolLinkResult>> RegenerateLink(Guid id, CancellationToken cancellationToken)
     {
         var command = new RegenerateSchoolLinkCommand(id, RequireAdminUserId(), ClientIp(), UserAgent());
+        var result = await _sender.Send(command, cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>
+    /// `POST /api/admin/schools/{id}/regenerate-entry-code` — yangi maktab kodi → `{ entryCode }`
+    /// (`XXXX-XXXX`). Eski kod DARHOL ishlamay qoladi (`regenerate-link` bilan bir xil naqsh, audit bilan).
+    /// </summary>
+    [HttpPost("{id:guid}/regenerate-entry-code")]
+    [ProducesResponseType(typeof(RegenerateSchoolEntryCodeResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    public async Task<ActionResult<RegenerateSchoolEntryCodeResult>> RegenerateEntryCode(Guid id, CancellationToken cancellationToken)
+    {
+        var command = new RegenerateSchoolEntryCodeCommand(id, RequireAdminUserId(), ClientIp(), UserAgent());
         var result = await _sender.Send(command, cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);

@@ -108,3 +108,6 @@ export type RegenerateLinkResponse = components['schemas']['RegenerateSchoolLink
 export const SCHOOL_ERROR_CODES = {
   hasStudents: 'SCHOOL_HAS_STUDENTS',
 } as const;
+
+/** `POST /api/admin/schools/{id}/regenerate-entry-code` javobi — `{ entryCode }` (`XXXX-XXXX`, backend formatlab beradi). */
+export type RegenerateEntryCodeResponse = components['schemas']['RegenerateSchoolEntryCodeResult'];

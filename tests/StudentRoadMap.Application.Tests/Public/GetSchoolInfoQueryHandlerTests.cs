@@ -30,7 +30,7 @@ public sealed class GetSchoolInfoQueryHandlerTests
         var now = DateTimeOffset.UtcNow;
         const string token = "access-token-linkview-fail-open-0123456789ab";
         var slug = SchoolSlug.Create("maktab-linkview-fail-open").Value;
-        var school = School.Create(Guid.NewGuid(), "Maktab LinkView Fail-Open", "Toshkent", "Chilonzor", slug, token, now);
+        var school = School.Create(Guid.NewGuid(), "Maktab LinkView Fail-Open", "Toshkent", "Chilonzor", slug, token, "FAXM2345", now);
 
         // 2026-09-03: `GetSchoolInfoQueryHandler` mavjud dastur BO'LMASA `409 NO_PROGRAM_AVAILABLE`
         // qaytaradi, shu sabab bu (hisoblagich haqidagi) test uchun bitta mavjud dastur kerak —

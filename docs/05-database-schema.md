@@ -36,6 +36,7 @@ CREATE TABLE schools (
     slug                      varchar(80)  NOT NULL,
     access_token              varchar(64)  NOT NULL,
     access_code               varchar(6),
+    entry_code                varchar(8),                          -- 2026-09-07: maktab kodi; kind=1 da doim, kind=2 da NULL
     daily_registration_limit  int          NOT NULL DEFAULT 500,
     kind                      smallint     NOT NULL,               -- P47: 1 School, 2 PublicSpace (DEFAULT yo'q)
     is_active                 boolean      NOT NULL DEFAULT true,
@@ -48,6 +49,8 @@ CREATE TABLE schools (
 );
 CREATE UNIQUE INDEX ux_schools_slug        ON schools(slug) WHERE is_deleted = false;
 CREATE UNIQUE INDEX ux_schools_token       ON schools(access_token);
+-- 2026-09-07: maktab kodi maktabni aniqlaydi — unikal; NULL (ommaviy makon) kirmaydi, is_deleted ga qaramaydi.
+CREATE UNIQUE INDEX ux_schools_entry_code  ON schools(entry_code) WHERE entry_code IS NOT NULL;
 CREATE INDEX        ix_schools_region_dist ON schools(region, district);
 CREATE INDEX        ix_schools_name_trgm   ON schools USING gin (name gin_trgm_ops);
 -- P47: bazada AYNAN BITTA ommaviy makon (poyga holatiga qarshi yagona haqiqiy himoya).
@@ -578,6 +581,15 @@ alter table admin_users add column pending_totp_created_at timestamptz null;
 | `SchoolKind` | 1 School (maktab havolasi oqimi), 2 PublicSpace (ommaviy makon) — `schools.kind` |
 
 ---
+
+### 2026-09-07 da qo'shilgan — maktab kodi (migratsiya `AddSchoolEntryCode`)
+
+`schools.entry_code varchar(8)` (nullable) + `ux_schools_entry_code`. **Ikki bosqichli, buzilmaydigan:**
+ustun nullable qo'shiladi → mavjud `kind = 1` maktablar (o'chirilganlar ham) bazaning o'zida
+unikal kod bilan to'ldiriladi (`DO $$ ... $$` bloki: pgcrypto `gen_random_bytes`, har bayt uchun
+rejection sampling `< 248` → `% 31`, alifbo `ABCDEFGHJKMNPQRSTUVWXYZ23456789`, to'qnashishda
+qayta urinish) → indeks. `SET NOT NULL` QILINMAYDI — ommaviy makon (`kind = 2`) `NULL` qoladi;
+"`kind = 1` uchun doim bor" invariantini domen kafolatlaydi. `EntryCodeMigrationTests`.
 
 ## 4. Migratsiya siyosati
 

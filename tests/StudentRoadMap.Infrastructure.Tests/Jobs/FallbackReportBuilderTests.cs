@@ -8,6 +8,7 @@ using StudentRoadMap.Domain.Students;
 using StudentRoadMap.Infrastructure.Jobs;
 using StudentRoadMap.Infrastructure.Persistence;
 using StudentRoadMap.Infrastructure.Tests.Testing;
+using StudentRoadMap.Infrastructure.Security;
 
 namespace StudentRoadMap.Infrastructure.Tests.Jobs;
 
@@ -48,7 +49,7 @@ public sealed class FallbackReportBuilderTests
 
         var school = School.Create(
             Guid.NewGuid(), "Test maktabi", "Toshkent", "Chilonzor",
-            SchoolSlug.Create($"maktab-{Guid.NewGuid():N}").Value, $"access-{Guid.NewGuid():N}", Now);
+            SchoolSlug.Create($"maktab-{Guid.NewGuid():N}").Value, $"access-{Guid.NewGuid():N}", new EntryCodeGenerator().Generate(), Now);
 
         var student = Student.Create(
             Guid.NewGuid(), school.Id, "Alisher Karimov", new DateOnly(2010, 5, 20), Gender.Male, 9,

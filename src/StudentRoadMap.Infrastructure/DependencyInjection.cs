@@ -43,6 +43,7 @@ public static class DependencyInjection
         services.AddScoped<IEncryptionService, AesEncryptionService>();
         services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<ITokenGenerator, TokenGenerator>();
+        services.AddSingleton<IEntryCodeGenerator, EntryCodeGenerator>();
         services.AddScoped<IIpHasher, IpHasher>();
         // Singleton — ikkalasi ham faqat `IConfiguration`ga tayanadi (holatsiz). `Program.cs`
         // `IJwtTokenService`ni ilova ishga tushganda MAJBURIY resolve qiladi — `Jwt:Key`

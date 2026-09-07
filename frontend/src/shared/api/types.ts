@@ -175,3 +175,13 @@ export type MyAssessment = components['schemas']['MyAssessmentDto'];
 
 /** `POST /api/me/sessions` so'rov tanasi — `docs/07` §5.4 (maktabsiz, `slug`/`accessToken`siz). */
 export type StartPublicSessionRequestBody = components['schemas']['StartPublicSessionRequest'];
+
+/**
+ * `POST /api/public/schools/resolve-code` so'rov tanasi — `docs/07` §1.1a. `code` — foydalanuvchi
+ * kiritgan XOM matn (defis/kichik harf bo'lishi mumkin); mijoz uni yuborishdan oldin
+ * normalizatsiya qiladi, server ham qayta normalizatsiya qiladi.
+ */
+export type ResolveSchoolCodeRequestBody = components['schemas']['ResolveSchoolCodeRequest'];
+
+/** `POST /api/public/schools/resolve-code` javobi — `{ slug, accessToken }`; mijoz shundan `/t/{slug}?k=` quradi (`CLAUDE.md` 8: ID yo'q). */
+export type ResolveSchoolCodeResponse = components['schemas']['ResolveSchoolCodeResult'];

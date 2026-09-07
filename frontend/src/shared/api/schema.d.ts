@@ -3998,6 +3998,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/schools/resolve-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ResolveSchoolCodeRequest"];
+                    "text/json": components["schemas"]["ResolveSchoolCodeRequest"];
+                    "application/*+json": components["schemas"]["ResolveSchoolCodeRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ResolveSchoolCodeResult"];
+                        "application/json": components["schemas"]["ResolveSchoolCodeResult"];
+                        "text/json": components["schemas"]["ResolveSchoolCodeResult"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/public/sessions": {
         parameters: {
             query?: never;
@@ -5264,6 +5334,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/schools/{id}/regenerate-entry-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RegenerateSchoolEntryCodeResult"];
+                        "application/json": components["schemas"]["RegenerateSchoolEntryCodeResult"];
+                        "text/json": components["schemas"]["RegenerateSchoolEntryCodeResult"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/schools/{id}/toggle-active": {
         parameters: {
             query?: never;
@@ -6134,6 +6252,7 @@ export interface components {
             publicUrl: string;
             qrCodeBase64: string;
             accessCode?: string | null;
+            entryCode?: string | null;
             /** Format: int32 */
             dailyRegistrationLimit: number;
             isActive: boolean;
@@ -6767,6 +6886,9 @@ export interface components {
             /** Format: int32 */
             expiresIn: number;
         };
+        RegenerateSchoolEntryCodeResult: {
+            entryCode: string;
+        };
         RegenerateSchoolLinkResult: {
             publicUrl: string;
             qrCodeBase64: string;
@@ -6791,6 +6913,13 @@ export interface components {
             /** Format: uuid */
             assessmentId: string;
             status: string;
+        };
+        ResolveSchoolCodeRequest: {
+            code: string;
+        };
+        ResolveSchoolCodeResult: {
+            slug: string;
+            accessToken: string;
         };
         SaveAnswerItemRequest: {
             /** Format: uuid */

@@ -118,7 +118,7 @@ public sealed class GetSchoolByIdQueryHandlerTests
         var context = new FakeSchoolsAppDbContext();
         var slug = SchoolSlug.Create("maktab-statistika").Value;
         var school = School.Create(
-            Guid.NewGuid(), "12-son maktab", "Farg'ona", "Qo'qon", slug, "access-token-stats-0123456789abcdef", Now);
+            Guid.NewGuid(), "12-son maktab", "Farg'ona", "Qo'qon", slug, "access-token-stats-0123456789abcdef", "STAT2345", Now);
         context.SchoolList.Add(school);
         return (context, school);
     }

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
@@ -18,6 +19,7 @@ const BASE_DETAIL: SchoolDetailDto = {
   contactPhone: '+998901234567',
   dailyRegistrationLimit: 500,
   accessCode: null,
+  entryCode: 'ABCD-2345',
   notes: null,
   slug: '12-maktab-qokon',
   publicUrl: 'https://16shaxsiyat.uz/t/12-maktab-qokon?k=abc123token',
@@ -77,6 +79,15 @@ function renderDetailPage() {
       </ToastProvider>
     </QueryClientProvider>,
   );
+}
+
+/**
+ * "Maktab kodi" `InfoRow` ining qiymat qismi. Kod QR modalda ham (yopiq, lekin DOM'da —
+ * jsdom `showModal` yo'q) turadi, shu sabab sahifa bo'ylab `getByText` ikkitasini topardi.
+ */
+function entryCodeRow(): HTMLElement {
+  const label = screen.getByText('Maktab kodi', { selector: 'dt' });
+  return label.parentElement!;
 }
 
 /** Statistika bo'limidagi bitta karta qiymatini o'qiydi (label bo'yicha). */
@@ -175,5 +186,61 @@ describe('SchoolDetailPage', () => {
 
     expect(await screen.findByText('Maktab topilmadi')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Qayta urinish' })).toBeInTheDocument();
+  });
+
+  /** Maktab kodi (`entryCode`) — `/kirish` → "Maktab uchun" siri; havola/QR yonida turadi. */
+  describe('maktab kodi', () => {
+    it("'Maktab kodi' qatorida formatlangan kodni ko'rsatadi, 'Kirish kodi' (sinf kodi) alohida qoladi", async () => {
+      mockFetch();
+      renderDetailPage();
+
+      await screen.findByRole('heading', { name: '12-son maktab' });
+
+      const row = entryCodeRow();
+      expect(within(row).getByText('ABCD-2345')).toBeInTheDocument();
+      expect(within(row).getByRole('button', { name: 'Maktab kodini nusxalash' })).toBeInTheDocument();
+      // `accessCode` (ixtiyoriy sinf kodi) qatori o'zgarmagan — bu yerda `null` → `—`.
+      expect(screen.getByText('Kirish kodi')).toBeInTheDocument();
+    });
+
+    it("'Kodni qayta yaratish' → tasdiq → POST regenerate-entry-code → yangi kod DARHOL ko'rinadi", async () => {
+      const detail: SchoolDetailDto = { ...BASE_DETAIL };
+      const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes('/regenerate-entry-code') && init?.method === 'POST') {
+          return Promise.resolve(
+            jsonResponse<'RegenerateSchoolEntryCodeResult'>({ entryCode: 'WXYZ-6789' }),
+          );
+        }
+        if (url.includes('/api/admin/schools/school-1')) {
+          return Promise.resolve(jsonResponse<'AdminSchoolDetailDto'>(detail));
+        }
+        return Promise.reject(new Error(`unexpected fetch: ${url}`));
+      });
+      vi.stubGlobal('fetch', fetchMock);
+      const user = userEvent.setup();
+      renderDetailPage();
+
+      await screen.findByRole('heading', { name: '12-son maktab' });
+      expect(within(entryCodeRow()).getByText('ABCD-2345')).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'Kodni qayta yaratish' }));
+
+      // Tasdiq dialogi (jsdom `showModal` yo'q — matn bo'yicha, `SchoolsPage.test.tsx` izohi).
+      expect(screen.getByText(/Eski kod darhol ishlamay qoladi/)).toBeInTheDocument();
+      await user.click(screen.getByText('Ha, qayta yaratish'));
+
+      await waitFor(() =>
+        expect(
+          fetchMock.mock.calls.some(
+            ([url, init]) =>
+              String(url).endsWith('/api/admin/schools/school-1/regenerate-entry-code') &&
+              (init as RequestInit | undefined)?.method === 'POST',
+          ),
+        ).toBe(true),
+      );
+      // Detail hali eski (`ABCD-2345`) qaytaradi — sahifa esa javobdagi yangi kodni ko'rsatadi.
+      await waitFor(() => expect(within(entryCodeRow()).getByText('WXYZ-6789')).toBeInTheDocument());
+      expect(within(entryCodeRow()).queryByText('ABCD-2345')).not.toBeInTheDocument();
+    });
   });
 });

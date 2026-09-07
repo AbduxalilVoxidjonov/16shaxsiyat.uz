@@ -351,7 +351,8 @@
         "accessCode": "Kirish kodi",
         "createdAt": "Yaratilgan sana",
         "link": "Havola",
-        "notes": "Izoh"
+        "notes": "Izoh",
+        "entryCode": "Maktab kodi"
       },
       "students": {
         "heading": "O'quvchilar",
@@ -393,7 +394,9 @@
       "regenerateLink": "Havolani yangilash",
       "activate": "Faollashtirish",
       "deactivate": "Nofaol qilish",
-      "delete": "O'chirish"
+      "delete": "O'chirish",
+      "copyEntryCode": "Maktab kodini nusxalash",
+      "regenerateEntryCode": "Kodni qayta yaratish"
     },
     "linkCopied": "Havola nusxalandi",
     "linkCopyErrorTitle": "Havolani nusxalab bo'lmadi",
@@ -423,7 +426,8 @@
       "linkLabel": "Havola",
       "downloadCta": "PNG yuklab olish",
       "printCta": "Chop etish",
-      "loadError": "QR kodni yuklab bo'lmadi"
+      "loadError": "QR kodni yuklab bo'lmadi",
+      "entryCodeLabel": "Maktab kodi"
     },
     "form": {
       "createTitle": "Yangi maktab",
@@ -447,7 +451,16 @@
       "submitEditCta": "Saqlash",
       "createSuccess": "Maktab yaratildi",
       "editSuccess": "O'zgarishlar saqlandi",
-      "genericError": "Saqlashda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
+      "genericError": "Saqlashda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring.",
+      "createSuccessCode": "Maktab kodi: {{code}} — maktabga havola bilan birga bering."
+    },
+    "entryCodeCopied": "Maktab kodi nusxalandi",
+    "regenerateEntryCodeDialog": {
+      "title": "Maktab kodini qayta yaratishni tasdiqlang",
+      "warning": "Eski kod darhol ishlamay qoladi. Maktabga yangi kodni yetkazishni unutmang.",
+      "confirmCta": "Ha, qayta yaratish",
+      "successTitle": "Maktab kodi yangilandi",
+      "errorTitle": "Kodni qayta yaratib bo'lmadi. Birozdan so'ng qayta urinib ko'ring."
     }
   },
   "students": {
@@ -1723,6 +1736,25 @@
         "expired": "Kirish so'rovining muddati o'tgan. Telegram tugmasini qaytadan bosing.",
         "rateLimited": "Juda ko'p urinish bo'ldi. Bir necha daqiqadan so'ng qayta urinib ko'ring.",
         "notConfigured": "Telegram kirishi serverda hali sozlanmagan. Birozdan so'ng qayta urinib ko'ring."
+      },
+      "pageHeading": "Shaxsiyat testiga kirish",
+      "pageLead": "Ikki yo'l: Telegram orqali shaxsiy kabinet yoki maktabingiz bergan kod.",
+      "personal": {
+        "title": "Shaxsiy kabinet"
+      },
+      "school": {
+        "title": "Maktab uchun",
+        "lead": "Kodni maktabingiz beradi. Akkaunt ochish shart emas.",
+        "openCta": "Maktab uchun",
+        "codeLabel": "Maktab kodi",
+        "codePlaceholder": "XXXX-XXXX",
+        "continueCta": "Davom etish",
+        "errors": {
+          "required": "8 belgili kodni to'liq kiriting.",
+          "invalid": "Kod topilmadi. Maktabingizdan tekshiring.",
+          "rateLimited": "Juda ko'p urinish bo'ldi. Bir necha daqiqadan so'ng qayta urinib ko'ring.",
+          "generic": "Xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
+        }
       }
     },
     "profile": {

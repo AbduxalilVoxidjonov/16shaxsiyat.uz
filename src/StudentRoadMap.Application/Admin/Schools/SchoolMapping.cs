@@ -33,6 +33,7 @@ internal static class SchoolMapping
             publicUrl,
             qrCodeGenerator.GeneratePngBase64(publicUrl),
             school.AccessCode,
+            school.EntryCode is null ? null : SchoolEntryCode.Format(school.EntryCode),
             school.DailyRegistrationLimit,
             school.IsActive,
             school.Notes,

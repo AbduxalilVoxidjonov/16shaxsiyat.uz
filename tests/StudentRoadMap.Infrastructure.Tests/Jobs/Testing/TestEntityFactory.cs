@@ -3,6 +3,7 @@ using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Schools;
 using StudentRoadMap.Domain.Students;
 using StudentRoadMap.Infrastructure.Persistence;
+using StudentRoadMap.Infrastructure.Security;
 
 namespace StudentRoadMap.Infrastructure.Tests.Jobs.Testing;
 
@@ -19,7 +20,7 @@ internal static class TestEntityFactory
         var school = School.Create(
             Guid.NewGuid(), "Test maktabi", "Toshkent", "Chilonzor",
             SchoolSlug.Create($"test-maktabi-{Guid.NewGuid():N}").Value,
-            $"access-{Guid.NewGuid():N}", now);
+            $"access-{Guid.NewGuid():N}", new EntryCodeGenerator().Generate(), now);
 
         var student = Student.Create(
             Guid.NewGuid(), school.Id, studentFullName, new DateOnly(2010, 5, 20), Gender.Male, 9,

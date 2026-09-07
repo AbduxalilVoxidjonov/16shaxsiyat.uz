@@ -16,6 +16,8 @@ import { SchoolLinkHealthBadge } from '../components/SchoolLinkHealthBadge';
 import { SchoolQrModal, type SchoolQrModalData } from '../components/SchoolQrModal';
 import { SchoolFormDialog } from '../components/SchoolFormDialog';
 import { RegenerateLinkDialog } from '../components/RegenerateLinkDialog';
+import { RegenerateEntryCodeDialog } from '../components/RegenerateEntryCodeDialog';
+import { SchoolEntryCodeCell } from '../components/SchoolEntryCodeCell';
 import { SchoolStatsCards } from '../components/SchoolStatsCards';
 
 /** Ma'lumot bo'lmagan matnli maydon uchun `—` (nol bilan chalkashmaydi — nol faqat sonlarda). */
@@ -56,6 +58,13 @@ export default function SchoolDetailPage() {
    * Modal yopilganda tozalanadi — keyingi safar yangilangan `detailQuery` ma'lumoti ishlatiladi.
    */
   const [freshLink, setFreshLink] = useState<Pick<SchoolQrModalData, 'publicUrl' | 'qrCodeBase64'> | null>(null);
+  const [regenerateCodeOpen, setRegenerateCodeOpen] = useState(false);
+  /**
+   * Maktab kodi qayta yaratilgach yangi qiymat DARHOL ko'rinsin (`freshLink` bilan bir xil
+   * sabab): `detailQuery` hali eski kodni qaytarayotgan bo'lishi mumkin. Detail qayta yuklangach
+   * (`updatedAt` o'zgaradi) tozalanadi.
+   */
+  const [freshEntryCode, setFreshEntryCode] = useState<{ updatedAt: string; entryCode: string } | null>(null);
 
   usePageTitle(detailQuery.data?.name ?? t('pages.schoolDetail.title'));
 
@@ -94,6 +103,8 @@ export default function SchoolDetailPage() {
   }
 
   const school = detailQuery.data;
+  const entryCode =
+    freshEntryCode && freshEntryCode.updatedAt === school.updatedAt ? freshEntryCode.entryCode : school.entryCode;
 
   return (
     <div className="flex flex-col gap-4">
@@ -155,6 +166,9 @@ export default function SchoolDetailPage() {
               onShowQr={() => setQrOpen(true)}
             />
           </InfoRow>
+          <InfoRow label={t('schools.detail.info.entryCode')}>
+            <SchoolEntryCodeCell entryCode={entryCode} onRegenerate={() => setRegenerateCodeOpen(true)} />
+          </InfoRow>
           <InfoRow label={t('schools.linkHealth.detailHeading')}>
             <SchoolLinkHealthBadge linkHealth={school.linkHealth} showReason />
           </InfoRow>
@@ -190,6 +204,16 @@ export default function SchoolDetailPage() {
         />
       )}
 
+      {regenerateCodeOpen && (
+        <RegenerateEntryCodeDialog
+          open
+          schoolId={school.id}
+          schoolName={school.name}
+          onClose={() => setRegenerateCodeOpen(false)}
+          onSuccess={(result) => setFreshEntryCode({ updatedAt: school.updatedAt, entryCode: result.entryCode })}
+        />
+      )}
+
       <SchoolQrModal
         open={qrOpen}
         onClose={() => {
@@ -201,6 +225,7 @@ export default function SchoolDetailPage() {
           slug: school.slug,
           publicUrl: freshLink?.publicUrl ?? school.publicUrl,
           qrCodeBase64: freshLink?.qrCodeBase64 ?? school.qrCodeBase64,
+          entryCode,
         }}
       />
     </div>

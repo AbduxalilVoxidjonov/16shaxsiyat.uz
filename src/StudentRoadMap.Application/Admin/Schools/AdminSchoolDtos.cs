@@ -50,6 +50,12 @@ public sealed record AdminSchoolListItemDto(
 /// yarim yo'lda qoldirardi. `docs/07` 3.1 rasman faqat `regenerate-link` javobida QR ko'rsatadi,
 /// lekin bu — o'qish (`GetById`) uchun zararsiz kengaytma (yangi maxfiy ma'lumot chiqarilmaydi,
 /// QR shunchaki `publicUrl`ning grafik ko'rinishi). PM'ga savol: `docs/07`ga rasman kiritilsinmi?
+///
+/// **`EntryCode`** — maktab kodi (`School.EntryCode`), KO'RSATISH shaklida (`XXXX-XXXX`,
+/// `SchoolEntryCode.Format`). `/kirish` → "Maktab uchun" yo'li uchun; havola va QR bilan
+/// bir xil sir darajasida, admin uni maktabga beradi. `AccessCode` (sinf kodi) EMAS.
+/// Admin maktab endpointlari `SchoolsOnly()` bilan cheklangan, shu sabab amalda har doim
+/// to'ldirilgan; tip `string?` — ustun bazada nullable (ommaviy makon uchun `null`).
 /// </summary>
 public sealed record AdminSchoolDetailDto(
     Guid Id,
@@ -63,6 +69,7 @@ public sealed record AdminSchoolDetailDto(
     string PublicUrl,
     string QrCodeBase64,
     string? AccessCode,
+    string? EntryCode,
     int DailyRegistrationLimit,
     bool IsActive,
     string? Notes,

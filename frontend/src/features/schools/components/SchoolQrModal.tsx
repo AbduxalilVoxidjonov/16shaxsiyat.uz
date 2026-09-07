@@ -11,6 +11,8 @@ export interface SchoolQrModalData {
   slug: string;
   publicUrl: string;
   qrCodeBase64: string;
+  /** Maktab kodi (`XXXX-XXXX`) — bor bo'lsa chop etiladigan varaqda havola ostida ko'rinadi. */
+  entryCode?: string | null;
 }
 
 export interface SchoolQrModalProps {
@@ -58,6 +60,12 @@ export function SchoolQrModal({ open, onClose, data, isLoading = false, isError 
             <p className="max-w-xs text-center text-sm break-all text-neutral-600">
               <span className="font-medium">{t('schools.qrModal.linkLabel')}:</span> {data.publicUrl}
             </p>
+            {data.entryCode && (
+              <p className="text-center text-sm text-neutral-600">
+                <span className="font-medium">{t('schools.qrModal.entryCodeLabel')}:</span>{' '}
+                <span className="font-mono font-semibold tracking-widest text-neutral-900">{data.entryCode}</span>
+              </p>
+            )}
           </div>
 
           <div className="flex w-full gap-2">

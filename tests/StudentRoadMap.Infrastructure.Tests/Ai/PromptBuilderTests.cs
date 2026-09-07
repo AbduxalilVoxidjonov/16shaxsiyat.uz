@@ -9,6 +9,7 @@ using StudentRoadMap.Domain.Students;
 using StudentRoadMap.Infrastructure.Ai;
 using StudentRoadMap.Infrastructure.Persistence;
 using StudentRoadMap.Infrastructure.Tests.Testing;
+using StudentRoadMap.Infrastructure.Security;
 
 namespace StudentRoadMap.Infrastructure.Tests.Ai;
 
@@ -53,6 +54,7 @@ public sealed class PromptBuilderTests
         "Chilonzor",
         SchoolSlug.Create($"maktab-{Guid.NewGuid():N}").Value,
         $"access-{Guid.NewGuid():N}",
+        new EntryCodeGenerator().Generate(),
         Now);
 
     private static Student CreateStudent(

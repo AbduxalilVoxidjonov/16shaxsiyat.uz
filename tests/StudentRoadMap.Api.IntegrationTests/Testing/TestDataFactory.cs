@@ -106,6 +106,23 @@ internal static class TestDataFactory
     /// global bayroq bilan `&&` qilinadi (`ShowResultPolicy`). Standart qiymat domendagi
     /// bilan bir xil (`false`) — natijani ko'rishni sinaydigan testlar `true` uzatadi.
     /// </summary>
+    /// <summary>
+    /// Sinov uchun UNIKAL maktab kodi (`SchoolEntryCode` formati) — `ux_schools_entry_code`
+    /// SQLite'da ham kuchda, bitta fixture'da ko'p maktab yaratiladi. Ishlab chiqarish
+    /// generatori (`Infrastructure.Security.EntryCodeGenerator`) `internal` — shu sabab
+    /// bu yerda o'z mini-nusxasi (bir xil alifbo/uzunlik, `RandomNumberGenerator`).
+    /// </summary>
+    public static string NewEntryCode()
+    {
+        var chars = new char[SchoolEntryCode.Length];
+        for (var i = 0; i < chars.Length; i++)
+        {
+            chars[i] = SchoolEntryCode.Alphabet[System.Security.Cryptography.RandomNumberGenerator.GetInt32(SchoolEntryCode.Alphabet.Length)];
+        }
+
+        return new string(chars);
+    }
+
     public static async Task<School> CreateSchoolAsync(
         AppDbContext db,
         DateTimeOffset now,
@@ -115,7 +132,8 @@ internal static class TestDataFactory
         bool isActive = true,
         string? accessCode = null,
         string? region = null,
-        bool showResultToStudent = false)
+        bool showResultToStudent = false,
+        string? entryCode = null)
     {
         var slug = SchoolSlug.Create(slugSeed).Value;
         var school = School.Create(
@@ -125,6 +143,7 @@ internal static class TestDataFactory
             "Chilonzor",
             slug,
             accessToken,
+            entryCode ?? NewEntryCode(),
             now,
             dailyRegistrationLimit: dailyRegistrationLimit,
             accessCode: accessCode);

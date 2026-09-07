@@ -86,6 +86,36 @@ hech qanday yangi ma'lumot bermaydi.
 
 ---
 
+### 1.1a `POST /api/public/schools/resolve-code` — maktab kodi (2026-09-07)
+`/kirish` sahifasidagi **"Maktab uchun"** yo'li: o'quvchi maktab bergan 8 belgili kodni kiritadi,
+server uni maktab havolasining tarkibiy qismlariga aylantiradi. Bu — MAVJUD oqimga (1.1 → 1.2)
+kirish eshigi: mijoz javobdan `/t/{slug}?k={accessToken}` quradi va o'sha yerdan davom etadi.
+Kod bilan kirgan o'quvchi havola bilan kirgan bilan BIR XIL huquqga ega (ikkalasi ham maktab
+tarqatadigan sir). Auth yo'q. Kod **tanada** (URL/loglarga tushmasin).
+
+```json
+{ "code": "7K3M-9XQ2" }
+```
+`code` — xom matn: kichik harf, defis, bo'shliq qabul qilinadi (server normalizatsiya qiladi:
+katta harf, defissiz, 8 belgi, alifbo `ABCDEFGHJKMNPQRSTUVWXYZ23456789`).
+
+**200**
+```json
+{ "slug": "12-maktab-kokand", "accessToken": "…" }
+```
+ID YO'Q (`CLAUDE.md` 8-qoida). Maktab nomi ham yo'q — u 1.1 da keladi.
+
+**404** `SCHOOL_CODE_INVALID` — **BITTA umumiy javob** quyidagi hammasi uchun: format noto'g'ri,
+bunday kod yo'q, maktab nofaol, o'chirilgan, ommaviy makon (unda kod umuman yo'q). 1.1 dagi
+`410 SCHOOL_INACTIVE` bu yerda ATAYLAB qaytarilmaydi — kod yagona sir, "nofaol" ≠ "yo'q"
+farqi kodni sanab chiqayotganga tasdiq bo'lardi. Matn: "Kod topilmadi. Maktabingizdan tekshiring."
+· **400** `VALIDATION_ERROR` (`code` maydoni yo'q) · **429** `RATE_LIMITED` (IP bo'yicha 10/5 daqiqa).
+
+Muvaffaqiyatsiz urinish audit'ga yoziladi (`SchoolCode.ResolveFailed`, IP xeshi, kod qiymatisiz —
+`docs/08` 8-bo'lim); muvaffaqiyat yozilmaydi (keyingi qadam `school_link_views` ga tushadi).
+
+---
+
 ### 1.2 `POST /api/public/sessions`
 Anketa + sessiya ochish.
 
@@ -430,6 +460,7 @@ Tana bo'sh. Har doim `204 No Content` (idempotent), cookie tozalanadi.
 | POST | `/api/admin/schools` | Yaratish; `slug` avtomatik (nom+tuman), band bo'lsa `-2` |
 | PUT | `/api/admin/schools/{id}` | Yangilash |
 | POST | `/api/admin/schools/{id}/regenerate-link` | Yangi `accessToken` → `{ publicUrl, qrCodeBase64 }` |
+| POST | `/api/admin/schools/{id}/regenerate-entry-code` | Yangi maktab kodi → `{ entryCode }` (`XXXX-XXXX`); eski kod darhol yaroqsiz, audit `School.EntryCodeRegenerated` (2026-09-07) |
 | POST | `/api/admin/schools/{id}/toggle-active` | Faol/nofaol |
 | DELETE | `/api/admin/schools/{id}` | Soft delete (o'quvchisi bo'lsa 409) |
 | GET | `/api/admin/schools/link-health` | Tizim bo'yicha "nechta maktab havolasi ishlamaydi" (dashboard banneri) |
@@ -526,8 +557,13 @@ Quyidagi endpoint ayni shu hodisa uchun qo'shildi va shu yerda hujjatlashtirilad
 faqat tasdiq oynasi oqibatni ko'rsatishi uchun.
 
 **`GET /api/admin/schools/{id}` — 200** (`SchoolDetailDto`): `id, name, region, district,
-schoolNumber, contactPerson, contactPhone, slug, publicUrl, qrCodeBase64, accessCode,
+schoolNumber, contactPerson, contactPhone, slug, publicUrl, qrCodeBase64, accessCode, entryCode,
 dailyRegistrationLimit, isActive, notes, createdAt, updatedAt, stats`
+
+`entryCode` (2026-09-07) — maktab kodi, KO'RSATISH shaklida (`"7K3M-9XQ2"`); yaratish (`POST`)
+javobida ham bor — admin uni havola/QR bilan birga maktabga beradi. `accessCode` (ixtiyoriy sinf
+kodi) bilan ALOQASIZ. Ommaviy makon admin maktab endpointlariga kirmaydi, shu sabab amalda doim
+to'ldirilgan (tip `string | null` — ustun nullable).
 
 ```json
 {
@@ -1224,6 +1260,7 @@ sessiyalarning bloklari (`assessment_id IN`), anketa nomlari (`id IN`).
 | `POST /api/public/sessions` | IP bo'yicha 10/soat |
 | `POST /api/public/.../answers` | sessiya bo'yicha 120/daqiqa |
 | `GET /api/public/schools/{slug}` | IP bo'yicha 60/daqiqa |
+| `POST /api/public/schools/resolve-code` | IP bo'yicha 10/5 daqiqa (2026-09-07, `AdminLogin` bilan bir xil qattiqlik) |
 | `POST /api/auth/login` | IP bo'yicha 10/15 daqiqa |
 | `POST /api/auth/telegram` | IP bo'yicha 10/5 daqiqa (P47) |
 | `POST /api/me/sessions` | IP bo'yicha 10/soat (P47, ommaviy sessiya bilan bir xil) |

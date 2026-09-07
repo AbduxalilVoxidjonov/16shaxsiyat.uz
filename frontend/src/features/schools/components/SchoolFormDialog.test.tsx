@@ -16,6 +16,7 @@ const SCHOOL_DETAIL = {
   contactPhone: '+998901234567',
   dailyRegistrationLimit: 500,
   accessCode: null,
+  entryCode: 'ABCD-2345',
   notes: null,
   slug: '12-maktab-qokon',
   publicUrl: 'https://16shaxsiyat.uz/t/12-maktab-qokon?k=abc',

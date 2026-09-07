@@ -12,6 +12,7 @@ using StudentRoadMap.Application.Public.GetSchoolInfo;
 using StudentRoadMap.Application.Public.GetSession;
 using StudentRoadMap.Application.Public.GetStudentResult;
 using StudentRoadMap.Application.Public.GetTestQuestions;
+using StudentRoadMap.Application.Public.ResolveSchoolCode;
 using StudentRoadMap.Application.Public.SaveAnswers;
 using StudentRoadMap.Application.Public.StartSession;
 using StudentRoadMap.Application.Public.StartTest;
@@ -54,6 +55,28 @@ public sealed class PublicSessionController : ControllerBase
     public async Task<ActionResult<GetSchoolInfoResult>> GetSchoolInfo(string slug, [FromQuery(Name = "k")] string? k, CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new GetSchoolInfoQuery(slug, k ?? string.Empty), cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>
+    /// `POST /api/public/schools/resolve-code` — `docs/07` 1.1a. Maktab kodi → `{ slug, accessToken }`;
+    /// mijoz shundan `/t/{slug}?k=` quradi va MAVJUD oqim (1.1 → 1.2) boshlanadi. Kod TANADA
+    /// (loglar/tarixga tushmasin). Barcha rad holatlari — bitta `404 SCHOOL_CODE_INVALID`.
+    /// </summary>
+    [HttpPost("schools/resolve-code")]
+    [EnableRateLimiting(RateLimitSetup.PublicResolveSchoolCode)]
+    [ProducesResponseType(typeof(ResolveSchoolCodeResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests, "application/problem+json")]
+    public async Task<ActionResult<ResolveSchoolCodeResult>> ResolveSchoolCode([FromBody] ResolveSchoolCodeRequest request, CancellationToken cancellationToken)
+    {
+        var command = request.ToCommand(
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers.UserAgent.ToString());
+
+        var result = await _sender.Send(command, cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
     }

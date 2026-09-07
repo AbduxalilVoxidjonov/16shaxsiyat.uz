@@ -9,6 +9,7 @@ import { ROUTES } from '@/shared/config/routes';
 import { AppError } from '@/shared/api/AppError';
 import type { TelegramLoginRequestBody } from '@/shared/api/types';
 import { TelegramLoginButton } from '../components/TelegramLoginButton';
+import { SchoolCodeCard } from '../components/SchoolCodeCard';
 import { readTelegramCallbackParams, stripTelegramCallbackParams } from '../lib/telegramCallback';
 import { useTelegramLogin } from '../api/useTelegramLogin';
 import { usePublicSession } from '../api/usePublicSession';
@@ -56,16 +57,17 @@ const PROMISE_ITEMS = [
 ] as const;
 
 /**
- * `/kirish` — ommaviy foydalanuvchining Telegram orqali kirishi (`docs/07` §2a.1, `docs/08` §2a).
+ * `/kirish` — IKKI TENG yo'l (`docs/07` §2a.1, §1.1a; `docs/08` §2a, §3a):
+ *   1. **Shaxsiy kabinet** — Telegram orqali kirish (mavjud oqim, o'zgarmagan);
+ *   2. **Maktab uchun** — maktab bergan 8 belgili kod (`SchoolCodeCard`): akkaunt ochilmaydi,
+ *      kod `{ slug, accessToken }` ga aylanadi va foydalanuvchi MAVJUD maktab oqimiga
+ *      (`/t/:slug?k=`) o'tadi.
  *
- * Sahifa IKKI holatda ochiladi:
+ * Telegram qismi IKKI holatda ochiladi:
  *   - oddiy tashrif — Telegram widget tugmasi ko'rsatiladi;
  *   - Telegram redirect'i — manzilda `id`, `auth_date`, `hash`… parametrlari bor; ular
  *     O'ZGARTIRILMASDAN `POST /api/auth/telegram` ga yuboriladi, so'ng manzil satridan
  *     darhol tozalanadi (shaxsiy ma'lumot brauzer tarixida qolmasin).
- *
- * Maktab oqimiga (`/t/:slug`) BU SAHIFA umuman aloqador emas: u yerda kirish ham,
- * ro'yxatdan o'tish ham talab qilinmaydi.
  */
 export default function PublicLoginPage() {
   const { t } = useTranslation();
@@ -142,7 +144,7 @@ export default function PublicLoginPage() {
 
   return (
     <section className="wrap py-14 sm:py-20">
-      <div className="relative mx-auto max-w-xl overflow-hidden rounded-5xl border border-line bg-paper-card p-7 shadow-soft sm:p-10">
+      <div className="relative mx-auto max-w-4xl overflow-hidden rounded-5xl border border-line bg-paper-card p-7 shadow-soft sm:p-10">
         <PatternBackdrop className="opacity-25" />
         <GirihStar
           className="animate-spin-slow pointer-events-none absolute -top-24 -right-24 size-64 text-firuza-100"
@@ -150,32 +152,54 @@ export default function PublicLoginPage() {
           aria-hidden="true"
         />
 
-        <div className="relative flex flex-col items-center gap-6 text-center">
-          <div>
+        <div className="relative flex flex-col gap-8">
+          <div className="text-center">
             <p className="eyebrow text-firuza-700">{t('account.login.eyebrow')}</p>
             <h1 className="font-display balance mt-3 text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">
-              {t('account.login.heading')}
+              {t('account.login.pageHeading')}
             </h1>
-            <p className="lead mt-4 text-[15px]">{t('account.login.lead')}</p>
+            <p className="lead mt-4 text-[15px]">{t('account.login.pageLead')}</p>
           </div>
 
-          {isPending ? (
-            <p className="flex items-center gap-2 text-sm text-ink-soft">
-              <Spinner size={18} />
-              {t('account.login.pending')}
-            </p>
-          ) : (
-            <TelegramLoginButton authUrl={authUrl} disabled={login.isPending} />
-          )}
-
-          {errorMessage && (
-            <p
-              role="alert"
-              className="w-full rounded-3xl border border-terakota-200 bg-terakota-50 px-4 py-3 text-sm text-terakota-800"
+          <div className="grid gap-4 sm:grid-cols-2">
+            {/* 1-karta: shaxsiy kabinet (Telegram) — mavjud mantiq o'zgarmagan. */}
+            <section
+              aria-labelledby="telegram-login-heading"
+              className="flex flex-col items-center gap-4 rounded-4xl border border-line bg-paper-deep/50 p-6 text-center"
             >
-              {t(errorMessage)}
-            </p>
-          )}
+              <div>
+                <p className="eyebrow text-firuza-700">{t('account.login.personal.title')}</p>
+                <h2
+                  id="telegram-login-heading"
+                  className="font-display mt-2 text-xl font-extrabold text-ink"
+                >
+                  {t('account.login.heading')}
+                </h2>
+                <p className="mt-3 text-[15px] leading-relaxed text-ink-soft">{t('account.login.lead')}</p>
+              </div>
+
+              {isPending ? (
+                <p className="flex items-center gap-2 text-sm text-ink-soft">
+                  <Spinner size={18} />
+                  {t('account.login.pending')}
+                </p>
+              ) : (
+                <TelegramLoginButton authUrl={authUrl} disabled={login.isPending} />
+              )}
+
+              {errorMessage && (
+                <p
+                  role="alert"
+                  className="w-full rounded-3xl border border-terakota-200 bg-terakota-50 px-4 py-3 text-sm text-terakota-800"
+                >
+                  {t(errorMessage)}
+                </p>
+              )}
+            </section>
+
+            {/* 2-karta: maktab kodi — akkauntsiz, mavjud `/t/:slug` oqimiga eshik. */}
+            <SchoolCodeCard />
+          </div>
 
           <ul className="grid w-full gap-3 text-left sm:grid-cols-3">
             {PROMISE_ITEMS.map(({ key, Icon }) => (

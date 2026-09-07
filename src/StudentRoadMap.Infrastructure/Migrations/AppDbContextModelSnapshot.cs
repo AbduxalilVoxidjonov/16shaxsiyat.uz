@@ -1735,6 +1735,11 @@ namespace StudentRoadMap.Infrastructure.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("district");
 
+                    b.Property<string>("EntryCode")
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("entry_code");
+
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -1797,6 +1802,11 @@ namespace StudentRoadMap.Infrastructure.Migrations
                     b.HasIndex("AccessToken")
                         .IsUnique()
                         .HasDatabaseName("ux_schools_token");
+
+                    b.HasIndex("EntryCode")
+                        .IsUnique()
+                        .HasDatabaseName("ux_schools_entry_code")
+                        .HasFilter("entry_code IS NOT NULL");
 
                     b.HasIndex("Kind")
                         .IsUnique()

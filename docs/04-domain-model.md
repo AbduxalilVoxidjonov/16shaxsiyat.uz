@@ -41,6 +41,7 @@
 | `Kind` | `enum` | **P47** — `School = 1` (maktab havolasi oqimi), `PublicSpace = 2` (ommaviy makon). Bazada AYNAN BITTA `PublicSpace` |
 | `AccessToken` | `string(64)` | Kriptografik random, havolada `?k=` |
 | `AccessCode` | `string(6)?` | Ixtiyoriy qo'shimcha kod |
+| `EntryCode` | `string(8)?` | **Maktab kodi** (2026-09-07) — `/kirish` → "Maktab uchun" yo'li. `Kind = School` uchun HAR DOIM to'ldirilgan (yaratishda avtomatik), `PublicSpace` uchun `null`. Alifbo `SchoolEntryCode.Alphabet` (31 belgi, `0 O 1 I L` yo'q), saqlashda defissiz, ko'rsatishda `XXXX-XXXX`. `AccessCode` bilan ALOQASIZ |
 | `DailyRegistrationLimit` | `int` | Default 500 |
 | `IsActive` | `bool` | |
 | `ShowResultToStudent` | `bool` | **P47** — natija o'quvchiga ko'rsatiladimi. Ilgari GLOBAL `App:ShowResultToStudent` edi; maktablarda default `false`, ommaviy makonda `true` |
@@ -56,7 +57,13 @@
   bo'ladi (`ux_schools_public_space` qisman unikal indeksi — poyga holatiga qarshi yagona
   haqiqiy himoya; domen tekshiruvi niyatni ifodalaydi, DB esa uni kafolatlaydi).
 
-**Metodlar:** `RegenerateAccessToken()`, `Deactivate()`, `Activate()`, `SetShowResultToStudent()`.
+- **2026-09-07:** `EntryCode` maktabni ANIQLAYDI (`ux_schools_entry_code` qisman unikal indeks,
+  `entry_code IS NOT NULL`) va havola bilan BIR XIL huquq beradi — `resolve-code` uni
+  `{ slug, accessToken }` ga aylantiradi. Qayta generatsiya qilinsa eskisi darhol yaroqsiz.
+  Tasodifiylik domen tashqarisida (`Infrastructure.Security.EntryCodeGenerator`), domen
+  (`SchoolEntryCode`) faqat formatni tekshiradi/normalizatsiya qiladi.
+
+**Metodlar:** `RegenerateAccessToken()`, `RegenerateEntryCode()`, `Deactivate()`, `Activate()`, `SetShowResultToStudent()`.
 
 **Fabrikalar:** `Create()` — har doim `Kind = School`; `CreatePublicSpace()` — yagona ommaviy
 makon (faqat `DbSeeder.SeedPublicSpaceAsync` chaqiradi, slug `ommaviy`, `ShowResultToStudent = true`).
@@ -414,6 +421,7 @@ tarzda tuzatiladi (`DbSeeder.ReconcileProgramStatesAsync` — migratsiya emas).
 | `AiAnalysisSucceededEvent` | AI javob berdi | `StudentSnapshot` yangilash, `Status = Analyzed` |
 | `AiAnalysisFailedEvent` | 3 urinish ham muvaffaqiyatsiz | `Status = AnalysisFailed`, alert log |
 | `SchoolLinkRegeneratedEvent` | Havola yangilandi | Audit |
+| `SchoolEntryCodeRegeneratedEvent` | Maktab kodi yangilandi (2026-09-07) | Audit |
 | `TestPublishedEvent` | Superadmin anketani nashr qildi | Katalog keshini tozalash, audit |
 | `TestVersionBumpedEvent` | Nashr qilingan testga savol qo'shildi/olib tashlandi | Audit |
 

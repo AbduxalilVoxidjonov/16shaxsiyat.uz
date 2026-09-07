@@ -15,6 +15,7 @@ public sealed class SchoolTests
         "Qo'qon",
         SchoolSlug.Create("12-son-maktab-qoqon").Value,
         "initial-access-token",
+        "ABCD2345",
         Now);
 
     [Fact]
@@ -42,6 +43,7 @@ public sealed class SchoolTests
             district,
             SchoolSlug.Create("nomi").Value,
             "token",
+            "ABCD2345",
             Now);
 
         act.Should().Throw<ArgumentException>();
@@ -57,6 +59,7 @@ public sealed class SchoolTests
             "Qo'qon",
             SchoolSlug.Create("nomi").Value,
             "token",
+            "ABCD2345",
             Now,
             dailyRegistrationLimit: 0);
 

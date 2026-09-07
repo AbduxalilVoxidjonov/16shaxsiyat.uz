@@ -97,7 +97,7 @@ public sealed class SchoolLinkHealthCriterionTests
     {
         const string token = "kriteriya-qulf-tokeni-0123456789abcdefghij";
         var slug = SchoolSlug.Create("kriteriya-qulf-maktabi").Value;
-        var school = School.Create(Guid.NewGuid(), "Kriteriya Qulf Maktabi", "Toshkent", "Yunusobod", slug, token, Now);
+        var school = School.Create(Guid.NewGuid(), "Kriteriya Qulf Maktabi", "Toshkent", "Yunusobod", slug, token, "KRTR2345", Now);
 
         var context = new FakeSchoolsAppDbContext();
         var executor = new SchoolsInlineAsyncQueryExecutor();
@@ -160,7 +160,7 @@ public sealed class SchoolLinkHealthCriterionTests
 
         var slug = SchoolSlug.Create("sogʻlom-havola-maktabi").Value;
         var school = School.Create(
-            Guid.NewGuid(), "Sog'lom Havola Maktabi", "Toshkent", "Mirzo Ulug'bek", slug, "token-sogʻlom-0123456789abcdefghijkl", Now);
+            Guid.NewGuid(), "Sog'lom Havola Maktabi", "Toshkent", "Mirzo Ulug'bek", slug, "token-sogʻlom-0123456789abcdefghijkl", "SGHM2345", Now);
         context.SchoolList.Add(school);
 
         var (testDefinition, question) = BuildUsableTest();
@@ -189,7 +189,7 @@ public sealed class SchoolLinkHealthCriterionTests
 
         var slug = SchoolSlug.Create("testsiz-dastur-maktabi").Value;
         var school = School.Create(
-            Guid.NewGuid(), "Testsiz Dastur Maktabi", "Andijon", "Asaka", slug, "token-testsiz-0123456789abcdefghijklmn", Now);
+            Guid.NewGuid(), "Testsiz Dastur Maktabi", "Andijon", "Asaka", slug, "token-testsiz-0123456789abcdefghijklmn", "TSTS2345", Now);
         context.SchoolList.Add(school);
 
         // Dastur MAVJUD (`Published` + faol + `Public`), lekin tarkibida yaroqli test yo'q.
@@ -214,7 +214,7 @@ public sealed class SchoolLinkHealthCriterionTests
 
         var slug = SchoolSlug.Create("biriktirilmagan-maktab").Value;
         var school = School.Create(
-            Guid.NewGuid(), "Biriktirilmagan Maktab", "Farg'ona", "Qo'qon", slug, "token-biriktirilmagan-0123456789abcdef", Now);
+            Guid.NewGuid(), "Biriktirilmagan Maktab", "Farg'ona", "Qo'qon", slug, "token-biriktirilmagan-0123456789abcdef", "BRKT2345", Now);
         context.SchoolList.Add(school);
 
         var program = BuildProgram(ProgramStatus.Published, isActive: true, ProgramVisibility.Assigned);

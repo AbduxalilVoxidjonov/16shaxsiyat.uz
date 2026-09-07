@@ -44,6 +44,7 @@ const SCHOOL_DETAIL = {
   contactPhone: '+998901234567',
   dailyRegistrationLimit: 500,
   accessCode: null,
+  entryCode: 'ABCD-2345',
   notes: null,
   slug: SCHOOL_1.slug,
   publicUrl: SCHOOL_1.publicUrl,

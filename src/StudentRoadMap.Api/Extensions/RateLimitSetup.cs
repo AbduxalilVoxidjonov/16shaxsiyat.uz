@@ -66,6 +66,15 @@ public static class RateLimitSetup
     /// </summary>
     public const string PublicUserApi = "PublicUserApi";
 
+    /// <summary>
+    /// `POST /api/public/schools/resolve-code` — IP bo'yicha 10/5 daqiqa, `AdminLogin` bilan
+    /// AYNAN bir xil qattiqlik. Maktab kodi 31^8 fazoda (≈8.5·10^11) — brute-force amalda
+    /// imkonsiz, lekin kod QISQA va qo'lda kiritiladigan sir; siyosat bo'lishi shart
+    /// (`docs/08` 3a). Muvaffaqiyatsiz urinish audit'ga ham yoziladi — bu limit o'sha
+    /// yozuvlar hajmini ham cheklaydi.
+    /// </summary>
+    public const string PublicResolveSchoolCode = "PublicResolveSchoolCode";
+
     /// <summary>Rad etilgan so'rov uchun oyna uzunligi saqlanadigan `HttpContext.Items` kaliti.</summary>
     private const string RetryAfterWindowItemKey = "RateLimit.RetryAfterWindow";
 
@@ -140,6 +149,12 @@ public static class RateLimitSetup
                 partitionKey: GetSessionToken(httpContext),
                 permitLimit: 120,
                 window: TimeSpan.FromMinutes(1)));
+
+            options.AddPolicy(PublicResolveSchoolCode, httpContext => FixedWindow(
+                httpContext,
+                partitionKey: GetClientIp(httpContext),
+                permitLimit: 10,
+                window: TimeSpan.FromMinutes(5)));
 
             options.AddPolicy(PublicTelegramAuth, httpContext => FixedWindow(
                 httpContext,

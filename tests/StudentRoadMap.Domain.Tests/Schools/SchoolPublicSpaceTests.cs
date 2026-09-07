@@ -30,6 +30,7 @@ public sealed class SchoolPublicSpaceTests
             "Qo'qon",
             SchoolSlug.Create("12-son-maktab").Value,
             "token",
+            "ABCD2345",
             Now);
 
         school.Kind.Should().Be(SchoolKind.School);
@@ -93,7 +94,7 @@ public sealed class SchoolPublicSpaceTests
     public void DeactivateVaMarkDeleted_OddiyMaktabda_IshlaydiOzgarishsiz()
     {
         var school = School.Create(
-            Guid.NewGuid(), "12-son maktab", "Farg'ona", "Qo'qon", SchoolSlug.Create("12-son").Value, "token", Now);
+            Guid.NewGuid(), "12-son maktab", "Farg'ona", "Qo'qon", SchoolSlug.Create("12-son").Value, "token", "ABCD2345", Now);
 
         school.Deactivate(Now.AddDays(1));
         school.IsActive.Should().BeFalse();
@@ -107,7 +108,7 @@ public sealed class SchoolPublicSpaceTests
     public void SetShowResultToStudent_BayroqniOzgartiradiVaUpdatedAtniYangilaydi()
     {
         var school = School.Create(
-            Guid.NewGuid(), "12-son maktab", "Farg'ona", "Qo'qon", SchoolSlug.Create("12-son").Value, "token", Now);
+            Guid.NewGuid(), "12-son maktab", "Farg'ona", "Qo'qon", SchoolSlug.Create("12-son").Value, "token", "ABCD2345", Now);
 
         school.SetShowResultToStudent(true, Now.AddDays(3));
 

@@ -35,6 +35,10 @@ internal sealed class SchoolConfiguration : IEntityTypeConfiguration<School>
 
         builder.Property(s => s.AccessToken).HasMaxLength(64).IsRequired();
         builder.Property(s => s.AccessCode).HasMaxLength(6);
+
+        // Maktab kodi (`docs/08` 3a): 8 belgi, saqlashda defissiz. Nullable — ommaviy makon
+        // (`kind = 2`) uchun `null`; `kind = 1` uchun domen (`School.Create`) har doim beradi.
+        builder.Property(s => s.EntryCode).HasMaxLength(SchoolEntryCode.Length);
         builder.Property(s => s.DailyRegistrationLimit).IsRequired().HasDefaultValue(500);
         builder.Property(s => s.IsActive).IsRequired().HasDefaultValue(true);
 
@@ -55,6 +59,15 @@ internal sealed class SchoolConfiguration : IEntityTypeConfiguration<School>
         builder.HasIndex(s => s.AccessToken)
             .IsUnique()
             .HasDatabaseName("ux_schools_token");
+
+        // Kod maktabni ANIQLAYDI (`resolve-code` shu ustun bo'yicha qidiradi) — unikal bo'lishi
+        // shart. Qisman: `NULL` (ommaviy makon) unikallikka kirmaydi. `is_deleted` filtri YO'Q —
+        // o'chirilgan maktab kodi ham qayta berilmaydi (eski qog'oz/ekranlardagi kod boshqa
+        // maktabga olib bormasin).
+        builder.HasIndex(s => s.EntryCode)
+            .IsUnique()
+            .HasFilter("entry_code IS NOT NULL")
+            .HasDatabaseName("ux_schools_entry_code");
 
         // Bazada AYNAN BITTA ommaviy makon bo'lishining HAQIQIY kafolati. Domen tekshiruvi
         // (`School.CreatePublicSpace` yagona kirish nuqtasi + `Deactivate`/`MarkDeleted`

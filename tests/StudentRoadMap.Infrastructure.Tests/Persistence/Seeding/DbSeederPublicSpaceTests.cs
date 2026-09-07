@@ -102,6 +102,7 @@ public sealed class DbSeederPublicSpaceTests
                 "Qo'qon",
                 SchoolSlug.Create("12-son-maktab").Value,
                 "maktab-tokeni",
+                "MKTB2345",
                 Now));
 
             await context.SaveChangesAsync();

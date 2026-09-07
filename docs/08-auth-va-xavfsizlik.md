@@ -148,6 +148,33 @@ hali amal qilayotgan access token ham `401` oladi.
 - Bir xil `(school, normalizedName, birthDate)` — yangi o'quvchi yaratmaydi.
 - Bot himoyasi: MVP'da vaqt asosidagi honeypot maydon; kerak bo'lsa v2'da hCaptcha.
 
+### 3a. Maktab kodi (`School.EntryCode`) — 2026-09-07
+
+Havolaga MUQOBIL kirish eshigi: `/kirish` → "Maktab uchun" → kod → `POST /api/public/schools/resolve-code`
+→ `{ slug, accessToken }` → brauzer `/t/{slug}?k=` ga o'tadi (3-bo'limdagi oqim o'zgarmaydi).
+
+- **Format:** 8 belgi, alifbo `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (31 belgi; `0 O 1 I L` yo'q — kod
+  doskaga yoziladi/telefonda aytiladi). Ko'rsatishda `XXXX-XXXX`, bazada defissiz. Entropiya 31^8 ≈ 8.5·10^11.
+- **Generatsiya:** `RandomNumberGenerator.GetInt32` (`Infrastructure.Security.EntryCodeGenerator`),
+  maktab yaratilganda AVTOMATIK; admin kiritmaydi. Unikal: `ux_schools_entry_code`.
+- **Ommaviy makon** (`Kind = PublicSpace`) kodga EGA EMAS (`null`) — u faqat Telegram orqali.
+- **Tekshirish:** normalizatsiya (katta harf, defis/bo'shliqsiz) → `Kind = School AND IsActive AND
+  NOT IsDeleted` bo'yicha qidiruv. Har qanday rad — BITTA `404 SCHOOL_CODE_INVALID` (nofaol ≠ yo'q
+  farqi oshkor qilinmaydi — kod yagona sir, `410 SCHOOL_INACTIVE` bu yerda yo'q).
+- **Kod tanada**, URL'da emas — server loglari va brauzer tarixiga tushmaydi.
+- **Rate limit:** IP bo'yicha 10 / 5 daqiqa (`RateLimitSetup.PublicResolveSchoolCode`, `AdminLogin` bilan
+  bir xil). Brute-force 31^8 fazoda amalda imkonsiz, lekin kod qisqa va qo'lda kiritiladigan sir —
+  siyosat shart.
+- **Audit:** faqat muvaffaqiyatsiz urinish — `SchoolCode.ResolveFailed` (IP xeshi, User-Agent;
+  kiritilgan kod QIYMATI yozilmaydi, `EntityId` yo'q). Muvaffaqiyat yozilmaydi (havola ochilishi
+  bilan bir ma'noda — keyingi qadam `school_link_views` hisoblagichiga tushadi).
+- **Qayta generatsiya:** `POST /api/admin/schools/{id}/regenerate-entry-code` — eski kod darhol
+  yaroqsiz; audit `School.EntryCodeRegenerated` (kod qiymatisiz, `School.LinkRegenerated` kabi).
+  Havola tokeni va kod MUSTAQIL: biri yangilansa ikkinchisi ishlashda davom etadi.
+- **`AccessCode` bilan farqi:** `AccessCode` — ixtiyoriy 6 raqamli sinf kodi (yuqorida), havola orqali
+  kirganlardan anketada so'raladi, maktabni aniqlamaydi. `EntryCode` — maktabni aniqlaydigan eshik.
+  Kod bilan kirgan o'quvchidan ham (maktabda `AccessCode` bo'lsa) anketada u so'raladi — oqim bir xil.
+
 ---
 
 ## 4. Sessiya tokeni (o'quvchi)
@@ -299,6 +326,8 @@ faqat Production muhitida).
 `Auth.TotpDisabled` (P13 da qo'shildi — 2FA o'chirilishi yoqilishidan ko'ra muhimroq hodisa,
 chunki u himoyani pasaytiradi),
 `Security.RefreshReuse`, `School.Created/Updated/Deleted`, `School.LinkRegenerated`,
+`School.EntryCodeRegenerated` (2026-09-07, kod qiymatisiz), `SchoolCode.ResolveFailed` (2026-09-07 —
+ommaviy `resolve-code` rad etildi: `admin_user_id` va `entity_id` `null`, IP xeshi bor, kod qiymati yo'q),
 `School.ToggledActive`, `Student.Deleted`, `Assessment.Deleted`, `Assessment.AnalysisRerun`,
 `Assessment.ScoresRecalculated`, `AiConfig.Updated`, `AiConfig.KeyChanged` (kalit qiymati emas!),
 `Catalog.QuestionUpdated`, `Export.StudentsDownloaded`.

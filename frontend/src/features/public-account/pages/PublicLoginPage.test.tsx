@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes } from 'react-router';
+import { MemoryRouter, Route, Routes, useLocation, useParams } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
 import { jsonResponse, problemResponse, type Schemas } from '@/test/apiMock';
 import { setPublicAccessToken } from '@/shared/api/publicUserClient';
@@ -49,6 +50,13 @@ const EXPECTED_BODY = {
   hash: HASH,
 };
 
+/** `/t/:slug` stub — maktab oqimiga o'tilganini va `?k=` saqlanganini ko'rsatadi. */
+function LandingStub() {
+  const { slug } = useParams<{ slug: string }>();
+  const { search } = useLocation();
+  return <p>LANDING_STUB {slug} {search}</p>;
+}
+
 function renderPage(initialPath = '/kirish') {
   // Manzil satri MemoryRouter'dan mustaqil — `history.replaceState` aynan brauzer
   // manzilini tozalaydi, shu sabab jsdom URL'i ham mos qo'yiladi.
@@ -62,6 +70,7 @@ function renderPage(initialPath = '/kirish') {
             <Route path="/kirish" element={<PublicLoginPage />} />
             <Route path="/kabinet" element={<p>KABINET_STUB</p>} />
             <Route path="/kabinet/test" element={<p>ANKETA_STUB</p>} />
+            <Route path="/t/:slug" element={<LandingStub />} />
           </Routes>
         </MemoryRouter>
       </ToastProvider>
@@ -92,7 +101,8 @@ describe('PublicLoginPage', () => {
   it("Telegram widgetini MUTLAQ `data-auth-url` bilan ko'rsatadi", () => {
     renderPage();
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Telegram orqali kiring');
+    // Sahifa endi ikki kartali: Telegram sarlavhasi h2 (h1 — umumiy "Shaxsiyat testiga kirish").
+    expect(screen.getByRole('heading', { name: 'Telegram orqali kiring' })).toBeInTheDocument();
     const authUrl = widgetScript()?.getAttribute('data-auth-url');
     // Telegram nisbiy yo'lni qabul qilmaydi — manzil origin bilan birga bo'lishi shart.
     expect(authUrl).toBe(`${window.location.origin}/kirish`);
@@ -237,5 +247,95 @@ describe('PublicLoginPage', () => {
     renderPage();
 
     expect(screen.getByText('KABINET_STUB')).toBeInTheDocument();
+  });
+
+  describe('Maktab uchun (kod bilan kirish)', () => {
+    async function openCodeForm() {
+      const user = userEvent.setup();
+      renderPage();
+      await user.click(screen.getByRole('button', { name: 'Maktab uchun' }));
+      return user;
+    }
+
+    it("ikki teng karta ko'rsatadi: Telegram va Maktab uchun", () => {
+      renderPage();
+
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Shaxsiyat testiga kirish');
+      expect(screen.getByRole('heading', { level: 2, name: 'Telegram orqali kiring' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 2, name: 'Maktab uchun' })).toBeInTheDocument();
+      expect(screen.getByText('Kodni maktabingiz beradi. Akkaunt ochish shart emas.')).toBeInTheDocument();
+      // Telegram widget ham joyida — ikki yo'l bir-biriga xalaqit bermaydi.
+      expect(widgetScript()).not.toBeNull();
+    });
+
+    it("tugma bosilgach kod maydoni ochiladi (autoComplete o'chiq)", async () => {
+      await openCodeForm();
+
+      const input = screen.getByLabelText('Maktab kodi');
+      expect(input).toHaveAttribute('autocomplete', 'off');
+      expect(input).toHaveAttribute('placeholder', 'XXXX-XXXX');
+      expect(screen.getByRole('button', { name: 'Davom etish' })).toBeInTheDocument();
+    });
+
+    it("kodni normalize qilib (katta harf, defissiz) TANADA yuboradi va maktab oqimiga o'tadi", async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(
+          jsonResponse<'ResolveSchoolCodeResult'>({ slug: '12-maktab', accessToken: 'tok' }),
+        );
+      vi.stubGlobal('fetch', fetchMock);
+      const user = await openCodeForm();
+
+      const input = screen.getByLabelText('Maktab kodi');
+      await user.type(input, '7k3m-9xq2');
+      // Ko'rsatish shakli — `XXXX-XXXX`.
+      expect(input).toHaveValue('7K3M-9XQ2');
+      await user.click(screen.getByRole('button', { name: 'Davom etish' }));
+
+      await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(String(url)).toContain('/api/public/schools/resolve-code');
+      expect(init.method).toBe('POST');
+      // Kod URL'da EMAS, tanada; defis/kichik harf yechilgan.
+      expect(String(url)).not.toContain('7K3M');
+      expect(JSON.parse(String(init.body))).toEqual({ code: '7K3M9XQ2' });
+
+      // Mavjud maktab oqimi: `/t/{slug}?k={accessToken}`.
+      expect(await screen.findByText('LANDING_STUB 12-maktab ?k=tok')).toBeInTheDocument();
+    });
+
+    it("to'liq bo'lmagan kod bilan so'rov yuborilmaydi, xato ko'rsatiladi", async () => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+      const user = await openCodeForm();
+
+      await user.type(screen.getByLabelText('Maktab kodi'), '7k3m');
+      await user.click(screen.getByRole('button', { name: 'Davom etish' }));
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(screen.getByRole('alert')).toHaveTextContent("8 belgili kodni to'liq kiriting.");
+    });
+
+    it("404 SCHOOL_CODE_INVALID uchun generic 'Kod topilmadi' xabari", async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(problemResponse('SCHOOL_CODE_INVALID', 404)));
+      const user = await openCodeForm();
+
+      await user.type(screen.getByLabelText('Maktab kodi'), 'ABCD2345');
+      await user.click(screen.getByRole('button', { name: 'Davom etish' }));
+
+      expect(await screen.findByText('Kod topilmadi. Maktabingizdan tekshiring.')).toBeInTheDocument();
+      // Foydalanuvchi shu yerda qoladi — hech qayerga yo'naltirilmaydi.
+      expect(screen.queryByText(/LANDING_STUB/)).not.toBeInTheDocument();
+    });
+
+    it('429 RATE_LIMITED uchun kutish xabari', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(problemResponse('RATE_LIMITED', 429)));
+      const user = await openCodeForm();
+
+      await user.type(screen.getByLabelText('Maktab kodi'), 'ABCD2345');
+      await user.click(screen.getByRole('button', { name: 'Davom etish' }));
+
+      expect(await screen.findByText(/Juda ko'p urinish/)).toBeInTheDocument();
+    });
   });
 });

@@ -36,6 +36,19 @@ public sealed class School : AggregateRoot
 
     public string? AccessCode { get; private set; }
 
+    /// <summary>
+    /// **Maktab kodi** (`SchoolEntryCode`) — `/kirish` sahifasidagi "Maktab uchun" yo'li uchun
+    /// 8 belgili sir; `POST /api/public/schools/resolve-code` uni `{ slug, accessToken }` ga
+    /// aylantiradi. `Kind == School` uchun HAR DOIM to'ldirilgan (yaratishda beriladi),
+    /// `PublicSpace` uchun HAR DOIM `null` — ommaviy makonga kod bilan kirish yo'q, u faqat
+    /// Telegram orqali. Bazada `ux_schools_entry_code` qisman unikal indeksi (`entry_code IS
+    /// NOT NULL`). Saqlash shakli defissiz (`ABCD2345`), ko'rsatishda `ABCD-2345`.
+    ///
+    /// `AccessCode` (ixtiyoriy 6 raqamli "sinf kodi", anketadagi qo'shimcha tekshiruv) bilan
+    /// ALOQASI YO'Q — ikkalasi yonma-yon yashaydi.
+    /// </summary>
+    public string? EntryCode { get; private set; }
+
     public int DailyRegistrationLimit { get; private set; }
 
     public bool IsActive { get; private set; }
@@ -78,6 +91,7 @@ public sealed class School : AggregateRoot
         SchoolSlug slug,
         string accessToken,
         string? accessCode,
+        string? entryCode,
         int dailyRegistrationLimit,
         string? notes,
         SchoolKind kind,
@@ -94,6 +108,7 @@ public sealed class School : AggregateRoot
         Slug = slug;
         AccessToken = accessToken;
         AccessCode = accessCode;
+        EntryCode = entryCode;
         DailyRegistrationLimit = dailyRegistrationLimit;
         Notes = notes;
         Kind = kind;
@@ -110,6 +125,7 @@ public sealed class School : AggregateRoot
         string district,
         SchoolSlug slug,
         string accessToken,
+        string entryCode,
         DateTimeOffset now,
         string? schoolNumber = null,
         string? contactPerson = null,
@@ -138,6 +154,8 @@ public sealed class School : AggregateRoot
             throw new ArgumentException("Havola tokeni bo'sh bo'lishi mumkin emas.", nameof(accessToken));
         }
 
+        EnsureValidEntryCode(entryCode, nameof(entryCode));
+
         if (dailyRegistrationLimit <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(dailyRegistrationLimit), "Kunlik ro'yxatdan o'tish limiti musbat bo'lishi kerak.");
@@ -154,6 +172,7 @@ public sealed class School : AggregateRoot
             slug,
             accessToken,
             accessCode,
+            entryCode,
             dailyRegistrationLimit,
             notes,
             SchoolKind.School,
@@ -208,6 +227,8 @@ public sealed class School : AggregateRoot
             slug,
             accessToken,
             accessCode: null,
+            // Ommaviy makonga kod bilan kirish YO'Q (faqat Telegram) — `docs/08` 3a-bo'lim.
+            entryCode: null,
             dailyRegistrationLimit,
             notes,
             SchoolKind.PublicSpace,
@@ -230,6 +251,22 @@ public sealed class School : AggregateRoot
         UpdatedAt = now;
 
         RaiseDomainEvent(new SchoolLinkRegeneratedEvent(Id, now));
+    }
+
+    /// <summary>
+    /// Maktab kodini qayta generatsiya qiladi — eski kod DARHOL ishlamay qoladi
+    /// (`RegenerateAccessToken` bilan bir xil naqsh; kod ham havola kabi tarqatiladigan sir).
+    /// Ommaviy makonga qo'llanmaydi — unda kod umuman yo'q.
+    /// </summary>
+    public void RegenerateEntryCode(string newEntryCode, DateTimeOffset now)
+    {
+        EnsureNotPublicSpace("Ommaviy makonda maktab kodi yo'q.");
+        EnsureValidEntryCode(newEntryCode, nameof(newEntryCode));
+
+        EntryCode = newEntryCode;
+        UpdatedAt = now;
+
+        RaiseDomainEvent(new SchoolEntryCodeRegeneratedEvent(Id, now));
     }
 
     /// <summary>
@@ -327,6 +364,16 @@ public sealed class School : AggregateRoot
     {
         ShowResultToStudent = showResultToStudent;
         UpdatedAt = now;
+    }
+
+    private static void EnsureValidEntryCode(string entryCode, string paramName)
+    {
+        if (!SchoolEntryCode.IsValid(entryCode))
+        {
+            throw new ArgumentException(
+                $"Maktab kodi {SchoolEntryCode.Length} belgidan, faqat '{SchoolEntryCode.Alphabet}' alifbosidan bo'lishi kerak.",
+                paramName);
+        }
     }
 
     private void EnsureNotPublicSpace(string message)

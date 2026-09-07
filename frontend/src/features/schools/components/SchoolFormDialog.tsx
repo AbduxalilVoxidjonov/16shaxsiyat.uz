@@ -173,8 +173,15 @@ export function SchoolFormDialog({ open, schoolId, onClose }: SchoolFormDialogPr
         await updateSchool.mutateAsync({ id: schoolId, payload });
         toast.show({ variant: 'success', title: t('schools.form.editSuccess') });
       } else {
-        await createSchool.mutateAsync(payload);
-        toast.show({ variant: 'success', title: t('schools.form.createSuccess') });
+        const created = await createSchool.mutateAsync(payload);
+        // Maktab kodi yaratishda avtomatik hosil bo'ladi — admin uni darhol ko'rsin.
+        toast.show({
+          variant: 'success',
+          title: t('schools.form.createSuccess'),
+          description: created.entryCode
+            ? t('schools.form.createSuccessCode', { code: created.entryCode })
+            : undefined,
+        });
       }
       onClose();
     } catch (caught) {

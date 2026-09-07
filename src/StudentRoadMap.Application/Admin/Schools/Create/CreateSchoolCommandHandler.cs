@@ -23,6 +23,11 @@ namespace StudentRoadMap.Application.Admin.Schools.Create;
 /// **`AccessToken`** generatsiyasida ATAYLAB qayta urinish/tekshiruv YO'Q — 32 bayt tasodifiy
 /// qiymatning to'qnashish ehtimoli amalda nolga teng (`docs/08` 3-bo'lim), `ux_schools_token`
 /// baribir DB darajasida himoya qiladi.
+///
+/// **`EntryCode`** (maktab kodi, `docs/08` 3a) — yaratishda AVTOMATIK, admin kiritmaydi.
+/// 8 belgi qisqa bo'lgani uchun `SchoolEntryCodeAllocator` DB'dan tekshirib bo'sh kod tanlaydi;
+/// `ux_schools_entry_code` yakuniy himoya. Javobda (`AdminSchoolDetailDto.EntryCode`) darhol
+/// ko'rinadi — admin uni maktabga havola/QR bilan birga beradi.
 /// </summary>
 internal sealed class CreateSchoolCommandHandler : IRequestHandler<CreateSchoolCommand, Result<AdminSchoolDetailDto>>
 {
@@ -33,6 +38,7 @@ internal sealed class CreateSchoolCommandHandler : IRequestHandler<CreateSchoolC
     private readonly IAsyncQueryExecutor _executor;
     private readonly IDateTime _dateTime;
     private readonly ITokenGenerator _tokenGenerator;
+    private readonly IEntryCodeGenerator _entryCodeGenerator;
     private readonly IAppSettings _appSettings;
     private readonly IIpHasher _ipHasher;
     private readonly IQrCodeGenerator _qrCodeGenerator;
@@ -42,6 +48,7 @@ internal sealed class CreateSchoolCommandHandler : IRequestHandler<CreateSchoolC
         IAsyncQueryExecutor executor,
         IDateTime dateTime,
         ITokenGenerator tokenGenerator,
+        IEntryCodeGenerator entryCodeGenerator,
         IAppSettings appSettings,
         IIpHasher ipHasher,
         IQrCodeGenerator qrCodeGenerator)
@@ -50,6 +57,7 @@ internal sealed class CreateSchoolCommandHandler : IRequestHandler<CreateSchoolC
         _executor = executor;
         _dateTime = dateTime;
         _tokenGenerator = tokenGenerator;
+        _entryCodeGenerator = entryCodeGenerator;
         _appSettings = appSettings;
         _ipHasher = ipHasher;
         _qrCodeGenerator = qrCodeGenerator;
@@ -66,6 +74,9 @@ internal sealed class CreateSchoolCommandHandler : IRequestHandler<CreateSchoolC
         }
 
         var accessToken = _tokenGenerator.GenerateUrlSafeToken(AccessTokenByteLength);
+        var entryCode = await SchoolEntryCodeAllocator
+            .AllocateUniqueAsync(_context, _executor, _entryCodeGenerator, cancellationToken)
+            .ConfigureAwait(false);
 
         var school = School.Create(
             Guid.NewGuid(),
@@ -74,6 +85,7 @@ internal sealed class CreateSchoolCommandHandler : IRequestHandler<CreateSchoolC
             request.District,
             slugResult.Value,
             accessToken,
+            entryCode,
             now,
             schoolNumber: request.SchoolNumber,
             contactPerson: request.ContactPerson,

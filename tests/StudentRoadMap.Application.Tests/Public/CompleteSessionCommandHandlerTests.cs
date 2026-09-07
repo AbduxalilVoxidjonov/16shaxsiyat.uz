@@ -170,6 +170,7 @@ public sealed class CompleteSessionCommandHandlerTests
                 "Chilonzor",
                 SchoolSlug.Create("sinov-maktabi").Value,
                 "access-token-sinov-0123456789abcdef",
+                "SNVM2345",
                 Now.AddDays(-30)));
             Context.AssessmentList.Add(Assessment);
             Context.AssessmentTestList.Add(assessmentTest);

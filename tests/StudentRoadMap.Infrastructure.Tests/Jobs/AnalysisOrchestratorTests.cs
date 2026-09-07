@@ -13,6 +13,7 @@ using StudentRoadMap.Infrastructure.Jobs;
 using StudentRoadMap.Infrastructure.Persistence;
 using StudentRoadMap.Infrastructure.Tests.Jobs.Testing;
 using StudentRoadMap.Infrastructure.Tests.Testing;
+using StudentRoadMap.Infrastructure.Security;
 
 namespace StudentRoadMap.Infrastructure.Tests.Jobs;
 
@@ -60,7 +61,7 @@ public sealed class AnalysisOrchestratorTests
         var school = School.Create(
             Guid.NewGuid(), "Test maktabi", "Toshkent", "Chilonzor",
             SchoolSlug.Create($"test-maktabi-{Guid.NewGuid():N}").Value,
-            $"access-{Guid.NewGuid():N}", Now);
+            $"access-{Guid.NewGuid():N}", new EntryCodeGenerator().Generate(), Now);
 
         var student = Student.Create(
             Guid.NewGuid(), school.Id, "Alisher Karimov", new DateOnly(2010, 5, 20), Gender.Male, 9,
@@ -97,7 +98,7 @@ public sealed class AnalysisOrchestratorTests
         var school = School.Create(
             Guid.NewGuid(), "Test maktabi", "Toshkent", "Chilonzor",
             SchoolSlug.Create($"test-maktabi-{Guid.NewGuid():N}").Value,
-            $"access-{Guid.NewGuid():N}", Now);
+            $"access-{Guid.NewGuid():N}", new EntryCodeGenerator().Generate(), Now);
         var student = Student.Create(Guid.NewGuid(), school.Id, "Botir Yusupov", new DateOnly(2010, 1, 1), Gender.Male, 9, PhoneNumber.Create("901234567").Value, Now, Now);
         var program = AssessmentProgram.Create(Guid.NewGuid(), $"PROG-{Guid.NewGuid():N}"[..12], "Test dasturi", Now);
         var assessment = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, "tok-1", "uz", program.Id, Now, Now.AddDays(7), Now);

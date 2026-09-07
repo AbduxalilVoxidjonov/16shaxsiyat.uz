@@ -174,6 +174,16 @@ public static class ProblemCodes
     /// </summary>
     public const string PublicUserDeleted = "PUBLIC_USER_DELETED";
 
+    // --- Maktab kodi (`School.EntryCode`, `/kirish` → "Maktab uchun") — `docs/06` 6-bo'lim jadvaliga qo'shildi. ---
+
+    /// <summary>
+    /// `POST /api/public/schools/resolve-code` — kod topilmadi. BITTA umumiy kod: format
+    /// noto'g'ri, mavjud emas, maktab nofaol, o'chirilgan, ommaviy makon — hammasi shu (404).
+    /// `SCHOOL_INACTIVE` (410) bu yerda ATAYLAB ishlatilmaydi: kod yagona sir, "nofaol" bilan
+    /// "yo'q" ni farqlash kodni sanab chiqayotganga tasdiq bo'lardi (enumeration).
+    /// </summary>
+    public const string SchoolCodeInvalid = "SCHOOL_CODE_INVALID";
+
     /// <summary>`Error.Code` → HTTP status. Ro'yxatda yo'q kod uchun standart qiymat `409` (domen holat mashinasi konflikti).</summary>
     public static readonly IReadOnlyDictionary<string, int> HttpStatusByCode = new Dictionary<string, int>(StringComparer.Ordinal)
     {
@@ -215,6 +225,7 @@ public static class ProblemCodes
         [TelegramAuthNotConfigured] = StatusCodes.Status503ServiceUnavailable,
         [PublicSpaceNotConfigured] = StatusCodes.Status409Conflict,
         [PublicUserDeleted] = StatusCodes.Status401Unauthorized,
+        [SchoolCodeInvalid] = StatusCodes.Status404NotFound,
     };
 
     /// <summary>Default (`docs/06` jadvaliga kirmagan domen kodlari uchun) — holat mashinasi konflikti.</summary>

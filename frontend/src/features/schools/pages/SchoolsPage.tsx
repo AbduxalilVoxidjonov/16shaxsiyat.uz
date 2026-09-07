@@ -124,6 +124,7 @@ export default function SchoolsPage() {
             slug: qrState.slug,
             publicUrl: qrDetailQuery.data.publicUrl,
             qrCodeBase64: qrDetailQuery.data.qrCodeBase64,
+            entryCode: qrDetailQuery.data.entryCode,
           }
         : null;
 
