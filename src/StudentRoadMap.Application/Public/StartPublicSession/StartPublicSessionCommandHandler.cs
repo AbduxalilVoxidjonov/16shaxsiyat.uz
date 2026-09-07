@@ -14,17 +14,22 @@ namespace StudentRoadMap.Application.Public.StartPublicSession;
 /// <summary>
 /// Ommaviy (maktabsiz) sessiya ochish — `docs/07` 5.4-bo'lim.
 ///
-/// Oqim (maktab oqimidagi BR-1/BR-5 qoidalari AYNAN saqlanadi):
+/// Oqim (maktab oqimidagi BR-1/BR-5 qoidalari AYNAN saqlanadi — `ProgramSessionPolicy`):
 /// 1. Foydalanuvchi mavjudmi (o'chirilgan akkaunt global filtr bilan yashiringan);
 /// 2. Ommaviy makon (`SchoolKind.PublicSpace`) topiladi — yo'q bo'lsa `PUBLIC_SPACE_NOT_CONFIGURED`
 ///    (seed bajarilmagan), faol bo'lmasa `SCHOOL_INACTIVE`;
-/// 3. Shu foydalanuvchining ommaviy makondagi `Student` yozuvi qidiriladi:
-///    tugallanmagan muddati o'tmagan sessiya → `resumed: true`; muddati o'tgan → `Abandoned`
-///    (BR-5); 90 kun ichida yakunlangan → `409 DUPLICATE_ASSESSMENT`;
-/// 4. Dastur tanlanadi (`ProgramAvailability` — maktab oqimi bilan BIR XIL mezon);
-/// 5. Kunlik hisoblagich atomik oshiriladi (faqat YANGI sessiya oldidan — maktab oqimidagi
+/// 3. Shu foydalanuvchining ommaviy makondagi `Student` yozuvi qidiriladi, profil
+///    majburiyligi tekshiriladi (pastga qarang);
+/// 4. Dastur tanlanadi (`ProgramAvailability` — maktab oqimi bilan BIR XIL mezon). Sessiya
+///    holatidan OLDIN: BR-1/BR-5 **`(o'quvchi, dastur)` juftligi** bo'yicha (egasining qarori,
+///    2026-09-07) — makonda bir nechta dastur bo'lsa foydalanuvchi ularning har birini
+///    topshira oladi;
+/// 5. Mavjud `Student` bo'lsa, TANLANGAN DASTUR bo'yicha: tugallanmagan muddati o'tmagan
+///    sessiya → `resumed: true`; muddati o'tgan → `Abandoned` (BR-5); 90 kun ichida
+///    yakunlangan → `409 DUPLICATE_ASSESSMENT`. Boshqa dasturdagi sessiyalar ta'sir qilmaydi;
+/// 6. Kunlik hisoblagich atomik oshiriladi (faqat YANGI sessiya oldidan — maktab oqimidagi
 ///    PM qarori bilan bir xil);
-/// 6. `Assessment` yaratiladi va dastur testlari `AssessmentTestAttacher` bilan biriktiriladi.
+/// 7. `Assessment` yaratiladi va dastur testlari `AssessmentTestAttacher` bilan biriktiriladi.
 ///
 /// **O'quvchi qidirish mezoni maktabnikidan farq qiladi va bu ataylab:** maktabda
 /// `(SchoolId, NormalizedName, BirthDate)` (ro'yxatdan o'tish yo'q, shaxs shu uchlik bilan
@@ -48,7 +53,6 @@ namespace StudentRoadMap.Application.Public.StartPublicSession;
 internal sealed class StartPublicSessionCommandHandler : IRequestHandler<StartPublicSessionCommand, Result<StartSessionResult>>
 {
     private const int SessionTokenByteLength = 32;
-    private static readonly TimeSpan DuplicateWindow = TimeSpan.FromDays(90);
 
     private readonly IAppDbContext _context;
     private readonly IAsyncQueryExecutor _executor;
@@ -110,6 +114,17 @@ internal sealed class StartPublicSessionCommandHandler : IRequestHandler<StartPu
             return Result.Failure<StartSessionResult>(PublicStudentProfile.ValidationFailure(profileErrors));
         }
 
+        // Dastur — sessiya holati tekshiruvidan OLDIN (sinf izohi, 4-qadam): BR-1/BR-5 shu
+        // dastur bo'yicha ishlaydi. `400`/`404` bo'lsa hisoblagich oshirilmaydi, profil
+        // tahriri ham saqlanmaydi (`409` dagi kabi — muvaffaqiyatsiz so'rov hech narsa yozmaydi).
+        var programResult = await ResolveProgramAsync(space.Id, request.ProgramCode, cancellationToken).ConfigureAwait(false);
+        if (programResult.IsFailure)
+        {
+            return Result.Failure<StartSessionResult>(programResult.Error);
+        }
+
+        var program = programResult.Value;
+
         Student student;
         var isNewStudent = existingStudent is null;
 
@@ -124,14 +139,10 @@ internal sealed class StartPublicSessionCommandHandler : IRequestHandler<StartPu
                 return Result.Failure<StartSessionResult>(applyResult.Error);
             }
 
-            // TODO(P30): mijoz tomonida saralash — SQLite `DateTimeOffset` bo'yicha ORDER BY'ni
-            // tarjima qila olmaydi (`StartSessionCommandHandler` dagi bir xil izoh/texnik qarz).
-            var unfinishedCandidates = await _executor.ToListAsync(
-                _context.Assessments
-                    .Where(a => a.StudentId == existingStudent.Id && (a.Status == AssessmentStatus.Draft || a.Status == AssessmentStatus.InProgress)),
-                cancellationToken).ConfigureAwait(false);
-
-            var unfinished = unfinishedCandidates.OrderByDescending(a => a.StartedAt).FirstOrDefault();
+            // Faqat TANLANGAN dasturdagi tugallanmagan sessiya (`ProgramSessionPolicy`).
+            var unfinished = await ProgramSessionPolicy
+                .FindUnfinishedAsync(_context, _executor, existingStudent.Id, program.Id, cancellationToken)
+                .ConfigureAwait(false);
 
             if (unfinished is not null)
             {
@@ -155,15 +166,16 @@ internal sealed class StartPublicSessionCommandHandler : IRequestHandler<StartPu
                 unfinished.MarkAbandoned(now);
             }
 
-            var completedAssessments = await _executor.ToListAsync(
-                _context.Assessments.Where(a => a.StudentId == existingStudent.Id && a.CompletedAt != null),
-                cancellationToken).ConfigureAwait(false);
+            // BR-1 — shu DASTUR bo'yicha 90 kunlik oyna.
+            var hasRecentCompleted = await ProgramSessionPolicy
+                .HasCompletedWithinWindowAsync(_context, _executor, existingStudent.Id, program.Id, now, cancellationToken)
+                .ConfigureAwait(false);
 
-            if (completedAssessments.Any(a => a.CompletedAt!.Value >= now - DuplicateWindow))
+            if (hasRecentCompleted)
             {
                 return Result.Failure<StartSessionResult>(new Error(
                     ProblemCodes.DuplicateAssessment,
-                    "Siz so'nggi 90 kun ichida testni allaqachon yakunlagansiz."));
+                    "Siz so'nggi 90 kun ichida bu dasturni allaqachon yakunlagansiz."));
             }
 
             student = existingStudent;
@@ -179,14 +191,6 @@ internal sealed class StartPublicSessionCommandHandler : IRequestHandler<StartPu
 
             student = createResult.Value;
         }
-
-        var programResult = await ResolveProgramAsync(space.Id, request.ProgramCode, cancellationToken).ConfigureAwait(false);
-        if (programResult.IsFailure)
-        {
-            return Result.Failure<StartSessionResult>(programResult.Error);
-        }
-
-        var program = programResult.Value;
 
         // Kunlik limit — ommaviy makonda ancha katta (`School.DefaultPublicSpaceRegistrationLimit`),
         // lekin mexanizm bir xil: atomik oshirish, faqat YANGI sessiya oldidan.

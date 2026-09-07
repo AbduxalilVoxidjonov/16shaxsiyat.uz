@@ -17,14 +17,20 @@ namespace StudentRoadMap.Application.Public.StartSession;
 ///
 /// Oqim:
 /// 1. Maktabni topish, token (fixed-time) va faollikni tekshirish, ixtiyoriy kirish kodi.
-/// 2. O'quvchini (maktab+normalizatsiyalangan FISH+tug'ilgan sana) qidirish:
+/// 2. O'quvchini (maktab+normalizatsiyalangan FISH+tug'ilgan sana) qidirish.
+/// 3. Dastur tanlanadi (`ResolveProgramAsync`: bitta bo'lsa avtomatik, aks holda `programCode`
+///    shart — `400 PROGRAM_REQUIRED`/`404`). Bu qadam sessiya holati tekshiruvidan OLDIN —
+///    BR-1/BR-5 **`(o'quvchi, dastur)` juftligi** bo'yicha ishlaydi (egasining qarori,
+///    2026-09-07; `ProgramSessionPolicy`), dastur tanlanmaguncha nimani tekshirish noma'lum.
+/// 4. Mavjud o'quvchi bo'lsa, TANLANGAN DASTUR bo'yicha:
 ///    - tugallanmagan (`Draft`/`InProgress`) muddati o'tmagan sessiya bor → shu sessiya qaytariladi (`resumed: true`);
 ///    - tugallanmagan sessiya muddati o'tgan → `Abandoned`ga o'tkaziladi (BR-5), yangi sessiya ochiladi;
 ///    - 90 kun ichida yakunlangan (`CompletedAt != null`) sessiya bor → `409 DUPLICATE_ASSESSMENT`;
-///    - aks holda yangi sessiya ochiladi (mavjud o'quvchi bilan yoki yangi o'quvchi yaratib).
-/// 3. Faqat shu nuqtada — **yangi `Assessment` chindan yaratilishidan oldin** — kunlik ro'yxatdan
+///    - aks holda yangi sessiya ochiladi. BOSHQA dasturdagi sessiyalar (tugallanmagan yoki
+///      yakunlangan) bu qarorga ta'sir qilmaydi — A da yarim qolgan bo'lsa ham B yangi ochiladi.
+/// 5. Faqat shu nuqtada — **yangi `Assessment` chindan yaratilishidan oldin** — kunlik ro'yxatdan
 ///    o'tish hisoblagichi atomik oshiriladi; limitdan oshsa `429` (PM qarori, 2026-08-31: pastga qarang).
-/// 4. Nashr qilingan/faol test bloklari (`DisplayOrder` bo'yicha) biriktiriladi.
+/// 6. Dastur test bloklari (`ProgramTest.DisplayOrder` bo'yicha) biriktiriladi.
 ///
 /// **PM qarori (2026-08-31):** hisoblagich faqat YANGI `Assessment` yaratilganda oshiriladi —
 /// `resumed: true` va `409 DUPLICATE_ASSESSMENT` holatlarida OSHIRILMAYDI. Sabab:
@@ -37,7 +43,6 @@ namespace StudentRoadMap.Application.Public.StartSession;
 internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionCommand, Result<StartSessionResult>>
 {
     private const int SessionTokenByteLength = 32;
-    private static readonly TimeSpan DuplicateWindow = TimeSpan.FromDays(90);
 
     private readonly IAppDbContext _context;
     private readonly IAsyncQueryExecutor _executor;
@@ -112,26 +117,29 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
                 s.BirthDate == request.BirthDate),
             cancellationToken).ConfigureAwait(false);
 
+        // `docs/06` 8-bo'lim (2026-09-02 qaror), `prompts/34` C9-band: dastur tanlanadi —
+        // bo'sh `programCode` + bitta mavjud dastur bo'lsa avtomatik, aks holda aniq
+        // ko'rsatilishi shart. SESSIYA HOLATI TEKSHIRUVIDAN OLDIN: BR-1/BR-5 dastur bo'yicha
+        // ishlaydi (sinf izohi, 3-qadam). Muvaffaqiyatsiz bo'lsa (`400`/`404`) kunlik
+        // hisoblagich OSHIRILMAYDI (assessment hali yaratilmadi).
+        var programResult = await ResolveProgramAsync(school.Id, request.ProgramCode, cancellationToken).ConfigureAwait(false);
+        if (programResult.IsFailure)
+        {
+            return Result.Failure<StartSessionResult>(programResult.Error);
+        }
+
+        var program = programResult.Value;
+
         Student student;
         var isNewStudent = existingStudent is null;
 
         if (existingStudent is not null)
         {
-            // TODO(P30): server tomonida `OrderByDescending(DateTimeOffset)` ataylab ishlatilmayapti
-            // — SQLite provayderi (integratsiya sinovlari muhiti, Docker/PostgreSQL yo'q)
-            // `DateTimeOffset` bo'yicha ORDER BY'ni tarjima qila olmaydi (`NotSupportedException`).
-            // Bu — texnik qarz: sinovlar Postgres'dagi haqiqiy (server-side ORDER BY) so'rov
-            // yo'lini SINAMAYAPTI. BR-1 bo'yicha bitta o'quvchida amalda 0–1 ta tugallanmagan
-            // sessiya bo'lgani uchun mijoz tomonida saralash hozircha xavfsiz (kichik to'plam,
-            // to'g'ri natija), lekin bu faqat vaqtinchalik yechim. P30 (E2E)da Testcontainers
-            // bilan haqiqiy Postgres ustida qayta tekshirilib, kerak bo'lsa server-side
-            // `OrderByDescending`ga qaytariladi.
-            var unfinishedCandidates = await _executor.ToListAsync(
-                _context.Assessments
-                    .Where(a => a.StudentId == existingStudent.Id && (a.Status == AssessmentStatus.Draft || a.Status == AssessmentStatus.InProgress)),
-                cancellationToken).ConfigureAwait(false);
-
-            var unfinished = unfinishedCandidates.OrderByDescending(a => a.StartedAt).FirstOrDefault();
+            // Faqat TANLANGAN dasturdagi tugallanmagan sessiya — boshqa dasturdagi yarim qolgan
+            // sessiya bu dasturni boshlashga to'sqinlik qilmaydi (`ProgramSessionPolicy`).
+            var unfinished = await ProgramSessionPolicy
+                .FindUnfinishedAsync(_context, _executor, existingStudent.Id, program.Id, cancellationToken)
+                .ConfigureAwait(false);
 
             if (unfinished is not null)
             {
@@ -154,20 +162,17 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
                 unfinished.MarkAbandoned(now);
             }
 
-            // TODO(P30): yuqoridagi izohdagi sabab bilan bir xil — `CompletedAt >= ...` server
-            // tomonida SQLite'da tarjima qilinmaydi, shu sabab mijoz tomonida filtrlanadi.
-            var completedAssessments = await _executor.ToListAsync(
-                _context.Assessments.Where(a => a.StudentId == existingStudent.Id && a.CompletedAt != null),
-                cancellationToken).ConfigureAwait(false);
-
-            var hasRecentCompleted = completedAssessments.Any(a => a.CompletedAt!.Value >= now - DuplicateWindow);
+            // BR-1 — shu DASTUR bo'yicha 90 kunlik oyna (boshqa dasturni yakunlagani hisobga olinmaydi).
+            var hasRecentCompleted = await ProgramSessionPolicy
+                .HasCompletedWithinWindowAsync(_context, _executor, existingStudent.Id, program.Id, now, cancellationToken)
+                .ConfigureAwait(false);
 
             if (hasRecentCompleted)
             {
                 // Yangi `Assessment` yaratilmagani uchun kunlik hisoblagich BU YERDA HAM OSHIRILMAYDI.
                 return Result.Failure<StartSessionResult>(new Error(
                     ProblemCodes.DuplicateAssessment,
-                    "Ushbu o'quvchi so'nggi 90 kun ichida testni allaqachon yakunlagan."));
+                    "Ushbu o'quvchi so'nggi 90 kun ichida bu dasturni allaqachon yakunlagan."));
             }
 
             student = existingStudent;
@@ -188,18 +193,6 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
                 parentPhone: parentPhone,
                 email: request.Email);
         }
-
-        // `docs/06` 8-bo'lim (2026-09-02 qaror), `prompts/34` C9-band: dastur tanlanadi —
-        // bo'sh `programCode` + bitta mavjud dastur bo'lsa avtomatik, aks holda aniq
-        // ko'rsatilishi shart. Muvaffaqiyatsiz bo'lsa (`400`/`404`) kunlik hisoblagich
-        // OSHIRILMAYDI (pastdagi "BR-1" izohi bilan bir xil qoida — assessment hali yaratilmadi).
-        var programResult = await ResolveProgramAsync(school.Id, request.ProgramCode, cancellationToken).ConfigureAwait(false);
-        if (programResult.IsFailure)
-        {
-            return Result.Failure<StartSessionResult>(programResult.Error);
-        }
-
-        var program = programResult.Value;
 
         // BR-1 kunlik ro'yxatdan o'tish limiti — FAQAT shu nuqtadan boshlab, ya'ni yangi
         // `Assessment` chindan yaratilishidan oldin, atomik oshiriladi (PM qarori, sinf

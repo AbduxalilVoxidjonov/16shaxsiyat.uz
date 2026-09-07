@@ -146,8 +146,16 @@ Belgilar: **[M]** — Must (MVP majburiy), **[S]** — Should (MVP'da bo'lsa yax
 
 ## 4. Biznes qoidalari (BR)
 
-- **BR-1** Bitta o'quvchi bir maktabda 90 kun ichida faqat bitta **yakunlangan** sessiyaga ega bo'ladi
-  (takror urinish uchun superadmin ruxsat beradi).
+- **BR-1** Bitta o'quvchi bir maktabda **bir dastur bo'yicha** 90 kun ichida faqat bitta
+  **yakunlangan** sessiyaga ega bo'ladi (takror urinish uchun superadmin ruxsat beradi).
+  Oyna `(o'quvchi, dastur)` juftligi bo'yicha hisoblanadi, o'quvchi bo'yicha umumiy EMAS
+  (egasining qarori, 2026-09-07): har dastur — boshqa metodika to'plami, bir odamning
+  ikkinchi dasturni topshirishi "takror" hisoblanmaydi. Maktabga (yoki ommaviy makonga) bir
+  nechta dastur biriktirilgan bo'lsa, o'quvchi ularning har birini alohida topshira oladi.
+  Tugallanmagan sessiyani davom ettirish ham dastur bo'yicha: A dasturda yarim qolgan sessiya
+  A so'ralganda qaytariladi (`resumed`), B so'ralganda esa yangi sessiya ochiladi — shu sabab
+  bir o'quvchida bir vaqtda bir nechta (har dasturda ko'pi bilan bitta) tugallanmagan sessiya
+  bo'lishi mumkin.
 - **BR-2** Sessiya yakunlanmaguncha AI tahlil boshlanmaydi.
 - **BR-3** `ReliabilityScore < 40` bo'lsa, hisobot yuqorisida "natija ishonchsiz bo'lishi mumkin" bayrog'i qo'yiladi.
 - **BR-4** O'chirilgan (nofaol) maktab havolasi 410 Gone qaytaradi.
