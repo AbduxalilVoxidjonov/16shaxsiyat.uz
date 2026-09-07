@@ -45,9 +45,11 @@ function mockFetch(
   stats?: Partial<SchoolStatsDto>,
   status = 200,
   linkHealth?: SchoolDetailDto['linkHealth'],
+  overrides?: Partial<Pick<SchoolDetailDto, 'accessCode'>>,
 ) {
   const detail: SchoolDetailDto = {
     ...BASE_DETAIL,
+    ...overrides,
     stats: { ...BASE_DETAIL.stats, ...stats },
     linkHealth: linkHealth ?? BASE_DETAIL.linkHealth,
   };
@@ -191,7 +193,7 @@ describe('SchoolDetailPage', () => {
 
   /** Maktab kodi (`entryCode`) — `/kirish` → "Maktab uchun" siri; havola/QR yonida turadi. */
   describe('maktab kodi', () => {
-    it("'Maktab kodi' qatorida formatlangan kodni ko'rsatadi, 'Kirish kodi' (sinf kodi) alohida qoladi", async () => {
+    it("'Maktab kodi' qatorida formatlangan kodni ko'rsatadi; `accessCode: null` da 'Eski sinf kodi' qatori umuman yo'q", async () => {
       mockFetch();
       renderDetailPage();
 
@@ -200,8 +202,27 @@ describe('SchoolDetailPage', () => {
       const row = entryCodeRow();
       expect(within(row).getByText('ABCD-2345')).toBeInTheDocument();
       expect(within(row).getByRole('button', { name: 'Maktab kodini nusxalash' })).toBeInTheDocument();
-      // `accessCode` (ixtiyoriy sinf kodi) qatori o'zgarmagan — bu yerda `null` → `—`.
-      expect(screen.getByText('Kirish kodi')).toBeInTheDocument();
+      // Eski qo'lda kiritiladigan "Kirish kodi" admin UI'dan olib tashlangan (2026-09-07):
+      // `null` bo'lsa qator ham, `—` ham chiqmaydi — ikkinchi kod adminni chalg'itmasin.
+      expect(screen.queryByText('Kirish kodi')).toBeNull();
+      expect(screen.queryByText('Eski sinf kodi')).toBeNull();
+    });
+
+    /**
+     * Eski ma'lumot yo'qolib ko'rinmasin: maktabda hali `accessCode` qiymati BO'LSA, u
+     * "Eski sinf kodi" sifatida, "faqat ko'rish uchun" izohi bilan ko'rsatiladi.
+     */
+    it("eski `accessCode` qiymati bo'lsa — 'Eski sinf kodi' qatori izoh bilan ko'rinadi", async () => {
+      mockFetch(undefined, 200, undefined, { accessCode: '123456' });
+      renderDetailPage();
+
+      await screen.findByRole('heading', { name: '12-son maktab' });
+
+      const label = screen.getByText('Eski sinf kodi', { selector: 'dt' });
+      const row = within(label.parentElement!);
+      expect(row.getByText('123456')).toBeInTheDocument();
+      expect(row.getByText(/faqat ko'rish uchun/)).toBeInTheDocument();
+      expect(row.getByText(/O'rnini «Maktab kodi» egalladi/)).toBeInTheDocument();
     });
 
     /**

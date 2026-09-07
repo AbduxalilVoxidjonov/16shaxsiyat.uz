@@ -90,8 +90,10 @@ describe('SchoolFormDialog', () => {
   });
 
   /**
-   * Ikki ustunli tartibga o'tishda regressiya himoyasi: barcha 9 maydon hamon render bo'ladi
-   * va to'ldirilgan forma `POST /api/admin/schools` ga to'g'ri tana bilan ketadi.
+   * Ikki ustunli tartibga o'tishda regressiya himoyasi: barcha 8 maydon hamon render bo'ladi
+   * va to'ldirilgan forma `POST /api/admin/schools` ga to'g'ri tana bilan ketadi. Eski "Kirish
+   * kodi" (`accessCode`) maydoni admin UI'dan olib tashlangan (2026-09-07) — u YO'Q va tanada
+   * ham yuborilmaydi (backend `null` deb qabul qiladi).
    */
   it("yaratish: barcha maydonlar bor, to'ldirilgach POST ketadi va oyna yopiladi", async () => {
     const fetchMock = vi
@@ -119,11 +121,11 @@ describe('SchoolFormDialog', () => {
       "Kunlik ro'yxatdan o'tish limiti",
       "Mas'ul shaxs (F.I.Sh.)",
       'Telefon raqami',
-      'Kirish kodi',
       'Izoh',
     ]) {
       expect(screen.getByLabelText(label)).toBeInTheDocument();
     }
+    expect(screen.queryByLabelText('Kirish kodi')).toBeNull();
 
     await user.type(screen.getByLabelText('Nomi'), '12-son maktab');
     await user.selectOptions(screen.getByLabelText('Viloyat'), "Farg'ona");
@@ -148,6 +150,8 @@ describe('SchoolFormDialog', () => {
     // Bo'sh ixtiyoriy maydonlar `""` sifatida YUBORILMAYDI (`emptyToUndefined`).
     expect(body).not.toHaveProperty('contactPerson');
     expect(body).not.toHaveProperty('notes');
+    // Eskirgan `accessCode` tanada UMUMAN yo'q — `""` ham, `null` ham emas.
+    expect(body).not.toHaveProperty('accessCode');
     expect(await screen.findByText('Maktab yaratildi')).toBeInTheDocument();
   });
 
@@ -166,5 +170,40 @@ describe('SchoolFormDialog', () => {
       expect(screen.getByLabelText('Nomi')).toHaveValue('12-son maktab');
     });
     expect(screen.getByLabelText('Tuman')).toHaveValue("Qo'qon");
+  });
+
+  it("tahrirlashda eski `accessCode` qiymati bo'lsa ham maydon ko'rinmaydi va PUT tanasida yuborilmaydi", async () => {
+    const fetchMock = vi.fn().mockImplementation((_input: RequestInfo | URL, init?: RequestInit) =>
+      Promise.resolve(
+        jsonResponse<'AdminSchoolDetailDto'>({
+          ...SCHOOL_DETAIL,
+          accessCode: '123456',
+          ...(init?.method === 'PUT' ? { updatedAt: '2026-09-07T00:00:00Z' } : {}),
+        }),
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+
+    renderDialog({ open: true, schoolId: 'school-1' });
+    await waitFor(() => {
+      expect(screen.getByLabelText('Nomi')).toHaveValue('12-son maktab');
+    });
+    expect(screen.queryByLabelText('Kirish kodi')).toBeNull();
+    expect(screen.queryByDisplayValue('123456')).toBeNull();
+
+    await user.click(screen.getByText('Saqlash'));
+
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === 'PUT'),
+      ).toBe(true);
+    });
+    const putCall = fetchMock.mock.calls.find(
+      ([, init]) => (init as RequestInit | undefined)?.method === 'PUT',
+    );
+    const body = JSON.parse(String((putCall![1] as RequestInit).body)) as Record<string, unknown>;
+    expect(body).toMatchObject({ name: '12-son maktab', district: "Qo'qon" });
+    expect(body).not.toHaveProperty('accessCode');
   });
 });

@@ -45,7 +45,6 @@ function toFormValues(detail: SchoolDetailDto): SchoolFormValues {
     contactPerson: detail.contactPerson ?? '',
     contactPhone: detail.contactPhone ?? '',
     dailyRegistrationLimit: detail.dailyRegistrationLimit,
-    accessCode: detail.accessCode ?? '',
     notes: detail.notes ?? '',
   };
 }
@@ -86,7 +85,9 @@ function SchoolFormFields({
   /*
     Ikki ustunli tartib (egasining talabi: "uzun ustun emas, ikkitalik ustun qil"). `sm:` dan
     yuqorida ikki ustun, mobilda bitta. Mantiqan juft maydonlar yonma-yon: viloyat/tuman,
-    raqam/limit, mas'ul/telefon. Nomi, kirish kodi (uzun hint) va izoh — to'liq kenglik.
+    raqam/limit, mas'ul/telefon. Nomi va izoh — to'liq kenglik (3 juft + 2 to'liq = grid tekis).
+    Eski qo'lda kiritiladigan "Kirish kodi" (`accessCode`) maydoni 2026-09-07 da olib tashlangan —
+    o'rnini avtomatik `entryCode` ("Maktab kodi") egalladi; ikkinchi kod adminni chalg'itardi.
     Xato/hint matnlari `Input`/`Select`/`Textarea` ichida, maydon ostida chiziladi.
   */
   return (
@@ -136,16 +137,6 @@ function SchoolFormFields({
         {...register('contactPhone')}
       />
       <div className="sm:col-span-2">
-        <Input
-          label={t('schools.form.accessCodeLabel')}
-          hint={t('schools.form.accessCodeHint')}
-          inputMode="numeric"
-          maxLength={6}
-          error={errors.accessCode?.message}
-          {...register('accessCode')}
-        />
-      </div>
-      <div className="sm:col-span-2">
         <Textarea
           label={t('schools.form.notesLabel')}
           hint={t('schools.form.notesHint')}
@@ -160,8 +151,8 @@ function SchoolFormFields({
 /**
  * Yaratish/tahrirlash oynasi — docs/11-ux-va-ekranlar.md A-3; maydonlar `docs/02-biznes-
  * talablar.md` FR-1.1 bo'yicha ("nomi, viloyat, tuman, raqami, mas'ul shaxs, telefon,
- * kunlik limit, kirish kodi, izoh"). Submit tugmasi `Dialog`ning `footer`ida (`children`dan
- * tashqarida) — shu sabab HTML `form`/`form` atributi orqali bog'langan (native submit,
+ * kunlik limit, izoh"; eski `accessCode` admin UI'dan olib tashlangan, FR-1.5). Submit
+ * tugmasi `Dialog`ning `footer`ida (`children`dan tashqarida) — shu sabab HTML `form`/`form` atributi orqali bog'langan (native submit,
  * Enter tugmasi ham ishlaydi).
  */
 export function SchoolFormDialog({ open, schoolId, onClose }: SchoolFormDialogProps) {
@@ -182,7 +173,7 @@ export function SchoolFormDialog({ open, schoolId, onClose }: SchoolFormDialogPr
       contactPerson: emptyToUndefined(values.contactPerson),
       contactPhone: emptyToUndefined(values.contactPhone),
       dailyRegistrationLimit: values.dailyRegistrationLimit,
-      accessCode: emptyToUndefined(values.accessCode),
+      // `accessCode` ATAYLAB yuborilmaydi — backend `null` deb qabul qiladi (eskirgan maydon).
       notes: emptyToUndefined(values.notes),
     };
     try {

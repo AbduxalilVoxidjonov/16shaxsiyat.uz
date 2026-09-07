@@ -58,7 +58,9 @@ Belgilar: **[M]** — Must (MVP majburiy), **[S]** — Should (MVP'da bo'lsa yax
 - FR-1.3 [M] Ommaviy havola shakli: `{FRONTEND_URL}/t/{slug}?k={token}`.
 - FR-1.4 [M] Havolani qayta generatsiya — eski token darhol bekor bo'ladi; tugallanmagan sessiyalar
   o'z tokeni bilan davom etaveradi (sessiya tokeni alohida).
-- FR-1.5 [S] Ixtiyoriy 6 xonali `AccessCode` — yoqilsa, o'quvchi kirish oldidan kod kiritadi.
+- FR-1.5 [S] ~~Ixtiyoriy 6 xonali `AccessCode`~~ — **admin UI'dan olib tashlangan (2026-09-07)**:
+  backend'da ixtiyoriy/eskirgan (`null`; qiymatli eski maktabda tekshiruv ishlashda davom etadi,
+  detalda "Eski sinf kodi" sifatida faqat ko'rinadi). O'rnini avtomatik `EntryCode` ("Maktab kodi", `docs/08` §3a) egalladi.
 - FR-1.6 [M] Maktab bo'yicha kunlik ro'yxatdan o'tish limiti (default 500).
 
 ### FR-2 O'quvchi va sessiya

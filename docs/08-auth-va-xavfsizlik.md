@@ -140,7 +140,8 @@ hali amal qilayotgan access token ham `401` oladi.
 - `IsActive = false` → `410 SCHOOL_INACTIVE`.
 - Qayta generatsiya (`regenerate-link`) — eski token darhol yaroqsiz; hodisa audit'ga yoziladi.
 - Ixtiyoriy `AccessCode` (6 raqam) — sinfda o'qituvchi doskaga yozib beradi; 5 marta xato kod →
-  o'sha IP uchun 10 daqiqa blok.
+  o'sha IP uchun 10 daqiqa blok. **Eskirgan (2026-09-07):** admin UI'dan olib tashlangan, forma
+  uni yubormaydi (backend `null`); qiymatli eski maktabda tekshiruv ishlaydi. O'rnini `EntryCode` egalladi.
 
 **Suiiste'molga qarshi:**
 - Maktab kunlik ro'yxatdan o'tish limiti (`registration_counters` jadvali, atomik `INSERT … ON CONFLICT … +1`).
@@ -171,7 +172,8 @@ Havolaga MUQOBIL kirish eshigi: `/kirish` → "Maktab uchun" → kod → `POST /
 - **Qayta generatsiya:** `POST /api/admin/schools/{id}/regenerate-entry-code` — eski kod darhol
   yaroqsiz; audit `School.EntryCodeRegenerated` (kod qiymatisiz, `School.LinkRegenerated` kabi).
   Havola tokeni va kod MUSTAQIL: biri yangilansa ikkinchisi ishlashda davom etadi.
-- **`AccessCode` bilan farqi:** `AccessCode` — ixtiyoriy 6 raqamli sinf kodi (yuqorida), havola orqali
+- **`AccessCode` bilan farqi:** `AccessCode` — ixtiyoriy 6 raqamli sinf kodi (yuqorida; admin UI'dan
+  olib tashlangan, eskirgan), havola orqali
   kirganlardan anketada so'raladi, maktabni aniqlamaydi. `EntryCode` — maktabni aniqlaydigan eshik.
   Kod bilan kirgan o'quvchidan ham (maktabda `AccessCode` bo'lsa) anketada u so'raladi — oqim bir xil.
 

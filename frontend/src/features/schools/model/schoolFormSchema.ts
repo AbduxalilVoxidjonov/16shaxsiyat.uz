@@ -6,7 +6,8 @@ import { UZBEKISTAN_REGIONS } from './regions';
  * ("Maktab yozuvi: nomi, viloyat, tuman, maktab raqami, mas'ul FISH, telefon, izoh"),
  * `docs/05-database-schema.md` `schools` jadval ustun uzunliklari (`name varchar(200)`,
  * `region`/`district varchar(100)`, `school_number varchar(20)`, `contact_person varchar(150)`,
- * `contact_phone varchar(20)`, `access_code varchar(6)`, `notes varchar(1000)`).
+ * `contact_phone varchar(20)`, `notes varchar(1000)`). `access_code` — admin UI'dan olib
+ * tashlangan (2026-09-07), backend'da ixtiyoriy/eskirgan; o'rnini avtomatik `entryCode` egalladi.
  *
  * Backend yakuniy haqiqat manbai — bu yerdagi tekshiruv faqat tezroq xabar berish uchun
  * (xuddi `features/settings/model/changePasswordSchema.ts`dagi izohdagi naqsh).
@@ -17,7 +18,6 @@ const MAX_SCHOOL_NUMBER_LENGTH = 20;
 const MAX_CONTACT_PERSON_LENGTH = 150;
 const MAX_CONTACT_PHONE_LENGTH = 20;
 const MAX_NOTES_LENGTH = 1000;
-const ACCESS_CODE_LENGTH = 6;
 const MIN_DAILY_LIMIT = 1;
 const MAX_DAILY_LIMIT = 100000;
 const DEFAULT_DAILY_LIMIT = 500;
@@ -81,13 +81,6 @@ export const schoolFormSchema = z.object({
       });
     }
   }),
-  accessCode: z
-    .string()
-    .trim()
-    .optional()
-    .refine((value) => !value || /^\d{6}$/.test(value), {
-      message: `Kirish kodi ${String(ACCESS_CODE_LENGTH)} xonali raqam bo'lishi kerak.`,
-    }),
   notes: optionalTrimmed(
     MAX_NOTES_LENGTH,
     `Izoh ko'pi bilan ${String(MAX_NOTES_LENGTH)} belgidan iborat bo'lishi kerak.`,
@@ -104,6 +97,5 @@ export const SCHOOL_FORM_DEFAULT_VALUES: SchoolFormValues = {
   contactPerson: '',
   contactPhone: '',
   dailyRegistrationLimit: DEFAULT_DAILY_LIMIT,
-  accessCode: '',
   notes: '',
 };

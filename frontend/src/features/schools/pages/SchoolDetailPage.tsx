@@ -184,9 +184,21 @@ export default function SchoolDetailPage() {
           <InfoRow label={t('schools.detail.info.dailyLimit')}>
             {school.dailyRegistrationLimit}
           </InfoRow>
-          <InfoRow label={t('schools.detail.info.accessCode')}>
-            {orDash(school.accessCode)}
-          </InfoRow>
+          {/*
+            Eski qo'lda kiritilgan "sinf kodi" (`accessCode`) — admin UI'dan olib tashlangan
+            (2026-09-07), o'rnini `entryCode` egalladi. FAQAT eski qiymat bo'lsa ko'rsatiladi —
+            ma'lumot jimgina yo'qolib ko'rinmasin; `null` bo'lsa qator umuman chiqmaydi.
+          */}
+          {school.accessCode ? (
+            <InfoRow label={t('schools.detail.info.legacyAccessCode')}>
+              <div className="flex flex-col gap-0.5">
+                <span className="font-mono">{school.accessCode}</span>
+                <span className="text-xs text-neutral-500">
+                  {t('schools.detail.info.legacyAccessCodeHint')}
+                </span>
+              </div>
+            </InfoRow>
+          ) : null}
           <InfoRow label={t('schools.detail.info.createdAt')}>
             {formatDate(school.createdAt)}
           </InfoRow>

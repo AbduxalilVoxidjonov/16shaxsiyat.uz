@@ -349,7 +349,8 @@
         "contactPerson": "Mas'ul shaxs",
         "contactPhone": "Telefon raqami",
         "dailyLimit": "Kunlik ro'yxatdan o'tish limiti",
-        "accessCode": "Kirish kodi",
+        "legacyAccessCode": "Eski sinf kodi",
+        "legacyAccessCodeHint": "Eskirgan qo'lda kiritilgan kod — faqat ko'rish uchun, endi tahrirlanmaydi. O'rnini «Maktab kodi» egalladi.",
         "createdAt": "Yaratilgan sana",
         "link": "Havola",
         "notes": "Izoh",
@@ -449,8 +450,6 @@
       "contactPhoneLabel": "Telefon raqami",
       "contactPhoneHint": "Ixtiyoriy",
       "dailyLimitLabel": "Kunlik ro'yxatdan o'tish limiti",
-      "accessCodeLabel": "Kirish kodi",
-      "accessCodeHint": "Ixtiyoriy — bo'sh qoldirilsa hamma ro'yxatdan o'ta oladi",
       "notesLabel": "Izoh",
       "notesHint": "Ixtiyoriy",
       "submitCreateCta": "Yaratish",
@@ -1707,11 +1706,7 @@
       "allSchools": "Barcha maktablar",
       "from": "Sanadan",
       "to": "Sanagacha",
-      "clearAll": "Filtrlarni tozalash",
-      "source": "Manba",
-      "allSources": "Hammasi",
-      "sourceSchool": "Maktab",
-      "sourcePublic": "Ommaviy makon"
+      "clearAll": "Filtrlarni tozalash"
     },
     "table": {
       "ariaLabel": "Sessiyalar ro'yxati",
@@ -1723,14 +1718,7 @@
       "completedAt": "Yakunlangan",
       "reliability": "Ishonchlilik",
       "emptyTitle": "Sessiya topilmadi",
-      "emptyDescription": "Tanlangan filtrlarga mos sessiya yo'q. Filtrlarni o'zgartirib ko'ring.",
-      "source": "Manba"
-    },
-    "enums": {
-      "source": {
-        "School": "Maktab",
-        "Public": "Ommaviy makon"
-      }
+      "emptyDescription": "Tanlangan filtrlarga mos sessiya yo'q. Filtrlarni o'zgartirib ko'ring."
     }
   },
   "account": {
