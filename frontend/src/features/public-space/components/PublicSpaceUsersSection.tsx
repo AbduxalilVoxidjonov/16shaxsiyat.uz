@@ -11,6 +11,7 @@ import { ROUTES } from '@/shared/config/routes';
 import { formatDate } from '@/shared/lib/formatDate';
 import { formatUzPhone } from '@/shared/lib/formatPhone';
 import { usePublicSpaceUsersQuery } from '../api/usePublicSpaceUsersQuery';
+import { DeletedUserDialog } from './DeletedUserDialog';
 import {
   PUBLIC_USER_STATUS_BADGE_VARIANT,
   PUBLIC_USER_STATUS_FILTERS,
@@ -99,6 +100,7 @@ export function PublicSpaceUsersSection() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [viewingDeletedUser, setViewingDeletedUser] = useState<PublicSpaceUserDto | null>(null);
   const { page, pageSize, sort, setPage, setSort } = useServerTableState({
     defaultSort: { columnId: 'registeredAt', direction: 'desc' },
   });
@@ -233,7 +235,7 @@ export function PublicSpaceUsersSection() {
       id: 'status',
       header: t('publicSpace.users.table.status'),
       cell: (row) => {
-        const displayStatus = toPublicUserDisplayStatus(row.lastAssessment);
+        const displayStatus = toPublicUserDisplayStatus(row);
         return (
           <Badge variant={PUBLIC_USER_STATUS_BADGE_VARIANT[displayStatus]}>
             {t(`publicSpace.users.status.${displayStatus}`)}
@@ -295,6 +297,12 @@ export function PublicSpaceUsersSection() {
         isError={usersQuery.isError}
         onRetry={() => void usersQuery.refetch()}
         onRowClick={(row) => {
+          // O'chirilgan akkaunt — profilga o'tish o'rniga sabab ko'rsatiladi (egasining
+          // talabi, 2026-09-08). O'chirilganlik OXIRGI sessiya holatidan qat'i nazar ustun.
+          if (row.deletedAt != null) {
+            setViewingDeletedUser(row);
+            return;
+          }
           // Anketa to'ldirilmagan — profil yo'q, qator bosilsa hech narsa bo'lmaydi.
           if (!row.studentId) return;
           navigate(ROUTES.admin.studentProfile(row.studentId));
@@ -310,6 +318,13 @@ export function PublicSpaceUsersSection() {
             ? t('publicSpace.users.empty.filteredDescription')
             : t('publicSpace.users.empty.description')
         }
+      />
+
+      <DeletedUserDialog
+        user={viewingDeletedUser}
+        onClose={() => {
+          setViewingDeletedUser(null);
+        }}
       />
     </section>
   );

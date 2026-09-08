@@ -3305,7 +3305,13 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DeleteMyAccountRequest"];
+                    "text/json": components["schemas"]["DeleteMyAccountRequest"];
+                    "application/*+json": components["schemas"]["DeleteMyAccountRequest"];
+                };
+            };
             responses: {
                 /** @description No Content */
                 204: {
@@ -3313,6 +3319,15 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
                 };
                 /** @description Unauthorized */
                 401: {
@@ -6190,6 +6205,10 @@ export interface components {
             /** Format: int32 */
             grade?: number | null;
             assessments: components["schemas"]["AdminPublicUserAssessmentCountsDto"];
+            /** Format: date-time */
+            deletedAt?: string | null;
+            deletionReason?: string | null;
+            deletionComment?: string | null;
             lastAssessment?: components["schemas"]["AdminPublicUserLastAssessmentDto"];
         };
         AdminPublicUserListItemDtoPagedResult: {
@@ -6647,6 +6666,16 @@ export interface components {
             /** Format: int32 */
             displayOrder?: number | null;
             interpretationBands?: components["schemas"]["InterpretationBandDto"][] | null;
+        };
+        /**
+         * `DELETE /api/me` so'rov tanasi (kelishilgan shartnoma, 2026-09-08 — backend hali
+         * deploy qilinmagani uchun QO'LDA to'ldirilgan, keyin haqiqiy generatsiya bilan
+         * solishtiriladi). `reason` — {@link PublicUserDeletionReason} kodi, `comment` —
+         * `Other` tanlanganda majburiy, aks holda ixtiyoriy (≤500 belgi).
+         */
+        DeleteMyAccountRequest: {
+            reason: string;
+            comment?: string | null;
         };
         DisableTotpRequest: {
             currentPassword: string;

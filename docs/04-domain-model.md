@@ -317,18 +317,31 @@ alohida jadval, alohida refresh token jadvali, alohida JWT rol/policy.
 | `CreatedAt` / `UpdatedAt` | `DateTimeOffset` | |
 | `LastLoginAt` | `DateTimeOffset` | Yaratilishda ham to'ldiriladi (kirish = ro'yxatdan o'tish) |
 | `DeletedAt` | `DateTimeOffset?` | Yumshoq o'chirish; `IsDeleted` — hisoblanadigan xususiyat |
+| `DeletionReason` | `PublicUserDeletionReason?` | O'chirish sababi (2026-09-08, egasining qarori) — anonimlashtirish bilan TOZALANMAYDI |
+| `DeletionComment` | `string(500)?` | Ixtiyoriy erkin matnli izoh; `Other` sababida MAJBURIY (validatorda) |
+
+**`PublicUserDeletionReason` enum** (`smallint`, raqamlar `docs/05` 3-bo'limi bilan bir xil):
+`NoLongerNeeded` (1, "Endi kerak emas"), `NotUseful` (2, "Natijalar foydali bo'lmadi"),
+`PrivacyConcern` (3, "Ma'lumotlarim saqlanishini xohlamayman"), `CreatedByMistake`
+(4, "Xato bilan ro'yxatdan o'tganman"), `Other` (5, "Boshqa sabab" — izoh MAJBURIY).
 
 **Invariantlar**
 - `TelegramId > 0` (yaratilishda).
 - O'chirilgan akkauntda hech qanday harakat qilinmaydi (`DomainException("PUBLIC_USER_DELETED")`).
 
-**Metodlar:** `Create()`, `RecordLogin()`, `MarkDeleted()`.
+**Metodlar:** `Create()`, `RecordLogin()`, `MarkDeleted(now, reason, comment?)`.
 
 **Nima uchun yumshoq o'chirish + anonimlashtirish (qattiq o'chirish emas):** `students.public_user_id`
 FK'si va test tarixi (`docs/08`: natijalar 5 yil saqlanadi) qattiq o'chirishda buzilardi.
 `MarkDeleted` shaxsni aniqlovchi BARCHA maydonni (Telegram ID ham) tozalaydi — ya'ni GDPR
 ma'nosidagi "o'chirish" bajariladi, statistika esa anonim qoladi. Telegram ID tozalangani uchun
 bir xil foydalanuvchi qayta kirsa YANGI akkaunt oladi (kutilgan xatti-harakat).
+
+**Sabab/izoh anonimlashtirilmaydi (2026-09-08):** egasining qarori bo'yicha o'chirish
+SO'RALGANDA sabab olinadi va u superadmin ro'yxatida ("nega o'chirilgan") ko'rinishi kerak —
+shu sabab `DeletionReason`/`DeletionComment` boshqa profil maydonlaridan farqli o'laroq
+`MarkDeleted`da TOZALANMAYDI. Idempotent: takroriy chaqiruvda sabab/izoh QAYTA YOZILMAYDI
+(birinchi o'chirishdagi qiymat — haqiqat manbai).
 
 ---
 

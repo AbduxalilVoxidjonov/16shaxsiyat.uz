@@ -107,13 +107,16 @@ export type PublicSpaceUserProgressDto = components['schemas']['AdminPublicUserP
 /**
  * `?status=` filtri qiymatlari (backend `PublicUserStatusFilter`) — OXIRGI sessiya bo'yicha:
  * `never_started` — birorta sessiya yo'q (anketa to'ldirilmagan bo'lsa ham); `in_progress` —
- * oxirgi sessiya yakunlanmagan (`Draft`/`InProgress`/`Abandoned`); `completed` — yakunlangan.
+ * oxirgi sessiya yakunlanmagan (`Draft`/`InProgress`/`Abandoned`); `completed` — yakunlangan;
+ * `deleted` — akkaunt o'chirilgan (2026-09-08, egasining talabi: o'chirilgan akkauntlar
+ * ro'yxatdan yo'qolmaydi, alohida filtrlash mumkin bo'ladi).
  */
 export const PUBLIC_USER_STATUS_FILTERS = [
   'all',
   'never_started',
   'in_progress',
   'completed',
+  'deleted',
 ] as const;
 export type PublicUserStatusFilter = (typeof PUBLIC_USER_STATUS_FILTERS)[number];
 
@@ -147,13 +150,21 @@ export const PUBLIC_USER_DISPLAY_STATUSES = [
   'Analyzed',
   'AnalysisFailed',
   'Abandoned',
+  'Deleted',
   'Unknown',
 ] as const;
 export type PublicUserDisplayStatus = (typeof PUBLIC_USER_DISPLAY_STATUSES)[number];
 
-export function toPublicUserDisplayStatus(
-  lastAssessment: PublicSpaceUserLastAssessmentDto | null | undefined,
-): PublicUserDisplayStatus {
+/**
+ * Qator berilgani — 2026-09-08, egasining talabi: o'chirilgan akkauntlar endi ro'yxatda
+ * turaveradi (`deletedAt != null`), shu sabab holatni faqat oxirgi sessiyadan emas, butun
+ * qatordan hisoblash kerak. O'chirilganlik OXIRGI sessiya holatidan QAT'I NAZAR ustunlik
+ * qiladi — akkaunt tugallangan test bilan o'chirilgan bo'lsa ham ro'yxatda "O'chirilgan"
+ * ko'rinadi, aks holda admin buni payqamay qolardi.
+ */
+export function toPublicUserDisplayStatus(row: PublicSpaceUserDto): PublicUserDisplayStatus {
+  if (row.deletedAt != null) return 'Deleted';
+  const lastAssessment = row.lastAssessment;
   if (!lastAssessment) return 'NotStarted';
   switch (lastAssessment.status) {
     case 'Draft':
@@ -181,5 +192,6 @@ export const PUBLIC_USER_STATUS_BADGE_VARIANT: Record<PublicUserDisplayStatus, B
   Analyzed: 'success',
   AnalysisFailed: 'danger',
   Abandoned: 'warning',
+  Deleted: 'danger',
   Unknown: 'neutral',
 };

@@ -125,8 +125,18 @@ yuborilmaydi.
 (`telegram_id`/`username`/ism/avatar tozalanadi, `deleted_at` qo'yiladi), barcha refresh
 tokenlar bekor qilinadi, `PublicUser.Deleted` audit yoziladi. Qattiq o'chirish emas — test
 natijalari arxivi (§5: 5 yil) va `students.public_user_id` FK saqlanishi kerak. Global query
-filtr (`deleted_at IS NULL`) o'chirilgan akkauntni barcha so'rovlardan yashiradi, shu sabab
-hali amal qilayotgan access token ham `401` oladi.
+filtr (`deleted_at IS NULL`) o'chirilgan akkauntni ODDIY (o'quvchi tomonidagi) so'rovlardan
+yashiradi, shu sabab hali amal qilayotgan access token ham `401` oladi.
+
+**Sabab so'raladi va superadminga ko'rinadi (2026-09-08, egasining qarori):** o'chirishdan
+oldin foydalanuvchi sabab tanlaydi (`reason` — MAJBURIY tana maydoni, `docs/07` §5.5),
+ixtiyoriy izoh qoldirishi mumkin. Bu maydonlar YUQORIDAGI anonimlashtirish bilan
+TOZALANMAYDI — `PublicUser.DeletionReason`/`DeletionComment` sifatida saqlanadi va
+superadmin panelida (`GET /api/admin/public-space/users?status=deleted`) "nega o'chirilgani"
+ko'rinadi. Ya'ni bu yerda ikki xil "ko'rinish" bor: o'quvchining o'zi (yoki uning nomidan
+harakat qiluvchi begona) global filtr tufayli akkauntni ENDI KO'RA OLMAYDI, superadmin esa
+sabab/izoh bilan birga TO'LIQ ko'radi — bu shaxsiy ma'lumot emas, foydalanuvchining o'zi
+bergan fikr-mulohaza, shu sabab maxfiylik siyosatini buzmaydi.
 
 ---
 
@@ -223,6 +233,16 @@ o'zi, adminga murojaat qilmasdan. `public_users` yozuvi anonimlashtiriladi (§2a
 ⚠️ **Ochiq savol (egasiga):** ommaviy makonda yaratilgan `Student` yozuvidagi F.I.Sh./telefon
 bu bosqichda anonimlashtirilmaydi — u BR-1 (takrorlanishni aniqlash) mantig'iga kiradi va
 alohida qaror talab qiladi.
+
+**O'chirish sababi so'raladi va saqlanadi (2026-09-08, egasining qarori):** anonimlashtirish
+o'zi o'zgarmadi (Telegram ID/ism/username/foto baribir tozalanadi), lekin `DELETE /api/me`
+endi `reason` (MAJBURIY, `docs/07` §5.5) va ixtiyoriy `comment` qabul qiladi — bular
+`PublicUser.DeletionReason`/`DeletionComment` sifatida SAQLANADI (boshqa maydonlardan
+farqli o'laroq anonimlashtirish ularga tegmaydi) va superadminga
+`GET /api/admin/public-space/users?status=deleted` orqali ko'rinadi. Bu foydalanuvchi
+maxfiyligini buzmaydi — sababi o'zi ixtiyoriy ravishda bergan fikr, shaxsni aniqlovchi
+ma'lumot emas; o'quvchining o'zi esa akkauntini ENDI KO'RA OLMAYDI (global filtr, yuqoriga
+qarang).
 
 **Voyaga yetmagan ommaviy foydalanuvchi (P47):** `POST /api/me/sessions` da 18 yoshgacha
 bo'lganlar uchun `parentalConsent: true` MAJBURIY; roziliknoma versiyasi (`consent_version`)

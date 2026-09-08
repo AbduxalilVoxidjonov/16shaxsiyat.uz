@@ -27,6 +27,11 @@ internal sealed class PublicUserConfiguration : IEntityTypeConfiguration<PublicU
         builder.Property(u => u.LastLoginAt).IsRequired();
         builder.Property(u => u.DeletedAt);
 
+        // Sabab/izoh (2026-09-08) — anonimlashtirish ularga TEGMAYDI, superadmin ro'yxatida
+        // "nega o'chirilgan" ko'rinishi uchun ATAYLAB saqlanadi (`PublicUser.MarkDeleted`).
+        builder.Property(u => u.DeletionReason).HasColumnName("deletion_reason").HasConversion<short?>();
+        builder.Property(u => u.DeletionComment).HasColumnName("deletion_comment").HasMaxLength(PublicUser.MaxDeletionCommentLength);
+
         // `IsDeleted` — hisoblanadigan xususiyat (`DeletedAt is not null`), ustun EMAS.
         builder.Ignore(u => u.IsDeleted);
 

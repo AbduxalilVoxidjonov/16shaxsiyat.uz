@@ -15,6 +15,11 @@ export interface ConfirmDialogProps {
   cancelLabel?: string;
   confirmVariant?: ButtonVariant;
   isConfirming?: boolean;
+  /**
+   * Tasdiqlash tugmasini o'chirib qo'yadi (`isConfirming`dan MUSTAQIL) — masalan majburiy
+   * tanlov qilinmaguncha (`DeleteAccountDialog` sabab qadami, 2026-09-08).
+   */
+  isConfirmDisabled?: boolean;
   /** Tasdiqlashdan keyingi xato matni (agar mutatsiya muvaffaqiyatsiz bo'lsa). */
   error?: string;
   /**
@@ -42,6 +47,7 @@ export function ConfirmDialog({
   cancelLabel,
   confirmVariant = 'danger',
   isConfirming = false,
+  isConfirmDisabled = false,
   error,
   children,
 }: ConfirmDialogProps) {
@@ -58,7 +64,12 @@ export function ConfirmDialog({
           <Button variant="outline" onClick={onClose} disabled={isConfirming}>
             {cancelLabel ?? t('common.cancel')}
           </Button>
-          <Button variant={confirmVariant} onClick={onConfirm} isLoading={isConfirming}>
+          <Button
+            variant={confirmVariant}
+            onClick={onConfirm}
+            isLoading={isConfirming}
+            disabled={isConfirmDisabled}
+          >
             {confirmLabel ?? t('common.confirm')}
           </Button>
         </>

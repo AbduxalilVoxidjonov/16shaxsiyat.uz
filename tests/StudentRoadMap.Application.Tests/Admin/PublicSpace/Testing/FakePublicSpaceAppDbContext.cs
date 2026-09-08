@@ -16,8 +16,10 @@ namespace StudentRoadMap.Application.Tests.Admin.PublicSpace.Testing;
 /// bilan bir xil naqsh — loyihada mocking kutubxonasi yo'q). Handler tegadigan 5 jadval
 /// xotirada, qolgani `NotSupportedException` — "ortiqcha jadvalga murojaat yo'q" ham sinaladi.
 ///
-/// **Global filtrlar taqlid qilinadi:** `PublicUsers` — `DeletedAt == null`
-/// (`AppDbContext.OnModelCreating`), `Students`/`Assessments` — `!IsDeleted`.
+/// **Global filtrlar taqlid qilinadi:** `Students`/`Assessments` — `!IsDeleted`. `PublicUsers`
+/// FILTRLANMAYDI (2026-09-08): handler HAR DOIM `IgnoreQueryFilters(_context.PublicUsers)`
+/// chaqiradi (o'chirilgan akkauntlar ham ro'yxatga kirishi kerak) — real EF'da bu chaqiruv
+/// global filtrni olib tashlaydi, shu sabab bu yerda ham boshidanoq filtrsiz.
 /// `AssessmentTests` — `Assessment.Tests` navigatsiyasidan yig'iladi (EF'da alohida jadval).
 /// </summary>
 internal sealed class FakePublicSpaceAppDbContext : IAppDbContext
@@ -30,7 +32,7 @@ internal sealed class FakePublicSpaceAppDbContext : IAppDbContext
 
     public List<TestDefinition> TestDefinitionList { get; } = [];
 
-    public IQueryable<PublicUser> PublicUsers => PublicUserList.Where(u => u.DeletedAt == null).AsQueryable();
+    public IQueryable<PublicUser> PublicUsers => PublicUserList.AsQueryable();
 
     public IQueryable<Student> Students => StudentList.Where(s => !s.IsDeleted).AsQueryable();
 

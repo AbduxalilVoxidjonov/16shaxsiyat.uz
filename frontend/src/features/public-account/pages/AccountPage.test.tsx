@@ -397,11 +397,26 @@ describe('AccountPage', () => {
     await screen.findByText('Hali test topshirmagansiz');
 
     await user.click(screen.getByRole('button', { name: "Akkauntni o'chirish" }));
-    await user.click(dialogButton("Ha, o'chirilsin"));
+    // 1-qadam — hozirgi oqibatlar tasdig'i, hali O'CHIRMAYDI.
+    await user.click(dialogButton('Davom etish'));
+    // 2-qadam — sabab MAJBURIY.
+    expect(await screen.findByText("O'chirish sababi")).toBeInTheDocument();
+    await user.click(screen.getByLabelText('Endi kerak emas'));
+    await user.click(dialogButton('Butunlay o\'chirish'));
 
     expect(await screen.findByText('BOSH_SAHIFA_STUB')).toBeInTheDocument();
     expect(usePublicUserStore.getState().accessToken).toBeNull();
     expect(usePublicUserStore.getState().status).toBe('anonymous');
+
+    const deleteCall = fetchMock.mock.calls.find(
+      (call: unknown[]) => (call[1] as RequestInit).method === 'DELETE',
+    );
+    expect(deleteCall).toBeDefined();
+    const body = JSON.parse(String((deleteCall![1] as RequestInit).body)) as {
+      reason: string;
+      comment?: string;
+    };
+    expect(body).toEqual({ reason: 'NoLongerNeeded' });
   });
 
   it("chiqish `logout` so'rovini yuboradi va bosh sahifaga qaytaradi", async () => {

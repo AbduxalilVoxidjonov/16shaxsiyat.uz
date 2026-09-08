@@ -18,7 +18,7 @@ import { ProfileCard } from '../components/ProfileCard';
 import { ResumeAssessmentCard } from '../components/ResumeAssessmentCard';
 import { SavedProfileCard } from '../components/SavedProfileCard';
 import { AssessmentHistoryList } from '../components/AssessmentHistoryList';
-import { DeleteAccountDialog } from '../components/DeleteAccountDialog';
+import { DeleteAccountDialog, type DeleteAccountConfirmPayload } from '../components/DeleteAccountDialog';
 
 function HistorySkeleton() {
   return (
@@ -78,9 +78,9 @@ export default function AccountPage() {
     navigate(ROUTES.marketing.home, { replace: true });
   }
 
-  function handleDelete() {
+  function handleDelete(payload: DeleteAccountConfirmPayload) {
     setDeleteError(undefined);
-    deleteAccount.mutate(undefined, {
+    deleteAccount.mutate(payload, {
       onSuccess: () => {
         setDeleteOpen(false);
         // Server tokenlarni bekor qildi — lokal holat ham darhol tozalanadi.

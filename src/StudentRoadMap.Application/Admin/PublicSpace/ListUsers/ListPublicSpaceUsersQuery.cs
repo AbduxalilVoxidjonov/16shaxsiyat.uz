@@ -9,10 +9,12 @@ namespace StudentRoadMap.Application.Admin.PublicSpace.ListUsers;
 /// ommaviy makonda ro'yxatdan o'tgan foydalanuvchilar (`docs/07` 3.7-bo'lim, 2026-09-07).
 ///
 /// <para>
-/// `Status` — OXIRGI sessiya bo'yicha: `all` (standart) · `never_started` (birorta sessiya
-/// yo'q — anketa to'ldirilmagan bo'lsa ham) · `in_progress` (oxirgi sessiya yakunlanmagan —
-/// `Draft`/`InProgress`/`Abandoned`) · `completed` (oxirgi sessiya yakunlangan —
-/// `CompletedAt != null`). Qiymatlar `PublicUserStatusFilter` da.
+/// `Status` — OXIRGI sessiya bo'yicha: `all` (standart, o'chirilganlar HAM kiradi,
+/// 2026-09-08) · `never_started` (birorta sessiya yo'q — anketa to'ldirilmagan bo'lsa ham) ·
+/// `in_progress` (oxirgi sessiya yakunlanmagan — `Draft`/`InProgress`/`Abandoned`) ·
+/// `completed` (oxirgi sessiya yakunlangan — `CompletedAt != null`) · `deleted` — FAQAT
+/// "ma'lumotimni o'chiring" qilgan akkauntlar (`DeletedAt != null`, sababi bilan). Qiymatlar
+/// `PublicUserStatusFilter` da.
 /// </para>
 /// <para>
 /// `Search` — F.I.Sh. (anketa), Telegram ism/familiya/username bo'yicha (katta-kichik
@@ -40,7 +42,10 @@ public static class PublicUserStatusFilter
     public const string InProgress = "in_progress";
     public const string Completed = "completed";
 
-    public static readonly IReadOnlyList<string> Values = [All, NeverStarted, InProgress, Completed];
+    /// <summary>Faqat "ma'lumotimni o'chiring" qilgan akkauntlar (2026-09-08).</summary>
+    public const string Deleted = "deleted";
+
+    public static readonly IReadOnlyList<string> Values = [All, NeverStarted, InProgress, Completed, Deleted];
 
     /// <summary>Bo'sh → `All`; noma'lum → `null` (validator `400` beradi).</summary>
     public static string? Parse(string? raw)

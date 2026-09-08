@@ -104,7 +104,7 @@ public sealed class PublicUserTests
         var user = CreateUser();
         var deletedAt = Now.AddDays(30);
 
-        user.MarkDeleted(deletedAt);
+        user.MarkDeleted(deletedAt, PublicUserDeletionReason.NoLongerNeeded, "Endi kerak emas");
 
         user.DeletedAt.Should().Be(deletedAt);
         user.IsDeleted.Should().BeTrue();
@@ -114,25 +114,49 @@ public sealed class PublicUserTests
         user.LastName.Should().BeNull();
         user.PhotoUrl.Should().BeNull();
         user.Id.Should().NotBe(Guid.Empty, "yozuv qoladi — `students.public_user_id` FK'si va test tarixi buzilmasin");
+        user.DeletionReason.Should().Be(PublicUserDeletionReason.NoLongerNeeded, "sabab ANONIMLASHTIRISH bilan tozalanmaydi");
+        user.DeletionComment.Should().Be("Endi kerak emas");
+    }
+
+    [Fact]
+    public void MarkDeleted_IzohJudaUzun_Qirqiladi()
+    {
+        var user = CreateUser();
+
+        user.MarkDeleted(Now.AddDays(30), PublicUserDeletionReason.Other, new string('x', PublicUser.MaxDeletionCommentLength + 20));
+
+        user.DeletionComment!.Length.Should().Be(PublicUser.MaxDeletionCommentLength);
+    }
+
+    [Fact]
+    public void MarkDeleted_IzohsizComment_NullQoladi()
+    {
+        var user = CreateUser();
+
+        user.MarkDeleted(Now.AddDays(30), PublicUserDeletionReason.NotUseful);
+
+        user.DeletionComment.Should().BeNull();
     }
 
     [Fact]
     public void MarkDeleted_TakrorChaqirilsa_Idempotent()
     {
         var user = CreateUser();
-        user.MarkDeleted(Now.AddDays(30));
+        user.MarkDeleted(Now.AddDays(30), PublicUserDeletionReason.NoLongerNeeded, "Birinchi sabab");
 
-        var act = () => user.MarkDeleted(Now.AddDays(31));
+        var act = () => user.MarkDeleted(Now.AddDays(31), PublicUserDeletionReason.Other, "Ikkinchi sabab");
 
         act.Should().NotThrow();
         user.DeletedAt.Should().Be(Now.AddDays(30), "birinchi o'chirish vaqti saqlanadi");
+        user.DeletionReason.Should().Be(PublicUserDeletionReason.NoLongerNeeded, "sabab qayta yozilmaydi");
+        user.DeletionComment.Should().Be("Birinchi sabab", "izoh qayta yozilmaydi");
     }
 
     [Fact]
     public void RecordLogin_OchirilganAkkauntda_DomainExceptionOtadi()
     {
         var user = CreateUser();
-        user.MarkDeleted(Now.AddDays(30));
+        user.MarkDeleted(Now.AddDays(30), PublicUserDeletionReason.NoLongerNeeded);
 
         var act = () => user.RecordLogin(Now.AddDays(31));
 

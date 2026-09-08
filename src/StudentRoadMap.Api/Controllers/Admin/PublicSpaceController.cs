@@ -59,7 +59,8 @@ public sealed class PublicSpaceController : ControllerBase
     /// <summary>
     /// `GET /api/admin/public-space/users` — ro'yxatdan o'tgan foydalanuvchilar: kim, qachon,
     /// nechta sessiya, oxirgi sessiya va (yakunlanmagan bo'lsa) qayerda to'xtagan
-    /// (`docs/07` 3.7-bo'lim). `status`: `all|never_started|in_progress|completed`;
+    /// (`docs/07` 3.7-bo'lim). `status`: `all|never_started|in_progress|completed|deleted`
+    /// (`deleted` — 2026-09-08, faqat "ma'lumotimni o'chiring" qilganlar);
     /// `sort`: `registeredAt` (standart `-registeredAt`) yoki `lastLoginAt`.
     /// </summary>
     [HttpGet("users")]

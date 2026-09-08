@@ -81,6 +81,8 @@
 | 2026-08-31 | Lokal git repozitoriysi ochildi (`main` + `feat/*`) | PM.md 6-bo'limidagi git intizomi shuni talab qiladi | `docs/06` 8-bo'lim |
 | 2026-08-31 | EF Core paketlari `9.x` da qulflandi (net10.0 da) | Npgsql'ning EF Core 10 provayderi hali yo'q | `docs/06` 8-bo'lim |
 | 2026-08-31 | **Push qilinmaydi** — faqat lokal commit va branch | Loyiha egasining ko'rsatmasi; repo `AbduxalilVoxidjonov/shaxsiyat` tayyor, keyinroq push qilinadi | shu jurnal |
+| 2026-09-08 | Ommaviy foydalanuvchilar ro'yxatida telefon raqami ko'rsatiladi (manba — anketa, `students.phone`) | Egasining talabi. Telegram Login Widget telefon BERMAYDI, shu sabab `public_users`ga ustun qo'shilmadi — yagona mavjud raqam anketadagi | `docs/07` §3.7 |
+| 2026-09-08 | Akkauntni o'chirishda sabab so'raladi; o'chirilgan akkaunt admin ro'yxatidan YO'QOLMAYDI — "O'chirilgan" holatda sababi bilan turadi | Egasining talabi: "nega ketdi" ko'rinib tursin. Anonimlashtirish qoidasi saqlandi (Telegram ID/ism/username tozalanadi), faqat sabab va izoh qo'shildi | `docs/04` §2.11, `docs/05`, `docs/07` §3.7 va §5.5, `docs/08` |
 
 ---
 

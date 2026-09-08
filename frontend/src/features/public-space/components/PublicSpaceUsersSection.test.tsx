@@ -72,6 +72,47 @@ const NEVER_STARTED_USER = {
   assessments: { total: 0, completed: 0, inProgress: 0 },
 } satisfies Schemas['AdminPublicUserListItemDto'];
 
+/**
+ * Akkaunt o'chirilgan (egasining talabi, 2026-09-08) — oxirgi sessiyasi `Completed` bo'lsa
+ * ham `deletedAt` ustunlik qilishi kerak (`toPublicUserDisplayStatus`).
+ */
+const DELETED_USER = {
+  publicUserId: 'user-deleted',
+  telegram: { firstName: 'Sardor', lastName: null, username: 'sardor_d' },
+  registeredAt: '2026-08-01T10:00:00Z',
+  lastLoginAt: '2026-08-10T10:00:00Z',
+  studentId: 'student-3',
+  fullName: 'Sardorov Sardor',
+  age: 20,
+  grade: null,
+  assessments: { total: 1, completed: 1, inProgress: 0 },
+  deletedAt: '2026-09-07T12:00:00Z',
+  deletionReason: 'PrivacyConcern',
+  deletionComment: "Ma'lumotlarim ko'p yig'ilib ketdi",
+  lastAssessment: {
+    id: 'assessment-3',
+    status: 'Completed',
+    startedAt: '2026-08-01T10:00:00Z',
+    completedAt: '2026-08-01T10:40:00Z',
+  },
+} satisfies Schemas['AdminPublicUserListItemDto'];
+
+/** O'chirilgan, lekin sabab yozilmagan — eski o'chirishlar uchun ("ma'lumot yo'q ≠ nol"). */
+const DELETED_USER_NO_REASON = {
+  publicUserId: 'user-deleted-no-reason',
+  telegram: { firstName: null, lastName: null, username: 'eski_ochirilgan' },
+  registeredAt: '2026-07-01T10:00:00Z',
+  lastLoginAt: '2026-07-05T10:00:00Z',
+  studentId: null,
+  fullName: null,
+  age: null,
+  grade: null,
+  assessments: { total: 0, completed: 0, inProgress: 0 },
+  deletedAt: '2026-07-06T09:00:00Z',
+  deletionReason: null,
+  deletionComment: null,
+} satisfies Schemas['AdminPublicUserListItemDto'];
+
 interface FetchMockOptions {
   users?: Schemas['AdminPublicUserListItemDto'][];
   errorStatus?: number;
@@ -281,5 +322,67 @@ describe('PublicSpaceUsersSection', () => {
 
     await screen.findByText('Ali Valiyev');
     expect(container.textContent ?? '').not.toMatch(/maktab/i);
+  });
+
+  it(
+    "o'chirilgan akkaunt oxirgi sessiya `Completed` bo'lsa ham “O'chirilgan” badge bilan " +
+      'chiqadi (o‘chirilganlik ustun)',
+    async () => {
+      mockFetch({ users: [DELETED_USER] });
+      renderSection();
+
+      const row = (await screen.findByText('Sardor')).closest('tr');
+      expect(row).not.toBeNull();
+      expect(within(row!).getByText("O'chirilgan")).toBeInTheDocument();
+      expect(within(row!).queryByText('Tugallangan')).not.toBeInTheDocument();
+    },
+  );
+
+  it("o'chirilgan qatorga bosilsa profilga o'TILMAYDI, sabab dialogi ochiladi", async () => {
+    mockFetch({ users: [DELETED_USER] });
+    const user = userEvent.setup();
+    renderSection();
+
+    const row = (await screen.findByText('Sardor')).closest('tr');
+    expect(row).not.toBeNull();
+    await user.click(row!);
+
+    // Navigatsiya YO'Q.
+    expect(screen.queryByText('STUDENT_PROFILE_STUB')).not.toBeInTheDocument();
+    // Sabab dialogi ochildi va matn ko'rinadi.
+    expect(await screen.findByText("Akkaunt o'chirilgan")).toBeInTheDocument();
+    expect(screen.getByText('07.09.2026', { exact: false })).toBeInTheDocument();
+    expect(
+      screen.getByText("Ma'lumotlarim saqlanishini xohlamayman"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Ma'lumotlarim ko'p yig'ilib ketdi")).toBeInTheDocument();
+    expect(screen.getByText("O'quvchi profili")).toHaveAttribute(
+      'href',
+      '/admin/students/student-3',
+    );
+  });
+
+  it("sababsiz o'chirilgan akkauntda \"Sabab ko'rsatilmagan\" ko'rsatiladi", async () => {
+    mockFetch({ users: [DELETED_USER_NO_REASON] });
+    const user = userEvent.setup();
+    renderSection();
+
+    const row = (await screen.findByText('@eski_ochirilgan')).closest('tr');
+    expect(row).not.toBeNull();
+    await user.click(row!);
+
+    expect(await screen.findByText("Akkaunt o'chirilgan")).toBeInTheDocument();
+    expect(screen.getByText('Sabab ko\'rsatilmagan')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: "O'quvchi profili" })).not.toBeInTheDocument();
+  });
+
+  it('holat filtrida “O‘chirilgan” tanlovi mavjud', async () => {
+    mockFetch();
+    renderSection();
+
+    await screen.findByText('Ali Valiyev');
+    const select = screen.getByLabelText('Holat') as HTMLSelectElement;
+    const optionLabels = Array.from(select.options).map((option) => option.textContent);
+    expect(optionLabels).toContain("O'chirilgan");
   });
 });

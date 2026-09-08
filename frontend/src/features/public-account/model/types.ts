@@ -12,3 +12,10 @@ export type MyStudentProfile = components['schemas']['MyStudentProfileDto'];
  * anketa maydonlari, lekin `languageCode`/`programCode` YO'Q (ular sessiyaga tegishli).
  */
 export type UpdateStudentProfileRequestBody = components['schemas']['UpdateStudentProfileRequest'];
+
+/**
+ * `DELETE /api/me` tanasi (`docs/07` §5.5, 2026-09-08 kengaytmasi) — ikki qadamli o'chirish
+ * oqimining ikkinchi qadamida to'ldiriladi. `reason` — {@link PublicUserDeletionReason}
+ * (`shared/config/accountDeletion.ts`, ikkita feature ishlatgani uchun u yerda).
+ */
+export type DeleteMyAccountRequestBody = components['schemas']['DeleteMyAccountRequest'];

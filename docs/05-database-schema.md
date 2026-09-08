@@ -579,6 +579,7 @@ alter table admin_users add column pending_totp_created_at timestamptz null;
 | `AiAnalysisStatus` | 0 Pending, 1 Running, 2 Succeeded, 3 Failed |
 | `AdminRole` | 1 SuperAdmin, 2 SchoolAdmin (v2), 3 Psychologist (v2) |
 | `SchoolKind` | 1 School (maktab havolasi oqimi), 2 PublicSpace (ommaviy makon) — `schools.kind` |
+| `PublicUserDeletionReason` | 1 NoLongerNeeded, 2 NotUseful, 3 PrivacyConcern, 4 CreatedByMistake, 5 Other — `public_users.deletion_reason` (2026-09-08) |
 
 ---
 
@@ -590,6 +591,21 @@ unikal kod bilan to'ldiriladi (`DO $$ ... $$` bloki: pgcrypto `gen_random_bytes`
 rejection sampling `< 248` → `% 31`, alifbo `ABCDEFGHJKMNPQRSTUVWXYZ23456789`, to'qnashishda
 qayta urinish) → indeks. `SET NOT NULL` QILINMAYDI — ommaviy makon (`kind = 2`) `NULL` qoladi;
 "`kind = 1` uchun doim bor" invariantini domen kafolatlaydi. `EntryCodeMigrationTests`.
+
+### 2026-09-08 da qo'shilgan — o'chirish sababi (migratsiya `AddPublicUserDeletionReason`)
+
+Egasining qarori: "ma'lumotimni o'chiring" so'ralganda sabab olinadi va superadminga
+ko'rinadigan holda saqlanadi.
+
+```sql
+alter table public_users add column deletion_reason smallint null;
+alter table public_users add column deletion_comment varchar(500) null;
+```
+
+Faqat qo'shimcha, nullable ustunlar — destruktiv o'zgarish yo'q, backfill shart emas (mavjud
+o'chirilgan yozuvlarda ikkalasi `NULL` qoladi — eski sabab noma'lum, buzib ko'rsatilmaydi).
+Anonimlashtirish (`telegram_id`/`username`/`first_name`/`last_name`/`photo_url` → `NULL`)
+bu ikki ustunga TEGMAYDI (`PublicUser.MarkDeleted`).
 
 ## 4. Migratsiya siyosati
 

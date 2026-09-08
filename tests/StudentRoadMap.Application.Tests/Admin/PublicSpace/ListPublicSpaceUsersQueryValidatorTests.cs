@@ -14,6 +14,7 @@ public sealed class ListPublicSpaceUsersQueryValidatorTests
     [InlineData("never_started")]
     [InlineData("IN_PROGRESS")]
     [InlineData("completed")]
+    [InlineData("deleted")]
     public void Status_RuxsatEtilganQiymatlar_OTadi(string? status)
     {
         var result = _validator.Validate(new ListPublicSpaceUsersQuery(null, status, 1, 20, null));

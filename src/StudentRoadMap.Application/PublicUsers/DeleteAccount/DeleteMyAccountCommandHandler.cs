@@ -1,4 +1,5 @@
 using MediatR;
+using StudentRoadMap.Application.Admin.Common;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.PublicUsers.Common;
 using StudentRoadMap.Domain.Common;
@@ -7,16 +8,20 @@ using StudentRoadMap.Domain.Identity;
 namespace StudentRoadMap.Application.PublicUsers.DeleteAccount;
 
 /// <summary>
-/// "Ma'lumotimni o'chiring" (self-service, `docs/08` 5-bo'lim). Uch qadam:
-/// 1. `PublicUser.MarkDeleted` — Telegram ID va profil maydonlari tozalanadi (idempotent);
+/// "Ma'lumotimni o'chiring" (self-service, `docs/08` 5-bo'lim; sabab so'rash — egasining
+/// 2026-09-08 qarori). To'rt qadam:
+/// 1. `PublicUser.MarkDeleted` — Telegram ID va profil maydonlari tozalanadi (idempotent),
+///    sabab/izoh esa SAQLANADI (superadmin ro'yxatida ko'rinishi uchun);
 /// 2. BARCHA faol refresh tokenlar bekor qilinadi — mavjud qurilmalar darhol chiqariladi
 ///    (access token 30 daqiqagacha "tirik" qoladi, lekin `GET /api/me` global filtr tufayli
 ///    baribir `401` beradi);
-/// 3. audit (`PublicUser.Deleted`).
+/// 3. audit (`PublicUser.Deleted`) — FAQAT sabab KODI (`afterJson`), erkin matnli izoh
+///    audit logga YOZILMAYDI (u foydalanuvchi matni, `audit_logs`da kerak emas).
 ///
 /// **Qattiq o'chirish (hard delete) qilinmaydi** — sabab domen qatlamida yozilgan
 /// (`PublicUser.MarkDeleted` izohi: `students.public_user_id` FK'si va 5 yillik natija
-/// arxivi). Idempotent: takroriy chaqiruv `204` qaytaradi.
+/// arxivi). Idempotent: takroriy chaqiruv `204` qaytaradi va sabab QAYTA YOZILMAYDI
+/// (`request.Reason`/`Comment` shu holatda e'tiborga olinmaydi — `user is null`).
 ///
 /// ⚠️ **Ochiq savol (egasiga):** ommaviy makonda yaratilgan `Student` yozuvidagi F.I.Sh./
 /// telefon SHU BOSQICHDA anonimlashtirilmaydi — vazifa shartida faqat `MarkDeleted` va
@@ -56,7 +61,9 @@ internal sealed class DeleteMyAccountCommandHandler : IRequestHandler<DeleteMyAc
             return Result.Success();
         }
 
-        user.MarkDeleted(now);
+        // `request.Reason` bu yerga `null` bo'lib yeta olmaydi — validator (`NotNull`)
+        // handlerdan OLDIN ishlaydi (`ValidationBehavior`).
+        user.MarkDeleted(now, request.Reason!.Value, request.Comment);
 
         var activeTokens = await _executor.ToListAsync(
             _context.PublicRefreshTokens.Where(t => t.PublicUserId == user.Id && t.RevokedAt == null),
@@ -72,6 +79,7 @@ internal sealed class DeleteMyAccountCommandHandler : IRequestHandler<DeleteMyAc
             now,
             entityType: PublicAuditActions.PublicUserEntityType,
             entityId: user.Id,
+            afterJson: AuditSnapshot.Serialize(new { Reason = request.Reason.Value.ToString() }),
             ipHash: _ipHasher.Hash(request.IpAddress)));
 
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

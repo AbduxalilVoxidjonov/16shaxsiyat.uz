@@ -9,6 +9,7 @@ using StudentRoadMap.Application.Public.StartSession;
 using StudentRoadMap.Application.PublicUsers.Common;
 using StudentRoadMap.Application.PublicUsers.ListAssessments;
 using StudentRoadMap.Application.PublicUsers.TelegramLogin;
+using StudentRoadMap.Domain.PublicUsers;
 using StudentRoadMap.Domain.Students;
 using StudentRoadMap.Infrastructure.Persistence;
 
@@ -189,7 +190,7 @@ public sealed class MeDeleteEndpointTests : IClassFixture<PublicUserDeleteApiTes
         var (accessToken, refreshCookie, user) = await PublicUserTestDataFactory.LoginAsync(client, 740100008, username: "ochiriladi");
         client.UseBearer(accessToken);
 
-        var deleteResponse = await client.DeleteAsync(new Uri("/api/me", UriKind.Relative));
+        var deleteResponse = await DeleteMeAsync(client, PublicUserDeletionReason.PrivacyConcern, "Ma'lumotlarim saqlanishini xohlamayman");
 
         deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
@@ -202,6 +203,8 @@ public sealed class MeDeleteEndpointTests : IClassFixture<PublicUserDeleteApiTes
             stored.TelegramId.Should().BeNull("anonimlashtirish — Telegram ID tozalanadi");
             stored.Username.Should().BeNull();
             stored.FirstName.Should().BeNull();
+            stored.DeletionReason.Should().Be(PublicUserDeletionReason.PrivacyConcern, "sabab anonimlashtirish bilan tozalanmaydi");
+            stored.DeletionComment.Should().Be("Ma'lumotlarim saqlanishini xohlamayman");
 
             (await db.PublicUsers.AnyAsync(u => u.Id == user.Id)).Should().BeFalse("global filtr o'chirilgan akkauntni yashiradi");
 
@@ -231,11 +234,64 @@ public sealed class MeDeleteEndpointTests : IClassFixture<PublicUserDeleteApiTes
         var (accessToken, _, firstUser) = await PublicUserTestDataFactory.LoginAsync(client, 740100009);
         client.UseBearer(accessToken);
 
-        (await client.DeleteAsync(new Uri("/api/me", UriKind.Relative))).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await DeleteMeAsync(client, PublicUserDeletionReason.NoLongerNeeded)).StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         using var freshClient = _factory.CreateClient();
         var (_, _, secondUser) = await PublicUserTestDataFactory.LoginAsync(freshClient, 740100009);
 
         secondUser.Id.Should().NotBe(firstUser.Id, "`telegram_id` tozalangani uchun qayta kirish YANGI akkaunt yaratadi");
     }
+
+    [Fact]
+    public async Task DeleteMe_SababBerilmasa_400Qaytaradi()
+    {
+        using var client = _factory.CreateClient();
+        var (accessToken, _, _) = await PublicUserTestDataFactory.LoginAsync(client, 740100010);
+        client.UseBearer(accessToken);
+
+        var response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Delete, "/api/me")
+        {
+            Content = JsonContent.Create(new { }, options: TestJson.Options),
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task DeleteMe_BoshqaSababIzohsiz_400Qaytaradi()
+    {
+        using var client = _factory.CreateClient();
+        var (accessToken, _, _) = await PublicUserTestDataFactory.LoginAsync(client, 740100011);
+        client.UseBearer(accessToken);
+
+        var response = await DeleteMeAsync(client, PublicUserDeletionReason.Other);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task DeleteMe_TakrorChaqirilganda_SababniQaytaYozmaydi()
+    {
+        using var client = _factory.CreateClient();
+        var (accessToken, _, user) = await PublicUserTestDataFactory.LoginAsync(client, 740100012);
+        client.UseBearer(accessToken);
+
+        (await DeleteMeAsync(client, PublicUserDeletionReason.NoLongerNeeded, "Birinchi sabab")).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        // Access token hali "tirik" — lekin `PublicUser` allaqachon o'chirilgan (handlerda `user is null`).
+        var second = await DeleteMeAsync(client, PublicUserDeletionReason.Other, "Ikkinchi sabab");
+        second.StatusCode.Should().Be(HttpStatusCode.NoContent, "idempotent — allaqachon o'chirilgan akkauntda ham 204");
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var stored = await db.PublicUsers.IgnoreQueryFilters().AsNoTracking().SingleAsync(u => u.Id == user.Id);
+        stored.DeletionReason.Should().Be(PublicUserDeletionReason.NoLongerNeeded, "birinchi sabab saqlanadi");
+        stored.DeletionComment.Should().Be("Birinchi sabab");
+    }
+
+    private static Task<HttpResponseMessage> DeleteMeAsync(HttpClient client, PublicUserDeletionReason reason, string? comment = null) =>
+        client.SendAsync(new HttpRequestMessage(HttpMethod.Delete, "/api/me")
+        {
+            Content = JsonContent.Create(new { reason = reason.ToString(), comment }, options: TestJson.Options),
+        });
 }

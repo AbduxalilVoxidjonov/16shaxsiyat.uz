@@ -1818,14 +1818,21 @@
       "title": "Akkauntni o'chirasizmi?",
       "description": "Bu amalni ortga qaytarib bo'lmaydi.",
       "warning": "O'chirilgandan keyin kabinetingizga kira olmaysiz va natijalaringiz sizga ko'rinmaydi.",
-      "confirm": "Ha, o'chirilsin",
+      "confirm": "Butunlay o'chirish",
       "consequences": {
         "profile": "Profil ma'lumotlaringiz (ism, foydalanuvchi nomi, rasm) o'chiriladi.",
         "results": "Kabinetdagi test natijalari sizga ko'rinmay qoladi.",
         "newAccount": "Shu Telegram akkaunti bilan qayta kirsangiz, YANGI akkaunt ochiladi — eski natijalar unga bog'lanmaydi."
       },
       "doneToast": "Akkaunt o'chirildi.",
-      "errorFallback": "Akkauntni o'chirishda xatolik yuz berdi. Qayta urinib ko'ring."
+      "errorFallback": "Akkauntni o'chirishda xatolik yuz berdi. Qayta urinib ko'ring.",
+      "continueCta": "Davom etish",
+      "reasonStepTitle": "Nega o'chirmoqchisiz?",
+      "reasonStepLead": "Sababni bilish bizga xizmatni yaxshilashga yordam beradi.",
+      "reasonLegend": "O'chirish sababi",
+      "commentLabel": "Izoh (ixtiyoriy)",
+      "commentRequiredLabel": "Izoh (majburiy)",
+      "commentRequiredError": "Sababni qisqacha yozing"
     },
     "register": {
       "title": "Test uchun anketa",
@@ -2401,7 +2408,8 @@
           "all": "Hammasi",
           "never_started": "Boshlamagan",
           "in_progress": "Jarayonda",
-          "completed": "Tugallangan"
+          "completed": "Tugallangan",
+          "deleted": "O'chirilgan"
         }
       },
       "table": {
@@ -2421,7 +2429,8 @@
         "Analyzed": "Tahlil qilingan",
         "AnalysisFailed": "Tahlil muvaffaqiyatsiz",
         "Abandoned": "Tashlab ketilgan",
-        "Unknown": "Noma’lum"
+        "Unknown": "Noma’lum",
+        "Deleted": "O'chirilgan"
       },
       "progress": {
         "position": "{{block}}-blok · {{answered}}/{{total}} savol",
@@ -2432,7 +2441,22 @@
         "description": "Foydalanuvchilar Telegram orqali kirgach shu yerda ko’rinadi.",
         "filteredTitle": "Hech kim topilmadi",
         "filteredDescription": "Qidiruv yoki holat filtrini o’zgartirib ko’ring."
+      },
+      "deleted": {
+        "title": "Akkaunt o'chirilgan",
+        "deletedAt": "O'chirilgan sana: {{date}}",
+        "reasonLabel": "Sabab",
+        "noReason": "Sabab ko'rsatilmagan",
+        "commentLabel": "Izoh",
+        "viewProfile": "O'quvchi profili"
       }
     }
+  },
+  "deletionReason": {
+    "NoLongerNeeded": "Endi kerak emas",
+    "NotUseful": "Natijalar foydali bo'lmadi",
+    "PrivacyConcern": "Ma'lumotlarim saqlanishini xohlamayman",
+    "CreatedByMistake": "Xato bilan ro'yxatdan o'tganman",
+    "Other": "Boshqa sabab"
   }
 }

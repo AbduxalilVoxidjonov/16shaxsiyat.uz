@@ -166,9 +166,14 @@ public sealed record AdminPublicUserLastAssessmentDto(
 /// raqami ham shu ro'yxatda ko'rinsin.
 /// </para>
 /// <para>
-/// O'chirilgan (anonimlashtirilgan, `DeletedAt != null`) akkauntlar ro'yxatga KIRMAYDI —
-/// `PublicUsers` global filtri; soni `AdminPublicSpaceStatsDto.DeletedUserCount` da.
-/// Bu ADMIN API — `Id`lar qaytariladi (`CLAUDE.md` 8-qoida faqat ommaviy API uchun).
+/// **O'chirilgan (anonimlashtirilgan, `DeletedAt != null`) akkauntlar ENDI RO'YXATGA KIRADI**
+/// (2026-09-08, egasining qarori — ilgari `PublicUsers` global filtri ularni yashirar edi):
+/// `DeletedAt`/`DeletionReason`/`DeletionComment` orqali "nega o'chirilgani" ko'rinadi.
+/// `Telegram.*` bunday qatorda `null` (anonimlashtirilgan), `FullName`/`Phone` esa
+/// `Student` yozuvi o'chirilmagani uchun (bu bosqichda anonimlashtirilmaydi — handler izohi)
+/// odatda saqlanib qoladi. `?status=deleted` — faqat shular; boshqa filtrlar sessiya holatiga
+/// qarab ularni ham qamrab olishi mumkin. Bu ADMIN API — `Id`lar qaytariladi (`CLAUDE.md`
+/// 8-qoida faqat ommaviy API uchun).
 /// </para>
 /// </summary>
 public sealed record AdminPublicUserListItemDto(
@@ -182,4 +187,10 @@ public sealed record AdminPublicUserListItemDto(
     int? Age,
     int? Grade,
     AdminPublicUserAssessmentCountsDto Assessments,
+    /// <summary>O'chirilgan bo'lsa vaqt, aks holda `null` (2026-09-08).</summary>
+    DateTimeOffset? DeletedAt,
+    /// <summary>`PublicUserDeletionReason` enum nomi (`ToString()`), o'chirilmagan bo'lsa `null`.</summary>
+    string? DeletionReason,
+    /// <summary>Erkin matnli izoh, o'chirilmagan yoki yozilmagan bo'lsa `null`.</summary>
+    string? DeletionComment,
     AdminPublicUserLastAssessmentDto? LastAssessment);

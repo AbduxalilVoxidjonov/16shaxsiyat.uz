@@ -166,15 +166,17 @@ public sealed class MeController : ControllerBase
 
     /// <summary>
     /// `DELETE /api/me` — foydalanuvchi o'z ma'lumotini o'chiradi (anonimlashtirish).
-    /// Idempotent → har doim `204`.
+    /// Tanada o'chirish sababi MAJBURIY (`docs/07` §5.5, 2026-09-08). Idempotent → allaqachon
+    /// o'chirilgan akkauntda ham `204` (sabab qayta yozilmaydi), lekin sababsiz so'rov `400`.
     /// </summary>
     [HttpDelete]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests, "application/problem+json")]
-    public async Task<IActionResult> DeleteMe(CancellationToken cancellationToken)
+    public async Task<IActionResult> DeleteMe([FromBody] DeleteMyAccountRequest request, CancellationToken cancellationToken)
     {
-        var command = new DeleteMyAccountCommand(RequirePublicUserId(), HttpContext.Connection.RemoteIpAddress?.ToString());
+        var command = request.ToCommand(RequirePublicUserId(), HttpContext.Connection.RemoteIpAddress?.ToString());
 
         var result = await _sender.Send(command, cancellationToken).ConfigureAwait(false);
 

@@ -16,6 +16,7 @@ public sealed class PublicUser : AggregateRoot
     public const int MaxUsernameLength = 64;
     public const int MaxNameLength = 100;
     public const int MaxPhotoUrlLength = 500;
+    public const int MaxDeletionCommentLength = 500;
 
     /// <summary>
     /// Telegram foydalanuvchi identifikatori (`bigint`, unikal). Telegram ID'lari 2^53 dan
@@ -51,6 +52,17 @@ public sealed class PublicUser : AggregateRoot
     /// (`DeletedAt is not null` yagona haqiqat manbai).
     /// </summary>
     public DateTimeOffset? DeletedAt { get; private set; }
+
+    /// <summary>
+    /// Foydalanuvchi tanlagan o'chirish sababi (egasining 2026-09-08 qarori — o'chirishdan
+    /// oldin sabab so'raladi). Anonimlashtirish PROFIL maydonlarini tozalaydi, lekin BU
+    /// maydon ATAYLAB saqlanadi — superadmin ro'yxatida "nega o'chirilgan" ko'rinishi kerak
+    /// (aks holda `MarkDeleted` boshqa maydonlar kabi buni ham `null` qilib qo'yardi).
+    /// </summary>
+    public PublicUserDeletionReason? DeletionReason { get; private set; }
+
+    /// <summary>Ixtiyoriy erkin matnli izoh (≤500 belgi); `Other` sababida MAJBURIY (validatorda).</summary>
+    public string? DeletionComment { get; private set; }
 
     public bool IsDeleted => DeletedAt is not null;
 
@@ -129,9 +141,16 @@ public sealed class PublicUser : AggregateRoot
     /// (1) `students.public_user_id` FK'si va test tarixi (`docs/08`: natijalar 5 yil)
     ///     buzilardi; (2) statistika/audit yaxlitligi yo'qolardi; (3) Telegram ID tozalangani
     ///     uchun bir xil foydalanuvchi qayta kirsa YANGI akkaunt oladi — bu aynan kutilgan
-    ///     xatti-harakat. Idempotent: takroriy chaqiruv xato bermaydi.
+    ///     xatti-harakat.
+    ///
+    /// <paramref name="reason"/>/<paramref name="comment"/> — anonimlashtirish MANTIG'IGA
+    /// TEGMAYDI (Telegram ID/ism/username/foto baribir tozalanadi), lekin O'ZI saqlanadi:
+    /// egasining 2026-09-08 qarori bo'yicha superadmin "nega o'chirilgan"ni ko'ra olishi kerak.
+    /// Idempotent: takroriy chaqiruvda sabab/izoh QAYTA YOZILMAYDI (birinchi o'chirish
+    /// paytidagi qiymat — haqiqat manbai; takroriy chaqiruv odatda tarmoq qayta urinishi,
+    /// yangi "sabab"ni qabul qilish ma'nosiz).
     /// </summary>
-    public void MarkDeleted(DateTimeOffset now)
+    public void MarkDeleted(DateTimeOffset now, PublicUserDeletionReason reason, string? comment = null)
     {
         if (IsDeleted)
         {
@@ -144,6 +163,8 @@ public sealed class PublicUser : AggregateRoot
         LastName = null;
         PhotoUrl = null;
         DeletedAt = now;
+        DeletionReason = reason;
+        DeletionComment = Trim(comment, MaxDeletionCommentLength);
         UpdatedAt = now;
     }
 

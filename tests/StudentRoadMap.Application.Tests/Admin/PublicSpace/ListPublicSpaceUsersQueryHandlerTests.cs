@@ -251,17 +251,39 @@ public sealed class ListPublicSpaceUsersQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_OChirilganAkkaunt_RoYxatdaKoRinmaydi()
+    public async Task Handle_OChirilganAkkaunt_RoYxatdaSababiBilanKoRinadi()
     {
         var deleted = AddUser("O'chirilgan", "Odam", "deleted");
         AddStudent(deleted, "O'chirilgan Odam");
-        deleted.MarkDeleted(Now.AddDays(-1));
+        deleted.MarkDeleted(Now.AddDays(-1), PublicUserDeletionReason.PrivacyConcern, "Ma'lumotlarim saqlanishini xohlamayman");
         AddUser("Tirik", "Odam", "alive");
 
         var page = await HandleAsync();
 
+        page.TotalCount.Should().Be(2, "2026-09-08: o'chirilgan akkaunt ENDI ro'yxatga kiradi");
+        var deletedItem = page.Items.Single(i => i.PublicUserId == deleted.Id);
+        deletedItem.Telegram.Username.Should().BeNull("anonimlashtirish — username ham tozalangan");
+        deletedItem.DeletedAt.Should().Be(Now.AddDays(-1));
+        deletedItem.DeletionReason.Should().Be(nameof(PublicUserDeletionReason.PrivacyConcern));
+        deletedItem.DeletionComment.Should().Be("Ma'lumotlarim saqlanishini xohlamayman");
+
+        var aliveItem = page.Items.Single(i => i.Telegram.Username == "alive");
+        aliveItem.DeletedAt.Should().BeNull();
+        aliveItem.DeletionReason.Should().BeNull();
+        aliveItem.DeletionComment.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_StatusDeleted_FaqatOChirilganlarniQaytaradi()
+    {
+        var deleted = AddUser("O'chirilgan", "Odam", "deleted");
+        deleted.MarkDeleted(Now.AddDays(-1), PublicUserDeletionReason.Other, "Sinov");
+        AddUser("Tirik", "Odam", "alive");
+
+        var page = await HandleAsync(status: PublicUserStatusFilter.Deleted);
+
         page.TotalCount.Should().Be(1);
-        page.Items.Single().Telegram.Username.Should().Be("alive");
+        page.Items.Single().PublicUserId.Should().Be(deleted.Id);
     }
 
     [Fact]

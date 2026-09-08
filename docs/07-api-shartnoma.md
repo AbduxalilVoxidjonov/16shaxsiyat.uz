@@ -1236,9 +1236,11 @@ Xato: makon seed qilinmagan bo'lsa barcha endpointlar `409 PUBLIC_SPACE_NOT_CONF
 ```jsonc
 "stats": {
   "userCount": 128,          // ro'yxatdan o'tgan FAOL Telegram akkauntlari (`public_users`,
-                             // `Student` EMAS — anketa to'ldirmaganlar ham kiradi)
+                             // `Student` EMAS — anketa to'ldirmaganlar ham kiradi; O'CHIRILGANLAR
+                             // KIRMAYDI — `userCount` ≠ ro'yxat `totalCount`i, chunki 3.7dagi
+                             // ro'yxat 2026-09-08dan o'chirilganlarni HAM qamraydi)
   "deletedUserCount": 3,     // "ma'lumotimni o'chiring" qilgan (anonimlashtirilgan) akkauntlar —
-                             // ro'yxatda KO'RINMAYDI, faqat shu son
+                             // 2026-09-08dan RO'YXATDA HAM ko'rinadi (`?status=deleted`), bu — shu son
   "totalAssessments": 96, "inProgressCount": 7, "completedCount": 74, "analyzedCount": 61,
   "lastActivityAt": "2026-09-04T12:00:00Z"   // sessiya bo'lmasa `null`
 }
@@ -1254,9 +1256,11 @@ Parametrlar:
   (≤200 belgi); **TO'LIQ telefon raqami** bo'yicha ham (`+998XXXXXXXXX` yoki `998XXXXXXXXX` yoki
   mahalliy 9 xonali `XXXXXXXXX`) — faqat ANIQ TENGLIK, qisman raqam (masalan `"90123"`) hech
   narsaga mos kelmaydi (2026-09-08).
-- `status` — OXIRGI sessiya bo'yicha: `all` (standart) · `never_started` (sessiya yo'q — anketa
-  bo'lmasa ham) · `in_progress` (oxirgi sessiya yakunlanmagan: `Draft`/`InProgress`/`Abandoned`) ·
-  `completed` (`completedAt != null`: `Completed`/`Analyzing`/`Analyzed`/`AnalysisFailed`).
+- `status` — OXIRGI sessiya bo'yicha: `all` (standart, o'chirilganlar HAM kiradi) · `never_started`
+  (sessiya yo'q — anketa bo'lmasa ham) · `in_progress` (oxirgi sessiya yakunlanmagan:
+  `Draft`/`InProgress`/`Abandoned`) · `completed` (`completedAt != null`:
+  `Completed`/`Analyzing`/`Analyzed`/`AnalysisFailed`) · `deleted` (2026-09-08 — FAQAT
+  "ma'lumotimni o'chiring" qilgan akkauntlar, sessiya holatidan mustaqil).
   Noma'lum qiymat → `400 VALIDATION_ERROR` (jimgina "hammasi"ga tushmaydi).
 - `sort` — `registeredAt` (standart `-registeredAt`) yoki `lastLoginAt`; boshqa maydon → standart.
 - `page`/`pageSize` — 4-bo'lim konvensiyasi (`pageSize` ≤ 100).
@@ -1277,6 +1281,9 @@ Parametrlar:
       "grade": 9,                      // `Student.NoGrade` (0 — "sinf yo'q") bo'lsa `null`
       "assessments": { "total": 3, "completed": 2, "inProgress": 1 },   // inProgress = Draft|InProgress;
                                                                         // total − completed − inProgress = Abandoned
+      "deletedAt": null,               // "ma'lumotimni o'chiring" qilingan bo'lsa vaqt, aks holda `null`
+      "deletionReason": null,          // `PublicUserDeletionReason` nomi (masalan `"PrivacyConcern"`), aks holda `null`
+      "deletionComment": null,         // erkin matnli izoh, aks holda `null`
       "lastAssessment": {              // sessiya bo'lmasa `null`; oxirgisi — `startedAt` bo'yicha
         "id": "…", "status": "InProgress",
         "startedAt": "2026-09-06T18:21:00Z", "completedAt": null,
@@ -1296,9 +1303,15 @@ Parametrlar:
 "Qayerda to'xtagan" qoidasi ommaviy `GET /api/public/sessions/me` (1.3) bilan BITTA manbadan
 hisoblanadi (`Application/Public/GetSession/SessionProgressCalculator`): `displayOrder` bo'yicha
 birinchi `Completed` bo'lmagan blok — joriy blok. Bu ADMIN API — `id`lar qaytariladi
-(8-qoida faqat ommaviy API uchun). O'chirilgan (anonimlashtirilgan) akkauntlar ro'yxatga
-kirmaydi — ularda shaxsni aniqlovchi ma'lumot qolmagan, "qayerda to'xtagan" esa ma'nosiz
-(qayta kira olmaydi); soni `stats.deletedUserCount`da.
+(8-qoida faqat ommaviy API uchun).
+
+**O'chirilgan (anonimlashtirilgan) akkauntlar ENDI RO'YXATGA KIRADI (2026-09-08, egasining
+qarori)** — ilgari ular butunlay yashirilardi va faqat `stats.deletedUserCount`da sanalardi.
+Endi `deletedAt`/`deletionReason`/`deletionComment` orqali "nega o'chirilgani" ko'rinadi;
+`telegram.*` bunday qatorda `null` (anonimlashtirish), `fullName`/`phone` esa `Student` yozuvi
+alohida o'chirilmagani uchun odatda saqlanib qoladi. `?status=deleted` — faqat shular.
+`stats.userCount` esa avvalgidek FAQAT faol akkauntlarni sanaydi — shu sabab `userCount` bu
+ro'yxatning `totalCount`iga TENG BO'LMASLIGI mumkin (farqi taxminan `deletedUserCount`).
 
 **Ish unumi:** N+1 yo'q — jami ≤5 so'rov, sahifa hajmiga bog'liq emas: `COUNT`, sahifa
 (`ORDER BY … OFFSET/LIMIT`, holat filtri — oxirgi sessiya bo'yicha korrelyatsiyalangan
@@ -1590,13 +1603,31 @@ Xatolar:
 
 ### 5.5 `DELETE /api/me`
 
-Tana yo'q. Har doim `204 No Content` (idempotent).
+**Tana MAJBURIY (2026-09-08, egasining qarori — o'chirishdan oldin sabab so'raladi):**
+
+```jsonc
+{ "reason": "NoLongerNeeded", "comment": "Ixtiyoriy erkin matn" }
+```
+
+- `reason` — MAJBURIY, quyidagi qiymatlardan biri (`PublicUserDeletionReason`):
+  `NoLongerNeeded` ("Endi kerak emas"), `NotUseful` ("Natijalar foydali bo'lmadi"),
+  `PrivacyConcern` ("Ma'lumotlarim saqlanishini xohlamayman"), `CreatedByMistake`
+  ("Xato bilan ro'yxatdan o'tganman"), `Other` ("Boshqa sabab"). Berilmasa yoki noma'lum
+  qiymat bo'lsa `400 VALIDATION_ERROR`.
+- `comment` — ixtiyoriy, ≤500 belgi; `reason == "Other"` bo'lsa MAJBURIY (bo'sh bo'lmasin),
+  aks holda `400 VALIDATION_ERROR`.
+
+Muvaffaqiyatda har doim `204 No Content` — **idempotent**: akkaunt allaqachon o'chirilgan
+bo'lsa ham `204` qaytadi, lekin sabab/izoh QAYTA YOZILMAYDI (birinchi o'chirishdagi qiymat
+saqlanadi).
 
 Nima bo'ladi: `public_users` yozuvi **anonimlashtiriladi** (`telegram_id`, `username`,
 `first_name`, `last_name`, `photo_url` tozalanadi, `deleted_at` qo'yiladi), barcha refresh
-tokenlar bekor qilinadi, `PublicUser.Deleted` audit yoziladi. Yozuvning O'ZI qoladi —
-test natijalari arxivi (`docs/08` §5: 5 yil) va `students.public_user_id` FK buzilmasligi
-uchun. Shu Telegram akkaunti bilan qayta kirilsa **YANGI** akkaunt yaratiladi.
+tokenlar bekor qilinadi, `PublicUser.Deleted` audit yoziladi (audit `afterJson`da FAQAT sabab
+KODI — erkin matnli izoh audit logga yozilmaydi). `reason`/`comment` esa anonimlashtirish
+bilan TOZALANMAYDI — superadmin panelida ("nega o'chirilgani") ko'rinadi (§3.7). Yozuvning
+O'ZI qoladi — test natijalari arxivi (`docs/08` §5: 5 yil) va `students.public_user_id`
+FK buzilmasligi uchun. Shu Telegram akkaunti bilan qayta kirilsa **YANGI** akkaunt yaratiladi.
 
 Access token 30 daqiqagacha "tirik" qolishi mumkin, lekin `/api/me/*` darhol `401` qaytaradi.
 

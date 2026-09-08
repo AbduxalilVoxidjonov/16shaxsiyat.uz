@@ -226,10 +226,16 @@ public sealed class AdminPublicSpaceUsersEndpointTests : IClassFixture<PublicApi
             .Should().Equal($"{prefix}u4", $"{prefix}u3", $"{prefix}u2", $"{prefix}u1", $"{prefix}u0");
     }
 
+    /// <summary>
+    /// 2026-09-08 — egasining qarori: o'chirilgan (anonimlashtirilgan) akkaunt endi
+    /// RO'YXATDA turadi (`?status=deleted`), sababi/izohi bilan. Anonimlashtirilgani uchun
+    /// username/ism bo'yicha QIDIRUV uni baribir topolmaydi (Telegram maydonlari `null`).
+    /// </summary>
     [Fact]
-    public async Task ListUsers_OChirilganAkkaunt_KoRinmaydiLekinStatistikadaSanaladi()
+    public async Task ListUsers_OChirilganAkkaunt_RoYxatdaSababiBilanKoRinadi()
     {
         const string prefix = "psu_c_";
+        Guid deletedId;
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -238,17 +244,77 @@ public sealed class AdminPublicSpaceUsersEndpointTests : IClassFixture<PublicApi
 
             AddUser(db, $"{prefix}alive", "Tirik", null, now);
             var deleted = AddUser(db, $"{prefix}deleted", "O'chirilgan", null, now);
-            deleted.MarkDeleted(now);
+            deleted.MarkDeleted(now, PublicUserDeletionReason.PrivacyConcern, "Ma'lumotlarim saqlanishini xohlamayman");
+            deletedId = deleted.Id;
             await db.SaveChangesAsync();
         }
 
         using var client = await AuthenticatedClientAsync("public-space-users-deleted-admin");
 
+        // Anonimlashtirilgani uchun username/ism bo'yicha qidiruv topolmaydi.
         (await GetUsernamesAsync(client, $"search={prefix}")).Should().Equal($"{prefix}alive");
 
+        // `?status=deleted` — faqat o'chirilganlar, sababi/izohi bilan.
+        var deletedPage = await client.GetFromJsonAsync<PagedResult<AdminPublicUserListItemDto>>(
+            "/api/admin/public-space/users?status=deleted&pageSize=100", TestJson.Options);
+        var deletedItem = deletedPage!.Items.Should().ContainSingle(i => i.PublicUserId == deletedId).Subject;
+        deletedItem.Telegram.Username.Should().BeNull("anonimlashtirish — Telegram maydonlari tozalangan");
+        deletedItem.DeletedAt.Should().NotBeNull();
+        deletedItem.DeletionReason.Should().Be(nameof(PublicUserDeletionReason.PrivacyConcern));
+        deletedItem.DeletionComment.Should().Be("Ma'lumotlarim saqlanishini xohlamayman");
+
         var space = await client.GetFromJsonAsync<AdminPublicSpaceDto>("/api/admin/public-space", TestJson.Options);
-        space!.Stats.DeletedUserCount.Should().BeGreaterThanOrEqualTo(1, "anonimlashtirilgan akkauntlar faqat SON sifatida ko'rinadi");
+        space!.Stats.DeletedUserCount.Should().BeGreaterThanOrEqualTo(1);
         space.Stats.UserCount.Should().BeGreaterThanOrEqualTo(1);
+    }
+
+    /// <summary>
+    /// ⚠️ QULF: `_context.IgnoreQueryFilters(_context.PublicUsers)` EF Core'da BUTUN so'rovga
+    /// ta'sir qiladi — agar `students`/`assessments` uchun `!IsDeleted` QO'LDA tiklanmasa, LEFT
+    /// JOIN orqali SOFT O'CHIRILGAN `Student` va `Assessment` "o'chirilgan" akkaunt qatorida
+    /// sizib chiqadi. Bu test aynan shu holatni qulflaydi (handler izohi).
+    /// </summary>
+    [Fact]
+    public async Task ListUsers_OChirilganAkkauntdaSoftOChirilganStudentVaSessiya_SizibChiqmaydi()
+    {
+        const string prefix = "psu_leak_";
+        Guid deletedId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var now = DateTimeOffset.UtcNow;
+            var space = await PublicUserTestDataFactory.GetOrCreatePublicSpaceAsync(db, now);
+
+            var user = AddUser(db, $"{prefix}user", "Sirli", "Ism", now);
+            var student = AddStudent(db, space.Id, user.Id, "Sirli Ism To'liq", "+998905559999", now);
+            await db.SaveChangesAsync();
+
+            var block = await TestDataFactory.CreatePublishedTestAsync(db, now, "PSU-LEAK-MBTI", 1, questionCount: 2);
+            var programId = await TestDataFactory.GetOrCreateDefaultProgramIdAsync(db, now);
+            var assessment = await BuildAssessmentAsync(
+                db, student.Id, space.Id, programId, now.AddDays(-1), [block], completedBlocks: 1, answeredOnCurrent: 0, complete: true);
+            db.Assessments.Add(assessment);
+            await db.SaveChangesAsync();
+
+            // SOFT o'chirish — jadvalning o'zi qoladi, faqat global filtr yashiradi.
+            student.MarkDeleted(now);
+            assessment.MarkDeleted(now);
+            user.MarkDeleted(now, PublicUserDeletionReason.NoLongerNeeded);
+            deletedId = user.Id;
+            await db.SaveChangesAsync();
+        }
+
+        using var client = await AuthenticatedClientAsync("public-space-users-leak-admin");
+
+        var page = await client.GetFromJsonAsync<PagedResult<AdminPublicUserListItemDto>>(
+            "/api/admin/public-space/users?status=deleted&pageSize=100", TestJson.Options);
+        var item = page!.Items.Should().ContainSingle(i => i.PublicUserId == deletedId).Subject;
+
+        item.StudentId.Should().BeNull("student SOFT o'chirilgan — `!s.IsDeleted` qo'lda tiklanishi kerak");
+        item.FullName.Should().BeNull();
+        item.Phone.Should().BeNull();
+        item.Assessments.Should().Be(new AdminPublicUserAssessmentCountsDto(0, 0, 0), "sessiya SOFT o'chirilgan — sanoqqa kirmasin");
+        item.LastAssessment.Should().BeNull();
     }
 
     // ————— Yordamchilar —————

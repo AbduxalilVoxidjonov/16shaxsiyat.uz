@@ -15,6 +15,13 @@ namespace StudentRoadMap.Application.Admin.PublicSpace.ListUsers;
 /// `ux_students_public_user`: bitta akkaunt → 0..1 profil).
 ///
 /// <para>
+/// **O'chirilgan akkauntlar ham qamraladi (2026-09-08):** `IgnoreQueryFilters` bilan
+/// `public_users.deleted_at IS NOT NULL` bo'lgan yozuvlar HAM keladi (ilgari global filtr
+/// ularni yashirardi) — sabab/izoh admin ro'yxatida ko'rinishi kerak. `?status=deleted` —
+/// faqat shular.
+/// </para>
+///
+/// <para>
 /// **N+1 YO'Q — jami 5 so'rov, sahifa hajmiga bog'liq emas:**
 /// <list type="number">
 ///   <item>`COUNT` — filtrlangan foydalanuvchilar (DB);</item>
@@ -68,9 +75,15 @@ internal sealed class ListPublicSpaceUsersQueryHandler
         var (page, pageSize) = AdminPagingOptions.Normalize(request.Page, request.PageSize);
         var status = PublicUserStatusFilter.Parse(request.Status) ?? PublicUserStatusFilter.All;
 
-        var users = _context.AsNoTracking(_context.PublicUsers);
-        var students = _context.AsNoTracking(_context.Students);
-        var assessments = _context.AsNoTracking(_context.Assessments);
+        // ⚠️ `IgnoreQueryFilters()` EF Core'da BUTUN so'rovga ta'sir qiladi, faqat `PublicUsers`
+        // uchun EMAS: bu chaqiruv (2026-09-08, o'chirilgan akkauntlar endi ro'yxatga kirishi
+        // uchun qo'shildi) `students`/`assessments` global filtrlarini HAM o'chiradi, aks
+        // holda LEFT JOIN orqali soft-delete qilingan `Student`/`Assessment` sizib chiqadi.
+        // Shu sabab ular pastda `!s.IsDeleted`/`!a.IsDeleted` bilan QO'LDA tiklanadi
+        // (`IAppDbContext.IgnoreQueryFilters` va `DeleteStudentCommandHandler` izohiga qarang).
+        var users = _context.IgnoreQueryFilters(_context.AsNoTracking(_context.PublicUsers));
+        var students = _context.AsNoTracking(_context.Students).Where(s => !s.IsDeleted);
+        var assessments = _context.AsNoTracking(_context.Assessments).Where(a => !a.IsDeleted);
 
         var rows =
             from u in users
@@ -205,6 +218,8 @@ internal sealed class ListPublicSpaceUsersQueryHandler
                     .OrderByDescending(a => a.StartedAt)
                     .Select(a => a.CompletedAt != null)
                     .FirstOrDefault()),
+            // 2026-09-08: sessiya holatidan MUSTAQIL — faqat "ma'lumotimni o'chiring" qilganlar.
+            PublicUserStatusFilter.Deleted => rows.Where(r => r.User.DeletedAt != null),
             _ => rows,
         };
 
@@ -271,6 +286,9 @@ internal sealed class ListPublicSpaceUsersQueryHandler
             student is null ? null : AgeCalculator.CalculateAge(student.BirthDate, now),
             student is null || student.Grade == Student.NoGrade ? null : student.Grade,
             counts,
+            user.DeletedAt,
+            user.DeletionReason?.ToString(),
+            user.DeletionComment,
             last);
     }
 
