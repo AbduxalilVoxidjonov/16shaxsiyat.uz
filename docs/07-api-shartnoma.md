@@ -1250,7 +1250,10 @@ Manba — `public_users` (LEFT JOIN `students` orqali `public_user_id`; bitta ak
 Ro'yxatdan o'tgan, lekin hali anketa to'ldirmagan/test boshlamagan foydalanuvchi ham chiqadi.
 
 Parametrlar:
-- `search` — F.I.Sh. (anketa), Telegram ism/familiya/`username` bo'yicha, katta-kichik harf farqsiz (≤200 belgi).
+- `search` — F.I.Sh. (anketa), Telegram ism/familiya/`username` bo'yicha, katta-kichik harf farqsiz
+  (≤200 belgi); **TO'LIQ telefon raqami** bo'yicha ham (`+998XXXXXXXXX` yoki `998XXXXXXXXX` yoki
+  mahalliy 9 xonali `XXXXXXXXX`) — faqat ANIQ TENGLIK, qisman raqam (masalan `"90123"`) hech
+  narsaga mos kelmaydi (2026-09-08).
 - `status` — OXIRGI sessiya bo'yicha: `all` (standart) · `never_started` (sessiya yo'q — anketa
   bo'lmasa ham) · `in_progress` (oxirgi sessiya yakunlanmagan: `Draft`/`InProgress`/`Abandoned`) ·
   `completed` (`completedAt != null`: `Completed`/`Analyzing`/`Analyzed`/`AnalysisFailed`).
@@ -1266,8 +1269,10 @@ Parametrlar:
       "telegram": { "firstName": "Bobur", "lastName": "Toshev", "username": "bobur_t" },   // hammasi nullable
       "registeredAt": "2026-09-01T09:00:00Z",   // `public_users.created_at`
       "lastLoginAt":  "2026-09-06T18:20:00Z",
-      "studentId": "…",                // anketa to'ldirilmagan bo'lsa `null` (fullName/age/grade ham)
+      "studentId": "…",                // anketa to'ldirilmagan bo'lsa `null` (fullName/phone/age/grade ham)
       "fullName": "Toshev Bobur",
+      "phone": "+998901234567",        // manba — `students.phone` (anketa); `public_users`da telefon
+                                        // YO'Q (Telegram Login Widget bermaydi); anketa yo'q bo'lsa `null`
       "age": 17,
       "grade": 9,                      // `Student.NoGrade` (0 — "sinf yo'q") bo'lsa `null`
       "assessments": { "total": 3, "completed": 2, "inProgress": 1 },   // inProgress = Draft|InProgress;

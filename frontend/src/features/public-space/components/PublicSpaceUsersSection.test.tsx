@@ -19,6 +19,7 @@ const IN_PROGRESS_USER = {
   lastLoginAt: '2026-09-06T08:30:00Z',
   studentId: 'student-1',
   fullName: 'Valiyev Ali Akramovich',
+  phone: '+998901234567',
   age: 17,
   grade: 9,
   assessments: { total: 3, completed: 2, inProgress: 1 },
@@ -126,6 +127,7 @@ describe('PublicSpaceUsersSection', () => {
     expect(table.getByText('Valiyev Ali Akramovich')).toBeInTheDocument();
     expect(table.getByText('· 17 yosh · 9-sinf')).toBeInTheDocument();
     expect(table.getByText('2 / 3 tugallangan')).toBeInTheDocument();
+    expect(table.getByText('+998 (90) 123-45-67')).toBeInTheDocument();
     // Ro'yxatdan o'tgan / oxirgi kirish sanalari.
     expect(table.getByText('01.09.2026')).toBeInTheDocument();
     expect(table.getByText('06.09.2026')).toBeInTheDocument();
@@ -161,7 +163,8 @@ describe('PublicSpaceUsersSection', () => {
     const row = (await screen.findByText('Zulfiya')).closest('tr');
     expect(row).not.toBeNull();
     expect(within(row!).getByText('Tugallangan')).toBeInTheDocument();
-    expect(within(row!).getByText('—')).toBeInTheDocument();
+    // Telefon kiritilmagan (`phone: undefined`) va progress yo'q — ikkalasi ham "—".
+    expect(within(row!).getAllByText('—')).toHaveLength(2);
     expect(within(row!).queryByRole('progressbar')).not.toBeInTheDocument();
     expect(within(row!).getByText('1 / 1 tugallangan')).toBeInTheDocument();
     // Sinf yo'q (`grade: null`) — faqat yosh.
@@ -176,8 +179,8 @@ describe('PublicSpaceUsersSection', () => {
     const row = (await screen.findByText('@yangi_user')).closest('tr');
     expect(row).not.toBeNull();
     expect(within(row!).getByText('Boshlamagan')).toBeInTheDocument();
-    // Testlar ham, progress ham yo'q.
-    expect(within(row!).getAllByText('—')).toHaveLength(2);
+    // Telefon, testlar, progress — uchalasi ham yo'q.
+    expect(within(row!).getAllByText('—')).toHaveLength(3);
     expect(within(row!).queryByRole('link')).not.toBeInTheDocument();
   });
 

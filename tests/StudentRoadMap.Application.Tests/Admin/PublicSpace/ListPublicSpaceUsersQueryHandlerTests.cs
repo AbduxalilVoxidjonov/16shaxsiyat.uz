@@ -45,6 +45,7 @@ public sealed class ListPublicSpaceUsersQueryHandlerTests
         item.RegisteredAt.Should().Be(Now.AddDays(-2));
         item.StudentId.Should().BeNull("anketa hali to'ldirilmagan");
         item.FullName.Should().BeNull();
+        item.Phone.Should().BeNull("anketa yo'q — telefon ham yo'q");
         item.Age.Should().BeNull();
         item.Grade.Should().BeNull();
         item.Assessments.Should().Be(new AdminPublicUserAssessmentCountsDto(0, 0, 0));
@@ -61,6 +62,7 @@ public sealed class ListPublicSpaceUsersQueryHandlerTests
 
         item.StudentId.Should().Be(student.Id);
         item.FullName.Should().Be("Karimova Zulfiya");
+        item.Phone.Should().Be(student.Phone.Value, "manba — anketadagi `Student.Phone`");
         item.Age.Should().Be(17);
         item.Grade.Should().Be(9);
         item.LastAssessment.Should().BeNull();
@@ -195,6 +197,25 @@ public sealed class ListPublicSpaceUsersQueryHandlerTests
         (await HandleAsync(search: "boshqa")).Items.Should().ContainSingle(i => i.Telegram.Username == "boshqa");
         (await HandleAsync(search: "zulfiya")).Items.Should().ContainSingle(i => i.FullName == "Karimova Zulfiya");
         (await HandleAsync(search: "yo'q odam")).TotalCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Handle_Qidiruv_ToLiqTelefonRaqamiBoYichaTopadiQismanEmas()
+    {
+        var user = AddUser("Sardor", "Nurmatov", "sardor_n");
+        var student = AddStudent(user, "Nurmatov Sardor");
+        AddUser("Boshqa", "Odam", "boshqa_odam");
+
+        // To'liq mahalliy raqam (+998 siz, 9 xona).
+        (await HandleAsync(search: student.Phone.Value["+998".Length..])).Items
+            .Should().ContainSingle(i => i.PublicUserId == user.Id);
+
+        // To'liq xalqaro shakl (+998 bilan, 12 xona).
+        (await HandleAsync(search: student.Phone.Value)).Items
+            .Should().ContainSingle(i => i.PublicUserId == user.Id);
+
+        // Qisman raqam — moslik YO'Q (faqat to'liq tenglik).
+        (await HandleAsync(search: student.Phone.Value[..7])).TotalCount.Should().Be(0);
     }
 
     [Fact]

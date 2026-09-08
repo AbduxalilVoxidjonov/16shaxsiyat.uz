@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { PencilLine } from 'lucide-react';
 import { formatDate } from '@/shared/lib/formatDate';
-import { formatUzLocalDigits, extractUzLocalDigits } from '@/shared/lib/formatPhone';
+import { formatUzPhone } from '@/shared/lib/formatPhone';
 import { cn } from '@/shared/lib/cn';
 import type { MyStudentProfile } from '../model/types';
 
@@ -16,12 +16,6 @@ export interface SavedProfileCardProps {
   /** Karta ostidagi harakatlar (masalan "Testni boshlash"). */
   children?: ReactNode;
   className?: string;
-}
-
-/** `+998901234567` → `+998 (90) 123-45-67`; kutilmagan shakl bo'lsa xom qiymat. */
-function formatPhone(phone: string): string {
-  const local = extractUzLocalDigits(phone.replace(/^\+?998/, ''));
-  return local.length === 9 ? `+998 ${formatUzLocalDigits(local)}` : phone;
 }
 
 /**
@@ -51,7 +45,7 @@ export function SavedProfileCard({ profile, editHref, onEdit, children, classNam
     {
       key: 'phone',
       label: t('account.profileDetails.phone'),
-      value: profile.phone ? formatPhone(profile.phone) : '—',
+      value: profile.phone ? formatUzPhone(profile.phone) : '—',
     },
     {
       key: 'grade',

@@ -149,6 +149,20 @@ internal sealed class ListPublicSpaceUsersQueryHandler
     /// Qidiruv katta-kichik harf farqsiz (`UPPER(...) LIKE`) — Postgres `LIKE` registrga
     /// sezgir, `ix_students_name_trgm` esa F.I.Sh. uchun; Telegram maydonlarida indeks yo'q
     /// (jadval kichik — o'nlab-minglab akkaunt).
+    ///
+    /// <para>
+    /// **Telefon — FAQAT TO'LIQ MOSLIK, `Contains` YO'Q:** `Student.Phone` ustuni EF
+    /// value-converter bilan saqlanadi (`PhoneNumber` ↔ `string`). Konvertorli maydonda
+    /// TENGLIK (`==`) ishonchli SQL'ga tarjima qilinadi — EF konstantani `ToProvider`
+    /// funksiyasi orqali o'zgartirib, oddiy `WHERE phone = @p` chiqaradi. `.Value.Contains(...)`
+    /// esa AVVAL ustunni `PhoneNumber` obyektiga aylantirib, KEYIN uning xossasini o'qishni
+    /// talab qiladi — bu yo'nalish (provayderdan CLR'ga qarab YANA orqaga) EF tomonidan
+    /// SQL'ga ishonchli o'girilmaydi (sinov muhiti SQLite, production Postgres — ikkisi
+    /// boshqacha ishlab, aniqlanmagan xatti-tutish xavfi tug'diradi). Shu sabab qidiruv matni
+    /// TO'LIQ telefon raqamiga mos kelgandagina (`PhoneNumber.Create` muvaffaqiyatli — 9
+    /// xonali mahalliy YOKI `998` bilan boshlanuvchi 12 xonali) tenglik sharti qo'shiladi;
+    /// qisman raqam (masalan "90123") hech narsaga mos kelmaydi.
+    /// </para>
     /// </summary>
     private static IQueryable<UserRow> ApplySearch(IQueryable<UserRow> rows, string? search)
     {
@@ -159,12 +173,15 @@ internal sealed class ListPublicSpaceUsersQueryHandler
 
         var term = search.Trim().ToUpperInvariant();
         var normalizedName = NameNormalizer.Normalize(search);
+        var phoneAttempt = PhoneNumber.Create(search);
+        var phone = phoneAttempt.IsSuccess ? phoneAttempt.Value : null;
 
         return rows.Where(r =>
             (r.User.FirstName != null && r.User.FirstName.ToUpper().Contains(term))
             || (r.User.LastName != null && r.User.LastName.ToUpper().Contains(term))
             || (r.User.Username != null && r.User.Username.ToUpper().Contains(term))
-            || (r.Student != null && r.Student.NormalizedName.Contains(normalizedName)));
+            || (r.Student != null && r.Student.NormalizedName.Contains(normalizedName))
+            || (phone != null && r.Student != null && r.Student.Phone == phone));
     }
 
     /// <summary>
@@ -250,6 +267,7 @@ internal sealed class ListPublicSpaceUsersQueryHandler
             user.LastLoginAt,
             student?.Id,
             student?.FullName,
+            student?.Phone.Value,
             student is null ? null : AgeCalculator.CalculateAge(student.BirthDate, now),
             student is null || student.Grade == Student.NoGrade ? null : student.Grade,
             counts,

@@ -29,3 +29,13 @@ export function toE164UzPhone(digits: string): string | null {
   const d = extractUzLocalDigits(digits);
   return d.length === UZ_LOCAL_PHONE_DIGIT_COUNT ? `+998${d}` : null;
 }
+
+/**
+ * Ko'rsatish uchun: `+998901234567` → `+998 (90) 123-45-67`. Mahalliy qism 9 ta raqamdan
+ * iborat bo'lmasa (kutilmagan shakl, `null`/`undefined`) — kirgan qiymatni o'zgarishsiz qaytaradi.
+ */
+export function formatUzPhone(value: string | null | undefined): string {
+  if (!value) return value ?? '';
+  const local = extractUzLocalDigits(value.replace(/^\+?998/, ''));
+  return local.length === UZ_LOCAL_PHONE_DIGIT_COUNT ? `+998 ${formatUzLocalDigits(local)}` : value;
+}

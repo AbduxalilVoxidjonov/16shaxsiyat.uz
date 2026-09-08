@@ -115,11 +115,13 @@ public sealed class AdminPublicSpaceUsersEndpointTests : IClassFixture<PublicApi
         var nobody = page.Items.Single(i => i.Telegram.Username == $"{prefix}nobody");
         nobody.StudentId.Should().BeNull();
         nobody.FullName.Should().BeNull();
+        nobody.Phone.Should().BeNull("anketa yo'q — telefon ham yo'q");
         nobody.Assessments.Total.Should().Be(0);
         nobody.LastAssessment.Should().BeNull();
 
         var progress = page.Items.Single(i => i.Telegram.Username == $"{prefix}progress");
         progress.FullName.Should().Be("Toshev Bobur");
+        progress.Phone.Should().Be("+998905551001");
         progress.StudentId.Should().NotBeNull();
         progress.Assessments.Should().Be(new AdminPublicUserAssessmentCountsDto(1, 0, 1));
         progress.LastAssessment.Should().NotBeNull();
@@ -143,6 +145,34 @@ public sealed class AdminPublicSpaceUsersEndpointTests : IClassFixture<PublicApi
         (await GetUsernamesAsync(client, $"search={prefix}&status=never_started")).Should().Equal($"{prefix}nobody");
         (await GetUsernamesAsync(client, $"search={prefix}&status=in_progress")).Should().Equal($"{prefix}progress");
         (await GetUsernamesAsync(client, $"search={prefix}&status=completed")).Should().Equal($"{prefix}done");
+    }
+
+    [Fact]
+    public async Task ListUsers_ToLiqTelefonRaqamiBoYichaTopadi_QismanRaqamHechNarsaTopmaydi()
+    {
+        const string prefix = "psu_d_";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var now = DateTimeOffset.UtcNow;
+            var space = await PublicUserTestDataFactory.GetOrCreatePublicSpaceAsync(db, now);
+
+            var user = AddUser(db, $"{prefix}phone", "Nodir", "Egamberdiyev", now);
+            AddStudent(db, space.Id, user.Id, "Egamberdiyev Nodir", "+998907778899", now);
+            await db.SaveChangesAsync();
+        }
+
+        using var client = await AuthenticatedClientAsync("public-space-users-phone-admin");
+
+        // Xalqaro shakl (+998 bilan, 12 xona) — EF value-converter'li ustunga TENGLIK
+        // sifatida ishonchli tarjima qilinishi shu testda tekshiriladi (SQLite provayder).
+        (await GetUsernamesAsync(client, "search=%2B998907778899")).Should().Equal($"{prefix}phone");
+
+        // Mahalliy shakl (+998 siz, 9 xona).
+        (await GetUsernamesAsync(client, "search=907778899")).Should().Equal($"{prefix}phone");
+
+        // Qisman raqam — moslik YO'Q (faqat to'liq tenglik, `Contains` emas).
+        (await GetUsernamesAsync(client, "search=90777")).Should().BeEmpty();
     }
 
     [Fact]

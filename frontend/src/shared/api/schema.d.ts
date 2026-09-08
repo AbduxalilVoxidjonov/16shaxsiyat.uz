@@ -6184,6 +6184,7 @@ export interface components {
             /** Format: uuid */
             studentId?: string | null;
             fullName?: string | null;
+            phone?: string | null;
             /** Format: int32 */
             age?: number | null;
             /** Format: int32 */

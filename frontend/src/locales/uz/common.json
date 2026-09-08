@@ -2395,7 +2395,7 @@
       "assessmentsSummary": "{{completed}} / {{total}} tugallangan",
       "filters": {
         "searchLabel": "Qidiruv",
-        "searchPlaceholder": "F.I.Sh., Telegram ism yoki @username",
+        "searchPlaceholder": "F.I.Sh., Telegram ism, @username yoki telefon",
         "statusLabel": "Holat",
         "status": {
           "all": "Hammasi",
@@ -2407,6 +2407,7 @@
       "table": {
         "ariaLabel": "Foydalanuvchilar jadvali",
         "user": "Foydalanuvchi",
+        "phone": "Telefon",
         "registeredAt": "Ro’yxatdan o’tgan",
         "lastLoginAt": "Oxirgi kirish",
         "assessments": "Testlar",

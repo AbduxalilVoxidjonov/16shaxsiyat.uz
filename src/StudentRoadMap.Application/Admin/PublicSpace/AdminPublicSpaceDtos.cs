@@ -151,12 +151,20 @@ public sealed record AdminPublicUserLastAssessmentDto(
     AdminPublicUserProgressDto? Progress);
 
 /// <summary>
-/// `GET /api/admin/public-space/users` qatori (2026-09-07). Ro'yxat MANBAI — `public_users`
-/// (Telegram akkaunti), `Student` EMAS: ro'yxatdan o'tgan, lekin hali anketa to'ldirmagan
-/// foydalanuvchi ham ko'rinishi kerak (egasining talabi). Shu sabab `StudentId`/`FullName`/
-/// `Age`/`Grade` NULLABLE — anketa yo'q bo'lsa `null`. `Grade` — `Student.NoGrade` (0) bo'lsa
-/// ham `null` ("sinf yo'q" — kattalar/talabalar).
+/// `GET /api/admin/public-space/users` qatori (2026-09-07, `Phone` 2026-09-08 qo'shildi).
+/// Ro'yxat MANBAI — `public_users` (Telegram akkaunti), `Student` EMAS: ro'yxatdan o'tgan,
+/// lekin hali anketa to'ldirmagan foydalanuvchi ham ko'rinishi kerak (egasining talabi).
+/// Shu sabab `StudentId`/`FullName`/`Phone`/`Age`/`Grade` NULLABLE — anketa yo'q bo'lsa
+/// `null`. `Grade` — `Student.NoGrade` (0) bo'lsa ham `null` ("sinf yo'q" — kattalar/talabalar).
 ///
+/// <para>
+/// **`Phone` manbai — `students.phone` (anketa), `public_users`da EMAS:** Telegram Login
+/// Widget telefon raqamini bermaydi, shu sabab `PublicUser`da bunday ustun yo'q va
+/// qo'shilmaydi ham. Yagona mavjud raqam — anketani to'ldirganda kiritilgan
+/// `Student.Phone` (`+998XXXXXXXXX`, majburiy maydon). Anketa hali to'ldirilmagan bo'lsa
+/// `null` — egasining so'rovi bo'yicha Telegram orqali ro'yxatdan o'tgan foydalanuvchilarning
+/// raqami ham shu ro'yxatda ko'rinsin.
+/// </para>
 /// <para>
 /// O'chirilgan (anonimlashtirilgan, `DeletedAt != null`) akkauntlar ro'yxatga KIRMAYDI —
 /// `PublicUsers` global filtri; soni `AdminPublicSpaceStatsDto.DeletedUserCount` da.
@@ -170,6 +178,7 @@ public sealed record AdminPublicUserListItemDto(
     DateTimeOffset LastLoginAt,
     Guid? StudentId,
     string? FullName,
+    string? Phone,
     int? Age,
     int? Grade,
     AdminPublicUserAssessmentCountsDto Assessments,

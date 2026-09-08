@@ -16,7 +16,9 @@ namespace StudentRoadMap.Application.Admin.PublicSpace.ListUsers;
 /// </para>
 /// <para>
 /// `Search` — F.I.Sh. (anketa), Telegram ism/familiya/username bo'yicha (katta-kichik
-/// harf farqsiz). `Sort` — `registeredAt` (standart `-registeredAt`) yoki `lastLoginAt`.
+/// harf farqsiz); TO'LIQ telefon raqami bo'yicha ham (`students.phone`, 2026-09-08) — faqat
+/// ANIQ TENGLIK (9 xonali mahalliy YOKI `998` bilan boshlanuvchi 12 xonali), qisman raqam
+/// mos kelmaydi. `Sort` — `registeredAt` (standart `-registeredAt`) yoki `lastLoginAt`.
 /// </para>
 /// </summary>
 public sealed record ListPublicSpaceUsersQuery(

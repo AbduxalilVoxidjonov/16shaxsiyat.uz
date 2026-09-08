@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractUzLocalDigits, formatUzLocalDigits, toE164UzPhone } from './formatPhone';
+import { extractUzLocalDigits, formatUzLocalDigits, formatUzPhone, toE164UzPhone } from './formatPhone';
 
 describe('extractUzLocalDigits', () => {
   it("raqam bo'lmagan belgilarni olib tashlaydi", () => {
@@ -39,5 +39,24 @@ describe('toE164UzPhone', () => {
   it("to'liq bo'lmagan raqam uchun null qaytaradi", () => {
     expect(toE164UzPhone('9012345')).toBeNull();
     expect(toE164UzPhone('')).toBeNull();
+  });
+});
+
+describe('formatUzPhone', () => {
+  it("+998XXXXXXXXX shaklini ko'rsatish uchun formatlaydi", () => {
+    expect(formatUzPhone('+998901234567')).toBe('+998 (90) 123-45-67');
+  });
+
+  it("998 bilan boshlangan (+ siz) qiymatni ham formatlaydi", () => {
+    expect(formatUzPhone('998901234567')).toBe('+998 (90) 123-45-67');
+  });
+
+  it("kutilmagan shakl uchun kirgan qiymatni o'zgarishsiz qaytaradi", () => {
+    expect(formatUzPhone('90123')).toBe('90123');
+  });
+
+  it('null/undefined uchun bo\'sh qator qaytaradi', () => {
+    expect(formatUzPhone(null)).toBe('');
+    expect(formatUzPhone(undefined)).toBe('');
   });
 });

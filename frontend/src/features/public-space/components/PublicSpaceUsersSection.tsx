@@ -9,6 +9,7 @@ import { Input } from '@/shared/ui/Input';
 import { Select } from '@/shared/ui/Select';
 import { ROUTES } from '@/shared/config/routes';
 import { formatDate } from '@/shared/lib/formatDate';
+import { formatUzPhone } from '@/shared/lib/formatPhone';
 import { usePublicSpaceUsersQuery } from '../api/usePublicSpaceUsersQuery';
 import {
   PUBLIC_USER_STATUS_BADGE_VARIANT,
@@ -195,6 +196,11 @@ export function PublicSpaceUsersSection() {
           </div>
         );
       },
+    },
+    {
+      id: 'phone',
+      header: t('publicSpace.users.table.phone'),
+      cell: (row) => <span className="whitespace-nowrap">{row.phone ? formatUzPhone(row.phone) : '—'}</span>,
     },
     {
       id: 'registeredAt',
