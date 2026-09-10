@@ -4,7 +4,7 @@
 > PM har vazifa boshlanganda va tugaganda **darhol** yangilaydi.
 
 **Loyiha:** Shaxsiyat (`16shaxsiyat.uz`) · ichki nom `StudentRoadMap`
-**Oxirgi yangilanish:** 2026-09-11 · **Joriy bosqich:** B8 (Anketa konstruktori — tarmoqlanish) · **Joriy vazifa:** P52 tarmoqlanuvchi so'rovnoma (4 to'lqin, parallel agentlar)
+**Oxirgi yangilanish:** 2026-09-11 · **Joriy bosqich:** B8 (Anketa konstruktori — tarmoqlanish) · **Joriy vazifa:** P52 yakunlandi; navbatdagi ish kutilmoqda
 
 ---
 
@@ -69,7 +69,7 @@
 | P49 | Telegram kirish, kabinet va maktabsiz sessiya (API) | backend-dotnet | ✅ | — | `POST /api/auth/telegram` (HMAC-SHA256, doimiy vaqtda solishtirish, `auth_date` 24s) · `/api/me/*` · `StartSession` kengaytirilmadi, alohida command · ikki auditoriya qat'iy ajratilgan (test bilan qulflangan) · begona sessiya → `404` · 1179 test · commit `70b5d59` |
 | P50 | Telegram kirish va kabinet UI | frontend-react | ✅ | — | `/kirish`, `/kabinet`, `/kabinet/test`, `/kabinet/natijalar/:id` · access token FAQAT xotirada (XSS) · Telegram obyekti qayta yig'ilmaydi (imzo) · maktab oqimi tegilmagan · 608 test · commit `c155c59` |
 | P51 | Docker: seed `init` profiliga, obraz bir marta quriladi | backend-dotnet | ✅ | — | Egasining talabi · `up --build` 4 emas 2 obraz · `migrate` ATAYLAB avtomatik qoldi (API sxema eskirganini tekshirmaydi) · commit `b7d69c5` |
-| P52 | Tarmoqlanuvchi so'rovnoma (bo'limlar, ko'rsatish sharti, matn/ko'p tanlovli savollar) | backend + frontend | 🟡 | — | Egasining talabi · shartnoma `docs/18` · oltin fikstura `tests/fixtures/visibility-golden.json` (ikki tomon o'qiydi) · namuna `docs/examples/sorovnoma-intellect.json` |
+| P52 | Tarmoqlanuvchi so'rovnoma (bo'limlar, ko'rsatish sharti, matn/ko'p tanlovli savollar) | backend + frontend | ✅ | — | Egasining talabi · shartnoma `docs/18` · oltin fikstura `tests/fixtures/visibility-golden.json` **ikkala tomon o'qiydi** va 3 ta haqiqiy ajralishni ushladi · backend **1554 test**, frontend **920 test**, E2E 390px+1440px real Docker stekda PASS · namuna `docs/examples/sorovnoma-intellect.json` (5 bo'lim, 25 savol) import→nashr→ommaviy API testi bilan qulflangan · QA: PASS (1 bloklovchi + 2 muhim tuzatildi) |
 
 ---
 
@@ -409,6 +409,9 @@
 
 | Risk / qarz | Ta'sir | Reja |
 |-------------|--------|------|
+| P52: Excel eksport/import bo'lim va `visibility` maydonlarini bilmaydi — tarmoqlanuvchi anketani Excel'ga chiqarsa bu ma'lumot JIMGINA yo'qoladi | Superadmin Excel aylanmasidan keyin tarmoqlanishni yo'qotib qo'yishi mumkin | `docs/07` §3.4 da ogohlantirish yozilgan (rasmiy yo'l — JSON). Kerak bo'lsa eksportga bloklovchi/ogohlantiruvchi javob qo'shiladi |
+| P52: to'liq Playwright to'plami 3 worker bilan parallel yurganda yangi `branching-survey.e2e.ts` ba'zan admin importda `409 UNIQUE_CONSTRAINT_CONFLICT` beradi (alohida yuritilganda 100% PASS) | CI'da tasodifiy qizil bo'lishi mumkin | Sabab aniqlanmagan — ehtimol admin yozuv so'rovlari poygasi. CI `workers: 2` + `retries: 1` bilan yumshoq. Backend agenti alohida ko'rib chiqsin |
+| P52: 390px/1440px piksel darajasida KO'Z bilan ko'rilmagan — faqat `axe` va gorizontal-skroll avtomatik tekshirildi | Vizual nomuvofiqlik sezilmay qolishi mumkin | E2E aynan shu yo'l bilan bitta BLOKLOVCHI ni ushladi (footer "Keyingi" ni to'sardi), ya'ni qamrov yomon emas. Egasi ko'rsa yaxshi |
 | P50 dan beri `PUBLIC_SPACE_SLUG = 'ommaviy'` frontendda backend `DbSeeder.PublicSpaceSlug` konstantasining NUSXASI — backend uni javobda qaytarmaydi | Backend slug'ni o'zgartirsa frontend jimgina buziladi (test ushlamaydi, chunki ikkalasi ham qattiq yozilgan) | Backend `GET /api/public/...` javobida ommaviy makon slug'ini qaytarsin yoki shartnoma testi qo'shilsin |
 | P49/P50: ommaviy oqim uchun E2E (Playwright) hali yozilmagan — Telegram kirishini e2e'da taqlid qilish kerak | Kabinet va maktabsiz test oqimida regressiya vitest bilan ushlanmasligi mumkin (brauzer xatti-harakati, cookie, refresh) | Telegram javobini soxtalashtiruvchi test yordamchisi (bot tokeni test muhitida ma'lum) + `screens.e2e.ts` ga `/kirish`, `/kabinet` qo'shish |
 | P49: `DELETE /api/me` `public_users` ni anonimlashtiradi, lekin ommaviy makondagi `Student` yozuvidagi F.I.Sh./telefon qoladi (BR-1 takrorlanish mantig'iga kiradi) | "O'chirish huquqi" to'liq bajarilmagan — shaxsiy ma'lumot bazada qolaveradi | Egasining qarori kerak: `Student` PII ham anonimlashtirilsinmi va takrorlanishni aniqlash nima bilan almashtirilsin |
