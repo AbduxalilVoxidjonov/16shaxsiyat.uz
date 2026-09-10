@@ -264,7 +264,14 @@
       "saved": "Saqlandi"
     },
     "question": {
-      "requiredError": "Bu savolga javob bering."
+      "requiredError": "Bu savolga javob bering.",
+      "phoneInvalid": "To'g'ri telefon raqam kiriting (masalan: +998 90 123 45 67).",
+      "formatInvalid": "Noto'g'ri format.",
+      "charCount": "{{count}} / {{max}}",
+      "minSelectionsHint": "Kamida {{count}} ta tanlang.",
+      "maxSelectionsHint": "Ko'pi bilan {{count}} ta tanlang.",
+      "selectionRangeHint": "Kamida {{min}}, ko'pi bilan {{max}} ta tanlang.",
+      "minSelectionsError": "Kamida {{count}} ta variant tanlang."
     }
   },
   "register": {
