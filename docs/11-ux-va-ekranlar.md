@@ -111,6 +111,17 @@ palitra, faqat farqlash uchun.
 - Yuqorida kichkina "Saqlandi ✓" indikatori (autosave holati).
 - Offline banner: "Internet yo'q — javoblaringiz saqlanmoqda, ulanish tiklanganda yuboriladi".
 
+**P52-A4 — bo'lim-qadam ko'rinishi** (tarmoqlanuvchi so'rovnoma, to'liq shartnoma `docs/18`,
+frontend qismi `docs/10` §4.3): anketada bo'lim bor bo'lsa (`sections`), yuqoridagi maket bir
+farq bilan — bir ekranda savollar sahifasi o'rniga BITTA ko'rinadigan bo'lim ko'rsatiladi
+(sarlavha + tavsif + o'sha bo'limga tegishli, HOZIR ko'rinadigan savollar). "Keyingi" keyingi
+ko'rinadigan bo'limga o'tadi (masalan "qo'shimcha kursga qatnashasizmi?" savoliga javobga
+qarab — 2-A/2-B/2-C dan biri, yoki hech biri), progress bo'lim ichidagi savol soniga emas,
+BUTUN testdagi HOZIR ko'rinadigan savollar soniga qarab hisoblanadi. Bo'lim almashganda fokus
+yangi sarlavhaga o'tadi (ekran o'quvchisi uchun). Savol darajasida ham shart bo'lishi mumkin —
+masalan "Boshqa (kiriting)" varianti tanlansa ostida matn maydoni darhol paydo bo'ladi.
+Bo'limsiz anketalarda (4 ta tizim metodikasi) yuqoridagi sahifalangan ko'rinish o'zgarishsiz.
+
 ### E-4 Blok yakuni (`/t/:slug/test/:testCode/done`)
 - "Ajoyib! 1-blok tugadi 🎉" (emoji faqat shu ekranda, o'quvchi motivatsiyasi uchun).
 - Qolgan bloklar va taxminiy vaqt.

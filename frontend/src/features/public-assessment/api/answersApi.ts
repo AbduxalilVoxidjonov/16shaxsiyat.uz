@@ -1,6 +1,7 @@
 import { env } from '@/shared/config/env';
 import { publicRequest } from '@/shared/api/publicClient';
-import type { SaveAnswerItem, SaveAnswersResponse } from '@/shared/api/types';
+import type { SaveAnswersResponse } from '@/shared/api/types';
+import type { BranchingSaveAnswerEntry } from '@/shared/api/branchingTypes';
 
 function answersUrl(testCode: string): string {
   return `/api/public/sessions/tests/${encodeURIComponent(testCode)}/answers`;
@@ -13,7 +14,7 @@ function answersUrl(testCode: string): string {
  */
 export function saveAnswers(
   testCode: string,
-  answers: readonly SaveAnswerItem[],
+  answers: readonly BranchingSaveAnswerEntry[],
 ): Promise<SaveAnswersResponse> {
   return publicRequest<SaveAnswersResponse>(answersUrl(testCode), {
     method: 'POST',
@@ -35,9 +36,9 @@ const KEEPALIVE_CHUNK_BYTE_SIZE = 8_000;
  * ketgan qism localStorage navbatida (`pending: true`) qoladi va keyingi tashrifda oddiy
  * autosave orqali qayta yuboriladi (backend upsert idempotent — docs/07 4-bo'lim).
  */
-function chunkAnswersForKeepalive(answers: readonly SaveAnswerItem[]): SaveAnswerItem[][] {
-  const chunks: SaveAnswerItem[][] = [];
-  let currentChunk: SaveAnswerItem[] = [];
+function chunkAnswersForKeepalive(answers: readonly BranchingSaveAnswerEntry[]): BranchingSaveAnswerEntry[][] {
+  const chunks: BranchingSaveAnswerEntry[][] = [];
+  let currentChunk: BranchingSaveAnswerEntry[] = [];
   let currentChunkBytes = 0;
   let totalBytes = 0;
 
@@ -78,7 +79,7 @@ function chunkAnswersForKeepalive(answers: readonly SaveAnswerItem[]): SaveAnswe
  */
 export function sendAnswersKeepalive(
   testCode: string,
-  answers: readonly SaveAnswerItem[],
+  answers: readonly BranchingSaveAnswerEntry[],
   sessionToken: string,
 ): void {
   if (typeof fetch !== 'function' || answers.length === 0) {

@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  answersForTest,
   clearAnswerStore,
+  filterVisibleAnswers,
   markSent,
   pendingByTestCode,
   readAnswerStore,
+  toWireItem,
   upsertAnswer,
-  valuesForTest,
   writeAnswerStore,
 } from './answerQueue';
 
@@ -69,14 +71,44 @@ describe('answerQueue', () => {
     expect(groups['RIASEC']?.map((entry) => entry.questionId)).toEqual(['q3']);
   });
 
-  it("valuesForTest berilgan testCode'ga tegishli barcha qiymatlarni (pending yoki yo'q) qaytaradi", () => {
+  it("answersForTest berilgan testCode'ga tegishli barcha javoblarni (pending yoki yo'q) qaytaradi", () => {
     let store = upsertAnswer({}, { testCode: 'BIG5', questionId: 'q1', value: 4, durationMs: 10 });
     store = markSent(store, ['q1']);
     store = upsertAnswer(store, { testCode: 'BIG5', questionId: 'q2', value: 2, durationMs: 20 });
     store = upsertAnswer(store, { testCode: 'RIASEC', questionId: 'q3', value: 5, durationMs: 30 });
 
-    expect(valuesForTest(store, 'BIG5')).toEqual({ q1: 4, q2: 2 });
-    expect(valuesForTest(store, 'RIASEC')).toEqual({ q3: 5 });
+    expect(answersForTest(store, 'BIG5')).toEqual({ q1: { value: 4 }, q2: { value: 2 } });
+    expect(answersForTest(store, 'RIASEC')).toEqual({ q3: { value: 5 } });
+  });
+
+  it('answersForTest matn/ko\'p-tanlov javoblarini ham to\'g\'ri qaytaradi (docs/18 §4.2)', () => {
+    let store = upsertAnswer({}, { testCode: 'SURVEY', questionId: 'q1', text: 'Karimov Ali', durationMs: 10 });
+    store = upsertAnswer(store, { testCode: 'SURVEY', questionId: 'q2', selectedValues: [1, 3], durationMs: 20 });
+
+    expect(answersForTest(store, 'SURVEY')).toEqual({
+      q1: { text: 'Karimov Ali' },
+      q2: { selectedValues: [1, 3] },
+    });
+  });
+
+  it('toWireItem faqat to\'ldirilgan maydonni qo\'shadi — ortiqcha undefined kalit yo\'q', () => {
+    const store = upsertAnswer({}, { testCode: 'BIG5', questionId: 'q1', value: 4, durationMs: 10 });
+    const item = store['q1'];
+    expect(item).toBeDefined();
+    expect(toWireItem(item!)).toEqual({ questionId: 'q1', value: 4, durationMs: 10 });
+    expect(Object.keys(toWireItem(item!))).toEqual(['questionId', 'durationMs', 'value']);
+  });
+
+  it("filterVisibleAnswers ko'rinmas ID'larni chiqarib tashlaydi (docs/18 §6.2)", () => {
+    let store = upsertAnswer({}, { testCode: 'SURVEY', questionId: 'q1', value: 1, durationMs: 10 });
+    store = upsertAnswer(store, { testCode: 'SURVEY', questionId: 'q2', value: 2, durationMs: 20 });
+    const items = pendingByTestCode(store)['SURVEY'] ?? [];
+
+    const visible = filterVisibleAnswers(items, new Set(['q1']));
+    expect(visible.map((item) => item.questionId)).toEqual(['q1']);
+
+    // `visibleIds` berilmasa — hech narsa filtrlanmaydi (bo'limsiz oqim, mavjud xatti-harakat).
+    expect(filterVisibleAnswers(items, undefined).map((item) => item.questionId)).toEqual(['q1', 'q2']);
   });
 
   it("clearAnswerStore localStorage'ni tozalaydi (410 sessiya tugagandan keyin)", () => {

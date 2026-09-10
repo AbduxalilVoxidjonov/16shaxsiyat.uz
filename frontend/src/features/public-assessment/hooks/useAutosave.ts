@@ -4,13 +4,17 @@ import { AppError } from '@/shared/api/AppError';
 import { getSessionToken } from '@/shared/api/sessionToken';
 import { saveAnswers, sendAnswersKeepalive } from '../api/answersApi';
 import {
+  answersForTest,
+  filterVisibleAnswers,
   markSent,
   pendingByTestCode,
   readAnswerStore,
+  toWireItem,
   upsertAnswer,
-  valuesForTest,
   writeAnswerStore,
+  type AnswerPayload,
   type AnswerStore,
+  type StoredAnswer,
 } from '../lib/answerQueue';
 
 export type AutosaveStatus = 'saved' | 'saving';
@@ -23,21 +27,29 @@ export interface UseAutosaveOptions {
   testCode: string;
   /** `410 SESSION_EXPIRED` kelganda chaqiriladi — chaqiruvchi tomon landing'ga qaytaradi. */
   onSessionExpired?: () => void;
+  /**
+   * `docs/18` §6.2 — HOZIR ko'rinadigan savol ID'lari. Berilsa, shu to'plamdan TASHQARIDAGI
+   * (bo'lim/savol shartiga ko'ra yashirilgan) yozuvlar yuborilmaydi va "saqlanmoqda" holatiga
+   * hisobga olinmaydi — aks holda backend `400 QUESTION_NOT_VISIBLE` qaytarardi va
+   * "Saqlanmoqda…" indikatori abadiy osilib qolardi. `undefined` — cheklovsiz (bo'limsiz oqim,
+   * mavjud xatti-harakat).
+   */
+  visibleQuestionIds?: ReadonlySet<string>;
 }
 
 export interface UseAutosaveResult {
-  /** Joriy testga tegishli mahalliy qiymatlar (`questionId -> value`) — server javobidan ustun. */
-  localValues: Record<string, number>;
+  /** Joriy testga tegishli mahalliy javoblar (`questionId -> {value|text|selectedValues}`) — server javobidan ustun. */
+  localAnswers: Record<string, AnswerPayload>;
   /** "Saqlandi ✓" / "Saqlanmoqda…" indikatori uchun (docs/11 E-3). Offline holati alohida — `useOnline()`. */
   status: AutosaveStatus;
   /** Javobni darhol mahalliy keshga yozadi (UI hech qachon kutmaydi) va yuborishni navbatga qo'yadi. */
-  setAnswer: (questionId: string, value: number, durationMs: number) => void;
+  setAnswer: (questionId: string, payload: AnswerPayload, durationMs: number) => void;
   /**
    * Navbatni darhol yuborishga urinadi (debounce/interval'ni kutmasdan) va **yuborish
    * YAKUNLANGANDA** hal bo'ladigan promise qaytaradi:
    *
-   * - `true` — chaqirilgan paytda navbatda bo'lgan BARCHA javoblar serverga yetib bordi
-   *   (yoki navbat allaqachon bo'sh edi);
+   * - `true` — chaqirilgan paytda navbatda bo'lgan BARCHA (ko'rinadigan) javoblar serverga
+   *   yetib bordi (yoki navbat allaqachon bo'sh edi);
    * - `false` — yetib bormadi (tarmoq xatosi, oflayn, `410`). Javoblar `pending: true`
    *   holida navbatda qoladi va keyingi urinishda qayta yuboriladi — YO'QOLMAYDI.
    *
@@ -50,7 +62,9 @@ export interface UseAutosaveResult {
 }
 
 /**
- * Autosave — docs/10-frontend-arxitektura.md 4.2-bo'lim, CLAUDE.md MAXSUS DIQQAT 1-band.
+ * Autosave — docs/10-frontend-arxitektura.md 4.2-bo'lim, CLAUDE.md MAXSUS DIQQAT 1-band,
+ * `docs/18` §4.2/§6.2 (tarmoqlanuvchi so'rovnoma — `value`/`text`/`selectedValues` shakli va
+ * yashirilgan savol javobini yubormaslik).
  *
  * - Javob darhol mahalliy keshga (`answerQueue.ts`, `localStorage`) yoziladi — UI hech qachon
  *   tarmoqni kutmaydi.
@@ -60,9 +74,13 @@ export interface UseAutosaveResult {
  *   bloklanmaydi, keyingi urinishda avtomatik qayta yuboriladi.
  * - `410 SESSION_EXPIRED` — navbat bilan urinish to'xtaydi, `onSessionExpired` chaqiriladi.
  * - `beforeunload` va `visibilitychange` (→ `hidden`, mobilda `beforeunload`dan ishonchliroq) —
- *   `fetch(..., { keepalive: true })` bilan oxirgi (hali yuborilmagan) paket yuboriladi.
+ *   `fetch(..., { keepalive: true })` bilan oxirgi (hali yuborilmagan, ko'rinadigan) paket
+ *   yuboriladi.
+ * - `visibleQuestionIds` berilgan bo'lsa, undan TASHQARIDAGI yozuvlar (hozir yashirilgan
+ *   bo'lim/savol) hech qachon yuborilmaydi — lekin navbatdan o'chirilmaydi ham: qayta
+ *   ko'rinsa (o'quvchi javobini qaytadan tanlasa) keyingi flush ularni yuboradi.
  *
- * Eslatma (React Compiler purity): render vaqtida hisoblanadigan qiymatlar (`localValues`,
+ * Eslatma (React Compiler purity): render vaqtida hisoblanadigan qiymatlar (`localAnswers`,
  * `status`) haqiqiy `useState`dan olinadi (render davomida `ref.current` o'qish/yozish
  * taqiqlangan). `storeRef` — navbatning HAQIQIY manbai; u faqat effekt/callback'lar ichida
  * (`updateStore`, interval, `beforeunload`/`visibilitychange`, `flush`) o'qiladi va yoziladi —
@@ -70,17 +88,26 @@ export interface UseAutosaveResult {
  * (Ilgari `storeRef` alohida effekt orqali sinxronlanardi — bu bir render kechikish berardi va
  * `flush()` eng oxirgi javobni ko'rmasligi mumkin edi.)
  */
-export function useAutosave({ testCode, onSessionExpired }: UseAutosaveOptions): UseAutosaveResult {
+export function useAutosave({
+  testCode,
+  onSessionExpired,
+  visibleQuestionIds,
+}: UseAutosaveOptions): UseAutosaveResult {
   const isOnline = useOnline();
   const [store, setStore] = useState<AnswerStore>(() => readAnswerStore());
   const storeRef = useRef<AnswerStore>(store);
   const [isSending, setIsSending] = useState(false);
   const debounceRef = useRef<number | null>(null);
   const onSessionExpiredRef = useRef(onSessionExpired);
+  const visibleQuestionIdsRef = useRef(visibleQuestionIds);
 
   useEffect(() => {
     onSessionExpiredRef.current = onSessionExpired;
   }, [onSessionExpired]);
+
+  useEffect(() => {
+    visibleQuestionIdsRef.current = visibleQuestionIds;
+  }, [visibleQuestionIds]);
 
   const updateStore = useCallback((updater: (prev: AnswerStore) => AnswerStore) => {
     // `setStore` funksional yangilagichi EMAS: navbat `storeRef`da sinxron yangilanishi shart,
@@ -91,27 +118,17 @@ export function useAutosave({ testCode, onSessionExpired }: UseAutosaveOptions):
     setStore(next);
   }, []);
 
-  /** Bitta test bloki navbatini yuboradi. `true` — serverga yetib bordi. */
+  /** Bitta test bloki navbatini yuboradi. `true` — YUBORILISHI KERAK BO'LGANLARNING hammasi serverga yetib bordi. */
   const flushGroup = useCallback(
-    async (
-      groupTestCode: string,
-      items: readonly { questionId: string; value: number; durationMs: number }[],
-    ): Promise<boolean> => {
-      if (items.length === 0) return true;
+    async (groupTestCode: string, items: readonly StoredAnswer[]): Promise<boolean> => {
+      const sendable =
+        groupTestCode === testCode
+          ? filterVisibleAnswers(items, visibleQuestionIdsRef.current)
+          : items;
+      if (sendable.length === 0) return true;
       try {
-        // `items` — `StoredAnswer[]` (`testCode`/`pending` maydonlari bilan, `answerQueue.ts`),
-        // backend shartnomasi (`SaveAnswersRequest`) esa faqat `questionId`/`value`/`durationMs`
-        // kutadi — shu sabab yuborishdan oldin qisqartiriladi.
-        await saveAnswers(
-          groupTestCode,
-          items.map(({ questionId, value, durationMs }) => ({ questionId, value, durationMs })),
-        );
-        updateStore((prev) =>
-          markSent(
-            prev,
-            items.map((item) => item.questionId),
-          ),
-        );
+        await saveAnswers(groupTestCode, sendable.map(toWireItem));
+        updateStore((prev) => markSent(prev, sendable.map((item) => item.questionId)));
         return true;
       } catch (error) {
         if (error instanceof AppError && error.status === 410) {
@@ -123,7 +140,7 @@ export function useAutosave({ testCode, onSessionExpired }: UseAutosaveOptions):
         return false;
       }
     },
-    [updateStore],
+    [testCode, updateStore],
   );
 
   /** Bitta yuborish sikli — chaqirilgan paytdagi butun navbatni yuboradi. Hech qachon `throw` qilmaydi. */
@@ -156,8 +173,8 @@ export function useAutosave({ testCode, onSessionExpired }: UseAutosaveOptions):
   }, [runFlush]);
 
   const setAnswer = useCallback(
-    (questionId: string, value: number, durationMs: number) => {
-      updateStore((prev) => upsertAnswer(prev, { testCode, questionId, value, durationMs }));
+    (questionId: string, payload: AnswerPayload, durationMs: number) => {
+      updateStore((prev) => upsertAnswer(prev, { testCode, questionId, durationMs, ...payload }));
       if (debounceRef.current !== null) {
         window.clearTimeout(debounceRef.current);
       }
@@ -207,11 +224,9 @@ export function useAutosave({ testCode, onSessionExpired }: UseAutosaveOptions):
       if (!token) return;
       const groups = pendingByTestCode(storeRef.current);
       for (const [code, items] of Object.entries(groups)) {
-        sendAnswersKeepalive(
-          code,
-          items.map(({ questionId, value, durationMs }) => ({ questionId, value, durationMs })),
-          token,
-        );
+        const sendable =
+          code === testCode ? filterVisibleAnswers(items, visibleQuestionIdsRef.current) : items;
+        sendAnswersKeepalive(code, sendable.map(toWireItem), token);
       }
     }
     function handleBeforeUnload() {
@@ -228,13 +243,19 @@ export function useAutosave({ testCode, onSessionExpired }: UseAutosaveOptions):
       window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [testCode]);
 
-  const localValues = useMemo(() => valuesForTest(store, testCode), [store, testCode]);
+  const localAnswers = useMemo(() => answersForTest(store, testCode), [store, testCode]);
   const status: AutosaveStatus = useMemo(() => {
-    const hasPending = Object.values(store).some((entry) => entry.pending);
+    const hasPending = Object.values(store).some((entry) => {
+      if (!entry.pending) return false;
+      if (entry.testCode === testCode && visibleQuestionIds && !visibleQuestionIds.has(entry.questionId)) {
+        return false; // hozir yashirin — yuborilmaydi, "saqlanmoqda" holatini abadiy bloklamasin
+      }
+      return true;
+    });
     return isSending || hasPending ? 'saving' : 'saved';
-  }, [store, isSending]);
+  }, [store, isSending, testCode, visibleQuestionIds]);
 
-  return { localValues, status, setAnswer, flush };
+  return { localAnswers, status, setAnswer, flush };
 }

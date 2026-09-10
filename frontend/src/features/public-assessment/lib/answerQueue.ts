@@ -1,4 +1,17 @@
 import { STORAGE_KEYS } from '@/shared/config/storageKeys';
+import type { BranchingSaveAnswerEntry } from '@/shared/api/branchingTypes';
+
+/**
+ * Bitta savolga berilgan javob QIYMATI — `docs/18` §2.7/§4.2 invarianti bo'yicha uchta
+ * shakldan (`value`/`text`/`selectedValues`) AYNAN bittasi to'ldiriladi (savol turiga mos).
+ * Ikkinchisi/uchinchisi shunchaki YO'Q (`undefined`) — `null` EMAS, aks holda
+ * `JSON.stringify` orqali serverga bo'sh maydon ham ketardi.
+ */
+export interface AnswerPayload {
+  value?: number;
+  text?: string;
+  selectedValues?: number[];
+}
 
 /**
  * O'quvchi javobining mahalliy yozuvi — bir vaqtning o'zida ikkita rolni bajaradi:
@@ -11,10 +24,9 @@ import { STORAGE_KEYS } from '@/shared/config/storageKeys';
  * holda ekran shu zahoti "javobsiz" holatga qaytib ketardi (server'dan qaytgan `currentValue`
  * eski, keshni yangilash uchun qayta so'rov yubormaguncha).
  */
-export interface StoredAnswer {
+export interface StoredAnswer extends AnswerPayload {
   testCode: string;
   questionId: string;
-  value: number;
   durationMs: number;
   pending: boolean;
 }
@@ -46,7 +58,7 @@ export function writeAnswerStore(store: AnswerStore): void {
 /** Bitta javobni yozadi/yangilaydi va `pending: true` deb belgilaydi (yangi tahrir — qayta yuborilishi kerak). */
 export function upsertAnswer(
   store: AnswerStore,
-  entry: { testCode: string; questionId: string; value: number; durationMs: number },
+  entry: { testCode: string; questionId: string; durationMs: number } & AnswerPayload,
 ): AnswerStore {
   return {
     ...store,
@@ -82,12 +94,47 @@ export function pendingByTestCode(store: AnswerStore): Record<string, StoredAnsw
   return groups;
 }
 
-/** Joriy testga tegishli barcha mahalliy qiymatlar (`questionId -> value`) — pending yoki yo'qligidan qat'i nazar. */
-export function valuesForTest(store: AnswerStore, testCode: string): Record<string, number> {
-  const result: Record<string, number> = {};
+/**
+ * Berilgan yozuvlardan HOZIR ko'rinadiganlarini ajratadi (`docs/18` §6.2: "yashirilgan
+ * savolning mahalliy javobi yuborilmaydi — autosave navbatidan chiqariladi"). `visibleIds`
+ * berilmasa (bo'limsiz oqim) — hammasi qaytariladi, filtr qo'llanmaydi.
+ */
+export function filterVisibleAnswers(
+  items: readonly StoredAnswer[],
+  visibleIds: ReadonlySet<string> | undefined,
+): StoredAnswer[] {
+  if (!visibleIds) return [...items];
+  return items.filter((item) => visibleIds.has(item.questionId));
+}
+
+/**
+ * Mahalliy yozuvni `POST .../answers` so'rov elementi shakliga o'giradi (`docs/18` §4.2) —
+ * faqat TO'LDIRILGAN maydon (`value`/`text`/`selectedValues`dan bittasi) qo'shiladi, aks
+ * holda eski (bo'limsiz) so'rovlar ham `text: undefined, selectedValues: undefined` kabi
+ * ortiqcha kalitlar bilan ketardi.
+ */
+export function toWireItem(entry: StoredAnswer): BranchingSaveAnswerEntry {
+  const { questionId, value, text, selectedValues, durationMs } = entry;
+  return {
+    questionId,
+    durationMs,
+    ...(value !== undefined ? { value } : {}),
+    ...(text !== undefined ? { text } : {}),
+    ...(selectedValues !== undefined ? { selectedValues } : {}),
+  };
+}
+
+/** Joriy testga tegishli barcha mahalliy javoblar (`questionId -> {value|text|selectedValues}`) — pending yoki yo'qligidan qat'i nazar. */
+export function answersForTest(store: AnswerStore, testCode: string): Record<string, AnswerPayload> {
+  const result: Record<string, AnswerPayload> = {};
   for (const entry of Object.values(store)) {
     if (entry.testCode === testCode) {
-      result[entry.questionId] = entry.value;
+      const { value, text, selectedValues } = entry;
+      result[entry.questionId] = {
+        ...(value !== undefined ? { value } : {}),
+        ...(text !== undefined ? { text } : {}),
+        ...(selectedValues !== undefined ? { selectedValues } : {}),
+      };
     }
   }
   return result;

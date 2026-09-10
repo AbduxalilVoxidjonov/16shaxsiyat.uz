@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { jsonResponse } from '@/test/apiMock';
 import { sendAnswersKeepalive } from './answersApi';
-import type { SaveAnswerItem } from '@/shared/api/types';
+import type { BranchingSaveAnswerEntry } from '@/shared/api/branchingTypes';
 
 /** `POST /sessions/tests/{testCode}/answers` javobi — `docs/07` 1.6-bo'lim. */
 function okResponse(): Response {
@@ -51,7 +51,7 @@ describe('sendAnswersKeepalive', () => {
     // Har biri ~120 bayt (uzun `questionId` bilan) — 400 ta ~48KB, byudjet (~32KB) dan oshadi,
     // shu sabab hammasi emas, faqat byudjetga sig'gani yuboriladi va bir nechta so'rovga bo'linadi.
     const longId = 'q'.repeat(80);
-    const answers: SaveAnswerItem[] = Array.from({ length: 400 }, (_, index) => ({
+    const answers: BranchingSaveAnswerEntry[] = Array.from({ length: 400 }, (_, index) => ({
       questionId: `${longId}-${String(index)}`,
       value: (index % 5) + 1,
       durationMs: 1000 + index,

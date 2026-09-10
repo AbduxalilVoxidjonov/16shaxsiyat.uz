@@ -20,7 +20,7 @@
  * (`QuestionRenderer` va yangi savol komponentlari) importlari `shared/api/types`ga
  * almashtiriladi.
  */
-import type { PublicQuestion } from './types';
+import type { PublicQuestion, TestQuestionsResponse } from './types';
 import type { VisibilityRule } from '@/shared/lib/visibility';
 
 /**
@@ -65,4 +65,29 @@ export type BranchingQuestion = PublicQuestion & BranchingQuestionFields;
 /** docs/18 §4.1 — `GetTestQuestionsResult`ga qo'shiladigan `sections` maydoni. */
 export interface TestQuestionsWithSections {
   sections: PublicSection[] | null;
+}
+
+/**
+ * `GetTestQuestionsResult` (generatsiya qilingan) + `sections` va tarmoqlanuvchi savol
+ * maydonlari — `useTestQuestions` shu tipni qaytaradi. Nom ataylab "…Response" bilan
+ * TUGAMAYDI (`eslint.config.js` "qo'lda DTO yozilmasin" qoidasi, yuqoridagi izohga qarang) —
+ * "Data" qo'shimchasi shu sabab tanlangan, mazmuni esa docs/18 §4.1 bilan bir xil.
+ */
+export type BranchingTestQuestionsData = Omit<TestQuestionsResponse, 'questions'> & {
+  questions: BranchingQuestion[];
+  sections?: PublicSection[] | null;
+};
+
+/**
+ * docs/18 §4.2 — `POST .../answers` so'rov elementi: `value`/`text`/`selectedValues`dan
+ * AYNAN bittasi to'ldiriladi (savol turiga mos). Nom ataylab "…Item" bilan TUGAMAYDI (yuqoridagi
+ * "…Response" izohiga qarang — bu yerda `interface` ishlatilgani uchun intersection'ga
+ * yashirinib bo'lmaydi, shu sabab "Entry" qo'shimchasi tanlangan).
+ */
+export interface BranchingSaveAnswerEntry {
+  questionId: string;
+  value?: number;
+  text?: string;
+  selectedValues?: number[];
+  durationMs: number;
 }

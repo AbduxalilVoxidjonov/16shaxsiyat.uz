@@ -44,13 +44,13 @@ describe('useAutosave', () => {
     const { result } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
 
     act(() => {
-      result.current.setAnswer('q1', 4, 1200);
+      result.current.setAnswer('q1', { value: 4 }, 1200);
     });
 
     // Hali tarmoqqa yuborilmagan (debounce hali tugamagan), lekin mahalliy keshda bor.
     expect(saveAnswersMock).not.toHaveBeenCalled();
     expect(readAnswerStore()).toMatchObject({ q1: { value: 4, durationMs: 1200, pending: true } });
-    expect(result.current.localValues).toEqual({ q1: 4 });
+    expect(result.current.localAnswers).toEqual({ q1: { value: 4 } });
     expect(result.current.status).toBe('saving');
   });
 
@@ -58,7 +58,7 @@ describe('useAutosave', () => {
     const { result } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
 
     act(() => {
-      result.current.setAnswer('q1', 4, 1200);
+      result.current.setAnswer('q1', { value: 4 }, 1200);
     });
 
     await act(async () => {
@@ -80,13 +80,13 @@ describe('useAutosave', () => {
     const { result } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
 
     act(() => {
-      result.current.setAnswer('q1', 2, 100);
+      result.current.setAnswer('q1', { value: 2 }, 100);
     });
     await act(async () => {
       vi.advanceTimersByTime(1000);
     });
     act(() => {
-      result.current.setAnswer('q1', 5, 300); // 1000ms ichida qayta tahrirlandi — taymer qayta boshlanadi
+      result.current.setAnswer('q1', { value: 5 }, 300); // 1000ms ichida qayta tahrirlandi — taymer qayta boshlanadi
     });
     await act(async () => {
       vi.advanceTimersByTime(1000);
@@ -107,7 +107,7 @@ describe('useAutosave', () => {
     const { result } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
 
     act(() => {
-      result.current.setAnswer('q1', 3, 50);
+      result.current.setAnswer('q1', { value: 3 }, 50);
     });
     // Debounce (1.5s) allaqachon yuborgan bo'lishi mumkin — buni oldini olish uchun
     // saveAnswers darhol muvaffaqiyatsiz bo'lsin, keyin faqat interval orqali qayta urinsin.
@@ -132,7 +132,7 @@ describe('useAutosave', () => {
     const { result } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
 
     act(() => {
-      result.current.setAnswer('q1', 1, 10);
+      result.current.setAnswer('q1', { value: 1 }, 10);
     });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1500);
@@ -140,7 +140,7 @@ describe('useAutosave', () => {
 
     expect(saveAnswersMock).toHaveBeenCalledTimes(1);
     // Xato bo'lsa ham UI/holat bloklanmaydi — javob hali mahalliy keshda, "saving" holatida.
-    expect(result.current.localValues).toEqual({ q1: 1 });
+    expect(result.current.localAnswers).toEqual({ q1: { value: 1 } });
     expect(result.current.status).toBe('saving');
     expect(readAnswerStore()['q1']?.pending).toBe(true);
 
@@ -158,8 +158,8 @@ describe('useAutosave', () => {
     const { result } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
 
     act(() => {
-      result.current.setAnswer('q1', 4, 10);
-      result.current.setAnswer('q2', 2, 20);
+      result.current.setAnswer('q1', { value: 4 }, 10);
+      result.current.setAnswer('q2', { value: 2 }, 20);
     });
 
     await act(async () => {
@@ -176,7 +176,7 @@ describe('useAutosave', () => {
     const { result } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
 
     act(() => {
-      result.current.setAnswer('q1', 4, 10);
+      result.current.setAnswer('q1', { value: 4 }, 10);
     });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
@@ -202,7 +202,7 @@ describe('useAutosave', () => {
     const { result } = renderHook(() => useAutosave({ testCode: 'BIG5', onSessionExpired }));
 
     act(() => {
-      result.current.setAnswer('q1', 1, 10);
+      result.current.setAnswer('q1', { value: 1 }, 10);
     });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1500);
@@ -216,7 +216,7 @@ describe('useAutosave', () => {
     const { result } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
 
     act(() => {
-      result.current.setAnswer('q1', 3, 5);
+      result.current.setAnswer('q1', { value: 3 }, 5);
     });
     await act(async () => {
       void result.current.flush();
@@ -239,7 +239,7 @@ describe('useAutosave', () => {
     const { result } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
 
     act(() => {
-      result.current.setAnswer('q1', 3, 5);
+      result.current.setAnswer('q1', { value: 3 }, 5);
     });
 
     let settled: boolean | 'pending' = 'pending';
@@ -271,7 +271,7 @@ describe('useAutosave', () => {
     const { result } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
 
     act(() => {
-      result.current.setAnswer('q1', 2, 7);
+      result.current.setAnswer('q1', { value: 2 }, 7);
     });
 
     let ok: boolean | undefined;
@@ -281,7 +281,7 @@ describe('useAutosave', () => {
 
     expect(ok).toBe(false);
     expect(readAnswerStore()['q1']).toMatchObject({ value: 2, pending: true });
-    expect(result.current.localValues).toEqual({ q1: 2 });
+    expect(result.current.localAnswers).toEqual({ q1: { value: 2 } });
   });
 
   it('oflaynda flush() false qaytaradi va tarmoqqa umuman urinmaydi', async () => {
@@ -289,7 +289,7 @@ describe('useAutosave', () => {
     const { result } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
 
     act(() => {
-      result.current.setAnswer('q1', 4, 10);
+      result.current.setAnswer('q1', { value: 4 }, 10);
     });
 
     let ok: boolean | undefined;
@@ -325,7 +325,7 @@ describe('useAutosave', () => {
     const { result } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
 
     act(() => {
-      result.current.setAnswer('q1', 3, 5);
+      result.current.setAnswer('q1', { value: 3 }, 5);
     });
     let first!: Promise<boolean>;
     act(() => {
@@ -338,7 +338,7 @@ describe('useAutosave', () => {
 
     // Birinchi so'rov hali "havoda" — shu paytda yangi javob qo'shiladi va yana flush.
     act(() => {
-      result.current.setAnswer('q2', 4, 6);
+      result.current.setAnswer('q2', { value: 4 }, 6);
     });
     let secondDone = false;
     let second!: Promise<boolean>;
@@ -373,7 +373,7 @@ describe('useAutosave', () => {
     const { result, unmount } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
 
     act(() => {
-      result.current.setAnswer('q1', 3, 5);
+      result.current.setAnswer('q1', { value: 3 }, 5);
     });
 
     await act(async () => {
@@ -388,7 +388,7 @@ describe('useAutosave', () => {
     const { result } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
 
     act(() => {
-      result.current.setAnswer('q1', 4, 10);
+      result.current.setAnswer('q1', { value: 4 }, 10);
     });
 
     window.dispatchEvent(new Event('beforeunload'));
@@ -404,7 +404,7 @@ describe('useAutosave', () => {
     const { result } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
 
     act(() => {
-      result.current.setAnswer('q1', 4, 10);
+      result.current.setAnswer('q1', { value: 4 }, 10);
     });
 
     Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
@@ -422,11 +422,128 @@ describe('useAutosave', () => {
 
     const { result } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
     act(() => {
-      result.current.setAnswer('q1', 4, 10);
+      result.current.setAnswer('q1', { value: 4 }, 10);
     });
 
     window.dispatchEvent(new Event('beforeunload'));
 
     expect(sendAnswersKeepaliveMock).not.toHaveBeenCalled();
+  });
+
+  // docs/18 §4.2 — matn/ko'p-tanlov javob shakli.
+  describe('docs/18 §4.2 — text/selectedValues javob shakli', () => {
+    it("setAnswer({ text }) — wire elementida FAQAT text (value/selectedValues yo'q)", async () => {
+      const { result } = renderHook(() => useAutosave({ testCode: 'SURVEY' }));
+
+      act(() => {
+        result.current.setAnswer('q1', { text: 'Karimov Ali' }, 800);
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1500);
+      });
+
+      expect(saveAnswersMock).toHaveBeenCalledWith('SURVEY', [
+        { questionId: 'q1', text: 'Karimov Ali', durationMs: 800 },
+      ]);
+      expect(result.current.localAnswers).toEqual({ q1: { text: 'Karimov Ali' } });
+    });
+
+    it("setAnswer({ selectedValues }) — wire elementida FAQAT selectedValues", async () => {
+      const { result } = renderHook(() => useAutosave({ testCode: 'SURVEY' }));
+
+      act(() => {
+        result.current.setAnswer('q1', { selectedValues: [1, 3] }, 50);
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1500);
+      });
+
+      expect(saveAnswersMock).toHaveBeenCalledWith('SURVEY', [
+        { questionId: 'q1', selectedValues: [1, 3], durationMs: 50 },
+      ]);
+    });
+  });
+
+  // docs/18 §6.2 — "yashirilgan savolning mahalliy javobi yuborilmaydi — autosave navbatidan chiqariladi".
+  describe('docs/18 §6.2 — visibleQuestionIds', () => {
+    it("visibleQuestionIds berilgan bo'lsa, undan tashqaridagi savol flush()da YUBORILMAYDI", async () => {
+      const { result } = renderHook(() =>
+        useAutosave({ testCode: 'SURVEY', visibleQuestionIds: new Set(['q1']) }),
+      );
+
+      act(() => {
+        result.current.setAnswer('q1', { value: 1 }, 10); // ko'rinadi
+        result.current.setAnswer('q2', { value: 2 }, 20); // yashirin (2-A/2-B tarmog'i)
+      });
+
+      let ok: boolean | undefined;
+      await act(async () => {
+        ok = await result.current.flush();
+      });
+
+      // Faqat ko'rinadigan savol yuborildi — backend `QUESTION_NOT_VISIBLE` (400) qaytarmaydi.
+      expect(saveAnswersMock).toHaveBeenCalledTimes(1);
+      expect(saveAnswersMock).toHaveBeenCalledWith('SURVEY', [
+        { questionId: 'q1', value: 1, durationMs: 10 },
+      ]);
+      // Yashirin javob hali ham mahalliy keshda — yo'qolmagan, faqat yuborilmagan.
+      expect(readAnswerStore()['q2']).toMatchObject({ value: 2, pending: true });
+      // Yuborilishi KERAK bo'lganlar (ko'rinadiganlar) muvaffaqiyatli bo'lgani uchun `true`.
+      expect(ok).toBe(true);
+    });
+
+    it("yashirin savolning pending javobi 'Saqlanmoqda…' holatini abadiy osiltirmaydi", () => {
+      const { result } = renderHook(() =>
+        useAutosave({ testCode: 'SURVEY', visibleQuestionIds: new Set(['q1']) }),
+      );
+
+      act(() => {
+        result.current.setAnswer('q2', { value: 2 }, 20); // yashirin, hech qachon yuborilmaydi
+      });
+
+      // `q1` hali javobsiz, faqat yashirin `q2` navbatda — status "saqlandi" ko'rsatishi kerak.
+      expect(result.current.status).toBe('saved');
+    });
+
+    it("bo'lim qayta ko'ringanda (visibleQuestionIds kengaytirilganda) avval yashirilgan javob YUBORILADI", async () => {
+      const { result, rerender } = renderHook(
+        ({ visibleQuestionIds }: { visibleQuestionIds: ReadonlySet<string> }) =>
+          useAutosave({ testCode: 'SURVEY', visibleQuestionIds }),
+        { initialProps: { visibleQuestionIds: new Set(['q1']) } },
+      );
+
+      act(() => {
+        result.current.setAnswer('q2', { value: 2 }, 20); // hozircha yashirin
+      });
+      await act(async () => {
+        await result.current.flush();
+      });
+      expect(saveAnswersMock).not.toHaveBeenCalled();
+
+      rerender({ visibleQuestionIds: new Set(['q1', 'q2']) }); // q2 endi ko'rinadi
+
+      await act(async () => {
+        await result.current.flush();
+      });
+
+      expect(saveAnswersMock).toHaveBeenCalledWith('SURVEY', [
+        { questionId: 'q2', value: 2, durationMs: 20 },
+      ]);
+    });
+
+    it("visibleQuestionIds berilmasa (bo'limsiz oqim) hech narsa filtrlanmaydi — mavjud xatti-harakat", async () => {
+      const { result } = renderHook(() => useAutosave({ testCode: 'BIG5' }));
+
+      act(() => {
+        result.current.setAnswer('q1', { value: 4 }, 10);
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1500);
+      });
+
+      expect(saveAnswersMock).toHaveBeenCalledWith('BIG5', [
+        { questionId: 'q1', value: 4, durationMs: 10 },
+      ]);
+    });
   });
 });

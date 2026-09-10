@@ -4,10 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
-import { jsonResponse, problemResponse, type Schemas } from '@/test/apiMock';
+import { jsonResponse, problemResponse, typedResponse, type Schemas } from '@/test/apiMock';
 import TestPage from './TestPage';
 import { readAnswerStore } from '../lib/answerQueue';
 import { useSessionStore } from '../store/sessionStore';
+import type { BranchingQuestion, BranchingTestQuestionsData, PublicSection } from '@/shared/api/branchingTypes';
 
 const SCALE_LABELS = [
   { value: 1, label: "Umuman qo'shilmayman" },
@@ -377,5 +378,316 @@ describe('TestPage', () => {
     await screen.findByText('Savol bir');
     const q1 = within(screen.getByText('Savol bir').closest('fieldset') as HTMLElement);
     expect(q1.getByRole('radio', { name: "To'liq qo'shilaman" })).toBeChecked();
+  });
+});
+
+// docs/18-tarmoqlanuvchi-sorovnoma.md §6.2 — bo'lim-qadam rejimi. Fikstura namunaviy oqimga
+// (docs/18 §0) o'xshaydi: 1-bo'lim (hamma), 1.6-filtr → 2-A/2-B/2-C, 3-bo'lim (hamma).
+function branchingQuestion(
+  overrides: Partial<BranchingQuestion> & Pick<BranchingQuestion, 'id' | 'code' | 'order' | 'text' | 'type' | 'sectionId'>,
+): BranchingQuestion {
+  return {
+    isRequired: true,
+    options: null,
+    currentValue: null,
+    placeholder: null,
+    inputPattern: null,
+    maxLength: null,
+    minSelections: null,
+    maxSelections: null,
+    visibility: null,
+    currentText: null,
+    currentValues: null,
+    ...overrides,
+  };
+}
+
+const BRANCHING_SECTIONS: PublicSection[] = [
+  { id: 's1', code: 'S1', title: 'Asosiy ma\'lumotlar', description: null, order: 1, visibility: null },
+  {
+    id: 's2a',
+    code: 'S2A',
+    title: 'Intellect o\'quvchilari uchun',
+    description: null,
+    order: 2,
+    visibility: { match: 'All', conditions: [{ questionCode: 'Q1_6', operator: 'Equals', values: [1] }] },
+  },
+  {
+    id: 's2b',
+    code: 'S2B',
+    title: 'Boshqa markaz uchun',
+    description: null,
+    order: 3,
+    visibility: { match: 'All', conditions: [{ questionCode: 'Q1_6', operator: 'Equals', values: [2] }] },
+  },
+  {
+    id: 's2c',
+    code: 'S2C',
+    title: 'Potensial lidlar uchun',
+    description: null,
+    order: 4,
+    visibility: { match: 'All', conditions: [{ questionCode: 'Q1_6', operator: 'Equals', values: [3] }] },
+  },
+  { id: 's3', code: 'S3', title: 'Yakuniy bo\'lim', description: null, order: 5, visibility: null },
+];
+
+const BRANCHING_QUESTIONS: BranchingQuestion[] = [
+  branchingQuestion({ id: 'q1', code: 'Q1_1', order: 1, sectionId: 's1', text: 'F.I.Sh.', type: 'ShortText' }),
+  branchingQuestion({
+    id: 'q6',
+    code: 'Q1_6',
+    order: 6,
+    sectionId: 's1',
+    text: "Qo'shimcha kursga qatnashasizmi?",
+    type: 'SingleChoice',
+    options: [
+      { id: 'o1', text: 'Intellect', value: 1, order: 1 },
+      { id: 'o2', text: 'Boshqa markaz', value: 2, order: 2 },
+      { id: 'o3', text: 'Qatnashmayman', value: 3, order: 3 },
+    ],
+  }),
+  branchingQuestion({ id: 'q2a', code: 'Q2A_1', order: 10, sectionId: 's2a', text: '2-A savoli', type: 'ShortText' }),
+  branchingQuestion({ id: 'q2b', code: 'Q2B_1', order: 20, sectionId: 's2b', text: '2-B savoli', type: 'ShortText' }),
+  branchingQuestion({ id: 'q2c', code: 'Q2C_1', order: 30, sectionId: 's2c', text: '2-C savoli', type: 'ShortText' }),
+  branchingQuestion({
+    id: 'q3',
+    code: 'Q3_1',
+    order: 40,
+    sectionId: 's3',
+    text: '3-bo\'lim savoli',
+    type: 'ShortText',
+    isRequired: false,
+  }),
+];
+
+function branchingQuestionsPage(
+  overrides: Partial<BranchingTestQuestionsData> = {},
+): BranchingTestQuestionsData {
+  return {
+    testCode: 'SURVEY',
+    page: 1,
+    pageSize: 60,
+    totalPages: 1,
+    totalQuestions: BRANCHING_QUESTIONS.length,
+    scaleLabels: null,
+    sections: BRANCHING_SECTIONS,
+    questions: BRANCHING_QUESTIONS,
+    ...overrides,
+  };
+}
+
+function branchingSessionStateBody(
+  overrides: Partial<Schemas['GetSessionStateResult']> = {},
+): Schemas['GetSessionStateResult'] {
+  return {
+    assessmentId: 'assessment-1',
+    status: 'InProgress',
+    student: { firstNameShort: 'Sardor', grade: 9 },
+    expiresAt: '2026-09-10T00:00:00Z',
+    currentTestCode: 'SURVEY',
+    tests: [
+      { code: 'SURVEY', name: "So'rovnoma", status: 'InProgress', answered: 0, total: 6, order: 1, estimatedMinutes: 5 },
+    ],
+    progressPercent: 0,
+    hasPersonalityBattery: false,
+    ...overrides,
+  };
+}
+
+describe("TestPage — bo'lim-qadam rejimi (docs/18)", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useSessionStore.getState().clear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorage.clear();
+    useSessionStore.getState().clear();
+  });
+
+  function mockBranchingFetch(overrides: MockOptions = {}) {
+    return mockFetch({
+      sessionState: () => jsonResponse<'GetSessionStateResult'>(branchingSessionStateBody()),
+      startTest: (testCode) =>
+        jsonResponse<'StartTestResult'>({ testCode, status: 'InProgress', pageSize: 60, totalPages: 1 }),
+      questions: () => typedResponse<BranchingTestQuestionsData>(branchingQuestionsPage()),
+      ...overrides,
+    });
+  }
+
+  function renderBranching() {
+    return renderTestPage('/t/demo-school/test/SURVEY');
+  }
+
+  async function fillFirstSection(user: ReturnType<typeof userEvent.setup>, optionName: string) {
+    await screen.findByText('F.I.Sh.');
+    await user.type(screen.getByLabelText(/F\.I\.Sh\./), 'Aliyev Vali');
+    await user.click(screen.getByRole('radio', { name: optionName }));
+    await user.click(screen.getByRole('button', { name: 'Keyingi' }));
+  }
+
+  it("1.6 = 'Intellect' tanlansa 2-A ko'rinadi, 2-B/2-C ko'rinmaydi, oxirida 3-bo'lim bor", async () => {
+    seedSession();
+    mockBranchingFetch();
+    const user = userEvent.setup();
+    renderBranching();
+
+    await fillFirstSection(user, 'Intellect');
+
+    expect(await screen.findByRole('heading', { name: "Intellect o'quvchilari uchun" })).toBeInTheDocument();
+    expect(screen.getByText('2-A savoli')).toBeInTheDocument();
+    expect(screen.queryByText('2-B savoli')).not.toBeInTheDocument();
+    expect(screen.queryByText('2-C savoli')).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/2-A savoli/), 'javobim');
+    await user.click(screen.getByRole('button', { name: 'Keyingi' }));
+
+    expect(await screen.findByRole('heading', { name: "Yakuniy bo'lim" })).toBeInTheDocument();
+    expect(screen.getByText("3-bo'lim savoli")).toBeInTheDocument();
+  });
+
+  it("1.6 = 'Boshqa markaz' tanlansa 2-B ko'rinadi, 2-A/2-C ko'rinmaydi, oxirida 3-bo'lim bor", async () => {
+    seedSession();
+    mockBranchingFetch();
+    const user = userEvent.setup();
+    renderBranching();
+
+    await fillFirstSection(user, 'Boshqa markaz');
+
+    expect(await screen.findByRole('heading', { name: 'Boshqa markaz uchun' })).toBeInTheDocument();
+    expect(screen.getByText('2-B savoli')).toBeInTheDocument();
+    expect(screen.queryByText('2-A savoli')).not.toBeInTheDocument();
+    expect(screen.queryByText('2-C savoli')).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/2-B savoli/), 'javobim');
+    await user.click(screen.getByRole('button', { name: 'Keyingi' }));
+
+    expect(await screen.findByRole('heading', { name: "Yakuniy bo'lim" })).toBeInTheDocument();
+  });
+
+  it("1.6 = 'Qatnashmayman' tanlansa 2-C ko'rinadi, 2-A/2-B ko'rinmaydi, oxirida 3-bo'lim bor", async () => {
+    seedSession();
+    mockBranchingFetch();
+    const user = userEvent.setup();
+    renderBranching();
+
+    await fillFirstSection(user, 'Qatnashmayman');
+
+    expect(await screen.findByRole('heading', { name: 'Potensial lidlar uchun' })).toBeInTheDocument();
+    expect(screen.getByText('2-C savoli')).toBeInTheDocument();
+    expect(screen.queryByText('2-A savoli')).not.toBeInTheDocument();
+    expect(screen.queryByText('2-B savoli')).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/2-C savoli/), 'javobim');
+    await user.click(screen.getByRole('button', { name: 'Keyingi' }));
+
+    expect(await screen.findByRole('heading', { name: "Yakuniy bo'lim" })).toBeInTheDocument();
+  });
+
+  it("bo'sh (ixtiyoriy) 3-savolni to'ldirmasdan 'Keyingi' bosilsa testni yakunlaydi", async () => {
+    seedSession();
+    const fetchMock = mockBranchingFetch();
+    const user = userEvent.setup();
+    renderBranching();
+
+    await fillFirstSection(user, 'Intellect');
+    await screen.findByRole('heading', { name: "Intellect o'quvchilari uchun" });
+    await user.type(screen.getByLabelText(/2-A savoli/), 'javobim');
+    await user.click(screen.getByRole('button', { name: 'Keyingi' }));
+
+    await screen.findByRole('heading', { name: "Yakuniy bo'lim" });
+    await user.click(screen.getByRole('button', { name: 'Keyingi' })); // 3.1 ixtiyoriy — bo'sh qoldiriladi
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/tests/SURVEY/complete'),
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+  });
+
+  it("hozir yashirin bo'limga tegishli, oldindan navbatga qo'yilgan javob so'rovga QO'SHILMAYDI (docs/18 §6.2)", async () => {
+    seedSession();
+    // `q2b` (2-B bo'limi) — hali yuborilmagan, mahalliy navbatda turgan javob deb faraz
+    // qilamiz (masalan oldingi urinishda). Joriy render 1.6 ni HALI javobsiz boshlaydi, ya'ni
+    // na 2-A, na 2-B ko'rinadi.
+    localStorage.setItem(
+      'shaxsiyat.pendingAnswers',
+      JSON.stringify({
+        q2b: { testCode: 'SURVEY', questionId: 'q2b', text: 'eski javob', durationMs: 10, pending: true },
+      }),
+    );
+    const fetchMock = mockBranchingFetch();
+    const user = userEvent.setup();
+    renderBranching();
+
+    // 1.6 = Intellect (1) — 2-A ko'rinadi, 2-B YO'Q. `q2b` hamon ko'rinmas bo'lib qoladi.
+    await fillFirstSection(user, 'Intellect');
+    await screen.findByRole('heading', { name: "Intellect o'quvchilari uchun" });
+
+    await waitFor(() => {
+      expect(countCalls(fetchMock, '/answers')).toBeGreaterThan(0);
+    });
+
+    for (const call of fetchMock.mock.calls) {
+      const [url, init] = call as [string, RequestInit | undefined];
+      if (!String(url).includes('/answers') || init?.method !== 'POST') continue;
+      const body = JSON.parse(init.body as string) as { answers: { questionId: string }[] };
+      expect(body.answers.map((a) => a.questionId)).not.toContain('q2b');
+    }
+
+    // Javob YO'QOLMAGAN — hali ham mahalliy navbatda turibdi (keyin 2-B qayta ko'rinsa yuboriladi).
+    expect(readAnswerStore()['q2b']).toMatchObject({ text: 'eski javob' });
+  });
+
+  it("'Boshqa (kiriting)' varianti tanlansa ostida matn maydoni paydo bo'ladi, boshqa variant tanlansa yo'qoladi", async () => {
+    seedSession();
+    const singleSection: PublicSection[] = [
+      { id: 's1', code: 'S1', title: "Qiziqish", description: null, order: 1, visibility: null },
+    ];
+    const questions: BranchingQuestion[] = [
+      branchingQuestion({
+        id: 'fav',
+        code: 'FAV',
+        order: 1,
+        sectionId: 's1',
+        text: 'Sevimli faningiz?',
+        type: 'SingleChoice',
+        options: [
+          { id: 'o1', text: 'Matematika', value: 1, order: 1 },
+          { id: 'o2', text: 'Boshqa (kiriting)', value: 2, order: 2 },
+        ],
+      }),
+      branchingQuestion({
+        id: 'favOther',
+        code: 'FAV_OTHER',
+        order: 2,
+        sectionId: 's1',
+        text: 'Qaysi fan?',
+        type: 'ShortText',
+        isRequired: false,
+        visibility: { match: 'All', conditions: [{ questionCode: 'FAV', operator: 'Equals', values: [2] }] },
+      }),
+    ];
+    mockBranchingFetch({
+      questions: () =>
+        typedResponse<BranchingTestQuestionsData>(
+          branchingQuestionsPage({ sections: singleSection, questions, totalQuestions: 2 }),
+        ),
+    });
+    const user = userEvent.setup();
+    renderBranching();
+
+    await screen.findByText('Sevimli faningiz?');
+    expect(screen.queryByText('Qaysi fan?')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('radio', { name: 'Boshqa (kiriting)' }));
+    expect(await screen.findByText('Qaysi fan?')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('radio', { name: 'Matematika' }));
+    await waitFor(() => {
+      expect(screen.queryByText('Qaysi fan?')).not.toBeInTheDocument();
+    });
   });
 });

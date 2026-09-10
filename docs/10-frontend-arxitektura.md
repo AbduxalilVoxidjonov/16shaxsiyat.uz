@@ -184,6 +184,34 @@ va foydalanuvchi landing sahifaga qaytariladi ("Sessiya muddati tugagan, qaytada
 - Progress: `answered / total` + umumiy 4 blok progress bar.
 - Har savolda `durationMs` — savol ko'ringan vaqtdan javobgacha (`performance.now()`).
 
+**P52-A4 — tarmoqlanuvchi so'rovnoma va bo'lim-qadam rejimi** (to'liq shartnoma `docs/18`,
+frontend qismi §6.2): `TestPage` javob shaklidan (`GET .../questions` javobida `sections`
+bor/yo'qligidan) ikki rejimga bo'linadi, lekin BIR XIL savol render/o'zaro ta'sir yadrosini
+(`QuestionRenderer`) ishlatadi:
+
+- **Bo'limsiz** (`sections` yo'q) — yuqoridagi sahifalash oqimi AYNAN o'zgarishsiz (4 ta tizim
+  metodikasi, regressiya testi bilan qulflangan).
+- **Bo'limli** — bitta so'rovda kelgan BARCHA faol savol orasidan `shared/lib/visibility.ts`
+  (`resolveVisibleQuestions`, backend `VisibleQuestionResolver`ning TS egizagi, oltin fikstura
+  bilan qulflangan) yordamida HOZIR ko'rinadigan bo'lim/savollar hisoblanadi
+  (`features/public-assessment/lib/branchingFlow.ts` — kod↔ID moslashtirish qatlami) va bir
+  ekranda BITTA ko'rinadigan bo'lim (`SectionIntro` + shu bo'lim savollari) ko'rsatiladi.
+  "Keyingi" keyingi ko'rinadigan bo'limga o'tadi (yashirilganlar sakrab o'tiladi), progress
+  `visibleQuestionIds` bo'yicha hisoblanadi (`totalQuestions` emas). Javob o'zgarganda ko'rinish
+  `useMemo` bilan DARHOL qayta hisoblanadi — server javobini kutmaydi.
+- Yangi savol turlari (`ShortText`/`Phone`/`LongText`/`MultiChoice`) — `QuestionRenderer` savol
+  turiga qarab `TextQuestion`/`LongTextQuestion`/`MultiChoiceQuestion`dan birini tanlaydi;
+  eski turlar (`Likert5`/`Likert7`/`Binary`/`SingleChoice`/`ForcedChoice`) — o'zgarishsiz
+  `LikertQuestion`.
+- Javob yuborish shakli — `{ questionId, value?, text?, selectedValues?, durationMs }`
+  (`docs/18` §4.2), autosave navbati (`answerQueue.ts`) shu uchtadan bittasini saqlaydi.
+  **Yashirilgan savolning mahalliy javobi yuborilmaydi** — `useAutosave`ning
+  `visibleQuestionIds` parametri orqali navbatdan filtrlanadi (backend `400
+  QUESTION_NOT_VISIBLE` qaytarmasin uchun), lekin javobning o'zi yo'qolmaydi (qayta ko'rinsa
+  keyingi flush yuboradi).
+- Bo'lim almashganda fokus yangi bo'lim sarlavhasiga ko'chadi (a11y), `prefers-reduced-motion`
+  hurmat qilinadi.
+
 ### 4.4 Foydalanuvchi tajribasi bo'yicha talablar
 - Blok oxirida "Tanaffus qilish" ekrani: nechta blok qoldi, taxminiy vaqt.
 - Orqaga qaytish mumkin (javob o'zgartirilsa `revisionCount` oshadi).
