@@ -28,19 +28,28 @@ public static class VisibilityEvaluator
     {
         answers.TryGetValue(condition.QuestionCode, out var snapshot);
 
+        // MAVJUDLIK emas, JAVOB BORLIGI tekshiriladi. `Answer` yozuvi bazada turgan holda ham
+        // bo'sh bo'lishi mumkin (`MultiChoice` da tanlov olib tashlangan, matn faqat bo'shliqqa
+        // aylangan) — `snapshot is not null` deb tekshirilsa, bunday javob "boshqa qiymat" deb
+        // hisoblanib, `NotEquals`/`NoneOf` tarmoqlari o'z-o'zidan ochilib ketardi. Bu — oltin
+        // fikstura ("MultiChoice manba + NotEquals — tanlov bo'sh bo'lsa (javobsiz) FALSE")
+        // ushlagan xato; TS egizagi (`shared/lib/visibility.ts`) boshidan `isAnswered` bo'yicha
+        // ishlagan, ya'ni ikki nusxa aynan shu joyda ajralib ketgan edi.
+        var answered = snapshot?.IsAnswered ?? false;
+
         return condition.Operator switch
         {
-            VisibilityOperator.Answered => snapshot?.IsAnswered ?? false,
-            VisibilityOperator.NotAnswered => !(snapshot?.IsAnswered ?? false),
+            VisibilityOperator.Answered => answered,
+            VisibilityOperator.NotAnswered => !answered,
 
             // `docs/18` §2.5 jadvali: javob yo'q bo'lsa HAMMASI `false` (NotEquals/NoneOf ham) —
             // "hali javob bermagan" holat "boshqa qiymat" deb hisoblanmasin.
-            VisibilityOperator.Equals => snapshot is not null && MatchesEquals(snapshot, condition.Values),
-            VisibilityOperator.NotEquals => snapshot is not null && !MatchesEquals(snapshot, condition.Values),
-            VisibilityOperator.AnyOf => snapshot is not null && MatchesAnyOf(snapshot, condition.Values),
-            VisibilityOperator.NoneOf => snapshot is not null && !MatchesAnyOf(snapshot, condition.Values),
-            VisibilityOperator.ContainsAny => snapshot is not null && snapshot.SelectedValues.Intersect(condition.Values).Any(),
-            VisibilityOperator.ContainsAll => snapshot is not null && condition.Values.All(v => snapshot.SelectedValues.Contains(v)),
+            VisibilityOperator.Equals => answered && MatchesEquals(snapshot!, condition.Values),
+            VisibilityOperator.NotEquals => answered && !MatchesEquals(snapshot!, condition.Values),
+            VisibilityOperator.AnyOf => answered && MatchesAnyOf(snapshot!, condition.Values),
+            VisibilityOperator.NoneOf => answered && !MatchesAnyOf(snapshot!, condition.Values),
+            VisibilityOperator.ContainsAny => answered && snapshot!.SelectedValues.Intersect(condition.Values).Any(),
+            VisibilityOperator.ContainsAll => answered && condition.Values.All(v => snapshot!.SelectedValues.Contains(v)),
             _ => throw new ArgumentOutOfRangeException(nameof(condition), condition.Operator, "Noma'lum VisibilityOperator qiymati."),
         };
     }
