@@ -1,6 +1,7 @@
 using FluentAssertions;
 using StudentRoadMap.Application.Admin.Catalog.Tests.Publish;
 using StudentRoadMap.Domain.Catalog;
+using StudentRoadMap.Domain.Catalog.Branching;
 using StudentRoadMap.Domain.Scoring;
 
 namespace StudentRoadMap.Application.Tests.Admin;
@@ -181,5 +182,135 @@ public sealed class CatalogPublishValidatorTests
         var issues = CatalogPublishValidator.Validate(test);
 
         issues.Should().BeEmpty();
+    }
+
+    // --- P52 (`docs/18` §5) — bo'lim/tarmoqlanish nashr validatsiyasi. ---
+
+    private static TestDefinition CreateSurveyTestDefinition() => TestDefinition.Create(
+        Guid.NewGuid(), "SURVEY-BRANCH-1", "Tarmoqlanuvchi so'rovnoma", 1, 10, scoringStrategyCode: null, Now, scoringMode: TestScoringMode.Survey);
+
+    private static Question CreateTypedQuestion(
+        Guid testDefinitionId, string code, int order, QuestionType type, VisibilityRule? visibility = null, Guid? sectionId = null) =>
+        Question.Create(
+            Guid.NewGuid(), testDefinitionId, code, order, "Savol matni", type, "SURVEY", 1, 1.0m,
+            sectionId: sectionId, visibilityRule: visibility);
+
+    [Fact]
+    public void Validate_VisibilityReferencesUnknownQuestion_ReturnsVisibilityUnknownQuestionIssue()
+    {
+        var test = CreateSurveyTestDefinition();
+        var rule = new VisibilityRule(VisibilityMatch.All, [new VisibilityCondition("MISSING", VisibilityOperator.Equals, [1])]);
+        test.AddQuestion(CreateTypedQuestion(test.Id, "Q1", 1, QuestionType.ShortText, rule), Now);
+
+        var issues = CatalogPublishValidator.Validate(test);
+
+        issues.Should().ContainSingle(i => i.Code == "VISIBILITY_UNKNOWN_QUESTION" && i.QuestionCode == "Q1");
+    }
+
+    [Fact]
+    public void Validate_VisibilityReferencesLaterQuestion_ReturnsVisibilityForwardReferenceIssue()
+    {
+        var test = CreateSurveyTestDefinition();
+        var rule = new VisibilityRule(VisibilityMatch.All, [new VisibilityCondition("Q2", VisibilityOperator.Equals, [1])]);
+        test.AddQuestion(CreateTypedQuestion(test.Id, "Q1", 1, QuestionType.SingleChoice, rule), Now);
+        test.AddQuestion(CreateTypedQuestion(test.Id, "Q2", 2, QuestionType.SingleChoice), Now);
+
+        var issues = CatalogPublishValidator.Validate(test);
+
+        issues.Should().ContainSingle(i => i.Code == "VISIBILITY_FORWARD_REFERENCE" && i.QuestionCode == "Q1");
+    }
+
+    [Fact]
+    public void Validate_ContainsAnyOnNonMultiChoiceSource_ReturnsVisibilityOperatorMismatchIssue()
+    {
+        var test = CreateSurveyTestDefinition();
+        test.AddQuestion(CreateTypedQuestion(test.Id, "Q1", 1, QuestionType.Likert5), Now);
+        var rule = new VisibilityRule(VisibilityMatch.All, [new VisibilityCondition("Q1", VisibilityOperator.ContainsAny, [1])]);
+        test.AddQuestion(CreateTypedQuestion(test.Id, "Q2", 2, QuestionType.ShortText, rule), Now);
+
+        var issues = CatalogPublishValidator.Validate(test);
+
+        issues.Should().ContainSingle(i => i.Code == "VISIBILITY_OPERATOR_MISMATCH" && i.QuestionCode == "Q2");
+    }
+
+    [Fact]
+    public void Validate_EqualsValueNotAmongSourceOptions_ReturnsVisibilityValueUnknownIssue()
+    {
+        var test = CreateSurveyTestDefinition();
+        var source = CreateTypedQuestion(test.Id, "Q1", 1, QuestionType.SingleChoice);
+        source.AddOption(AnswerOption.Create(Guid.NewGuid(), source.Id, "Variant A", 1, 1));
+        test.AddQuestion(source, Now);
+
+        var rule = new VisibilityRule(VisibilityMatch.All, [new VisibilityCondition("Q1", VisibilityOperator.Equals, [99])]);
+        test.AddQuestion(CreateTypedQuestion(test.Id, "Q2", 2, QuestionType.ShortText, rule), Now);
+
+        var issues = CatalogPublishValidator.Validate(test);
+
+        issues.Should().ContainSingle(i => i.Code == "VISIBILITY_VALUE_UNKNOWN" && i.QuestionCode == "Q2");
+    }
+
+    [Fact]
+    public void Validate_AnsweredOperator_DoesNotRequireValues_ReturnsNoIssues()
+    {
+        var test = CreateSurveyTestDefinition();
+        test.AddQuestion(CreateTypedQuestion(test.Id, "Q1", 1, QuestionType.ShortText), Now);
+        var rule = new VisibilityRule(VisibilityMatch.All, [new VisibilityCondition("Q1", VisibilityOperator.Answered, [])]);
+        test.AddQuestion(CreateTypedQuestion(test.Id, "Q2", 2, QuestionType.ShortText, rule), Now);
+
+        var issues = CatalogPublishValidator.Validate(test);
+
+        issues.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Validate_SingleChoiceWithFewerThanTwoOptions_ReturnsQuestionOptionsRequiredIssue()
+    {
+        var test = CreateSurveyTestDefinition();
+        var question = CreateTypedQuestion(test.Id, "Q1", 1, QuestionType.SingleChoice);
+        question.AddOption(AnswerOption.Create(Guid.NewGuid(), question.Id, "Yagona variant", 1, 1));
+        test.AddQuestion(question, Now);
+
+        var issues = CatalogPublishValidator.Validate(test);
+
+        issues.Should().ContainSingle(i => i.Code == "QUESTION_OPTIONS_REQUIRED" && i.QuestionCode == "Q1");
+    }
+
+    [Fact]
+    public void Validate_DuplicateOptionValues_ReturnsQuestionOptionValueDuplicateIssue()
+    {
+        var test = CreateSurveyTestDefinition();
+        var question = CreateTypedQuestion(test.Id, "Q1", 1, QuestionType.SingleChoice);
+        question.AddOption(AnswerOption.Create(Guid.NewGuid(), question.Id, "Variant A", 1, 1));
+        question.AddOption(AnswerOption.Create(Guid.NewGuid(), question.Id, "Variant B (dublikat qiymat)", 1, 2));
+        test.AddQuestion(question, Now);
+
+        var issues = CatalogPublishValidator.Validate(test);
+
+        issues.Should().ContainSingle(i => i.Code == "QUESTION_OPTION_VALUE_DUPLICATE" && i.QuestionCode == "Q1");
+    }
+
+    [Fact]
+    public void Validate_SectionWithoutActiveQuestions_ReturnsSectionEmptyIssue()
+    {
+        var test = CreateSurveyTestDefinition();
+        test.AddSection(QuestionSection.Create(Guid.NewGuid(), test.Id, "S1", "Bo'sh bo'lim", 1), Now);
+
+        var issues = CatalogPublishValidator.Validate(test);
+
+        issues.Should().ContainSingle(i => i.Code == "SECTION_EMPTY" && i.SectionCode == "S1");
+    }
+
+    [Fact]
+    public void Validate_InvalidInputPattern_ReturnsInputPatternInvalidIssue()
+    {
+        var test = CreateSurveyTestDefinition();
+        var question = Question.Create(
+            Guid.NewGuid(), test.Id, "Q1", 1, "Savol matni", QuestionType.ShortText, "SURVEY", 1, 1.0m,
+            inputPattern: "(unbalanced[");
+        test.AddQuestion(question, Now);
+
+        var issues = CatalogPublishValidator.Validate(test);
+
+        issues.Should().ContainSingle(i => i.Code == "INPUT_PATTERN_INVALID" && i.QuestionCode == "Q1");
     }
 }

@@ -1,4 +1,6 @@
+using StudentRoadMap.Application.Public.Common;
 using StudentRoadMap.Domain.Catalog;
+using StudentRoadMap.Domain.Catalog.Branching;
 using StudentRoadMap.Domain.Scoring;
 
 namespace StudentRoadMap.Application.Admin.Catalog.Tests.Publish;
@@ -58,8 +60,135 @@ internal static class CatalogPublishValidator
             }
         }
 
+        // `docs/18` §5 — bo'lim/tarmoqlanish qoidalari. B-1/B-2 (`QUESTION_TYPE_NOT_SCORABLE`/
+        // `BRANCHING_NOT_ALLOWED_IN_SCORED`) bu yerga QO'SHILMAGAN: ular `TestDefinition.AddQuestion`/
+        // `AddSection` orqali SAQLASH vaqtida darhol (`400`) rad etiladi — bunday holat
+        // Draft/Published farqisiz umuman bazaga yozilmaydi, shu sabab bu yerda qayta
+        // tekshirish imkonsiz holatni "tekshirish" bo'lardi.
+        ValidateBranching(test, issues);
+
         return issues;
     }
+
+    /// <summary>`docs/18` §5 — bo'limlar va ko'rsatish shartlari (`VisibilityRule`) uchun nashr vaqtidagi tekshiruvlar.</summary>
+    private static void ValidateBranching(TestDefinition test, List<PublishIssueDto> issues)
+    {
+        var questionsByCode = test.Questions.ToDictionary(q => q.Code, StringComparer.Ordinal);
+        var questionsBySection = test.Questions
+            .Where(q => q.SectionId is not null)
+            .GroupBy(q => q.SectionId!.Value)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        foreach (var question in test.Questions)
+        {
+            if (question.VisibilityRule is { } rule)
+            {
+                ValidateVisibilityRule(rule, question.DisplayOrder, question.Code, null, questionsByCode, issues);
+            }
+        }
+
+        foreach (var section in test.Sections)
+        {
+            var sectionQuestions = questionsBySection.GetValueOrDefault(section.Id) ?? [];
+
+            if (sectionQuestions.All(q => !q.IsActive))
+            {
+                issues.Add(new PublishIssueDto("SECTION_EMPTY", null, null, $"'{section.Code}' bo'limida faol savol yo'q.", section.Code));
+            }
+
+            if (section.VisibilityRule is { } sectionRule)
+            {
+                var minOrder = sectionQuestions.Count > 0 ? sectionQuestions.Min(q => q.DisplayOrder) : int.MaxValue;
+                ValidateVisibilityRule(sectionRule, minOrder, null, section.Code, questionsByCode, issues);
+            }
+        }
+
+        foreach (var question in test.Questions.Where(q => q.IsActive))
+        {
+            if (question.QuestionType is QuestionType.SingleChoice or QuestionType.MultiChoice && question.Options.Count < 2)
+            {
+                issues.Add(new PublishIssueDto("QUESTION_OPTIONS_REQUIRED", null, question.Code, $"'{question.Code}' savolida kamida 2 ta variant bo'lishi kerak."));
+            }
+
+            if (question.Options.GroupBy(o => o.Value).Any(g => g.Count() > 1))
+            {
+                issues.Add(new PublishIssueDto("QUESTION_OPTION_VALUE_DUPLICATE", null, question.Code, $"'{question.Code}' savolida takroriy variant qiymati bor."));
+            }
+
+            if (question.InputPattern is { Length: > 0 } pattern && !CachedInputPatternMatcher.IsValidPattern(pattern))
+            {
+                issues.Add(new PublishIssueDto("INPUT_PATTERN_INVALID", null, question.Code, $"'{question.Code}' savolining shablon (InputPattern) noto'g'ri."));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Bitta shart (bo'lim yoki savol darajasidagi) — `docs/18` §5: `VISIBILITY_UNKNOWN_QUESTION`,
+    /// `VISIBILITY_FORWARD_REFERENCE` (B-4 — faqat oldingi savolga), `VISIBILITY_OPERATOR_MISMATCH`,
+    /// `VISIBILITY_VALUE_UNKNOWN`. <paramref name="referencingOrder"/> — savol uchun o'sha
+    /// savolning `DisplayOrder`i, bo'lim uchun bo'limdagi ENG KICHIK savol tartibi.
+    /// </summary>
+    private static void ValidateVisibilityRule(
+        VisibilityRule rule,
+        int referencingOrder,
+        string? questionCode,
+        string? sectionCode,
+        IReadOnlyDictionary<string, Question> questionsByCode,
+        List<PublishIssueDto> issues)
+    {
+        foreach (var condition in rule.Conditions)
+        {
+            if (!questionsByCode.TryGetValue(condition.QuestionCode, out var source))
+            {
+                issues.Add(new PublishIssueDto("VISIBILITY_UNKNOWN_QUESTION", null, questionCode, $"'{condition.QuestionCode}' kodli savol topilmadi.", sectionCode));
+                continue;
+            }
+
+            if (source.DisplayOrder >= referencingOrder)
+            {
+                issues.Add(new PublishIssueDto("VISIBILITY_FORWARD_REFERENCE", null, questionCode, $"Shart '{condition.QuestionCode}' savoliga (keyingi/joriy tartibdagi) havola qiladi — faqat oldingi savolga ruxsat (B-4).", sectionCode));
+            }
+
+            var isMismatch = condition.Operator switch
+            {
+                VisibilityOperator.ContainsAny or VisibilityOperator.ContainsAll => source.QuestionType != QuestionType.MultiChoice,
+                VisibilityOperator.Equals or VisibilityOperator.NotEquals or VisibilityOperator.AnyOf or VisibilityOperator.NoneOf => !IsValueType(source.QuestionType),
+                _ => false,
+            };
+
+            if (isMismatch)
+            {
+                issues.Add(new PublishIssueDto("VISIBILITY_OPERATOR_MISMATCH", null, questionCode, $"'{condition.Operator}' operatori '{condition.QuestionCode}' ({source.QuestionType}) savol turiga mos emas.", sectionCode));
+                continue;
+            }
+
+            if (condition.Operator is VisibilityOperator.Answered or VisibilityOperator.NotAnswered)
+            {
+                continue;
+            }
+
+            var validValues = ResolveValidValues(source);
+            if (validValues is not null && condition.Values.Any(v => !validValues.Contains(v)))
+            {
+                issues.Add(new PublishIssueDto("VISIBILITY_VALUE_UNKNOWN", null, questionCode, $"'{condition.QuestionCode}' savolining variantlari/darajalari orasida ko'rsatilgan qiymat yo'q.", sectionCode));
+            }
+        }
+    }
+
+    /// <summary>`Equals`/`NotEquals`/`AnyOf`/`NoneOf` faqat qiymatli turlarga (`docs/18` §5) — matn turlariga (`ShortText`/`LongText`/`Phone`) taqiqlangan.</summary>
+    private static bool IsValueType(QuestionType type) =>
+        type is QuestionType.Likert5 or QuestionType.Likert7 or QuestionType.Binary
+            or QuestionType.SingleChoice or QuestionType.ForcedChoice or QuestionType.MultiChoice;
+
+    /// <summary>Manba savolning haqiqiy qiymatlar to'plami — `VISIBILITY_VALUE_UNKNOWN` uchun. Matn turlari uchun `null` (tekshirilmaydi — operator mos kelmasligi allaqachon ushlangan).</summary>
+    private static HashSet<int>? ResolveValidValues(Question source) => source.QuestionType switch
+    {
+        QuestionType.Likert5 => [1, 2, 3, 4, 5],
+        QuestionType.Likert7 => [1, 2, 3, 4, 5, 6, 7],
+        QuestionType.Binary => [0, 1],
+        QuestionType.SingleChoice or QuestionType.ForcedChoice or QuestionType.MultiChoice => source.Options.Select(o => o.Value).ToHashSet(),
+        _ => null,
+    };
 
     /// <summary>
     /// Talqin oraliqlari — PM qarori (2026-09-02, `docs/03` §6.3 ga yozilmoqda): TOLERANTLIK

@@ -63,10 +63,22 @@ internal static class CatalogMapping
     /// `null` bo'lib qolardi — shu sabab har bir chaqiruvchi aniq resolver beradi
     /// (nom kerak bo'lmagan joyda <see cref="CatalogScaleNameResolver.None"/>).
     /// </summary>
-    public static CatalogQuestionItemDto ToQuestionDto(Question question, CatalogScaleNameResolver scaleNames)
+    /// <summary>
+    /// <paramref name="options"/> — chaqiruvchi TASHQARIDAN beradi: `Question.Options` faqat
+    /// aggregate TRACKED yuklanganda (`LoadTrackedAsync`) yoki entity yangi yaratilganda to'g'ri
+    /// bo'ladi; `AsNoTracking` ro'yxat so'rovlarida (`ListTestQuestionsQueryHandler`) alohida
+    /// batch so'rov bilan olib kelinadi (`GetCatalogTestPreviewQueryHandler` naqshi).
+    /// `null` — chaqiruvchi variantlarni yuklamagan (masalan tizim savoli, variantsiz tur).
+    /// </summary>
+    public static CatalogQuestionItemDto ToQuestionDto(Question question, CatalogScaleNameResolver scaleNames, IReadOnlyList<AnswerOption>? options = null)
     {
         ArgumentNullException.ThrowIfNull(question);
         ArgumentNullException.ThrowIfNull(scaleNames);
+
+        var resolvedOptions = options ?? question.Options.ToList();
+        var optionDtos = resolvedOptions.Count == 0
+            ? null
+            : resolvedOptions.OrderBy(o => o.DisplayOrder).Select(o => new CatalogOptionDto(o.Id, o.TextUz, o.Value, o.DisplayOrder)).ToList();
 
         return new CatalogQuestionItemDto(
             question.Id,
@@ -83,7 +95,30 @@ internal static class CatalogMapping
             question.IsActive,
             question.IsSystem,
             scaleNames.Resolve(question.Scale),
-            scaleNames.ResolveDescription(question.Scale));
+            scaleNames.ResolveDescription(question.Scale),
+            question.SectionId,
+            question.Placeholder,
+            question.InputPattern,
+            question.MaxLength,
+            question.MinSelections,
+            question.MaxSelections,
+            question.VisibilityRule,
+            optionDtos);
+    }
+
+    /// <summary>`docs/18` §2.2/§5 — bo'lim DTO'siga xaritalash.</summary>
+    public static CatalogSectionItemDto ToSectionDto(QuestionSection section)
+    {
+        ArgumentNullException.ThrowIfNull(section);
+
+        return new CatalogSectionItemDto(
+            section.Id,
+            section.TestDefinitionId,
+            section.Code,
+            section.TitleUz,
+            section.DescriptionUz,
+            section.DisplayOrder,
+            section.VisibilityRule);
     }
 
     /// <summary>
@@ -203,12 +238,28 @@ internal static class CatalogMapping
             return null;
         }
 
-        _ = await executor.ToListAsync(
+        var questions = await executor.ToListAsync(
             context.Questions.Where(q => q.TestDefinitionId == testDefinitionId),
+            cancellationToken).ConfigureAwait(false);
+
+        // `docs/18` §5 — `CatalogPublishValidator`/`ToQuestionDto` `question.Options`ga tayanadi
+        // (`QUESTION_OPTIONS_REQUIRED`/`QUESTION_OPTION_VALUE_DUPLICATE`/`VISIBILITY_VALUE_UNKNOWN`);
+        // `AnswerOption`ning `TestDefinitionId`si yo'q (faqat `QuestionId`), shu sabab avval
+        // yuklangan savol ID'lari orqali batch so'rov (`GetCatalogTestPreviewQueryHandler` naqshi,
+        // lekin bu yerda TRACKED — EF fixup `question.Options`ni to'ldirishi uchun).
+        var questionIds = questions.Select(q => q.Id).ToList();
+        _ = await executor.ToListAsync(
+            context.AnswerOptions.Where(o => questionIds.Contains(o.QuestionId)),
             cancellationToken).ConfigureAwait(false);
 
         _ = await executor.ToListAsync(
             context.TestScales.Where(s => s.TestDefinitionId == testDefinitionId),
+            cancellationToken).ConfigureAwait(false);
+
+        // `docs/18` §2.2 — bo'limlar ham xuddi shu "fixup" naqshi bilan (bo'lim CRUD
+        // handler'lari uchun kerak: `TestDefinition.AddSection`/`RemoveSection`/`ReorderSections`).
+        _ = await executor.ToListAsync(
+            context.QuestionSections.Where(s => s.TestDefinitionId == testDefinitionId),
             cancellationToken).ConfigureAwait(false);
 
         return test;

@@ -204,6 +204,13 @@ public static class ProblemCodes
     /// <summary>Ko'rsatish sharti (`visibility`) faqat `Survey` anketalarda — `Scored`da taqiqlangan (B-2).</summary>
     public const string BranchingNotAllowedInScored = "BRANCHING_NOT_ALLOWED_IN_SCORED";
 
+    /// <summary>
+    /// `ShortText`/`Phone` savolining `inputPattern`i (admin tomonidan) kompilyatsiya qilinmadi
+    /// (`docs/18` §5) — `CachedInputPatternMatcher.IsValidPattern` bilan bir xil qoida
+    /// (`RegexOptions.NonBacktracking`, 100 ms timeout, keyin backtracking bilan qayta urinish).
+    /// </summary>
+    public const string InputPatternInvalid = "INPUT_PATTERN_INVALID";
+
     /// <summary>`Error.Code` → HTTP status. Ro'yxatda yo'q kod uchun standart qiymat `409` (domen holat mashinasi konflikti).</summary>
     public static readonly IReadOnlyDictionary<string, int> HttpStatusByCode = new Dictionary<string, int>(StringComparer.Ordinal)
     {
@@ -252,6 +259,7 @@ public static class ProblemCodes
         [QuestionNotVisible] = StatusCodes.Status400BadRequest,
         [QuestionTypeNotScorable] = StatusCodes.Status400BadRequest,
         [BranchingNotAllowedInScored] = StatusCodes.Status400BadRequest,
+        [InputPatternInvalid] = StatusCodes.Status400BadRequest,
     };
 
     /// <summary>Default (`docs/06` jadvaliga kirmagan domen kodlari uchun) — holat mashinasi konflikti.</summary>

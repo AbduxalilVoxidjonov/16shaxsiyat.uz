@@ -1,3 +1,5 @@
+using StudentRoadMap.Domain.Catalog.Branching;
+
 namespace StudentRoadMap.Application.Admin.Catalog;
 
 /// <summary>
@@ -73,6 +75,14 @@ public sealed record CatalogTestDetailDto(
 /// yoki `TestScale.DescriptionUz`). Tizim metodikasi sahifasidagi "Shkalalar" ma'lumot bloki
 /// uchun; ko'pincha <c>null</c>.
 /// </para>
+/// <para>
+/// `docs/18` §2.3/§5 kengaytmasi: <see cref="SectionId"/>/<see cref="Visibility"/>/
+/// <see cref="Placeholder"/>/<see cref="InputPattern"/>/<see cref="MaxLength"/>/
+/// <see cref="MinSelections"/>/<see cref="MaxSelections"/>/<see cref="Options"/> — faqat
+/// tegishli savol turlarida to'ldirilgan bo'ladi, aks holda `null`. <c>Visibility</c> shu yerda
+/// (ADMIN javobida) OCHIQ — `CLAUDE.md` 9-qoidasi faqat `scale`/`scaleDirection`ni man qiladi,
+/// shartning o'zi emas; bu superadmin uchun "qaysi savolga bog'liq" ma'lumoti.
+/// </para>
 /// </summary>
 public sealed record CatalogQuestionItemDto(
     Guid Id,
@@ -89,7 +99,38 @@ public sealed record CatalogQuestionItemDto(
     bool IsActive,
     bool IsSystem,
     string? ScaleNameUz,
-    string? ScaleDescriptionUz);
+    string? ScaleDescriptionUz,
+    Guid? SectionId = null,
+    string? Placeholder = null,
+    string? InputPattern = null,
+    int? MaxLength = null,
+    int? MinSelections = null,
+    int? MaxSelections = null,
+    VisibilityRule? Visibility = null,
+    IReadOnlyList<CatalogOptionDto>? Options = null);
+
+/// <summary>`SingleChoice`/`ForcedChoice`/`MultiChoice` savol variantlari — admin katalogi (`docs/18` §5).</summary>
+public sealed record CatalogOptionDto(Guid Id, string TextUz, int Value, int DisplayOrder);
+
+/// <summary>
+/// `POST/PUT .../questions` so'rovidagi variant kirishi — `docs/18` §5: `{ textUz, value,
+/// displayOrder }`. Tahrirlashda BERILGAN ro'yxat mavjudlarni TO'LIQ almashtiradi (replace).
+/// </summary>
+public sealed record QuestionOptionInputDto(string TextUz, int Value, int DisplayOrder);
+
+/// <summary>
+/// Anketa bo'limi — `GET/POST/PUT/DELETE .../sections` (`docs/18` §2.2/§5). Faqat `Custom`
+/// (`IsSystem = false`) anketalarda mavjud bo'lishi mumkin (B-3) — tizim metodikasida bo'lim
+/// hech qachon yaratilmaydi, shu sabab bu DTO tizim anketasi uchun har doim bo'sh ro'yxat.
+/// </summary>
+public sealed record CatalogSectionItemDto(
+    Guid Id,
+    Guid TestDefinitionId,
+    string Code,
+    string TitleUz,
+    string? DescriptionUz,
+    int DisplayOrder,
+    VisibilityRule? Visibility);
 
 /// <summary>`docs/03` §6.1 saqlash shakli: `{ "from":0, "to":33, "label":"Past" }`.</summary>
 public sealed record InterpretationBandDto(double From, double To, string Label);
@@ -105,8 +146,12 @@ public sealed record CatalogScaleItemDto(
     IReadOnlyList<InterpretationBandDto> InterpretationBands,
     int QuestionCount);
 
-/// <summary>`POST .../publish` 400 javobidagi bitta xato — `docs/07` §3.4 namunasi: `{code, scale?, questionCode?, message}`.</summary>
-public sealed record PublishIssueDto(string Code, string? Scale, string? QuestionCode, string Message);
+/// <summary>
+/// `POST .../publish` 400 javobidagi bitta xato — `docs/07` §3.4 namunasi: `{code, scale?,
+/// questionCode?, message}`. <see cref="SectionCode"/> — `docs/18` §5 kengaytmasi (masalan
+/// `SECTION_EMPTY`) — bo'limga oid xato uchun, savolga oid xatolarda `null`.
+/// </summary>
+public sealed record PublishIssueDto(string Code, string? Scale, string? QuestionCode, string Message, string? SectionCode = null);
 
 /// <summary>`GET .../preview` — o'quvchi ko'radigan ko'rinish (`docs/07` §3.4: "savollar + shkala yorliqlari"). `scale`/`scaleDirection` savol darajasida YO'Q — bu admin uchun ham "o'quvchi qanday ko'radi" ko'rinishi, xom shkala kodlari emas.</summary>
 public sealed record CatalogTestPreviewDto(

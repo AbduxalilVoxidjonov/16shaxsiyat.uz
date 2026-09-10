@@ -18,6 +18,13 @@ public sealed class ImportTestQuestionsCommandValidator : AbstractValidator<Impo
             question.RuleFor(q => q.Scale).NotEmpty().MaximumLength(10);
             question.RuleFor(q => q.Direction).Must(d => d is 1 or -1).WithMessage("Yo'nalish faqat +1 yoki -1 bo'lishi mumkin.");
             question.RuleFor(q => q.Weight).GreaterThan(0);
+
+            question.RuleFor(q => q.SectionCode).MaximumLength(20).When(q => q.SectionCode is not null);
+            question.RuleFor(q => q.Placeholder).MaximumLength(200).When(q => q.Placeholder is not null);
+            question.RuleFor(q => q.InputPattern).MaximumLength(200).When(q => q.InputPattern is not null);
+            question.RuleFor(q => q.MaxLength).InclusiveBetween(1, 4000).When(q => q.MaxLength.HasValue);
+            question.RuleFor(q => q.MinSelections).GreaterThanOrEqualTo(0).When(q => q.MinSelections.HasValue);
+            question.RuleFor(q => q.MaxSelections).GreaterThanOrEqualTo(1).When(q => q.MaxSelections.HasValue);
         });
     }
 }

@@ -32,4 +32,16 @@
     <ProjectReference Include="..\..\src\StudentRoadMap.Api\StudentRoadMap.Api.csproj" />
   </ItemGroup>
 
+  <!--
+    P52 (`docs/18` §5/§7): "Import (JSON)" qabul mezoni — `docs/examples/sorovnoma-intellect.json`
+    o'zgartirilmaydigan kirish (o'zgarmas fayl, `docs/18` chegarasi) — chiqish katalogiga
+    nusxalanadi, shu bilan test uni HTTP orqali import qilib, nashr qilib sinaydi.
+  -->
+  <ItemGroup>
+    <Content Include="..\..\docs\examples\sorovnoma-intellect.json">
+      <Link>examples\sorovnoma-intellect.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

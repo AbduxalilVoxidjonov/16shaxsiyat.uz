@@ -64,6 +64,23 @@ internal sealed class ImportTestQuestionsCommandHandler : IRequestHandler<Import
             {
                 var questionType = Enum.Parse<QuestionType>(item.Type, ignoreCase: true);
 
+                if (item.InputPattern is { Length: > 0 } pattern && !CachedInputPatternMatcher.IsValidPattern(pattern))
+                {
+                    return Result.Failure<CatalogTestDetailDto>(new Error(ProblemCodes.InputPatternInvalid, $"'{item.Code}' savolining InputPattern shabloni kompilyatsiya qilinmadi."));
+                }
+
+                Guid? sectionId = null;
+                if (item.SectionCode is { Length: > 0 } sectionCode)
+                {
+                    var section = test.Sections.FirstOrDefault(s => s.Code == sectionCode);
+                    if (section is null)
+                    {
+                        return Result.Failure<CatalogTestDetailDto>(new Error(ProblemCodes.NotFound, $"'{sectionCode}' kodli bo'lim topilmadi — savollardan OLDIN bo'limlar import qilinishi shart."));
+                    }
+
+                    sectionId = section.Id;
+                }
+
                 var question = Question.Create(
                     Guid.NewGuid(),
                     test.Id,
@@ -75,13 +92,28 @@ internal sealed class ImportTestQuestionsCommandHandler : IRequestHandler<Import
                     item.Direction,
                     item.Weight,
                     isRequired: item.IsRequired ?? true,
-                    isSystem: false);
+                    isSystem: false,
+                    sectionId: sectionId,
+                    visibilityRule: item.Visibility,
+                    placeholder: item.Placeholder,
+                    inputPattern: item.InputPattern,
+                    maxLength: item.MaxLength,
+                    minSelections: item.MinSelections,
+                    maxSelections: item.MaxSelections);
 
                 test.AddQuestion(question, now);
                 // ⚠️ QA topilmasi — `CreateTestQuestionCommandHandler` izohiga qarang: `test`
                 // so'rov orqali tracked, aniq `Add()` bo'lmasa yangi `Question` `Modified`
                 // deb noto'g'ri xulosa chiqarilib "0 qator ta'sirlandi" bilan yiqiladi.
                 _context.Add(question);
+
+                foreach (var optionInput in item.Options ?? [])
+                {
+                    var option = AnswerOption.Create(Guid.NewGuid(), question.Id, optionInput.TextUz, optionInput.Value, optionInput.DisplayOrder);
+                    question.AddOption(option);
+                    _context.Add(option);
+                }
+
                 importedCount++;
             }
         }

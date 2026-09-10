@@ -43,6 +43,23 @@ internal sealed class CreateTestQuestionCommandHandler : IRequestHandler<CreateT
 
         var questionType = Enum.Parse<QuestionType>(request.Type, ignoreCase: true);
 
+        if (request.InputPattern is { Length: > 0 } pattern && !CachedInputPatternMatcher.IsValidPattern(pattern))
+        {
+            return Result.Failure<CatalogQuestionItemDto>(new Error(ProblemCodes.InputPatternInvalid, "InputPattern shabloni kompilyatsiya qilinmadi."));
+        }
+
+        Guid? sectionId = null;
+        if (request.SectionCode is { Length: > 0 } sectionCode)
+        {
+            var section = test.Sections.FirstOrDefault(s => s.Code == sectionCode);
+            if (section is null)
+            {
+                return Result.Failure<CatalogQuestionItemDto>(new Error(ProblemCodes.NotFound, $"'{sectionCode}' kodli bo'lim topilmadi."));
+            }
+
+            sectionId = section.Id;
+        }
+
         var question = Question.Create(
             Guid.NewGuid(),
             test.Id,
@@ -56,7 +73,14 @@ internal sealed class CreateTestQuestionCommandHandler : IRequestHandler<CreateT
             isRequired: request.IsRequired ?? true,
             isSystem: false,
             textRu: request.TextRu,
-            textEn: request.TextEn);
+            textEn: request.TextEn,
+            sectionId: sectionId,
+            visibilityRule: request.Visibility,
+            placeholder: request.Placeholder,
+            inputPattern: request.InputPattern,
+            maxLength: request.MaxLength,
+            minSelections: request.MinSelections,
+            maxSelections: request.MaxSelections);
 
         test.AddQuestion(question, now);
 
@@ -67,6 +91,15 @@ internal sealed class CreateTestQuestionCommandHandler : IRequestHandler<CreateT
         // "0 qator ta'sirlandi" (`DbUpdateConcurrencyException`) bilan yiqiladi. Aniq `Add()`
         // holatni to'g'ri `Added`ga majburlaydi.
         _context.Add(question);
+
+        // `docs/18` §5 — `SingleChoice`/`ForcedChoice`/`MultiChoice` variantlari. `AddOption`
+        // domendan `QUESTION_OPTIONS_NOT_ALLOWED`ni boshqa turlar uchun bevosita ko'taradi.
+        foreach (var optionInput in request.Options ?? [])
+        {
+            var option = AnswerOption.Create(Guid.NewGuid(), question.Id, optionInput.TextUz, optionInput.Value, optionInput.DisplayOrder);
+            question.AddOption(option);
+            _context.Add(option);
+        }
 
         _context.Add(AuditLog.Create(
             AuditActions.CatalogQuestionAdded,

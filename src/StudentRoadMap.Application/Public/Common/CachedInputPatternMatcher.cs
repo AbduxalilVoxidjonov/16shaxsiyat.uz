@@ -51,6 +51,14 @@ public static class CachedInputPatternMatcher
         }
     }
 
+    /// <summary>
+    /// Shablon kompilyatsiya qilinadimi (`docs/18` §5 `INPUT_PATTERN_INVALID`) — admin katalogida
+    /// savol saqlashda ishlatiladi, xuddi shu keshdan va qoidadan foydalanadi (ikkinchi mustaqil
+    /// regex-mantiq paydo bo'lmasligi uchun, `docs/18` §5: "Ommaviy oqimdagi `CachedInputPatternMatcher`
+    /// bilan bir xil qoidaga tayan").
+    /// </summary>
+    public static bool IsValidPattern(string pattern) => GetOrCompile(pattern) is not null;
+
     private static Regex? GetOrCompile(string pattern)
     {
         if (Cache.TryGetValue(pattern, out var cached))

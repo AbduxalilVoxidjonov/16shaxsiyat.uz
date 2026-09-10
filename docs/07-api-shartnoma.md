@@ -975,6 +975,19 @@ O'girish backend'da bir joyda: `StudentProfileMapping.RiasecScaleToLetter`
 | PUT | `/api/admin/catalog/scales/{scaleId}` |
 | DELETE | `/api/admin/catalog/scales/{scaleId}` (savollari bo'lsa 409) |
 
+**Bo'limlar** (faqat `Custom`, tarmoqlanuvchi so'rovnoma — `docs/18` §5)
+
+| Metod | Yo'l | Tizim testida |
+|-------|------|---------------|
+| GET | `/api/admin/catalog/tests/{id}/sections` | ✅ (har doim bo'sh ro'yxat, B-3) |
+| POST | `/api/admin/catalog/tests/{id}/sections` — `{ code, titleUz, descriptionUz, displayOrder, visibility }` | ❌ `409 SYSTEM_TEST_LOCKED` |
+| PUT | `/api/admin/catalog/sections/{sectionId}` — `{ titleUz, descriptionUz, visibility }` (`code` o'zgarmaydi) | ❌ `409 SYSTEM_TEST_LOCKED` |
+| DELETE | `/api/admin/catalog/sections/{sectionId}` | savollari bo'lsa `409 SECTION_IN_USE` |
+| POST | `/api/admin/catalog/tests/{id}/sections/reorder` — `[{id, displayOrder}]` | ❌ `409 SYSTEM_TEST_LOCKED` |
+
+Kod takrorlansa `409 SECTION_CODE_DUPLICATE`. `visibility` berilib anketa `ScoringMode = Scored`
+bo'lsa `400 BRANCHING_NOT_ALLOWED_IN_SCORED` (B-2). To'liq shartnoma — `docs/18` §5.
+
 **Savollar**
 
 | Metod | Yo'l | Tizim testida |
@@ -985,6 +998,35 @@ O'girish backend'da bir joyda: `StudentProfileMapping.RiasecScaleToLetter`
 | DELETE | `/api/admin/catalog/questions/{id}` | ❌ `409 SYSTEM_TEST_LOCKED` |
 | POST | `/api/admin/catalog/tests/{id}/questions/reorder` | ✅ (`[{id, displayOrder}]`) |
 | POST | `/api/admin/catalog/tests/{id}/questions/import` | `Custom` — to'liq; tizim — faqat matn yangilash |
+
+`POST .../questions` va `PUT .../questions/{id}` (`docs/18` §5) qo'shimcha maydonlarni qabul
+qiladi: `sectionCode` (yoki `null` — bo'limsiz), `placeholder`, `inputPattern`, `maxLength`,
+`minSelections`/`maxSelections` (`MultiChoice`), `visibility`, `options[]`
+(`{ textUz, value, displayOrder }` — `SingleChoice`/`ForcedChoice`/`MultiChoice` uchun,
+tahrirlashda **to'liq almashtiriladi**). Tizim savolida bu maydonlarning HAMMASI e'tiborsiz
+(faqat `textUz`/`textRu`/`isActive`). `inputPattern` kompilyatsiya qilinmasa `400
+INPUT_PATTERN_INVALID`. `ShortText`/`LongText`/`Phone`/`MultiChoice` yoki `visibility` `Scored`
+anketada berilsa mos ravishda `400 QUESTION_TYPE_NOT_SCORABLE`/`BRANCHING_NOT_ALLOWED_IN_SCORED`
+(B-1/B-2). `POST .../questions/import` savol elementlari ham xuddi shu qo'shimcha maydonlarni
+qabul qiladi — `sectionCode` ko'rsatilgan bo'lim OLDIN import qilingan bo'lishi shart (aks holda
+`404 NOT_FOUND`).
+
+**Nashr validatsiyasi** (`CatalogPublishValidator`) — bo'lim/tarmoqlanish uchun yangi
+`issues[]` kodlari (`docs/18` §5): `VISIBILITY_UNKNOWN_QUESTION`, `VISIBILITY_FORWARD_REFERENCE`
+(B-4), `VISIBILITY_OPERATOR_MISMATCH`, `VISIBILITY_VALUE_UNKNOWN`, `QUESTION_OPTIONS_REQUIRED`
+(`SingleChoice`/`MultiChoice` da 2 tadan kam variant), `QUESTION_OPTION_VALUE_DUPLICATE`,
+`SECTION_EMPTY` (bo'limda faol savol yo'q — issue'da `sectionCode` to'ldiriladi), va
+`INPUT_PATTERN_INVALID` (himoya sifatida, odatda saqlashda allaqachon ushlanadi).
+
+**Import (JSON) va Excel chegarasi.** "Katalog → Import (JSON)" oqimi (`POST /tests` →
+`POST .../sections` → `POST .../questions/import`) `sections[]`/`sectionCode`/`visibility`/
+`options[]`ni to'liq qo'llab-quvvatlaydi — namuna: `docs/examples/sorovnoma-intellect.json`.
+**Excel yo'li (`export.xlsx`/`import-template.xlsx`/`parse-excel`) KENGAYTIRILMAGAN** — jadval
+shakli tarmoqlanishni (shartli ko'rinish) ifodalay olmaydi. Bo'limi yoki `visibility`si bor
+anketani Excel'ga eksport qilish HOZIRCHA bu ma'lumotlarni TASHLAB YUBORADI (faqat tekis
+savollar ro'yxati chiqadi) — superadmin buni Excel orqali TAHRIRLAB qaytarib import qilsa,
+bo'lim/shart yo'qolgan holda saqlanadi. Tarmoqlanuvchi anketalar uchun faqat JSON yo'li
+ishlatilishi kerak.
 
 **Excel shablon, eksport va yuklash** (P39)
 

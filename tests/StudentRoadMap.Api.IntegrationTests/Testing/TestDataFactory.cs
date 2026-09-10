@@ -65,7 +65,12 @@ internal static class TestDataFactory
     /// "0 rows affected") berishi kuzatildi (sinov kodi uchun xavfsiz yechim — ishlab chiqarish
     /// kodida `AssessmentProgram.AddTest`/`Publish` domen metodlari orqali ishlatiladi).
     /// </summary>
-    private static async Task AttachTestToDefaultProgramAsync(AppDbContext db, DateTimeOffset now, Guid testDefinitionId, int displayOrder)
+    /// <summary>
+    /// `public` (avval `private`) — P52 integratsiya testi (`docs/examples/sorovnoma-intellect.json`
+    /// HTTP orqali import qilinadi, ya'ni bu yordamchi fabrikalar ORQALI emas) uchun tashqaridan
+    /// chaqiriladi.
+    /// </summary>
+    public static async Task AttachTestToDefaultProgramAsync(AppDbContext db, DateTimeOffset now, Guid testDefinitionId, int displayOrder)
     {
         var existing = await db.AssessmentPrograms.AsNoTracking()
             .Where(p => p.Code == DefaultProgramCode)

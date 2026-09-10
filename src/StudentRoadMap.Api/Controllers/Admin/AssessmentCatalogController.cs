@@ -13,6 +13,11 @@ using StudentRoadMap.Application.Admin.Catalog.Questions.Delete;
 using StudentRoadMap.Application.Admin.Catalog.Questions.List;
 using StudentRoadMap.Application.Admin.Catalog.Questions.Update;
 using StudentRoadMap.Application.Admin.Catalog.Scales.Create;
+using StudentRoadMap.Application.Admin.Catalog.Sections.Create;
+using StudentRoadMap.Application.Admin.Catalog.Sections.Delete;
+using StudentRoadMap.Application.Admin.Catalog.Sections.List;
+using StudentRoadMap.Application.Admin.Catalog.Sections.Reorder;
+using StudentRoadMap.Application.Admin.Catalog.Sections.Update;
 using StudentRoadMap.Application.Admin.Catalog.Scales.Delete;
 using StudentRoadMap.Application.Admin.Catalog.Scales.List;
 using StudentRoadMap.Application.Admin.Catalog.Scales.Update;
@@ -246,6 +251,78 @@ public sealed class AssessmentCatalogController : ControllerBase
         var result = await _sender.Send(new DeleteTestScaleCommand(scaleId, RequireAdminUserId(), ClientIp(), UserAgent()), cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess ? NoContent() : this.ToProblem(result.Error);
+    }
+
+    // --- Bo'limlar (faqat Custom, `docs/18` §5) ----------------------------------------------
+
+    /// <summary>`GET /api/admin/catalog/tests/{id}/sections`.</summary>
+    [HttpGet("tests/{id:guid}/sections")]
+    [ProducesResponseType(typeof(IReadOnlyList<CatalogSectionItemDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    public async Task<ActionResult<IReadOnlyList<CatalogSectionItemDto>>> ListSections(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new ListTestSectionsQuery(id), cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>`POST /api/admin/catalog/tests/{id}/sections` — tizim testida `409 SYSTEM_TEST_LOCKED`.</summary>
+    [HttpPost("tests/{id:guid}/sections")]
+    [ProducesResponseType(typeof(CatalogSectionItemDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
+    public async Task<ActionResult<CatalogSectionItemDto>> CreateSection(Guid id, [FromBody] CreateTestSectionRequest request, CancellationToken cancellationToken)
+    {
+        var command = request.ToCommand(id, RequireAdminUserId(), ClientIp(), UserAgent());
+        var result = await _sender.Send(command, cancellationToken).ConfigureAwait(false);
+
+        if (!result.IsSuccess)
+        {
+            return this.ToProblem(result.Error);
+        }
+
+        return CreatedAtAction(nameof(ListSections), new { id }, result.Value);
+    }
+
+    /// <summary>`PUT /api/admin/catalog/sections/{sectionId}` — `code` o'zgarmaydi.</summary>
+    [HttpPut("sections/{sectionId:guid}")]
+    [ProducesResponseType(typeof(CatalogSectionItemDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
+    public async Task<ActionResult<CatalogSectionItemDto>> UpdateSection(Guid sectionId, [FromBody] UpdateTestSectionRequest request, CancellationToken cancellationToken)
+    {
+        var command = request.ToCommand(sectionId, RequireAdminUserId(), ClientIp(), UserAgent());
+        var result = await _sender.Send(command, cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>`DELETE /api/admin/catalog/sections/{sectionId}` — savollari bo'lsa `409 SECTION_IN_USE`.</summary>
+    [HttpDelete("sections/{sectionId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
+    public async Task<IActionResult> DeleteSection(Guid sectionId, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new DeleteTestSectionCommand(sectionId, RequireAdminUserId(), ClientIp(), UserAgent()), cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? NoContent() : this.ToProblem(result.Error);
+    }
+
+    /// <summary>`POST /api/admin/catalog/tests/{id}/sections/reorder` — `[{id, displayOrder}]`.</summary>
+    [HttpPost("tests/{id:guid}/sections/reorder")]
+    [ProducesResponseType(typeof(IReadOnlyList<CatalogSectionItemDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
+    public async Task<ActionResult<IReadOnlyList<CatalogSectionItemDto>>> ReorderSections(Guid id, [FromBody] ReorderTestSectionsRequest request, CancellationToken cancellationToken)
+    {
+        var command = request.ToCommand(id, RequireAdminUserId(), ClientIp(), UserAgent());
+        var result = await _sender.Send(command, cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
     }
 
     // --- Savollar ---------------------------------------------------------------------------
