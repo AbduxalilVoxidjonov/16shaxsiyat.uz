@@ -146,6 +146,149 @@ export async function deleteSchoolCascade(
   await callApi('DELETE', `/api/admin/schools/${schoolId}`, { token, clientIp });
 }
 
+export interface VisibilityConditionInput {
+  questionCode: string;
+  operator: string;
+  values: number[];
+}
+
+export interface VisibilityRuleInput {
+  match: 'All' | 'Any';
+  conditions: VisibilityConditionInput[];
+}
+
+export interface BranchingSectionInput {
+  code: string;
+  titleUz: string;
+  descriptionUz?: string | null;
+  displayOrder: number;
+  visibility?: VisibilityRuleInput | null;
+}
+
+export interface BranchingOptionInput {
+  textUz: string;
+  value: number;
+  displayOrder: number;
+}
+
+export interface BranchingQuestionInput {
+  code: string;
+  order: number;
+  sectionCode?: string | null;
+  textUz: string;
+  type: string;
+  scale?: string;
+  direction?: number;
+  weight?: number;
+  isRequired?: boolean;
+  placeholder?: string | null;
+  inputPattern?: string | null;
+  maxLength?: number | null;
+  minSelections?: number | null;
+  maxSelections?: number | null;
+  visibility?: VisibilityRuleInput | null;
+  options?: BranchingOptionInput[] | null;
+}
+
+export interface BranchingSurveyInput {
+  code: string;
+  nameUz: string;
+  descriptionUz?: string | null;
+  estimatedMinutes: number;
+  sections: BranchingSectionInput[];
+  questions: BranchingQuestionInput[];
+}
+
+/**
+ * `docs/18` §5/§7 — superadmin oqimini API orqali takrorlaydi: `Custom`/`Survey` test
+ * yaratish → bo'limlar → savollar (`.../questions/import`) → nashr. E2E uchun (P52) —
+ * tarmoqlanuvchi so'rovnoma stsenariysida haqiqiy UI konstruktorini emas (u alohida,
+ * og'ir oqim), aynan `AdminCatalogBranchingImportEndpointTests` bilan bir xil API
+ * ketma-ketligini ishlatadi. Natijada qaytadigan `id` — `POST .../programs/{id}/tests`ga.
+ */
+export async function createAndPublishBranchingSurvey(
+  token: string,
+  clientIp: string,
+  survey: BranchingSurveyInput,
+): Promise<{ id: string }> {
+  const created = await callApi<{ id: string }>('POST', '/api/admin/catalog/tests', {
+    token,
+    clientIp,
+    body: {
+      code: survey.code,
+      nameUz: survey.nameUz,
+      descriptionUz: survey.descriptionUz ?? null,
+      estimatedMinutes: survey.estimatedMinutes,
+      pageSize: 60,
+      shuffleQuestions: false,
+      displayOrder: 1,
+      scoringMode: 'Survey',
+    },
+  });
+
+  for (const section of survey.sections) {
+    await callApi('POST', `/api/admin/catalog/tests/${created.id}/sections`, {
+      token,
+      clientIp,
+      body: {
+        code: section.code,
+        titleUz: section.titleUz,
+        descriptionUz: section.descriptionUz ?? null,
+        displayOrder: section.displayOrder,
+        visibility: section.visibility ?? null,
+      },
+    });
+  }
+
+  await callApi('POST', `/api/admin/catalog/tests/${created.id}/questions/import`, {
+    token,
+    clientIp,
+    body: { questions: survey.questions },
+  });
+
+  await callApi('POST', `/api/admin/catalog/tests/${created.id}/publish`, { token, clientIp });
+
+  return created;
+}
+
+/**
+ * Yangi (`Custom`/`Assigned`) dastur yaratadi, testni biriktiradi, nashr qiladi va FAQAT
+ * berilgan maktabga tayinlaydi — `Public` visibility ATAYLAB ishlatilmaydi (aks holda
+ * dastur BARCHA maktablarda, jumladan parallel ishlayotgan boshqa E2E testlarining
+ * maktablarida ham ko'rinib qolardi — `docs/18` bilan bog'liq emas, E2E izolyatsiyasi).
+ */
+export async function createProgramWithTest(
+  token: string,
+  clientIp: string,
+  options: { code: string; nameUz: string; testDefinitionId: string; schoolId: string },
+): Promise<{ id: string }> {
+  const program = await callApi<{ id: string }>('POST', '/api/admin/programs', {
+    token,
+    clientIp,
+    body: {
+      code: options.code,
+      nameUz: options.nameUz,
+      descriptionUz: null,
+      displayOrder: 1,
+      visibility: 'Assigned',
+    },
+  });
+
+  await callApi('POST', `/api/admin/programs/${program.id}/tests`, {
+    token,
+    clientIp,
+    body: { testDefinitionId: options.testDefinitionId, displayOrder: 1 },
+  });
+
+  await callApi('POST', `/api/admin/programs/${program.id}/publish`, { token, clientIp });
+  await callApi('POST', `/api/admin/programs/${program.id}/schools/${options.schoolId}`, {
+    token,
+    clientIp,
+  });
+
+  return program;
+}
+
 /**
  * Nomi bo'yicha topilgan maktablarni (odatda UI orqali yaratilganlarini) o'chiradi —
  * test yarmida yiqilsa ham E2E bazasida qoldiq qolmasligi uchun.

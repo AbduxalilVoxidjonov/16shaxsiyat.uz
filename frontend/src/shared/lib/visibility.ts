@@ -212,5 +212,21 @@ export function resolveVisibleQuestions(
     }
   }
 
+  // Hech qanday savolga tegishli bo'lmagan (yoki yuqoridagi tsiklda hali "duch kelinmagan")
+  // bo'limlar ham baholanadi — natijaviy (barcha kaskad tugagandan keyingi) `liveAnswers` bilan
+  // (docs/18 §2.6: "VisibleSectionIds BARCHA bo'limlar bo'yicha to'liq bo'lishi kerak"; C#
+  // egizagi — `VisibleQuestionResolver.Resolve` — shu bosqichni oxirida bajaradi, TS ham xuddi
+  // shunday qilishi kerak, aks holda savolsiz bo'lim ikki tomonda boshqacha natija beradi —
+  // oltin fikstura "bo'sh bo'lim (savolsiz)" holati shuni ushlagan).
+  for (const section of sections) {
+    if (!sectionVisibleCache.has(section.code)) {
+      const visible = evaluateVisibility(section.visibilityRule, liveAnswers);
+      sectionVisibleCache.set(section.code, visible);
+      if (visible) {
+        visibleSectionCodes.add(section.code);
+      }
+    }
+  }
+
   return { visibleSectionCodes, visibleQuestionCodes };
 }

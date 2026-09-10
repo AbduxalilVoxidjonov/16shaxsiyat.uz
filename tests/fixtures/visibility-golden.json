@@ -1148,6 +1148,42 @@
       "expectedVisibleQuestionCodes": [
         "QM"
       ]
+    },
+    {
+      "name": "bo'sh bo'lim (savolsiz) shartsiz bo'lsa ham ko'rinadi (docs/18 §2.6 — barcha bo'limlar baholanadi)",
+      "sections": [
+        {
+          "code": "S1",
+          "order": 1,
+          "visibility": null
+        },
+        {
+          "code": "EMPTY",
+          "order": 2,
+          "visibility": null
+        }
+      ],
+      "questions": [
+        {
+          "code": "Q1",
+          "order": 1,
+          "type": "SingleChoice",
+          "sectionCode": "S1",
+          "visibility": null,
+          "options": [
+            1,
+            2
+          ]
+        }
+      ],
+      "answers": {},
+      "expectedVisibleSectionCodes": [
+        "S1",
+        "EMPTY"
+      ],
+      "expectedVisibleQuestionCodes": [
+        "Q1"
+      ]
     }
   ]
 }

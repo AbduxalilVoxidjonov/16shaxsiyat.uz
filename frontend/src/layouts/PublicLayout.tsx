@@ -53,7 +53,20 @@ export function PublicLayout() {
         (#4A423B) esa ≈9.3:1 — palitradan chiqmagan holda yetarli zaxira. Matn baribir
         ikkilamchi ko'rinadi (`text-xs`, markazda).
       */}
-      <footer className="relative z-10 px-5 pt-6 pb-8 sm:px-8">
+      {/*
+        `pointer-events-none` — QA topilmasi (P52): footer sof dekorativ (`Divider`
+        `aria-hidden`, tagline matni — hech qanday havola/tugma yo'q), lekin `relative z-10`
+        (`<main>` bilan bir xil qatlam) sabab DOM tartibida KEYINROQ keladi. Sahifa JUDA
+        QISQA bo'lganda (masalan tarmoqlanuvchi so'rovnomaning bitta savolli bo'limi,
+        `docs/18` §6.2) `min-h-dvh`/`flex-1` tuzilmasi footer'ni ekran pastiga "itarib"
+        yuboradi — aynan o'sha joyda `TestPage`ning `fixed bottom-0` "Keyingi" paneli ham
+        joylashgan. `z-index` teng bo'lgani uchun keyinroq DOM elementi (footer) ustidan
+        bosishni to'sib qo'yardi (E2E, `branching-survey.e2e.ts`, haqiqiy brauzerda ushlangan
+        — Vitest/jsdom'da ko'rinmaydi, chunki u pointer-event stacking'ni hisoblamaydi).
+        Footer'da bosiladigan narsa yo'qligi sabab `pointer-events-none` xavfsiz — hech qanday
+        funksionallik yo'qolmaydi.
+      */}
+      <footer className="relative z-10 px-5 pt-6 pb-8 pointer-events-none sm:px-8">
         <div className="mx-auto w-full max-w-prose">
           <Divider />
           <p className="mt-5 text-center text-xs text-ink-soft">{t('app.tagline')}</p>
