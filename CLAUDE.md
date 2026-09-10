@@ -44,6 +44,7 @@ Har ishdan oldin tegishli hujjatni o'qi. Hujjatda yo'q narsani **taxmin qilma** 
 | Deploy va infratuzilma | `docs/13-deploy-va-infratuzilma.md` |
 | Yo'l xaritasi, DoD | `docs/14-yol-xaritasi.md` |
 | Atamalar | `docs/15-glossariy.md` |
+| **Tarmoqlanuvchi so'rovnoma** | `docs/18-tarmoqlanuvchi-sorovnoma.md` |
 
 Ishlab chiqish **`prompts/` papkasidagi tartibda** olib boriladi — `prompts/00-qollanma.md` dan boshla.
 

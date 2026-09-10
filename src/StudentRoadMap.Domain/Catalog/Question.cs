@@ -1,3 +1,4 @@
+using StudentRoadMap.Domain.Catalog.Branching;
 using StudentRoadMap.Domain.Common;
 
 namespace StudentRoadMap.Domain.Catalog;
@@ -38,6 +39,27 @@ public sealed class Question : Entity
     /// <summary>Seed'dan kelgan savol — o'chirilmaydi, shkalasi o'zgarmaydi (BR-8).</summary>
     public bool IsSystem { get; private set; }
 
+    /// <summary>`null` — bo'limga tegishli emas (`docs/18` §2.3).</summary>
+    public Guid? SectionId { get; private set; }
+
+    /// <summary>Savol darajasidagi ko'rsatish sharti — FAQAT `Survey` anketalarda (B-2, `docs/18` §2.3/§2.4).</summary>
+    public VisibilityRule? VisibilityRule { get; private set; }
+
+    /// <summary>Matn turlari uchun bo'sh maydon ko'rsatkichi (`docs/18` §2.3).</summary>
+    public string? Placeholder { get; private set; }
+
+    /// <summary>`ShortText`/`Phone` uchun regex shabloni (.NET va JS ikkalasida ham ishlaydigan).</summary>
+    public string? InputPattern { get; private set; }
+
+    /// <summary>Matn turlari uchun maksimal uzunlik — standart `ShortText`/`Phone` 200, `LongText` 2000, chegara 4000.</summary>
+    public int? MaxLength { get; private set; }
+
+    /// <summary>`MultiChoice` uchun minimal tanlovlar soni.</summary>
+    public int? MinSelections { get; private set; }
+
+    /// <summary>`MultiChoice` uchun maksimal tanlovlar soni — `null` cheklovsiz.</summary>
+    public int? MaxSelections { get; private set; }
+
     public IReadOnlyCollection<AnswerOption> Options => _options.AsReadOnly();
 
     /// <summary>EF Core uchun parametrsiz konstruktor.</summary>
@@ -58,7 +80,14 @@ public sealed class Question : Entity
         int scaleDirection,
         decimal weight,
         bool isRequired,
-        bool isSystem)
+        bool isSystem,
+        Guid? sectionId,
+        VisibilityRule? visibilityRule,
+        string? placeholder,
+        string? inputPattern,
+        int? maxLength,
+        int? minSelections,
+        int? maxSelections)
         : base(id)
     {
         TestDefinitionId = testDefinitionId;
@@ -74,6 +103,13 @@ public sealed class Question : Entity
         IsRequired = isRequired;
         IsActive = true;
         IsSystem = isSystem;
+        SectionId = sectionId;
+        VisibilityRule = visibilityRule;
+        Placeholder = placeholder;
+        InputPattern = inputPattern;
+        MaxLength = maxLength;
+        MinSelections = minSelections;
+        MaxSelections = maxSelections;
     }
 
     public static Question Create(
@@ -89,7 +125,14 @@ public sealed class Question : Entity
         bool isRequired = true,
         bool isSystem = false,
         string? textRu = null,
-        string? textEn = null)
+        string? textEn = null,
+        Guid? sectionId = null,
+        VisibilityRule? visibilityRule = null,
+        string? placeholder = null,
+        string? inputPattern = null,
+        int? maxLength = null,
+        int? minSelections = null,
+        int? maxSelections = null)
     {
         if (string.IsNullOrWhiteSpace(code))
         {
@@ -107,8 +150,12 @@ public sealed class Question : Entity
         }
 
         ValidateScaleDirection(scaleDirection);
+        visibilityRule?.Validate();
+        ValidateMaxLength(maxLength);
 
-        return new Question(id, testDefinitionId, code, displayOrder, textUz, textRu, textEn, questionType, scale, scaleDirection, weight, isRequired, isSystem);
+        return new Question(
+            id, testDefinitionId, code, displayOrder, textUz, textRu, textEn, questionType, scale, scaleDirection, weight, isRequired, isSystem,
+            sectionId, visibilityRule, placeholder, inputPattern, maxLength, minSelections, maxSelections);
     }
 
     /// <summary>Shkala/yo'nalish/vazn — faqat `IsSystem = false` savollarda o'zgartiriladi (BR-8).</summary>
@@ -159,11 +206,84 @@ public sealed class Question : Entity
     /// <summary>BR-8 doirasiga kirmaydi — tizim savolida ham o'zgartirish mumkin (`docs/07` §3.4 faqat `Scale`/`Direction`/`Weight`ni cheklaydi).</summary>
     public void UpdateRequired(bool isRequired) => IsRequired = isRequired;
 
+    /// <summary>Savolni bo'limga biriktiradi/bo'limdan chiqaradi (`null`). `IsSystem`da qulflangan (`docs/18` §2.2).</summary>
+    public void AssignSection(Guid? sectionId)
+    {
+        EnsureNotSystemLocked();
+        SectionId = sectionId;
+    }
+
+    /// <summary>Savol darajasidagi ko'rsatish sharti — FAQAT `Survey` anketalarda ma'noli (B-2), `IsSystem`da qulflangan (`docs/18` §2.3).</summary>
+    public void UpdateVisibility(VisibilityRule? visibilityRule)
+    {
+        EnsureNotSystemLocked();
+        visibilityRule?.Validate();
+        VisibilityRule = visibilityRule;
+    }
+
+    /// <summary>`docs/18` §2.3 — matn turlari uchun bo'sh maydon ko'rsatkichi. `IsSystem`da qulflangan.</summary>
+    public void UpdatePlaceholder(string? placeholder)
+    {
+        EnsureNotSystemLocked();
+
+        if (placeholder is { Length: > 200 })
+        {
+            throw new ArgumentException("Placeholder 200 belgidan oshmasligi kerak.", nameof(placeholder));
+        }
+
+        Placeholder = placeholder;
+    }
+
+    /// <summary>`docs/18` §2.3 — `ShortText`/`Phone` uchun regex shablon. `IsSystem`da qulflangan.</summary>
+    public void UpdateInputPattern(string? inputPattern)
+    {
+        EnsureNotSystemLocked();
+
+        if (inputPattern is { Length: > 200 })
+        {
+            throw new ArgumentException("InputPattern 200 belgidan oshmasligi kerak.", nameof(inputPattern));
+        }
+
+        InputPattern = inputPattern;
+    }
+
+    /// <summary>`docs/18` §2.3 — matn turlari uchun maksimal uzunlik (chegara 4000). `IsSystem`da qulflangan.</summary>
+    public void UpdateMaxLength(int? maxLength)
+    {
+        EnsureNotSystemLocked();
+        ValidateMaxLength(maxLength);
+        MaxLength = maxLength;
+    }
+
+    /// <summary>`docs/18` §2.3 — `MultiChoice` uchun tanlovlar soni chegarasi. `IsSystem`da qulflangan.</summary>
+    public void UpdateSelectionLimits(int? minSelections, int? maxSelections)
+    {
+        EnsureNotSystemLocked();
+
+        if (minSelections is < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(minSelections), "Minimal tanlovlar soni manfiy bo'lishi mumkin emas.");
+        }
+
+        if (maxSelections is < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxSelections), "Maksimal tanlovlar soni musbat bo'lishi kerak.");
+        }
+
+        if (minSelections is not null && maxSelections is not null && minSelections > maxSelections)
+        {
+            throw new ArgumentException("Minimal tanlovlar soni maksimaldan katta bo'lishi mumkin emas.", nameof(minSelections));
+        }
+
+        MinSelections = minSelections;
+        MaxSelections = maxSelections;
+    }
+
     public void AddOption(AnswerOption option)
     {
-        if (QuestionType is not (QuestionType.SingleChoice or QuestionType.ForcedChoice))
+        if (QuestionType is not (QuestionType.SingleChoice or QuestionType.ForcedChoice or QuestionType.MultiChoice))
         {
-            throw new DomainException("QUESTION_OPTIONS_NOT_ALLOWED", "Faqat 'SingleChoice'/'ForcedChoice' savollariga variant qo'shish mumkin.");
+            throw new DomainException("QUESTION_OPTIONS_NOT_ALLOWED", "Faqat 'SingleChoice'/'ForcedChoice'/'MultiChoice' savollariga variant qo'shish mumkin.");
         }
 
         if (IsSystem)
@@ -189,6 +309,24 @@ public sealed class Question : Entity
         if (scaleDirection is not (1 or -1))
         {
             throw new ArgumentOutOfRangeException(nameof(scaleDirection), "Shkala yo'nalishi faqat +1 yoki -1 bo'lishi mumkin.");
+        }
+    }
+
+    /// <summary>`docs/18` §2.3 — matn maydonlari uchun chegara 4000.</summary>
+    private static void ValidateMaxLength(int? maxLength)
+    {
+        if (maxLength is < 1 or > 4000)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxLength), "MaxLength 1 dan 4000 gacha bo'lishi kerak.");
+        }
+    }
+
+    /// <summary>`docs/18` §2.2/§2.3 — tarmoqlanish bilan bog'liq maydonlar `IsSystem`da qulflangan (B-3/BR-8).</summary>
+    private void EnsureNotSystemLocked()
+    {
+        if (IsSystem)
+        {
+            throw new DomainException("SYSTEM_TEST_LOCKED", "Tizim metodikasi savolining bu maydonini o'zgartirib bo'lmaydi.");
         }
     }
 }

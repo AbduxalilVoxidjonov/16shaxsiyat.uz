@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using StudentRoadMap.Domain.Catalog;
+using StudentRoadMap.Domain.Catalog.Branching;
 
 namespace StudentRoadMap.Infrastructure.Persistence.Configurations;
 
@@ -34,6 +35,26 @@ internal sealed class QuestionConfiguration : IEntityTypeConfiguration<Question>
         builder.Property(q => q.IsActive).IsRequired().HasDefaultValue(true);
         builder.Property(q => q.IsSystem).IsRequired().HasDefaultValue(false);
 
+        // P52 (`docs/18` §2.3/§3.2) — tarmoqlanuvchi so'rovnoma maydonlari.
+        builder.Property(q => q.SectionId).HasColumnName("section_id");
+        builder.Property(q => q.Placeholder).HasColumnName("placeholder").HasMaxLength(200);
+        builder.Property(q => q.InputPattern).HasColumnName("input_pattern").HasMaxLength(200);
+        builder.Property(q => q.MaxLength).HasColumnName("max_length");
+        builder.Property(q => q.MinSelections).HasColumnName("min_selections");
+        builder.Property(q => q.MaxSelections).HasColumnName("max_selections");
+
+        builder.Property(q => q.VisibilityRule)
+            .HasColumnName("visibility_rule")
+            .HasColumnType("jsonb")
+            .HasConversion(
+                rule => VisibilityRuleJson.Serialize(rule),
+                json => VisibilityRuleJson.Deserialize(json));
+
+        builder.HasOne<QuestionSection>()
+            .WithMany()
+            .HasForeignKey(q => q.SectionId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.Metadata.FindNavigation(nameof(Question.Options))!
             .SetPropertyAccessMode(PropertyAccessMode.Field);
 
@@ -46,5 +67,8 @@ internal sealed class QuestionConfiguration : IEntityTypeConfiguration<Question>
 
         builder.HasIndex(q => new { q.TestDefinitionId, q.DisplayOrder })
             .HasDatabaseName("ix_questions_test_order");
+
+        builder.HasIndex(q => new { q.SectionId, q.DisplayOrder })
+            .HasDatabaseName("ix_questions_section");
     }
 }

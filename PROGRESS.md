@@ -4,7 +4,7 @@
 > PM har vazifa boshlanganda va tugaganda **darhol** yangilaydi.
 
 **Loyiha:** Shaxsiyat (`16shaxsiyat.uz`) · ichki nom `StudentRoadMap`
-**Oxirgi yangilanish:** 2026-09-05 · **Joriy bosqich:** B6 (Admin UI) ‖ B7 (Ommaviy dizayn) · **Joriy vazifa:** P45 hujjatlar sinxronizatsiyasi ‖ 2FA/QR to'lqini (boshqa agentda, parallel)
+**Oxirgi yangilanish:** 2026-09-11 · **Joriy bosqich:** B8 (Anketa konstruktori — tarmoqlanish) · **Joriy vazifa:** P52 tarmoqlanuvchi so'rovnoma (4 to'lqin, parallel agentlar)
 
 ---
 
@@ -69,6 +69,7 @@
 | P49 | Telegram kirish, kabinet va maktabsiz sessiya (API) | backend-dotnet | ✅ | — | `POST /api/auth/telegram` (HMAC-SHA256, doimiy vaqtda solishtirish, `auth_date` 24s) · `/api/me/*` · `StartSession` kengaytirilmadi, alohida command · ikki auditoriya qat'iy ajratilgan (test bilan qulflangan) · begona sessiya → `404` · 1179 test · commit `70b5d59` |
 | P50 | Telegram kirish va kabinet UI | frontend-react | ✅ | — | `/kirish`, `/kabinet`, `/kabinet/test`, `/kabinet/natijalar/:id` · access token FAQAT xotirada (XSS) · Telegram obyekti qayta yig'ilmaydi (imzo) · maktab oqimi tegilmagan · 608 test · commit `c155c59` |
 | P51 | Docker: seed `init` profiliga, obraz bir marta quriladi | backend-dotnet | ✅ | — | Egasining talabi · `up --build` 4 emas 2 obraz · `migrate` ATAYLAB avtomatik qoldi (API sxema eskirganini tekshirmaydi) · commit `b7d69c5` |
+| P52 | Tarmoqlanuvchi so'rovnoma (bo'limlar, ko'rsatish sharti, matn/ko'p tanlovli savollar) | backend + frontend | 🟡 | — | Egasining talabi · shartnoma `docs/18` · oltin fikstura `tests/fixtures/visibility-golden.json` (ikki tomon o'qiydi) · namuna `docs/examples/sorovnoma-intellect.json` |
 
 ---
 

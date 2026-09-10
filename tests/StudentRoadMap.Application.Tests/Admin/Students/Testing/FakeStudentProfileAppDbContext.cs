@@ -83,6 +83,8 @@ internal sealed class FakeStudentProfileAppDbContext : IAppDbContext
 
     public IQueryable<TestScale> TestScales => throw new NotSupportedException();
 
+    public IQueryable<QuestionSection> QuestionSections => throw new NotSupportedException();
+
     public IQueryable<AnalysisJob> AnalysisJobs => throw new NotSupportedException();
 
     public IQueryable<PublicUser> PublicUsers => throw new NotSupportedException();

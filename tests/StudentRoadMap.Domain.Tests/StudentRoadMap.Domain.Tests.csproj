@@ -20,4 +20,12 @@
     <ProjectReference Include="..\..\src\StudentRoadMap.Domain\StudentRoadMap.Domain.csproj" />
   </ItemGroup>
 
+  <!-- Oltin fikstura (`docs/18` §6.1) — C# va TS nusxalarining bir xilligini kafolatlaydi. -->
+  <ItemGroup>
+    <Content Include="..\fixtures\visibility-golden.json">
+      <Link>fixtures\visibility-golden.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

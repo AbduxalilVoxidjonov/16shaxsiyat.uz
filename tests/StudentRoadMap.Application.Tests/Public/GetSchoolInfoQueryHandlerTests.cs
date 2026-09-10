@@ -143,6 +143,8 @@ public sealed class GetSchoolInfoQueryHandlerTests
 
         public IQueryable<TestScale> TestScales => Enumerable.Empty<TestScale>().AsQueryable();
 
+        public IQueryable<QuestionSection> QuestionSections => Enumerable.Empty<QuestionSection>().AsQueryable();
+
         public IQueryable<AnalysisJob> AnalysisJobs => Enumerable.Empty<AnalysisJob>().AsQueryable();
 
         public IQueryable<PublicUser> PublicUsers => Enumerable.Empty<PublicUser>().AsQueryable();

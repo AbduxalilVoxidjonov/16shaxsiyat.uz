@@ -117,14 +117,18 @@ public sealed class AssessmentTest : Entity
 
     /// <summary>
     /// Javobni qo'shadi yoki mavjudini yangilaydi — `(AssessmentTestId, QuestionId)` unikal (upsert).
+    /// `textValue`/`selectedValues` — `docs/18` §2.7 yangi shakllari (matn/ko'p tanlov savollari);
+    /// eski chaqiruvchilar (faqat `rawValue`) o'zgarishsiz ishlashda davom etadi.
     /// </summary>
     public void UpsertAnswer(
         Guid answerId,
         Guid questionId,
-        int rawValue,
+        int? rawValue,
         Guid? selectedOptionId,
         int durationMs,
-        DateTimeOffset answeredAt)
+        DateTimeOffset answeredAt,
+        string? textValue = null,
+        IReadOnlyList<int>? selectedValues = null)
     {
         if (Status != TestStatus.InProgress)
         {
@@ -134,11 +138,30 @@ public sealed class AssessmentTest : Entity
         var existing = _answers.FirstOrDefault(a => a.QuestionId == questionId);
         if (existing is not null)
         {
-            existing.UpdateValue(rawValue, selectedOptionId, durationMs, answeredAt);
+            existing.UpdateValue(rawValue, selectedOptionId, durationMs, answeredAt, textValue, selectedValues);
             return;
         }
 
-        _answers.Add(Answer.Create(answerId, Id, questionId, rawValue, selectedOptionId, durationMs, answeredAt));
+        _answers.Add(Answer.Create(answerId, Id, questionId, rawValue, selectedOptionId, durationMs, answeredAt, textValue, selectedValues));
         AnsweredCount++;
+    }
+
+    /// <summary>
+    /// Ko'rsatilgan savollarning javoblarini o'chiradi — tarmoqlanuvchi so'rovnomada yashirilgan
+    /// savollarning eski javoblari eksport/AI tahliliga tushmasligi uchun (`docs/18` §2.7/§4.3).
+    /// `AnsweredCount` mos ravishda kamayadi (manfiy bo'lmaydi).
+    /// </summary>
+    public void RemoveAnswers(IEnumerable<Guid> questionIds)
+    {
+        ArgumentNullException.ThrowIfNull(questionIds);
+
+        var idsToRemove = questionIds as ICollection<Guid> ?? questionIds.ToList();
+        if (idsToRemove.Count == 0)
+        {
+            return;
+        }
+
+        var removedCount = _answers.RemoveAll(a => idsToRemove.Contains(a.QuestionId));
+        AnsweredCount = Math.Max(0, AnsweredCount - removedCount);
     }
 }

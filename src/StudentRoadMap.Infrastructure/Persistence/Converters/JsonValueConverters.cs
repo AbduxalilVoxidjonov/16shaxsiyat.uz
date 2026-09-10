@@ -33,6 +33,29 @@ internal static class JsonValueConverters
         v => v.ToList());
 
     /// <summary>
+    /// `Answer.SelectedValues` (`MultiChoice`) — bo'sh ro'yxat DB ustunida haqiqiy `NULL`ga
+    /// tushishi shart (`ck_answers_shape` CHECK cheklovi shu ustun `NULL`/`NOT NULL`ligiga
+    /// tayanadi, `docs/18` §2.7/§3.3): `GuidListConverter`dan farqli, bo'sh ro'yxat `"[]"`
+    /// EMAS, `NULL` sifatida saqlanadi. `convertsNulls: true` — DB'dan o'qilgan `NULL` domendagi
+    /// bo'sh ro'yxatga aylanadi (`Answer.SelectedValues` hech qachon `null` bo'lmasligi kerak,
+    /// standart EF xatti-harakati esa `NULL`ni konverter chaqirmasdan `default`ga — reference
+    /// tur uchun `null`ga — aylantirar edi). Bu parametr EF Core'ning ICHKI (`EF1001`) API'si —
+    /// aynan shu "bo'sh kolleksiya ↔ NULL ustun" holatini yechish uchun ataylab ishlatilgan.
+    /// </summary>
+#pragma warning disable EF1001 // `convertsNulls` — EF Core ichki API, izohga qarang.
+    public static readonly ValueConverter<IReadOnlyList<int>, string?> AnswerSelectedValuesConverter = new(
+        value => value.Count == 0 ? null : JsonSerializer.Serialize(value, SerializerOptions),
+        json => json == null ? new List<int>() : JsonSerializer.Deserialize<List<int>>(json, SerializerOptions) ?? new List<int>(),
+        mappingHints: null,
+        convertsNulls: true);
+#pragma warning restore EF1001
+
+    public static readonly ValueComparer<IReadOnlyList<int>> IntListComparer = new(
+        (a, b) => (a ?? new List<int>()).SequenceEqual(b ?? new List<int>()),
+        v => v.Aggregate(0, (hash, item) => HashCode.Combine(hash, item)),
+        v => v.ToList());
+
+    /// <summary>
     /// `TestScale.InterpretationBands` — `docs/03` §6.1 saqlash shakli
     /// (`[{ "from":0, "to":33, "label":"Past" }, …]`), `InterpretationBand`ning o'z nomlaridan
     /// (`MinInclusive`/`MaxInclusive`/`Level`) farqli — shu sabab alohida JSON DTO (`InterpretationBandJson`)

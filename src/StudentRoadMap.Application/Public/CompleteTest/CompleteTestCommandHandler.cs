@@ -186,7 +186,10 @@ internal sealed class CompleteTestCommandHandler : IRequestHandler<CompleteTestC
             .Select(q => new QuestionMeta(q.Id, q.Code, q.Scale, q.ScaleDirection, q.Weight, q.QuestionType, q.DisplayOrder))
             .ToList();
 
-        var answers = assessmentTest.Answers.ToDictionary(a => a.QuestionId, a => a.RawValue);
+        // `docs/18` §2.7/§2.8: `Answer.RawValue` endi `int?` — `ScoreAsync` faqat `ScoringMode
+        // != Survey` bo'lganda chaqiriladi (yuqoridagi `Handle` sharti), B-1 tufayli `RawValue`
+        // har doim to'ldirilgan bo'lishi shart; `null` kelsa jimgina 0 deb hisoblanmaydi.
+        var answers = assessmentTest.Answers.ToDictionary(a => a.QuestionId, a => RequireRawValue(a));
         var durations = assessmentTest.Answers.ToDictionary(a => a.QuestionId, a => a.DurationMs);
 
         var scoringInput = new ScoringInput(questionMetas, answers, durations, new StudentContext(null, null, null));
@@ -208,4 +211,14 @@ internal sealed class CompleteTestCommandHandler : IRequestHandler<CompleteTestC
 
         return result.Value;
     }
+
+    /// <summary>
+    /// `docs/18` §2.8: `ScoringEngine` kirishiga `Answer.RawValue is null` jimgina 0 deb
+    /// hisoblanmaydi — `ScoreAsync` faqat `Scored` test bloklari uchun chaqiriladi (B-1 tufayli
+    /// `RawValue` kafolatlangan), `null` kelishi domen invariantining buzilishi.
+    /// </summary>
+    private static int RequireRawValue(Answer answer) =>
+        answer.RawValue ?? throw new ArgumentException(
+            $"Savol {answer.QuestionId} uchun RawValue yo'q — Scored test bloki uchun bu kutilmagan holat.",
+            nameof(answer));
 }

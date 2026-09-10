@@ -141,7 +141,11 @@ internal sealed class RecalculateAssessmentScoresCommandHandler
                 .ToList();
 
             var testAnswers = answersByAssessmentTestId.GetValueOrDefault(assessmentTest.Id, []);
-            var answersDict = testAnswers.ToDictionary(a => a.QuestionId, a => a.RawValue);
+            // `docs/18` §2.7/§2.8: `Answer.RawValue` endi `int?` (matn/ko'p tanlov javoblari uchun).
+            // Bu yerga faqat `Scored` test blokining javoblari keladi (B-1 tufayli `RawValue` har doim
+            // to'ldirilgan bo'lishi shart) — `null` kelsa bu domen invariantining buzilishi, jimgina
+            // 0 deb hisoblanmaydi.
+            var answersDict = testAnswers.ToDictionary(a => a.QuestionId, a => RequireRawValue(a));
             var durationsDict = testAnswers.ToDictionary(a => a.QuestionId, a => a.DurationMs);
 
             var scoringInput = new ScoringInput(questionMetas, answersDict, durationsDict, new StudentContext(null, null, null));
@@ -206,7 +210,7 @@ internal sealed class RecalculateAssessmentScoresCommandHandler
         var nonSurveyAssessmentTestIds = nonSurveyAssessmentTests.Select(t => t.Id).ToHashSet();
         var nonSurveyAnswers = allAnswers.Where(a => nonSurveyAssessmentTestIds.Contains(a.AssessmentTestId)).ToList();
 
-        var reliabilityAnswers = nonSurveyAnswers.ToDictionary(a => a.QuestionId, a => a.RawValue);
+        var reliabilityAnswers = nonSurveyAnswers.ToDictionary(a => a.QuestionId, a => RequireRawValue(a));
         var reliabilityDurations = nonSurveyAnswers.ToDictionary(a => a.QuestionId, a => a.DurationMs);
         var totalDuration = TimeSpan.FromSeconds(assessment.TotalDurationSeconds ?? 0);
 
@@ -320,4 +324,15 @@ internal sealed class RecalculateAssessmentScoresCommandHandler
 
         bigFive.ApplyCompositeIndex(updated.Value.CompositeIndex!.Value, TestResultJson.Serialize(updated.Value.Levels));
     }
+
+    /// <summary>
+    /// `docs/18` §2.8: `ScoringEngine`/`ReliabilityCalculator` kirishiga `Answer.RawValue is null`
+    /// jimgina 0 deb hisoblanmaydi — bu yerga faqat `Scored` (`Survey` emas) test blokining
+    /// javoblari kelishi kafolatlangan (B-1), shu sabab `null` kelishi domen invariantining
+    /// buzilishi va aniq xato bilan to'xtatiladi.
+    /// </summary>
+    private static int RequireRawValue(Answer answer) =>
+        answer.RawValue ?? throw new ArgumentException(
+            $"Savol {answer.QuestionId} uchun RawValue yo'q — Scored test bloki uchun bu kutilmagan holat.",
+            nameof(answer));
 }

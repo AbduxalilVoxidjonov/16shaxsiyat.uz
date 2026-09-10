@@ -182,4 +182,76 @@ public sealed class AssessmentTestTests
 
         test.QuestionOrder.Should().Equal(order);
     }
+
+    // --- `docs/18` §2.7: `RemoveAnswers` — yashirilgan savollarning javoblarini tozalaydi ---
+
+    [Fact]
+    public void RemoveAnswers_WithMatchingQuestionIds_RemovesAnswersAndDecreasesAnsweredCount()
+    {
+        var test = CreateTest(3);
+        test.Start(Now);
+        var q1 = Guid.NewGuid();
+        var q2 = Guid.NewGuid();
+        var q3 = Guid.NewGuid();
+        test.UpsertAnswer(Guid.NewGuid(), q1, 3, null, 1000, Now);
+        test.UpsertAnswer(Guid.NewGuid(), q2, 4, null, 1000, Now);
+        test.UpsertAnswer(Guid.NewGuid(), q3, 5, null, 1000, Now);
+
+        test.RemoveAnswers([q2, q3]);
+
+        test.AnsweredCount.Should().Be(1);
+        test.Answers.Should().ContainSingle(a => a.QuestionId == q1);
+    }
+
+    [Fact]
+    public void RemoveAnswers_WithUnknownQuestionIds_DoesNotGoNegative()
+    {
+        var test = CreateTest();
+        test.Start(Now);
+        var questionId = Guid.NewGuid();
+        test.UpsertAnswer(Guid.NewGuid(), questionId, 3, null, 1000, Now);
+
+        test.RemoveAnswers([Guid.NewGuid(), Guid.NewGuid()]);
+
+        test.AnsweredCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void RemoveAnswers_WithEmptyList_IsNoOp()
+    {
+        var test = CreateTest();
+        test.Start(Now);
+        var questionId = Guid.NewGuid();
+        test.UpsertAnswer(Guid.NewGuid(), questionId, 3, null, 1000, Now);
+
+        test.RemoveAnswers([]);
+
+        test.AnsweredCount.Should().Be(1);
+        test.Answers.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void UpsertAnswer_WithTextValue_StoresTextShape()
+    {
+        var test = CreateTest();
+        test.Start(Now);
+        var questionId = Guid.NewGuid();
+
+        test.UpsertAnswer(Guid.NewGuid(), questionId, rawValue: null, selectedOptionId: null, durationMs: 1000, answeredAt: Now, textValue: "Toshkent");
+
+        test.Answers.Single().TextValue.Should().Be("Toshkent");
+        test.Answers.Single().RawValue.Should().BeNull();
+    }
+
+    [Fact]
+    public void UpsertAnswer_WithSelectedValues_StoresMultiChoiceShape()
+    {
+        var test = CreateTest();
+        test.Start(Now);
+        var questionId = Guid.NewGuid();
+
+        test.UpsertAnswer(Guid.NewGuid(), questionId, rawValue: null, selectedOptionId: null, durationMs: 1000, answeredAt: Now, selectedValues: [1, 3]);
+
+        test.Answers.Single().SelectedValues.Should().BeEquivalentTo([1, 3]);
+    }
 }

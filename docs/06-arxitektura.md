@@ -249,6 +249,12 @@ Barcha xatolar `application/problem+json`:
 | `PUBLIC_USER_DELETED` | 401 | Ommaviy akkaunt o'chirilgan/anonimlashtirilgan (P47) |
 | `NO_PROGRAM_AVAILABLE` | 409 | Makonga birorta mavjud dastur biriktirilmagan (P15/P47) |
 | `PROGRAM_REQUIRED` | 400 | Bir nechta dastur mavjud, `programCode` berilmagan (P34) |
+| `SECTION_CODE_DUPLICATE` | 409 | Anketa ichida bir xil kod bilan ikkinchi bo'lim (P52) |
+| `SECTION_IN_USE` | 409 | Savollari bor bo'limni o'chirishga urinish (P52) |
+| `ANSWER_SHAPE_INVALID` | 400 | `Answer`ning uchta shaklidan (`value`/`text`/`selectedValues`) aynan bittasi to'ldirilmagan (P52) |
+| `QUESTION_NOT_VISIBLE` | 400 | Joriy javoblar bo'yicha ko'rinmaydigan savolga javob yozishga urinish (P52) |
+| `QUESTION_TYPE_NOT_SCORABLE` | 400 | Matn/ko'p tanlov savol turi `Scored` anketada (B-1, P52) |
+| `BRANCHING_NOT_ALLOWED_IN_SCORED` | 400 | Ko'rsatish sharti (`visibility`) `Scored` anketada (B-2, P52) |
 
 > **`429` javobi.** `Retry-After` sarlavhasi (butun sekund) MAJBURIY, va bir xil qiymat
 > `ProblemDetails` tanasida `retryAfterSeconds` maydoni sifatida takrorlanadi — sarlavhani

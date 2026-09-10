@@ -1,0 +1,500 @@
+{
+  "$comment": "NAMUNA — egasining 'Maktab o'quvchilari uchun so'rovnoma' hujjati to'liq, import qilishga tayyor. Admin panel: Katalog → Import (JSON). Bu SEED EMAS: mijozga xos kontent tizim metodikalari qatoriga qo'shilmaydi. Import qilgach o'quv markaz nomlarini (Q2B_1 variantlari) o'z hududingizdagi haqiqiy markazlarga almashtiring, so'ng nashr qiling va dasturga biriktiring.",
+  "code": "INTELLECT-SURVEY",
+  "nameUz": "Maktab o'quvchilari uchun so'rovnoma",
+  "descriptionUz": "Qo'shimcha ta'lim bo'yicha qisqa so'rovnoma. Javoblaringiz maxfiy saqlanadi va faqat xizmat sifatini yaxshilash uchun ishlatiladi.",
+  "estimatedMinutes": 7,
+  "pageSize": 60,
+  "shuffleQuestions": false,
+  "displayOrder": 20,
+  "scoringMode": "Survey",
+  "sections": [
+    {
+      "code": "S1",
+      "titleUz": "Asosiy ma'lumotlar",
+      "descriptionUz": "Bu bo'limni barcha o'quvchilar to'ldiradi.",
+      "displayOrder": 1,
+      "visibility": null
+    },
+    {
+      "code": "S2A",
+      "titleUz": "Intellect o'quvchilari uchun",
+      "descriptionUz": "Bir necha savol — darslar sifatini yaxshilashimizga yordam beradi.",
+      "displayOrder": 2,
+      "visibility": {
+        "match": "All",
+        "conditions": [{ "questionCode": "Q1_6", "operator": "Equals", "values": [1] }]
+      }
+    },
+    {
+      "code": "S2B",
+      "titleUz": "Boshqa markazda o'qiyotganlar uchun",
+      "descriptionUz": null,
+      "displayOrder": 3,
+      "visibility": {
+        "match": "All",
+        "conditions": [{ "questionCode": "Q1_6", "operator": "Equals", "values": [2] }]
+      }
+    },
+    {
+      "code": "S2C",
+      "titleUz": "Hozircha qatnamayotganlar uchun",
+      "descriptionUz": null,
+      "displayOrder": 4,
+      "visibility": {
+        "match": "All",
+        "conditions": [{ "questionCode": "Q1_6", "operator": "Equals", "values": [3] }]
+      }
+    },
+    {
+      "code": "S3",
+      "titleUz": "Yakuniy qism",
+      "descriptionUz": "So'rovnomada qatnashganingiz uchun rahmat! Sizga bepul bonus taqdim etamiz.",
+      "displayOrder": 5,
+      "visibility": null
+    }
+  ],
+  "questions": [
+    {
+      "code": "Q1_1",
+      "order": 1,
+      "sectionCode": "S1",
+      "textUz": "Familiya, ism, sharifingiz",
+      "type": "ShortText",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "placeholder": "Masalan: Karimov Alisher Rustam o'g'li",
+      "maxLength": 200,
+      "visibility": null
+    },
+    {
+      "code": "Q1_2",
+      "order": 2,
+      "sectionCode": "S1",
+      "textUz": "Maktabingiz va sinfingiz",
+      "type": "ShortText",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "placeholder": "Masalan: 23-maktab, 10-A sinf",
+      "maxLength": 120,
+      "visibility": null
+    },
+    {
+      "code": "Q1_3",
+      "order": 3,
+      "sectionCode": "S1",
+      "textUz": "Telefon raqamingiz",
+      "type": "Phone",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "placeholder": "+998 90 123 45 67",
+      "inputPattern": "^\\+?998[0-9]{9}$",
+      "maxLength": 20,
+      "visibility": null
+    },
+    {
+      "code": "Q1_4",
+      "order": 4,
+      "sectionCode": "S1",
+      "textUz": "Ota-onangizning telefon raqami",
+      "type": "Phone",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "placeholder": "+998 91 987 65 43",
+      "inputPattern": "^\\+?998[0-9]{9}$",
+      "maxLength": 20,
+      "visibility": null
+    },
+    {
+      "code": "Q1_5",
+      "order": 5,
+      "sectionCode": "S1",
+      "textUz": "Maktabdagi dars smenangiz qaysi vaqtda?",
+      "type": "SingleChoice",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "visibility": null,
+      "options": [
+        { "textUz": "Kunduzgi smena (08:00 – 13:00)", "value": 1, "displayOrder": 1 },
+        { "textUz": "Tushdan keyingi smena (12:30 – 17:30)", "value": 2, "displayOrder": 2 }
+      ]
+    },
+    {
+      "code": "Q1_6",
+      "order": 6,
+      "sectionCode": "S1",
+      "textUz": "Hozirda qo'shimcha o'quv kurslariga qatnashasizmi?",
+      "type": "SingleChoice",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "visibility": null,
+      "options": [
+        { "textUz": "Ha, Intellect o'quv markazida o'qiyman", "value": 1, "displayOrder": 1 },
+        { "textUz": "Ha, boshqa o'quv markazida o'qiyman", "value": 2, "displayOrder": 2 },
+        { "textUz": "Hozircha hech qayerga qatnamayman", "value": 3, "displayOrder": 3 }
+      ]
+    },
+
+    {
+      "code": "Q2A_1",
+      "order": 7,
+      "sectionCode": "S2A",
+      "textUz": "Intellect markazida qaysi fan(lar)dan ta'lim olyapsiz?",
+      "type": "MultiChoice",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "minSelections": 1,
+      "visibility": null,
+      "options": [
+        { "textUz": "Ingliz tili (General English / CEFR)", "value": 1, "displayOrder": 1 },
+        { "textUz": "IELTS tayyorgarlik kursi", "value": 2, "displayOrder": 2 },
+        { "textUz": "Matematika / Mental arifmetika", "value": 3, "displayOrder": 3 },
+        { "textUz": "Dasturlash / IT kurslari", "value": 4, "displayOrder": 4 },
+        { "textUz": "Ona tili va adabiyot", "value": 5, "displayOrder": 5 },
+        { "textUz": "Kimyo / Biologiya", "value": 6, "displayOrder": 6 },
+        { "textUz": "Rus tili", "value": 7, "displayOrder": 7 },
+        { "textUz": "Boshqa", "value": 99, "displayOrder": 8 }
+      ]
+    },
+    {
+      "code": "Q2A_1_OTHER",
+      "order": 8,
+      "sectionCode": "S2A",
+      "textUz": "Qaysi fan? Yozib qoldiring",
+      "type": "ShortText",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "placeholder": "Fan nomini yozing",
+      "maxLength": 120,
+      "visibility": {
+        "match": "All",
+        "conditions": [{ "questionCode": "Q2A_1", "operator": "ContainsAny", "values": [99] }]
+      }
+    },
+    {
+      "code": "Q2A_2",
+      "order": 9,
+      "sectionCode": "S2A",
+      "textUz": "Qancha muddatdan buyon Intellect'da o'qib kelyapsiz?",
+      "type": "SingleChoice",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "visibility": null,
+      "options": [
+        { "textUz": "1 oygacha (yangi keldim)", "value": 1, "displayOrder": 1 },
+        { "textUz": "1 – 3 oy", "value": 2, "displayOrder": 2 },
+        { "textUz": "3 – 6 oy", "value": 3, "displayOrder": 3 },
+        { "textUz": "6 oydan ko'p", "value": 4, "displayOrder": 4 }
+      ]
+    },
+    {
+      "code": "Q2A_3",
+      "order": 10,
+      "sectionCode": "S2A",
+      "textUz": "O'quv markazimiz haqida qayerdan eshitgansiz yoki kim taklif qilgan?",
+      "type": "SingleChoice",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "visibility": null,
+      "options": [
+        { "textUz": "Do'stim / sinfdoshim tavsiya qilgan", "value": 1, "displayOrder": 1 },
+        { "textUz": "Ota-onam tanlab olib kelgan", "value": 2, "displayOrder": 2 },
+        { "textUz": "Ijtimoiy tarmoqlar (Instagram, Telegram)", "value": 3, "displayOrder": 3 },
+        { "textUz": "Maktabdagi taqdimot yoki reklama orqali", "value": 4, "displayOrder": 4 },
+        { "textUz": "Tashqi banner / ko'chadagi e'lon", "value": 5, "displayOrder": 5 }
+      ]
+    },
+    {
+      "code": "Q2A_4",
+      "order": 11,
+      "sectionCode": "S2A",
+      "textUz": "Nima uchun aynan Intellect o'quv markazini tanlagansiz?",
+      "type": "MultiChoice",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "minSelections": 1,
+      "visibility": null,
+      "options": [
+        { "textUz": "Uyimga yoki maktabimga yaqinligi uchun", "value": 1, "displayOrder": 1 },
+        { "textUz": "Narxi hamyonbop bo'lgani uchun", "value": 2, "displayOrder": 2 },
+        { "textUz": "O'qituvchilari tajribali va kuchli bo'lgani uchun", "value": 3, "displayOrder": 3 },
+        { "textUz": "Tanishim / do'stim shu yerda o'qib yuqori natija olgani uchun", "value": 4, "displayOrder": 4 },
+        { "textUz": "Dars xonalari qulay va zamonaviy jihozlangani uchun", "value": 5, "displayOrder": 5 }
+      ]
+    },
+    {
+      "code": "Q2A_5",
+      "order": 12,
+      "sectionCode": "S2A",
+      "textUz": "O'qituvchingizning dars o'tish jarayonini qanday baholaysiz?",
+      "type": "SingleChoice",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "visibility": null,
+      "options": [
+        { "textUz": "Zo'r — barcha mavzular juda qiziqarli va tushunarli", "value": 1, "displayOrder": 1 },
+        { "textUz": "Yaxshi — umumiy dars jarayoni ma'qul", "value": 2, "displayOrder": 2 },
+        { "textUz": "Qoniqarli — ba'zi mavzularda qiyinchiliklar bor", "value": 3, "displayOrder": 3 },
+        { "textUz": "Qoniqarsiz — o'qitish metodikasini o'zgartirish kerak", "value": 4, "displayOrder": 4 }
+      ]
+    },
+    {
+      "code": "Q2A_6",
+      "order": 13,
+      "sectionCode": "S2A",
+      "textUz": "Yangi tashkil qilinadigan kurslarimizda nimalar bo'lishini xohlardingiz?",
+      "type": "LongText",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": false,
+      "placeholder": "Fikringiz, taklifingiz yoki istaklaringizni yozing...",
+      "maxLength": 1000,
+      "visibility": null
+    },
+
+    {
+      "code": "Q2B_1",
+      "order": 14,
+      "sectionCode": "S2B",
+      "textUz": "Hozirda qaysi o'quv markaziga borasiz?",
+      "type": "SingleChoice",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "visibility": null,
+      "options": [
+        { "textUz": "1-o'quv markaz (nomini tahrirlang)", "value": 1, "displayOrder": 1 },
+        { "textUz": "2-o'quv markaz (nomini tahrirlang)", "value": 2, "displayOrder": 2 },
+        { "textUz": "3-o'quv markaz (nomini tahrirlang)", "value": 3, "displayOrder": 3 },
+        { "textUz": "4-o'quv markaz (nomini tahrirlang)", "value": 4, "displayOrder": 4 },
+        { "textUz": "Boshqa o'quv markaz", "value": 99, "displayOrder": 5 }
+      ]
+    },
+    {
+      "code": "Q2B_1_OTHER",
+      "order": 15,
+      "sectionCode": "S2B",
+      "textUz": "O'quv markaz nomini yozing",
+      "type": "ShortText",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "placeholder": "Markaz nomi",
+      "maxLength": 120,
+      "visibility": {
+        "match": "All",
+        "conditions": [{ "questionCode": "Q2B_1", "operator": "Equals", "values": [99] }]
+      }
+    },
+    {
+      "code": "Q2B_2",
+      "order": 16,
+      "sectionCode": "S2B",
+      "textUz": "Qaysi fandan qo'shimcha darsga qatnayapsiz?",
+      "type": "MultiChoice",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "minSelections": 1,
+      "visibility": null,
+      "options": [
+        { "textUz": "Ingliz tili / IELTS / CEFR", "value": 1, "displayOrder": 1 },
+        { "textUz": "Matematika", "value": 2, "displayOrder": 2 },
+        { "textUz": "Dasturlash / kompyuter savodxonligi", "value": 3, "displayOrder": 3 },
+        { "textUz": "Ona tili va adabiyot", "value": 4, "displayOrder": 4 },
+        { "textUz": "Kimyo / Biologiya", "value": 5, "displayOrder": 5 },
+        { "textUz": "Rus tili", "value": 6, "displayOrder": 6 },
+        { "textUz": "Boshqa fan", "value": 99, "displayOrder": 7 }
+      ]
+    },
+    {
+      "code": "Q2B_3",
+      "order": 17,
+      "sectionCode": "S2B",
+      "textUz": "Ushbu o'quv markaziga qancha vaqtdan beri qatnaysiz?",
+      "type": "SingleChoice",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "visibility": null,
+      "options": [
+        { "textUz": "1 oygacha", "value": 1, "displayOrder": 1 },
+        { "textUz": "1 – 3 oy", "value": 2, "displayOrder": 2 },
+        { "textUz": "3 – 6 oy", "value": 3, "displayOrder": 3 },
+        { "textUz": "6 oydan ko'p / 1 yildan ortiq", "value": 4, "displayOrder": 4 }
+      ]
+    },
+    {
+      "code": "Q2B_4",
+      "order": 18,
+      "sectionCode": "S2B",
+      "textUz": "Hozirgi o'quv markazingizda sizga eng ko'p nima yetishmayapti?",
+      "type": "MultiChoice",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "minSelections": 1,
+      "visibility": null,
+      "options": [
+        { "textUz": "O'qituvchi yetarlicha e'tibor bermaydi", "value": 1, "displayOrder": 1 },
+        { "textUz": "Mavzular tushunarsiz o'tiladi", "value": 2, "displayOrder": 2 },
+        { "textUz": "Narxi qimmatlik qilyapti", "value": 3, "displayOrder": 3 },
+        { "textUz": "Xonalar sharoiti va jihozlanishi past", "value": 4, "displayOrder": 4 },
+        { "textUz": "Uyimdan juda uzoqda joylashgan", "value": 5, "displayOrder": 5 },
+        { "textUz": "Barchasi qoniqtiradi, hech qanday e'tirozim yo'q", "value": 6, "displayOrder": 6 }
+      ]
+    },
+    {
+      "code": "Q2B_5",
+      "order": 19,
+      "sectionCode": "S2B",
+      "textUz": "Agar Intellect sizga qulay vaqt va kuchli o'qituvchi taklif qilsa, bepul sinov darsimizga kelib ko'rarmidingiz?",
+      "type": "SingleChoice",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "visibility": null,
+      "options": [
+        { "textUz": "Ha, albatta kelib ko'raman", "value": 1, "displayOrder": 1 },
+        { "textUz": "Vaqtiga va dars grafigiga bog'liq", "value": 2, "displayOrder": 2 },
+        { "textUz": "Ota-onam bilan maslahatlashib ko'rishim kerak", "value": 3, "displayOrder": 3 },
+        { "textUz": "Yo'q, hozirgi markazimdan ketmoqchi emasman", "value": 4, "displayOrder": 4 }
+      ]
+    },
+
+    {
+      "code": "Q2C_1",
+      "order": 20,
+      "sectionCode": "S2C",
+      "textUz": "Hozircha qo'shimcha kurslarga bormasligingizning asosiy sababi nima?",
+      "type": "SingleChoice",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "visibility": null,
+      "options": [
+        { "textUz": "Qaysi o'quv markaz yaxshiligini bilmayapman", "value": 1, "displayOrder": 1 },
+        { "textUz": "Maktab darslaridan vaqtim ortmayapti", "value": 2, "displayOrder": 2 },
+        { "textUz": "Moliyaviy sharoit to'g'ri kelmadi", "value": 3, "displayOrder": 3 },
+        { "textUz": "Qiziqadigan yo'nalishimni hali aniq tanlaganim yo'q", "value": 4, "displayOrder": 4 }
+      ]
+    },
+    {
+      "code": "Q2C_2",
+      "order": 21,
+      "sectionCode": "S2C",
+      "textUz": "Maktabni bitirib qaysi sohaga yoki oliygohga kirmoqchisiz?",
+      "type": "ShortText",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": false,
+      "placeholder": "Masalan: IT dasturchi / Toshkentdagi Inha universiteti",
+      "maxLength": 200,
+      "visibility": null
+    },
+    {
+      "code": "Q2C_3",
+      "order": 22,
+      "sectionCode": "S2C",
+      "textUz": "Qaysi fanlarni chuqurroq o'rganishni xohlaysiz?",
+      "type": "MultiChoice",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "minSelections": 1,
+      "visibility": null,
+      "options": [
+        { "textUz": "Ingliz tili (noldan boshlash yoki daraja oshirish)", "value": 1, "displayOrder": 1 },
+        { "textUz": "Matematika", "value": 2, "displayOrder": 2 },
+        { "textUz": "Dasturlash va zamonaviy IT kasblar", "value": 3, "displayOrder": 3 },
+        { "textUz": "Rus tili", "value": 4, "displayOrder": 4 },
+        { "textUz": "Kimyo / Biologiya", "value": 5, "displayOrder": 5 },
+        { "textUz": "Prezident va ixtisoslashtirilgan maktablarga tayyorlov", "value": 6, "displayOrder": 6 }
+      ]
+    },
+    {
+      "code": "Q2C_4",
+      "order": 23,
+      "sectionCode": "S2C",
+      "textUz": "Intellect o'quv markazida 1 haftalik BEPUL sinov darslariga qatnashishni xohlarmidingiz?",
+      "type": "SingleChoice",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "visibility": null,
+      "options": [
+        { "textUz": "Ha, bajonidil qatnashaman — menga aloqaga chiqing", "value": 1, "displayOrder": 1 },
+        { "textUz": "Ota-onam bilan maslahatlashishim kerak", "value": 2, "displayOrder": 2 },
+        { "textUz": "Vaqti to'g'ri kelsa boraman", "value": 3, "displayOrder": 3 },
+        { "textUz": "Yo'q, qiziq emas", "value": 4, "displayOrder": 4 }
+      ]
+    },
+
+    {
+      "code": "Q3_1",
+      "order": 24,
+      "sectionCode": "S3",
+      "textUz": "Qaysi bepul bonusni olishni xohlaysiz?",
+      "type": "SingleChoice",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": true,
+      "visibility": null,
+      "options": [
+        { "textUz": "Ingliz tili / matematika fanidan bepul bilim darajasini aniqlash testi", "value": 1, "displayOrder": 1 },
+        { "textUz": "Kelajak kasbini tanlash bo'yicha bepul shaxsiy konsultatsiya", "value": 2, "displayOrder": 2 },
+        { "textUz": "O'quv markaz kurslari uchun bir martalik 10% lik chegirma vaucheri", "value": 3, "displayOrder": 3 }
+      ]
+    },
+    {
+      "code": "Q3_2",
+      "order": 25,
+      "sectionCode": "S3",
+      "textUz": "Do'stingiz bilan birga o'qishni xohlaysizmi? Ismi va telefon raqamini qoldiring",
+      "type": "ShortText",
+      "scale": "SURVEY",
+      "direction": 1,
+      "weight": 1.0,
+      "isRequired": false,
+      "placeholder": "Masalan: Aziz, +998 90 111 22 33",
+      "maxLength": 200,
+      "visibility": null
+    }
+  ]
+}

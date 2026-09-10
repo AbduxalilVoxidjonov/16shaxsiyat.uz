@@ -60,6 +60,8 @@ internal sealed class FakeTypeCatalogAppDbContext : IAppDbContext
 
     public IQueryable<TestScale> TestScales => throw NotUsed(nameof(TestScales));
 
+    public IQueryable<QuestionSection> QuestionSections => throw NotUsed(nameof(QuestionSections));
+
     public IQueryable<AssessmentProgram> AssessmentPrograms => throw NotUsed(nameof(AssessmentPrograms));
 
     public IQueryable<ProgramTest> ProgramTests => throw NotUsed(nameof(ProgramTests));

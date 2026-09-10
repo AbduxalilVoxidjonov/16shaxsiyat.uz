@@ -66,6 +66,15 @@ internal sealed class TestDefinitionConfiguration : IEntityTypeConfiguration<Tes
             .HasForeignKey(s => s.TestDefinitionId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // `question_sections` — P52 (`docs/18` §2.2/§3.1), `Questions`/`Scales` bilan bir xil naqsh.
+        builder.Metadata.FindNavigation(nameof(TestDefinition.Sections))!
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.HasMany(t => t.Sections)
+            .WithOne()
+            .HasForeignKey(s => s.TestDefinitionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasIndex(t => t.Code).IsUnique().HasDatabaseName("ux_test_definitions_code");
 
         builder.HasIndex(t => new { t.IsActive, t.DisplayOrder })

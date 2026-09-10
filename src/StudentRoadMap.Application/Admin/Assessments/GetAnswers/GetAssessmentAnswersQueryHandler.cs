@@ -401,7 +401,13 @@ internal sealed class GetAssessmentAnswersQueryHandler : IRequestHandler<GetAsse
                 resolver.Resolve(question.Scale),
                 question.ScaleDirection,
                 question.Weight,
-                answer.RawValue,
+                // `docs/18` §2.7: `Answer.RawValue` endi `int?` (matn/ko'p tanlov javoblari uchun
+                // `null`). Bu qator faqat `IsScored` (Scored) bloklar uchun signal/tahlil
+                // hisoblashda ishlatiladi (pastda `scoredRows`/`orderedScored` filtri) — u yerda
+                // `RawValue` har doim to'ldirilgan (B-1). `Survey` javoblarining matn/tanlov
+                // shaklini shu admin jadvalida ko'rsatish P52 A2 (Application) vazifasi doirasida;
+                // hozircha `0` — faqat ko'rinish uchun, hisoblashga ta'sir qilmaydi.
+                answer.RawValue ?? 0,
                 answer.SelectedOptionId.HasValue ? optionTextById.GetValueOrDefault(answer.SelectedOptionId.Value) : null,
                 answer.DurationMs,
                 answer.RevisionCount,

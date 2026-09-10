@@ -148,7 +148,10 @@ internal sealed class CompleteSessionCommandHandler : IRequestHandler<CompleteSe
             _context.AsNoTracking(_context.Answers).Where(a => nonSurveyAssessmentTestIds.Contains(a.AssessmentTestId)),
             cancellationToken).ConfigureAwait(false);
 
-        var answersById = allAnswers.ToDictionary(a => a.QuestionId, a => a.RawValue);
+        // `docs/18` §2.7/§2.8: `Answer.RawValue` endi `int?` — bu yerga faqat `Survey` bo'lmagan
+        // (Scored) test bloklarining javoblari keladi (yuqoridagi filtr), B-1 tufayli `RawValue`
+        // har doim to'ldirilgan bo'lishi shart; `null` kelsa jimgina 0 deb hisoblanmaydi.
+        var answersById = allAnswers.ToDictionary(a => a.QuestionId, a => RequireRawValue(a));
         var durationsById = allAnswers.ToDictionary(a => a.QuestionId, a => a.DurationMs);
 
         // `Assessment.Complete()` yuqorida `TotalDurationSeconds`ni allaqachon hisoblagan.
@@ -363,4 +366,14 @@ internal sealed class CompleteSessionCommandHandler : IRequestHandler<CompleteSe
             completedAssessmentCount: student.CompletedAssessmentCount + 1,
             now: now);
     }
+
+    /// <summary>
+    /// `docs/18` §2.8: `ReliabilityCalculator` kirishiga `Answer.RawValue is null` jimgina 0 deb
+    /// hisoblanmaydi — bu yerga faqat `Survey` bo'lmagan test bloklarining javoblari keladi
+    /// (B-1 tufayli `RawValue` kafolatlangan), `null` kelishi domen invariantining buzilishi.
+    /// </summary>
+    private static int RequireRawValue(Answer answer) =>
+        answer.RawValue ?? throw new ArgumentException(
+            $"Savol {answer.QuestionId} uchun RawValue yo'q — Scored test bloki uchun bu kutilmagan holat.",
+            nameof(answer));
 }

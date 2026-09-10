@@ -1,3 +1,4 @@
+using StudentRoadMap.Domain.Catalog.Branching;
 using StudentRoadMap.Domain.Common;
 
 namespace StudentRoadMap.Domain.Catalog;
@@ -11,6 +12,7 @@ public sealed class TestDefinition : AggregateRoot
 {
     private readonly List<Question> _questions = [];
     private readonly List<TestScale> _scales = [];
+    private readonly List<QuestionSection> _sections = [];
 
     public string Code { get; private set; } = null!;
 
@@ -65,6 +67,9 @@ public sealed class TestDefinition : AggregateRoot
 
     /// <summary>Faqat `Custom` testlarda to'ldiriladi — tizim metodikasida bo'sh (`docs/07` §3.4).</summary>
     public IReadOnlyCollection<TestScale> Scales => _scales.AsReadOnly();
+
+    /// <summary>Savol bo'limlari — FAQAT `Custom` (`IsSystem = false`) anketalarda (B-3, `docs/18` §2.2).</summary>
+    public IReadOnlyCollection<QuestionSection> Sections => _sections.AsReadOnly();
 
     /// <summary>EF Core uchun parametrsiz konstruktor.</summary>
     private TestDefinition()
@@ -150,7 +155,11 @@ public sealed class TestDefinition : AggregateRoot
         return new TestDefinition(id, code, nameUz, descriptionUz, displayOrder, estimatedMinutes, shuffleQuestions, pageSize, kind, isSystem, effectiveScoringStrategyCode, scoringMode, createdByAdminUserId, now);
     }
 
-    /// <summary>Yangi savol qo'shadi. Tizim metodikasida taqiqlangan (BR-8).</summary>
+    /// <summary>
+    /// Yangi savol qo'shadi. Tizim metodikasida taqiqlangan (BR-8). `docs/18` chegaralari:
+    /// B-1 — matn/ko'p tanlov turlari faqat `Survey` rejimida (`QUESTION_TYPE_NOT_SCORABLE`);
+    /// B-2 — savol darajasidagi ko'rsatish sharti faqat `Survey` rejimida (`BRANCHING_NOT_ALLOWED_IN_SCORED`).
+    /// </summary>
     public void AddQuestion(Question question, DateTimeOffset now)
     {
         if (IsSystem)
@@ -167,6 +176,9 @@ public sealed class TestDefinition : AggregateRoot
         {
             throw new DomainException("QUESTION_CODE_DUPLICATE", "Bu kod bilan savol allaqachon mavjud.");
         }
+
+        EnsureScorableInScoredMode(question.QuestionType);
+        EnsureBranchingAllowed(question.VisibilityRule);
 
         _questions.Add(question);
         BumpVersionIfPublished();
@@ -188,6 +200,102 @@ public sealed class TestDefinition : AggregateRoot
         }
 
         BumpVersionIfPublished();
+        UpdatedAt = now;
+    }
+
+    /// <summary>Yangi bo'lim qo'shadi. Tizim metodikasida taqiqlangan (B-3/BR-8, `docs/18` §2.2).</summary>
+    public void AddSection(QuestionSection section, DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(section);
+
+        if (IsSystem)
+        {
+            throw new DomainException("SYSTEM_TEST_LOCKED", "Tizim metodikasiga bo'lim qo'shib bo'lmaydi.");
+        }
+
+        if (section.TestDefinitionId != Id)
+        {
+            throw new ArgumentException("Bo'lim boshqa anketaga tegishli.", nameof(section));
+        }
+
+        if (_sections.Any(s => s.Code == section.Code))
+        {
+            throw new DomainException("SECTION_CODE_DUPLICATE", "Bu kod bilan bo'lim allaqachon mavjud.");
+        }
+
+        EnsureBranchingAllowed(section.VisibilityRule);
+
+        _sections.Add(section);
+        UpdatedAt = now;
+    }
+
+    /// <summary>
+    /// Bo'limni olib tashlaydi. Tizim metodikasida taqiqlangan (B-3/BR-8). Bo'limda savollar
+    /// bo'lsa `SECTION_IN_USE` (`docs/18` §2.2).
+    /// </summary>
+    public void RemoveSection(Guid sectionId, DateTimeOffset now)
+    {
+        if (IsSystem)
+        {
+            throw new DomainException("SYSTEM_TEST_LOCKED", "Tizim metodikasidan bo'lim o'chirib bo'lmaydi.");
+        }
+
+        var section = _sections.FirstOrDefault(s => s.Id == sectionId);
+        if (section is null)
+        {
+            return;
+        }
+
+        if (_questions.Any(q => q.SectionId == sectionId))
+        {
+            throw new DomainException("SECTION_IN_USE", "Bu bo'limda savollar bor — avval savollarni boshqa bo'limga o'tkazing yoki o'chiring.");
+        }
+
+        _sections.Remove(section);
+        UpdatedAt = now;
+    }
+
+    /// <summary>
+    /// Savolni bo'limga o'tkazadi (yoki `sectionId = null` bilan bo'limdan chiqaradi). Tizim
+    /// metodikasida taqiqlangan (`docs/18` §2.2).
+    /// </summary>
+    public void MoveQuestionToSection(Guid questionId, Guid? sectionId, DateTimeOffset now)
+    {
+        if (IsSystem)
+        {
+            throw new DomainException("SYSTEM_TEST_LOCKED", "Tizim metodikasi savolining bo'limini o'zgartirib bo'lmaydi.");
+        }
+
+        var question = _questions.FirstOrDefault(q => q.Id == questionId)
+            ?? throw new ArgumentException("Savol ushbu anketada topilmadi.", nameof(questionId));
+
+        if (sectionId is Guid sid && _sections.All(s => s.Id != sid))
+        {
+            throw new ArgumentException("Bo'lim ushbu anketada topilmadi.", nameof(sectionId));
+        }
+
+        question.AssignSection(sectionId);
+        UpdatedAt = now;
+    }
+
+    /// <summary>Bo'limlar tartibini qayta belgilaydi. Tizim metodikasida taqiqlangan (`docs/18` §2.2).</summary>
+    public void ReorderSections(IReadOnlyList<(Guid SectionId, int DisplayOrder)> order, DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(order);
+
+        if (IsSystem)
+        {
+            throw new DomainException("SYSTEM_TEST_LOCKED", "Tizim metodikasining bo'limlar tartibini o'zgartirib bo'lmaydi.");
+        }
+
+        foreach (var (sectionId, displayOrder) in order)
+        {
+            var section = _sections.FirstOrDefault(s => s.Id == sectionId)
+                ?? throw new ArgumentException("Bo'lim ushbu anketada topilmadi.", nameof(order));
+
+            section.UpdateOrder(displayOrder);
+        }
+
         UpdatedAt = now;
     }
 
@@ -307,10 +415,36 @@ public sealed class TestDefinition : AggregateRoot
             pageSize: PageSize,
             shuffleQuestions: ShuffleQuestions,
             descriptionUz: DescriptionUz,
-            createdByAdminUserId: createdByAdminUserId);
+            createdByAdminUserId: createdByAdminUserId,
+            // QA topilmasi (P52 A1): `ScoringMode` ilgari uzatilmagani uchun `Survey` anketani
+            // nusxalash `Create`ning standart `Scored` rejimiga tushib, "Scoring strategiyasi
+            // kodi bo'sh bo'lishi mumkin emas" xatosi bilan yiqilar edi.
+            scoringMode: ScoringMode);
+
+        // Avval bo'limlar nusxalanadi — savollarning `SectionId`si yangi bo'lim ID'lariga
+        // moslashishi uchun eski→yangi xarita tuziladi (`docs/18` §3 A1 talabi).
+        var sectionIdMap = new Dictionary<Guid, Guid>();
+        foreach (var section in _sections)
+        {
+            var newSectionId = Guid.NewGuid();
+            sectionIdMap[section.Id] = newSectionId;
+
+            copy._sections.Add(QuestionSection.Create(
+                newSectionId,
+                newId,
+                section.Code,
+                section.TitleUz,
+                section.DisplayOrder,
+                section.DescriptionUz,
+                section.VisibilityRule));
+        }
 
         foreach (var question in _questions)
         {
+            var newSectionId = question.SectionId is Guid oldSectionId && sectionIdMap.TryGetValue(oldSectionId, out var mapped)
+                ? mapped
+                : (Guid?)null;
+
             var questionCopy = Question.Create(
                 Guid.NewGuid(),
                 newId,
@@ -324,7 +458,14 @@ public sealed class TestDefinition : AggregateRoot
                 question.IsRequired,
                 isSystem: false,
                 textRu: question.TextRu,
-                textEn: question.TextEn);
+                textEn: question.TextEn,
+                sectionId: newSectionId,
+                visibilityRule: question.VisibilityRule,
+                placeholder: question.Placeholder,
+                inputPattern: question.InputPattern,
+                maxLength: question.MaxLength,
+                minSelections: question.MinSelections,
+                maxSelections: question.MaxSelections);
 
             foreach (var option in question.Options)
             {
@@ -453,6 +594,36 @@ public sealed class TestDefinition : AggregateRoot
         if (Status == TestDefinitionStatus.Published)
         {
             Version++;
+        }
+    }
+
+    /// <summary>B-1 (`docs/18` §1): matn/ko'p tanlov turlari FAQAT `Survey` rejimida ballanmaydigan bo'lishi mumkin.</summary>
+    private void EnsureScorableInScoredMode(QuestionType questionType)
+    {
+        if (ScoringMode != TestScoringMode.Scored)
+        {
+            return;
+        }
+
+        var isScorable = questionType is QuestionType.Likert5 or QuestionType.Likert7 or QuestionType.Binary
+            or QuestionType.SingleChoice or QuestionType.ForcedChoice;
+
+        if (!isScorable)
+        {
+            throw new DomainException(
+                "QUESTION_TYPE_NOT_SCORABLE",
+                $"'{questionType}' savol turi faqat 'Survey' rejimidagi anketalarda ishlatiladi — ballanadigan (Scored) anketalarda taqiqlangan.");
+        }
+    }
+
+    /// <summary>B-2 (`docs/18` §1): ko'rsatish sharti FAQAT `Survey` rejimida — `Scored`da taqiqlangan.</summary>
+    private void EnsureBranchingAllowed(VisibilityRule? visibilityRule)
+    {
+        if (visibilityRule is not null && ScoringMode == TestScoringMode.Scored)
+        {
+            throw new DomainException(
+                "BRANCHING_NOT_ALLOWED_IN_SCORED",
+                "Ko'rsatish sharti (tarmoqlanish) faqat 'Survey' rejimidagi anketalarda ishlatiladi.");
         }
     }
 }

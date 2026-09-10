@@ -41,6 +41,7 @@ boshqaradi, har bir o'quvchining individual profilini ko'radi.
 | 15 | [15-glossariy.md](15-glossariy.md) | Atamalar lug'ati (uz/en) | Hamma |
 | 16 | [16-foydalanuvchi-qollanmasi.md](16-foydalanuvchi-qollanmasi.md) | Foydalanuvchi qo'llanmasi: kirish va 2FA, maktab va havola/QR, dasturlar, anketalar va talqin oraliqlari, natijalar va eksport, AI sozlamalari, maxfiylik; 9-bo'lim — maktab mas'uli uchun qisqa varaqa | Superadmin, maktab mas'uli |
 | 17 | [17-16personalities-tahlili.md](17-16personalities-tahlili.md) | 16Personalities tahlili: metodika, UX, biznes modeli, huquqiy chegara va bizga xulosalar | Mahsulot egasi, PM, psixometrika |
+| 18 | [18-tarmoqlanuvchi-sorovnoma.md](18-tarmoqlanuvchi-sorovnoma.md) | Tarmoqlanuvchi so'rovnoma: bo'limlar, ko'rsatish sharti (branching), matn/ko'p tanlovli savol turlari, ommaviy va admin API, oltin fikstura | Backend, frontend, QA |
 
 ---
 

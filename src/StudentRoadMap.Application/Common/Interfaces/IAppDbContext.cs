@@ -36,6 +36,9 @@ public interface IAppDbContext
     /// <summary>`Custom` anketalarning `SUM` shkalalari (`docs/07` §3.4, P37) — tizim metodikalarida bo'sh.</summary>
     IQueryable<TestScale> TestScales { get; }
 
+    /// <summary>Savol bo'limlari — FAQAT `Custom` anketalarda (P52, `docs/18` §2.2).</summary>
+    IQueryable<QuestionSection> QuestionSections { get; }
+
     IQueryable<AssessmentProgram> AssessmentPrograms { get; }
 
     IQueryable<ProgramTest> ProgramTests { get; }

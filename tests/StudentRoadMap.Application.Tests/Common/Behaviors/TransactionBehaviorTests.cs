@@ -88,6 +88,8 @@ public sealed class TransactionBehaviorTests
 
         public IQueryable<TestScale> TestScales => throw Unsupported();
 
+        public IQueryable<QuestionSection> QuestionSections => throw Unsupported();
+
         public IQueryable<AnalysisJob> AnalysisJobs => throw Unsupported();
 
         public IQueryable<PublicUser> PublicUsers => throw Unsupported();

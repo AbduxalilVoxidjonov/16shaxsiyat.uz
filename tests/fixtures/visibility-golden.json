@@ -1,0 +1,387 @@
+{
+  "$comment": "OLTIN FIKSTURA — ko'rsatish sharti (branching) hisoblagichi. docs/18 §6.1. Bu faylni IKKALA tomon o'qiydi: tests/StudentRoadMap.Domain.Tests/Branching/VisibilityGoldenTests.cs va frontend/src/shared/lib/visibility.golden.test.ts. Fayl o'zgarsa ikkala test ham darhol ushlaydi — C# va TS nusxalari bir-biridan ajralib ketmasligining YAGONA kafolati. Yangi holat qo'shilganda ikkala testni qayta ishga tushiring.",
+  "schema": {
+    "sections": "[{ code, order, visibility|null }] — DisplayOrder bo'yicha",
+    "questions": "[{ code, order, type, sectionCode|null, visibility|null, options?: [values] }] — DisplayOrder bo'yicha",
+    "answers": "{ [questionCode]: { rawValue|null, textValue|null, selectedValues: [] } } — javob berilmagan savol xaritada BO'LMAYDI",
+    "expectedVisibleSectionCodes": "kutilgan ko'rinadigan bo'limlar",
+    "expectedVisibleQuestionCodes": "kutilgan ko'rinadigan savollar"
+  },
+  "cases": [
+    {
+      "name": "shartsiz — hamma savol ko'rinadi",
+      "sections": [],
+      "questions": [
+        { "code": "Q1", "order": 1, "type": "ShortText", "sectionCode": null, "visibility": null },
+        { "code": "Q2", "order": 2, "type": "Likert5", "sectionCode": null, "visibility": null }
+      ],
+      "answers": {},
+      "expectedVisibleSectionCodes": [],
+      "expectedVisibleQuestionCodes": ["Q1", "Q2"]
+    },
+    {
+      "name": "filtr A — faqat 2-A bo'limi ochiladi",
+      "sections": [
+        { "code": "S1", "order": 1, "visibility": null },
+        {
+          "code": "S2A",
+          "order": 2,
+          "visibility": {
+            "match": "All",
+            "conditions": [{ "questionCode": "Q1_6", "operator": "Equals", "values": [1] }]
+          }
+        },
+        {
+          "code": "S2B",
+          "order": 3,
+          "visibility": {
+            "match": "All",
+            "conditions": [{ "questionCode": "Q1_6", "operator": "Equals", "values": [2] }]
+          }
+        },
+        {
+          "code": "S2C",
+          "order": 4,
+          "visibility": {
+            "match": "All",
+            "conditions": [{ "questionCode": "Q1_6", "operator": "Equals", "values": [3] }]
+          }
+        },
+        { "code": "S3", "order": 5, "visibility": null }
+      ],
+      "questions": [
+        { "code": "Q1_6", "order": 1, "type": "SingleChoice", "sectionCode": "S1", "visibility": null, "options": [1, 2, 3] },
+        { "code": "QA1", "order": 2, "type": "SingleChoice", "sectionCode": "S2A", "visibility": null, "options": [1, 2] },
+        { "code": "QB1", "order": 3, "type": "SingleChoice", "sectionCode": "S2B", "visibility": null, "options": [1, 2] },
+        { "code": "QC1", "order": 4, "type": "SingleChoice", "sectionCode": "S2C", "visibility": null, "options": [1, 2] },
+        { "code": "Q3_1", "order": 5, "type": "SingleChoice", "sectionCode": "S3", "visibility": null, "options": [1, 2, 3] }
+      ],
+      "answers": {
+        "Q1_6": { "rawValue": 1, "textValue": null, "selectedValues": [] }
+      },
+      "expectedVisibleSectionCodes": ["S1", "S2A", "S3"],
+      "expectedVisibleQuestionCodes": ["Q1_6", "QA1", "Q3_1"]
+    },
+    {
+      "name": "filtr javobsiz — bironta tarmoq ochilmaydi, shartsiz bo'limlar qoladi",
+      "sections": [
+        { "code": "S1", "order": 1, "visibility": null },
+        {
+          "code": "S2A",
+          "order": 2,
+          "visibility": {
+            "match": "All",
+            "conditions": [{ "questionCode": "Q1_6", "operator": "Equals", "values": [1] }]
+          }
+        },
+        { "code": "S3", "order": 3, "visibility": null }
+      ],
+      "questions": [
+        { "code": "Q1_6", "order": 1, "type": "SingleChoice", "sectionCode": "S1", "visibility": null, "options": [1, 2, 3] },
+        { "code": "QA1", "order": 2, "type": "Likert5", "sectionCode": "S2A", "visibility": null },
+        { "code": "Q3_1", "order": 3, "type": "Likert5", "sectionCode": "S3", "visibility": null }
+      ],
+      "answers": {},
+      "expectedVisibleSectionCodes": ["S1", "S3"],
+      "expectedVisibleQuestionCodes": ["Q1_6", "Q3_1"]
+    },
+    {
+      "name": "NotEquals javobsizda FALSE — sahifa ochilishi bilan tarmoq ochilib ketmasin",
+      "sections": [],
+      "questions": [
+        { "code": "Q1", "order": 1, "type": "SingleChoice", "sectionCode": null, "visibility": null, "options": [1, 2] },
+        {
+          "code": "Q2",
+          "order": 2,
+          "type": "ShortText",
+          "sectionCode": null,
+          "visibility": {
+            "match": "All",
+            "conditions": [{ "questionCode": "Q1", "operator": "NotEquals", "values": [1] }]
+          }
+        }
+      ],
+      "answers": {},
+      "expectedVisibleSectionCodes": [],
+      "expectedVisibleQuestionCodes": ["Q1"]
+    },
+    {
+      "name": "NotEquals javob berilgan va farq qiladi — ko'rinadi",
+      "sections": [],
+      "questions": [
+        { "code": "Q1", "order": 1, "type": "SingleChoice", "sectionCode": null, "visibility": null, "options": [1, 2] },
+        {
+          "code": "Q2",
+          "order": 2,
+          "type": "ShortText",
+          "sectionCode": null,
+          "visibility": {
+            "match": "All",
+            "conditions": [{ "questionCode": "Q1", "operator": "NotEquals", "values": [1] }]
+          }
+        }
+      ],
+      "answers": { "Q1": { "rawValue": 2, "textValue": null, "selectedValues": [] } },
+      "expectedVisibleSectionCodes": [],
+      "expectedVisibleQuestionCodes": ["Q1", "Q2"]
+    },
+    {
+      "name": "kaskad — manba savol yashiringanda bog'liq savol ham yashiriladi (eski javobga qaramay)",
+      "sections": [],
+      "questions": [
+        { "code": "Q1", "order": 1, "type": "SingleChoice", "sectionCode": null, "visibility": null, "options": [1, 2] },
+        {
+          "code": "Q2",
+          "order": 2,
+          "type": "SingleChoice",
+          "sectionCode": null,
+          "options": [1, 2],
+          "visibility": {
+            "match": "All",
+            "conditions": [{ "questionCode": "Q1", "operator": "Equals", "values": [1] }]
+          }
+        },
+        {
+          "code": "Q3",
+          "order": 3,
+          "type": "ShortText",
+          "sectionCode": null,
+          "visibility": {
+            "match": "All",
+            "conditions": [{ "questionCode": "Q2", "operator": "Equals", "values": [2] }]
+          }
+        }
+      ],
+      "answers": {
+        "Q1": { "rawValue": 2, "textValue": null, "selectedValues": [] },
+        "Q2": { "rawValue": 2, "textValue": null, "selectedValues": [] }
+      },
+      "expectedVisibleSectionCodes": [],
+      "expectedVisibleQuestionCodes": ["Q1"]
+    },
+    {
+      "name": "'Boshqa (kiriting)' naqshi — variant tanlansa matn maydoni paydo bo'ladi",
+      "sections": [],
+      "questions": [
+        { "code": "Q1", "order": 1, "type": "SingleChoice", "sectionCode": null, "visibility": null, "options": [1, 2, 99] },
+        {
+          "code": "Q1_OTHER",
+          "order": 2,
+          "type": "ShortText",
+          "sectionCode": null,
+          "visibility": {
+            "match": "All",
+            "conditions": [{ "questionCode": "Q1", "operator": "Equals", "values": [99] }]
+          }
+        }
+      ],
+      "answers": { "Q1": { "rawValue": 99, "textValue": null, "selectedValues": [] } },
+      "expectedVisibleSectionCodes": [],
+      "expectedVisibleQuestionCodes": ["Q1", "Q1_OTHER"]
+    },
+    {
+      "name": "MultiChoice — ContainsAny bittasi tanlansa yetarli",
+      "sections": [],
+      "questions": [
+        { "code": "QM", "order": 1, "type": "MultiChoice", "sectionCode": null, "visibility": null, "options": [1, 2, 3, 4] },
+        {
+          "code": "QF",
+          "order": 2,
+          "type": "LongText",
+          "sectionCode": null,
+          "visibility": {
+            "match": "All",
+            "conditions": [{ "questionCode": "QM", "operator": "ContainsAny", "values": [2, 4] }]
+          }
+        }
+      ],
+      "answers": { "QM": { "rawValue": null, "textValue": null, "selectedValues": [1, 4] } },
+      "expectedVisibleSectionCodes": [],
+      "expectedVisibleQuestionCodes": ["QM", "QF"]
+    },
+    {
+      "name": "MultiChoice — ContainsAll hammasi tanlanmasa ko'rinmaydi",
+      "sections": [],
+      "questions": [
+        { "code": "QM", "order": 1, "type": "MultiChoice", "sectionCode": null, "visibility": null, "options": [1, 2, 3] },
+        {
+          "code": "QF",
+          "order": 2,
+          "type": "LongText",
+          "sectionCode": null,
+          "visibility": {
+            "match": "All",
+            "conditions": [{ "questionCode": "QM", "operator": "ContainsAll", "values": [1, 2] }]
+          }
+        }
+      ],
+      "answers": { "QM": { "rawValue": null, "textValue": null, "selectedValues": [1, 3] } },
+      "expectedVisibleSectionCodes": [],
+      "expectedVisibleQuestionCodes": ["QM"]
+    },
+    {
+      "name": "Answered / NotAnswered — matn savoliga tayangan shart",
+      "sections": [],
+      "questions": [
+        { "code": "QT", "order": 1, "type": "ShortText", "sectionCode": null, "visibility": null },
+        {
+          "code": "QA",
+          "order": 2,
+          "type": "Likert5",
+          "sectionCode": null,
+          "visibility": {
+            "match": "All",
+            "conditions": [{ "questionCode": "QT", "operator": "Answered", "values": [] }]
+          }
+        },
+        {
+          "code": "QN",
+          "order": 3,
+          "type": "Likert5",
+          "sectionCode": null,
+          "visibility": {
+            "match": "All",
+            "conditions": [{ "questionCode": "QT", "operator": "NotAnswered", "values": [] }]
+          }
+        }
+      ],
+      "answers": { "QT": { "rawValue": null, "textValue": "Toshkent", "selectedValues": [] } },
+      "expectedVisibleSectionCodes": [],
+      "expectedVisibleQuestionCodes": ["QT", "QA"]
+    },
+    {
+      "name": "bo'sh matn javob berilmagan hisoblanadi (whitespace)",
+      "sections": [],
+      "questions": [
+        { "code": "QT", "order": 1, "type": "ShortText", "sectionCode": null, "visibility": null },
+        {
+          "code": "QA",
+          "order": 2,
+          "type": "Likert5",
+          "sectionCode": null,
+          "visibility": {
+            "match": "All",
+            "conditions": [{ "questionCode": "QT", "operator": "Answered", "values": [] }]
+          }
+        }
+      ],
+      "answers": { "QT": { "rawValue": null, "textValue": "   ", "selectedValues": [] } },
+      "expectedVisibleSectionCodes": [],
+      "expectedVisibleQuestionCodes": ["QT"]
+    },
+    {
+      "name": "Any — shartlardan bittasi yetarli",
+      "sections": [],
+      "questions": [
+        { "code": "Q1", "order": 1, "type": "SingleChoice", "sectionCode": null, "visibility": null, "options": [1, 2] },
+        { "code": "Q2", "order": 2, "type": "SingleChoice", "sectionCode": null, "visibility": null, "options": [1, 2] },
+        {
+          "code": "Q3",
+          "order": 3,
+          "type": "ShortText",
+          "sectionCode": null,
+          "visibility": {
+            "match": "Any",
+            "conditions": [
+              { "questionCode": "Q1", "operator": "Equals", "values": [1] },
+              { "questionCode": "Q2", "operator": "Equals", "values": [1] }
+            ]
+          }
+        }
+      ],
+      "answers": {
+        "Q1": { "rawValue": 2, "textValue": null, "selectedValues": [] },
+        "Q2": { "rawValue": 1, "textValue": null, "selectedValues": [] }
+      },
+      "expectedVisibleSectionCodes": [],
+      "expectedVisibleQuestionCodes": ["Q1", "Q2", "Q3"]
+    },
+    {
+      "name": "All — bitta shart bajarilmasa ko'rinmaydi",
+      "sections": [],
+      "questions": [
+        { "code": "Q1", "order": 1, "type": "SingleChoice", "sectionCode": null, "visibility": null, "options": [1, 2] },
+        { "code": "Q2", "order": 2, "type": "SingleChoice", "sectionCode": null, "visibility": null, "options": [1, 2] },
+        {
+          "code": "Q3",
+          "order": 3,
+          "type": "ShortText",
+          "sectionCode": null,
+          "visibility": {
+            "match": "All",
+            "conditions": [
+              { "questionCode": "Q1", "operator": "Equals", "values": [1] },
+              { "questionCode": "Q2", "operator": "Equals", "values": [1] }
+            ]
+          }
+        }
+      ],
+      "answers": {
+        "Q1": { "rawValue": 2, "textValue": null, "selectedValues": [] },
+        "Q2": { "rawValue": 1, "textValue": null, "selectedValues": [] }
+      },
+      "expectedVisibleSectionCodes": [],
+      "expectedVisibleQuestionCodes": ["Q1", "Q2"]
+    },
+    {
+      "name": "bo'lim sharti savol shartidan USTUN — bo'lim yopiq bo'lsa savol sharti bajarilsa ham ko'rinmaydi",
+      "sections": [
+        { "code": "S1", "order": 1, "visibility": null },
+        {
+          "code": "S2",
+          "order": 2,
+          "visibility": {
+            "match": "All",
+            "conditions": [{ "questionCode": "Q1", "operator": "Equals", "values": [1] }]
+          }
+        }
+      ],
+      "questions": [
+        { "code": "Q1", "order": 1, "type": "SingleChoice", "sectionCode": "S1", "visibility": null, "options": [1, 2] },
+        {
+          "code": "Q2",
+          "order": 2,
+          "type": "ShortText",
+          "sectionCode": "S2",
+          "visibility": {
+            "match": "All",
+            "conditions": [{ "questionCode": "Q1", "operator": "AnyOf", "values": [1, 2] }]
+          }
+        }
+      ],
+      "answers": { "Q1": { "rawValue": 2, "textValue": null, "selectedValues": [] } },
+      "expectedVisibleSectionCodes": ["S1"],
+      "expectedVisibleQuestionCodes": ["Q1"]
+    },
+    {
+      "name": "AnyOf va NoneOf — ro'yxatli solishtirish",
+      "sections": [],
+      "questions": [
+        { "code": "Q1", "order": 1, "type": "SingleChoice", "sectionCode": null, "visibility": null, "options": [1, 2, 3, 4] },
+        {
+          "code": "Q2",
+          "order": 2,
+          "type": "ShortText",
+          "sectionCode": null,
+          "visibility": {
+            "match": "All",
+            "conditions": [{ "questionCode": "Q1", "operator": "AnyOf", "values": [2, 3] }]
+          }
+        },
+        {
+          "code": "Q3",
+          "order": 3,
+          "type": "ShortText",
+          "sectionCode": null,
+          "visibility": {
+            "match": "All",
+            "conditions": [{ "questionCode": "Q1", "operator": "NoneOf", "values": [2, 3] }]
+          }
+        }
+      ],
+      "answers": { "Q1": { "rawValue": 3, "textValue": null, "selectedValues": [] } },
+      "expectedVisibleSectionCodes": [],
+      "expectedVisibleQuestionCodes": ["Q1", "Q2"]
+    }
+  ]
+}

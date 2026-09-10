@@ -184,6 +184,26 @@ public static class ProblemCodes
     /// </summary>
     public const string SchoolCodeInvalid = "SCHOOL_CODE_INVALID";
 
+    // --- P52 (tarmoqlanuvchi so'rovnoma, `docs/18-tarmoqlanuvchi-sorovnoma.md`) ---
+
+    /// <summary>Bitta anketa ichida bir xil `Code` bilan ikkinchi bo'lim qo'shish (`TestDefinition.AddSection`).</summary>
+    public const string SectionCodeDuplicate = "SECTION_CODE_DUPLICATE";
+
+    /// <summary>Bo'limda savollar bo'lganda o'chirishga urinish (`TestDefinition.RemoveSection`).</summary>
+    public const string SectionInUse = "SECTION_IN_USE";
+
+    /// <summary>`Answer` uchtadan (`RawValue`/`TextValue`/`SelectedValues`) aynan bittasi to'ldirilmagan.</summary>
+    public const string AnswerShapeInvalid = "ANSWER_SHAPE_INVALID";
+
+    /// <summary>Joriy javoblar bo'yicha ko'rinmaydigan savolga javob yozishga urinish (tarmoqni chetlab o'tishga qarshi himoya).</summary>
+    public const string QuestionNotVisible = "QUESTION_NOT_VISIBLE";
+
+    /// <summary>`ShortText`/`LongText`/`Phone`/`MultiChoice` — faqat `Survey` anketalarda, `Scored`da taqiqlangan (B-1).</summary>
+    public const string QuestionTypeNotScorable = "QUESTION_TYPE_NOT_SCORABLE";
+
+    /// <summary>Ko'rsatish sharti (`visibility`) faqat `Survey` anketalarda — `Scored`da taqiqlangan (B-2).</summary>
+    public const string BranchingNotAllowedInScored = "BRANCHING_NOT_ALLOWED_IN_SCORED";
+
     /// <summary>`Error.Code` → HTTP status. Ro'yxatda yo'q kod uchun standart qiymat `409` (domen holat mashinasi konflikti).</summary>
     public static readonly IReadOnlyDictionary<string, int> HttpStatusByCode = new Dictionary<string, int>(StringComparer.Ordinal)
     {
@@ -226,6 +246,12 @@ public static class ProblemCodes
         [PublicSpaceNotConfigured] = StatusCodes.Status409Conflict,
         [PublicUserDeleted] = StatusCodes.Status401Unauthorized,
         [SchoolCodeInvalid] = StatusCodes.Status404NotFound,
+        [SectionCodeDuplicate] = StatusCodes.Status409Conflict,
+        [SectionInUse] = StatusCodes.Status409Conflict,
+        [AnswerShapeInvalid] = StatusCodes.Status400BadRequest,
+        [QuestionNotVisible] = StatusCodes.Status400BadRequest,
+        [QuestionTypeNotScorable] = StatusCodes.Status400BadRequest,
+        [BranchingNotAllowedInScored] = StatusCodes.Status400BadRequest,
     };
 
     /// <summary>Default (`docs/06` jadvaliga kirmagan domen kodlari uchun) — holat mashinasi konflikti.</summary>

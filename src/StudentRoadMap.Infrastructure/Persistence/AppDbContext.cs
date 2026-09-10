@@ -51,6 +51,8 @@ public sealed class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<TestScale> TestScales => Set<TestScale>();
 
+    public DbSet<QuestionSection> QuestionSections => Set<QuestionSection>();
+
     public DbSet<AssessmentProgram> AssessmentPrograms => Set<AssessmentProgram>();
 
     public DbSet<ProgramTest> ProgramTests => Set<ProgramTest>();
@@ -105,6 +107,8 @@ public sealed class AppDbContext : DbContext, IAppDbContext
     IQueryable<Question> IAppDbContext.Questions => Questions;
 
     IQueryable<TestScale> IAppDbContext.TestScales => TestScales;
+
+    IQueryable<QuestionSection> IAppDbContext.QuestionSections => QuestionSections;
 
     IQueryable<AssessmentProgram> IAppDbContext.AssessmentPrograms => AssessmentPrograms;
 
@@ -266,9 +270,31 @@ public sealed class AppDbContext : DbContext, IAppDbContext
         if (Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
         {
             ApplySqliteDateTimeOffsetConversion(modelBuilder);
+            ApplySqliteAnswerShapeCheckConstraint(modelBuilder);
         }
 
         base.OnModelCreating(modelBuilder);
+    }
+
+    /// <summary>
+    /// `AnswerConfiguration.ck_answers_shape` — `docs/18-tarmoqlanuvchi-sorovnoma.md` §3.3 SQL
+    /// aynan PostgreSQL uchun yozilgan (`(x IS NOT NULL)::int` — Postgres bool→int cast
+    /// operatori). SQLite bu sintaksisni tanimaydi (`SQLite Error 1: unrecognized token: ":"`) —
+    /// faqat SINOV muhitida (`ApplySqliteDateTimeOffsetConversion` bilan bir xil sabab/naqsh)
+    /// portativ `CASE WHEN` ekvivalentiga almashtiriladi. Ikkala shakl ham mantiqan bir xil:
+    /// aynan bitta ustun `NOT NULL` bo'lganda `= 1`. Postgres modeliga (haqiqiy migratsiya)
+    /// HECH QANDAY ta'sir qilmaydi — `has-pending-model-changes` Npgsql provayderi bilan
+    /// tekshiriladi, bu metod faqat SQLite branch'ida chaqiriladi.
+    /// </summary>
+    private static void ApplySqliteAnswerShapeCheckConstraint(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Answer>().ToTable(t => t.HasCheckConstraint(
+            "ck_answers_shape",
+            """
+            (CASE WHEN raw_value IS NOT NULL THEN 1 ELSE 0 END)
+            + (CASE WHEN text_value IS NOT NULL THEN 1 ELSE 0 END)
+            + (CASE WHEN selected_values IS NOT NULL THEN 1 ELSE 0 END) = 1
+            """));
     }
 
     /// <summary>
