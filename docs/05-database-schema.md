@@ -570,7 +570,9 @@ alter table admin_users add column pending_totp_created_at timestamptz null;
 | `AssessmentStatus` | 0 Draft, 1 InProgress, 2 Completed, 3 Analyzing, 4 Analyzed, 5 AnalysisFailed, 6 Abandoned |
 | `TestStatus` | 0 NotStarted, 1 InProgress, 2 Completed (`assessment_tests.status`) |
 | `Gender` | 0 Unspecified, 1 Male, 2 Female |
-| `QuestionType` | 1 Likert5, 2 Likert7, 3 Binary, 4 SingleChoice, 5 ForcedChoice |
+| `QuestionType` | 1 Likert5, 2 Likert7, 3 Binary, 4 SingleChoice, 5 ForcedChoice, **6 ShortText, 7 LongText, 8 MultiChoice, 9 Phone** (6–9 — P52, faqat `Survey` rejimida) |
+| `VisibilityMatch` | 1 All, 2 Any — `visibility_rule` jsonb ichida SATR sifatida (`"All"`), raqam emas |
+| `VisibilityOperator` | 1 Equals, 2 NotEquals, 3 AnyOf, 4 NoneOf, 5 ContainsAny, 6 ContainsAll, 7 Answered, 8 NotAnswered — jsonb ichida SATR sifatida |
 | `TestKind` | 1 Standard (ilmiy metodika), 2 Custom (superadmin anketasi) |
 | `TestDefinitionStatus` | 1 Draft, 2 Published, 3 Archived (`test_definitions.status`) |
 | `ReliabilityFlag` | 1 Reliable, 2 Questionable, 3 Unreliable |
@@ -606,6 +608,69 @@ Faqat qo'shimcha, nullable ustunlar — destruktiv o'zgarish yo'q, backfill shar
 o'chirilgan yozuvlarda ikkalasi `NULL` qoladi — eski sabab noma'lum, buzib ko'rsatilmaydi).
 Anonimlashtirish (`telegram_id`/`username`/`first_name`/`last_name`/`photo_url` → `NULL`)
 bu ikki ustunga TEGMAYDI (`PublicUser.MarkDeleted`).
+
+### P52 da qo'shilgan — tarmoqlanuvchi so'rovnoma (migratsiya `AddBranchingSurvey`)
+
+To'liq shartnoma — `docs/18-tarmoqlanuvchi-sorovnoma.md` §3. Faqat qo'shish va kengaytirish:
+destruktiv qadam yo'q, shu sabab bir bosqichda bajarildi (`docs/05` §4 siyosati).
+
+```sql
+-- Yangi jadval: anketa bo'limlari (1-BO'LIM, 2-A, 2-B, 2-C, 3-BO'LIM …)
+CREATE TABLE question_sections (
+    id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    test_definition_id uuid NOT NULL REFERENCES test_definitions(id) ON DELETE CASCADE,
+    code               varchar(20)  NOT NULL,
+    title_uz           varchar(200) NOT NULL,
+    description_uz     varchar(1000),
+    display_order      int          NOT NULL,
+    visibility_rule    jsonb                        -- ko'rsatish sharti; NULL = shartsiz
+);
+CREATE UNIQUE INDEX ux_question_sections_test_code  ON question_sections (test_definition_id, code);
+CREATE INDEX        ix_question_sections_test_order ON question_sections (test_definition_id, display_order);
+
+-- questions: bo'lim, shart va turga xos sozlamalar
+ALTER TABLE questions
+    ADD COLUMN section_id      uuid REFERENCES question_sections(id) ON DELETE SET NULL,
+    ADD COLUMN visibility_rule jsonb,
+    ADD COLUMN placeholder     varchar(200),
+    ADD COLUMN input_pattern   varchar(200),        -- regex (ShortText/Phone)
+    ADD COLUMN max_length      int,
+    ADD COLUMN min_selections  int,                 -- MultiChoice
+    ADD COLUMN max_selections  int;
+CREATE INDEX ix_questions_section ON questions (section_id, display_order);
+
+-- answers: uch xil javob shakli
+ALTER TABLE answers
+    ALTER COLUMN raw_value DROP NOT NULL,           -- matn/ko'p tanlovda NULL
+    ADD COLUMN text_value      text,
+    ADD COLUMN selected_values jsonb;               -- int[]
+
+-- Aynan BITTA shakl to'ldirilgan bo'lishi shart (domen invariantining DB egizagi)
+ALTER TABLE answers ADD CONSTRAINT ck_answers_shape CHECK (
+    (raw_value IS NOT NULL)::int
+  + (text_value IS NOT NULL)::int
+  + (selected_values IS NOT NULL)::int = 1
+);
+```
+
+> `ck_answers_shape` SQLite sinov muhitida (`EnsureCreated`) `::int` sintaksisini
+> tushunmaydi — u yerda mantiqan bir xil `CASE WHEN` ekvivalenti ishlatiladi
+> (`AppDbContext.OnModelCreating`, provayder bo'yicha shoxlanish). Postgres modeliga
+> ta'sir qilmaydi.
+
+**`visibility_rule` jsonb shakli** (enumlar — satr, camelCase):
+
+```json
+{ "match": "All",
+  "conditions": [ { "questionCode": "Q1_6", "operator": "Equals", "values": [1] } ] }
+```
+
+Shartda savol **kodi** ishlatiladi, ID emas (`docs/18` B-5) — jsonb o'qiladigan bo'lib
+qoladi va import/eksport aylanmasi buzilmaydi. Shart faqat `display_order` kichikroq
+savolga havola qila oladi (B-4), bu nashr validatsiyasida `VISIBILITY_FORWARD_REFERENCE`
+bilan qulflangan.
+
+---
 
 ## 4. Migratsiya siyosati
 

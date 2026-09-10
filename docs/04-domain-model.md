@@ -188,13 +188,22 @@ Draft ──startFirstTest──▶ InProgress ──allTestsDone──▶ Compl
 | `Id` | `Guid` |
 | `AssessmentTestId` | `Guid` |
 | `QuestionId` | `Guid` |
-| `RawValue` | `int` (Likert) |
+| `RawValue` | `int?` (Likert/tanlov). Matn va ko'p tanlovli javobda `null` — P52 |
+| `TextValue` | `string?` (≤4000) — `ShortText`/`LongText`/`Phone` javobi (P52) |
+| `SelectedValues` | `IReadOnlyList<int>` (`jsonb`) — `MultiChoice` javobi (P52) |
 | `SelectedOptionId` | `Guid?` (SingleChoice uchun) |
 | `DurationMs` | `int` |
 | `AnsweredAt` | `DateTimeOffset` |
 | `RevisionCount` | `int` — necha marta o'zgartirilgan |
 
-**Invariant:** `(AssessmentTestId, QuestionId)` unikal — upsert.
+**Invariant 1:** `(AssessmentTestId, QuestionId)` unikal — upsert.
+
+**Invariant 2 (P52):** `RawValue` / `TextValue` / `SelectedValues` dan **aynan bittasi**
+to'ldirilgan bo'lishi shart — aks holda `DomainException("ANSWER_SHAPE_INVALID")`. DB
+darajasida ham `ck_answers_shape` CHECK cheklovi bilan qulflangan (`docs/05`).
+
+`AssessmentTest.RemoveAnswers(questionIds)` — yakunlashda **yashirilgan** savollarning
+javoblarini o'chiradi va `AnsweredCount` ni mos kamaytiradi (`docs/18` §4.3).
 
 ---
 
@@ -236,9 +245,22 @@ va shkala o'zgartirish `DomainException` beradi (BR-8).
 
 **Question:** `Id`, `TestDefinitionId`, `Code`, `DisplayOrder`, `TextUz`, `TextRu?`, `TextEn?`,
 `QuestionType`, `Scale`, `ScaleDirection` (+1/−1), `Weight`, `IsRequired`, `IsActive`,
-**`IsSystem`** (seed'dan kelgan savol — o'chirilmaydi, `Scale`/`Direction` o'zgarmaydi).
+**`IsSystem`** (seed'dan kelgan savol — o'chirilmaydi, `Scale`/`Direction` o'zgarmaydi),
+va P52 da qo'shilganlar: **`SectionId`** (`Guid?`), **`VisibilityRule`** (`VisibilityRule?`),
+**`Placeholder`**, **`InputPattern`**, **`MaxLength`**, **`MinSelections`**, **`MaxSelections`**.
 
-**AnswerOption** (faqat `SingleChoice`/`ForcedChoice`): `Id`, `QuestionId`, `TextUz`, `Value`, `Scale?`, `DisplayOrder`.
+**AnswerOption** (`SingleChoice`/`ForcedChoice`/**`MultiChoice`** — oxirgisi P52 da qo'shildi):
+`Id`, `QuestionId`, `TextUz`, `Value`, `Scale?`, `DisplayOrder`.
+
+**QuestionSection** (P52, `TestDefinition` agregati ichidagi bola): `Id`, `TestDefinitionId`,
+`Code` (anketa ichida unikal), `TitleUz`, `DescriptionUz?`, `DisplayOrder`,
+`VisibilityRule?`. Agregat metodlari: `AddSection()`, `RemoveSection()` (savollari bo'lsa
+`SECTION_IN_USE`), `MoveQuestionToSection()`, `ReorderSections()` — hammasi tizim
+metodikasida `SYSTEM_TEST_LOCKED` (BR-8).
+
+> Bo'limlar, ko'rsatish sharti va yangi savol turlarining **to'liq** shartnomasi —
+> `docs/18-tarmoqlanuvchi-sorovnoma.md`. Qat'iy chegara: matn/ko'p tanlovli turlar va
+> `VisibilityRule` faqat `ScoringMode = Survey` anketalarda (B-1/B-2).
 
 **TypeCatalog:** `Code` (`INTJ`), `NameUz` ("Loyihachi"), `ShortDescriptionUz`, `LongDescriptionUz`,
 `StrengthsJson`, `GrowthAreasJson`, `CareerHintsJson`.

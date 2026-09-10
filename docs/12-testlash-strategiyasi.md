@@ -53,6 +53,31 @@ qo'lda hisoblanadi), keyin kod.
 
 ---
 
+## 2.1. Ko'rsatish sharti "oltin fikstura"si (P52)
+
+Tarmoqlanuvchi so'rovnomaning ko'rinish mantig'i **ikki marta** yozilgan: serverda
+(`Domain/Catalog/Branching/VisibilityEvaluator` + `VisibleQuestionResolver`) va mijozda
+(`frontend/src/shared/lib/visibility.ts`). Mijoz savolni jonli ko'rsatib/yashirib turishi
+kerak, server esa yakunlashda va yozishda o'z qaroriga tayanadi — bitta nusxa yetmaydi.
+
+Ikki nusxa jimgina ajralib ketmasligining **yagona kafolati** — bitta umumiy fayl:
+
+| | |
+|---|---|
+| Fikstura | `tests/fixtures/visibility-golden.json` (19 holat) |
+| Server testi | `tests/StudentRoadMap.Domain.Tests/Branching/VisibilityGoldenTests.cs` |
+| Mijoz testi | `frontend/src/shared/lib/visibility.golden.test.ts` |
+
+**Qoida:** mantiq o'zgarsa — avval fiksturaga holat qo'shiladi, keyin ikkala tomon
+yangilanadi. Test yiqilsa **fikstura emas, kod** tuzatiladi.
+
+> Bu mexanizm o'zini birinchi kunidayoq oqladi: `MultiChoice` manba uchun holat
+> qo'shilganda C# tomoni javobning MAVJUDLIGINI tekshirayotgani (JAVOB BORLIGINI emas)
+> ma'lum bo'ldi — bo'sh tanlov yoki bo'shliqqa aylangan matn "boshqa qiymat" deb
+> hisoblanib, `NotEquals`/`NoneOf` tarmoqlari o'z-o'zidan ochilib ketardi.
+
+---
+
 ## 3. Unit testlar (domen)
 
 - `School.RegenerateAccessToken()` — yangi token eskisidan farq qiladi, uzunligi to'g'ri.
