@@ -5,7 +5,11 @@ import { Button } from '@/shared/ui/Button';
 import { useToast } from '@/shared/ui/useToast';
 import { usePublishCatalogTest } from '../api/useCatalogTestLifecycleMutations';
 import { useCatalogErrorMessage } from '../lib/useCatalogErrorMessage';
-import { parsePublishIssues, type PublishIssue } from '../model/publishIssues';
+import {
+  parsePublishIssues,
+  PUBLISH_ISSUE_MESSAGE_KEYS,
+  type PublishIssue,
+} from '../model/publishIssues';
 
 export interface PublishTestDialogProps {
   open: boolean;
@@ -100,30 +104,10 @@ export function PublishTestDialog({ open, testId, testName, onClose }: PublishTe
   );
 }
 
-/**
- * Backend `PublishIssueDto.Code` → o'zbekcha matn.
- *
- * ATAYLAB TO'LIQ EMAS: `SCALE_TOO_FEW_QUESTIONS` ("Kamida 4 savol kerak, hozir 2") va
- * `TEST_NAME_DUPLICATE` ("'…' nomli anketa allaqachon mavjud") backend xabarlari ICHIDA
- * aniq sonni/nomni olib keladi — ularni umumiy tarjima bilan almashtirish ma'lumot yo'qotardi,
- * shu sabab bu kodlarda backend `message` ko'rsatiladi (u ham o'zbekcha, xom kod EMAS).
- */
-const ISSUE_MESSAGE_KEYS: Record<string, string> = {
-  TEST_HAS_NO_QUESTIONS: 'catalog.publish.issues.TEST_HAS_NO_QUESTIONS',
-  TEST_HAS_NO_SCALES: 'catalog.publish.issues.TEST_HAS_NO_SCALES',
-  QUESTION_WITHOUT_SCALE: 'catalog.publish.issues.QUESTION_WITHOUT_SCALE',
-  SCALE_BANDS_MISSING: 'catalog.bands.issues.SCALE_BANDS_MISSING',
-  SCALE_BAND_NOT_INTEGER: 'catalog.bands.issues.SCALE_BAND_NOT_INTEGER',
-  SCALE_BAND_INVALID: 'catalog.bands.issues.SCALE_BAND_INVALID',
-  SCALE_BAND_INCOMPLETE: 'catalog.bands.issues.SCALE_BAND_INCOMPLETE',
-  SCALE_BAND_GAP: 'catalog.bands.issues.SCALE_BAND_GAP',
-  SCALE_BAND_OVERLAP: 'catalog.bands.issues.SCALE_BAND_OVERLAP',
-};
-
 function PublishIssueText({ issue }: { issue: PublishIssue }) {
   const { t } = useTranslation();
 
-  const key = ISSUE_MESSAGE_KEYS[issue.code];
+  const key = PUBLISH_ISSUE_MESSAGE_KEYS[issue.code];
   const text = key
     ? t(key)
     : issue.message.length > 0

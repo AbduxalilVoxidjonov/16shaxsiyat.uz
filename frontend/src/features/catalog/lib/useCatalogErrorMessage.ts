@@ -17,6 +17,12 @@ const CODE_MESSAGE_KEYS: Record<string, string> = {
   SCALE_CODE_DUPLICATE: 'catalog.errors.scaleCodeDuplicate',
   SCALE_IN_USE: 'catalog.errors.scaleInUse',
   UNIQUE_CONSTRAINT_CONFLICT: 'catalog.errors.uniqueConstraintConflict',
+  // `docs/18` §5 — tarmoqlanuvchi so'rovnoma kengaytmasi.
+  SECTION_IN_USE: 'catalog.errors.sectionInUse',
+  SECTION_CODE_DUPLICATE: 'catalog.errors.sectionCodeDuplicate',
+  QUESTION_TYPE_NOT_SCORABLE: 'catalog.errors.questionTypeNotScorable',
+  BRANCHING_NOT_ALLOWED_IN_SCORED: 'catalog.errors.branchingNotAllowedInScored',
+  QUESTION_NOT_VISIBLE: 'catalog.errors.questionNotVisible',
   IMPORT_FILE_INVALID: 'catalog.errors.importFileInvalid',
   PAYLOAD_TOO_LARGE: 'catalog.errors.payloadTooLarge',
   NOT_FOUND: 'catalog.errors.notFound',

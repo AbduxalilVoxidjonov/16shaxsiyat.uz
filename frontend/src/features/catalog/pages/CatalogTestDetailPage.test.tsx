@@ -4,9 +4,14 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
-import { jsonResponse, listResponse, problemResponse } from '@/test/apiMock';
+import { jsonResponse, listResponse, problemResponse, typedResponse } from '@/test/apiMock';
 import type { PublishIssue } from '../model/publishIssues';
-import type { CatalogQuestionItem, CatalogScaleItem, CatalogTestDetail } from '../model/types';
+import type {
+  CatalogQuestionItem,
+  CatalogScaleItem,
+  CatalogSection,
+  CatalogTestDetail,
+} from '../model/types';
 import CatalogTestDetailPage from './CatalogTestDetailPage';
 
 /**
@@ -57,6 +62,14 @@ function questionRow(overrides: Partial<CatalogQuestionItem> = {}): CatalogQuest
     // jadvali yo'q, shu sabab mock ham aynan javob shaklini takrorlaydi.
     scaleNameUz: 'Ekstraversiya/Introversiya',
     scaleDescriptionUz: null,
+    sectionId: null,
+    visibility: null,
+    placeholder: null,
+    inputPattern: null,
+    maxLength: null,
+    minSelections: null,
+    maxSelections: null,
+    options: null,
     ...overrides,
   };
 }
@@ -79,6 +92,7 @@ interface MockOptions {
   detail?: CatalogTestDetail;
   questions?: CatalogQuestionItem[];
   scales?: CatalogScaleItem[];
+  sections?: CatalogSection[];
   /** `POST .../publish` javobi — berilmasa nashr muvaffaqiyatli hisoblanadi. */
   publishResponse?: () => Response;
 }
@@ -87,6 +101,7 @@ function mockFetch({
   detail = testDetail(),
   questions = [questionRow()],
   scales = [],
+  sections = [],
   publishResponse,
 }: MockOptions = {}) {
   const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
@@ -98,6 +113,9 @@ function mockFetch({
     }
     if (url.endsWith('/questions')) {
       return Promise.resolve(listResponse<'CatalogQuestionItemDto'>(questions));
+    }
+    if (url.endsWith('/sections')) {
+      return Promise.resolve(typedResponse<CatalogSection[]>(sections));
     }
     if (url.endsWith('/scales'))
       return Promise.resolve(listResponse<'CatalogScaleItemDto'>(scales));

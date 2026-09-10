@@ -22,6 +22,14 @@ function question(overrides: Partial<CatalogQuestionItem> = {}): CatalogQuestion
     isRequired: true,
     isActive: true,
     isSystem: true,
+    sectionId: null,
+    visibility: null,
+    placeholder: null,
+    inputPattern: null,
+    maxLength: null,
+    minSelections: null,
+    maxSelections: null,
+    options: null,
     ...overrides,
   };
 }
@@ -121,6 +129,14 @@ describe('toQuestionFormValues', () => {
       scale: 'EI',
       direction: -1,
       weight: 1.5,
+      sectionCode: '',
+      placeholder: '',
+      inputPattern: '',
+      maxLength: Number.NaN,
+      minSelections: Number.NaN,
+      maxSelections: Number.NaN,
+      options: [],
+      visibility: null,
     });
   });
 });

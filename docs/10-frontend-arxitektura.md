@@ -260,6 +260,28 @@ Tartib:
 6. Sessiya `Analyzing` bo'lsa — 5 soniyada bir `refetchInterval` bilan yangilanadi.
 7. `AnalysisFailed` bo'lsa — xato sababi + "Boshqa provider bilan urinish" tanlovi.
 
+### 5.5 Anketa konstruktori — tarmoqlanuvchi so'rovnoma (P52, `docs/18`)
+
+`features/catalog` ichida `CatalogTestDetailPage` bo'limlari (`Custom` va `Survey` rejimida):
+
+- `SectionsSection`/`SectionDialog` — bo'limlar CRUD (`ScalesSection.tsx` naqshi).
+- `QuestionEditorDialog` — `docs/18` §2.1 yangi turlari (`ShortText`/`LongText`/
+  `MultiChoice`/`Phone`) va ular uchun maydonlar (`placeholder`/`inputPattern`/`maxLength`/
+  `min`-`maxSelections`/`options[]`) FAQAT `scoringMode === 'Survey'` bo'lganda ko'rinadi
+  (B-1/B-2) — `Scored` anketada bu turlar tanlov ro'yxatidan chiqarib tashlanadi, bo'lim va
+  ko'rsatish sharti bloklari esa tushuntirish matni bilan almashtiriladi.
+- `VisibilityRuleEditor` — savol/bo'lim shartini tahrirlaydi: manba savol FAQAT oldinroqdagi
+  savollardan (`model/visibilityEditorHelpers.ts` — `questionsBeforeOrder`/
+  `questionsBeforeSection`, B-4), operator manba savol turiga qarab filtrlanadi, qiymat(lar)
+  variant/shkala darajasidan tanlanadi (erkin son kiritish yo'q), pastda o'zbekcha jonli
+  jumla ko'rinishida oldindan ko'rish.
+- `BranchingPreview` — faqat o'qish, "qaysi javob qaysi bo'limga olib boradi" ro'yxati.
+- `shared/api/branchingTypes.ts` — backend admin endpointlari hali sxemada yo'qligi sababli
+  MUVAQQAT qo'lda yozilgan tiplar (`AdminSection`, `AdminQuestionOption`, …); `npm run
+  generate:api` chiqqach shu blok o'chiriladi.
+
+Tafsilot, admin API yo'llari va nashr validatsiyasi kodlari — `docs/18` §5–§6.3.
+
 ---
 
 ## 6. Tiplar va API sinxronizatsiyasi

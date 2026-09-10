@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { components } from '@/shared/api/schema';
 import {
@@ -6,6 +8,17 @@ import {
   validateTestImportObject,
   type TestImportFile,
 } from './importSchema';
+
+/**
+ * `docs/18` §7 — egasining tayyor namunasi, import qilishga tayyor JSON.
+ * `process.cwd()` — Vitest'ni ishga tushirgan katalog (`frontend/`, `package.json`dagi
+ * `test` buyrug'i shu yerdan chaqiriladi); `import.meta.url` bu yerda ishlatilmaydi, chunki
+ * Vitest'ning modul transformi uni doim `file://` sxemali qilib bermaydi.
+ */
+const SOROVNOMA_INTELLECT_PATH = path.resolve(
+  process.cwd(),
+  '../docs/examples/sorovnoma-intellect.json',
+);
 
 /** Fayl ichidagi bitta savol — `testImportFileSchema.questions` elementi. */
 type ImportQuestion = TestImportFile['questions'][number];
@@ -245,6 +258,100 @@ describe('Excel parse natijasi ↔ JSON import sxemasi', () => {
     expect(result.canImport).toBe(false);
     // Oldindan ko'rish BARIBIR chiqadi — admin nechta savol/shkala borligini ko'rishi kerak.
     expect(result.preview).not.toBeNull();
+  });
+});
+
+/**
+ * `docs/18` §7 — egasining haqiqiy so'rovnomasi (5 bo'lim, 25 savol, 1.6-savol filtri,
+ * ikkita "Boshqa (kiriting)" tarmog'i, bitta `ContainsAny` sharti). Import dialogi buni
+ * XATOSIZ o'qiy olishi SHART (P52 topshirig'i) — shu sabab bu test QULFLANGAN: fayl yoki
+ * sxema o'zgarsa, shu yerda darhol qizarishi kerak.
+ */
+describe("docs/examples/sorovnoma-intellect.json — tarmoqlanuvchi so'rovnoma namunasi", () => {
+  it('xatosiz o‘qiladi va importga tayyor', () => {
+    const raw = readFileSync(SOROVNOMA_INTELLECT_PATH, 'utf-8');
+    const result = validateTestImportFile(raw);
+
+    expect(result.issues).toEqual([]);
+    expect(result.canImport).toBe(true);
+    expect(result.data?.sections).toHaveLength(5);
+    expect(result.data?.questions).toHaveLength(25);
+    expect(result.preview?.questionCount).toBe(25);
+  });
+
+  it('bo‘lim va savol sxemasi to‘g‘ri o‘qiladi (kod, sarlavha, shart, sectionCode)', () => {
+    const raw = readFileSync(SOROVNOMA_INTELLECT_PATH, 'utf-8');
+    const result = validateTestImportFile(raw);
+
+    const s2a = result.data?.sections?.find((s) => s.code === 'S2A');
+    expect(s2a?.visibility).toEqual({
+      match: 'All',
+      conditions: [{ questionCode: 'Q1_6', operator: 'Equals', values: [1] }],
+    });
+
+    const q16 = result.data?.questions.find((q) => q.code === 'Q1_6');
+    expect(q16?.sectionCode).toBe('S1');
+    expect(q16?.type).toBe('SingleChoice');
+    expect(q16?.options).toHaveLength(3);
+
+    const otherQuestion = result.data?.questions.find((q) => q.code === 'Q2A_1_OTHER');
+    expect(otherQuestion?.visibility).toEqual({
+      match: 'All',
+      conditions: [{ questionCode: 'Q2A_1', operator: 'ContainsAny', values: [99] }],
+    });
+  });
+});
+
+describe("bo'lim/shart bo'lmagan eski fayllar (regressiya)", () => {
+  it("sections/visibility/options maydonlarisiz fayl o'zgarishsiz o'qiladi", () => {
+    const result = validateTestImportFile(JSON.stringify(validFile()));
+    expect(result.canImport).toBe(true);
+    expect(result.data?.sections).toBeUndefined();
+    expect(result.data?.questions[0]?.sectionCode).toBeUndefined();
+    expect(result.data?.questions[0]?.visibility).toBeUndefined();
+  });
+});
+
+describe("yangi savol turlari va variantlar — QUESTION_OPTIONS_REQUIRED/QUESTION_OPTION_VALUE_DUPLICATE", () => {
+  it("variantli savolda 2 tadan kam variant bo'lsa QUESTION_OPTIONS_REQUIRED", () => {
+    const file = validFile({
+      questions: [
+        validQuestion({ code: 'Q01', order: 1 }),
+        validQuestion({ code: 'Q02', order: 2 }),
+        validQuestion({ code: 'Q03', order: 3 }),
+        validQuestion({
+          code: 'Q04',
+          order: 4,
+          type: 'SingleChoice',
+          options: [{ textUz: 'A', value: 1, displayOrder: 1 }],
+        }),
+      ],
+    });
+    const result = validateTestImportFile(JSON.stringify(file));
+    expect(result.issues.some((issue) => issue.code === 'QUESTION_OPTIONS_REQUIRED')).toBe(true);
+  });
+
+  it('takroriy variant qiymati bo‘lsa QUESTION_OPTION_VALUE_DUPLICATE', () => {
+    const file = validFile({
+      questions: [
+        validQuestion({ code: 'Q01', order: 1 }),
+        validQuestion({ code: 'Q02', order: 2 }),
+        validQuestion({ code: 'Q03', order: 3 }),
+        validQuestion({
+          code: 'Q04',
+          order: 4,
+          type: 'SingleChoice',
+          options: [
+            { textUz: 'A', value: 1, displayOrder: 1 },
+            { textUz: 'B', value: 1, displayOrder: 2 },
+          ],
+        }),
+      ],
+    });
+    const result = validateTestImportFile(JSON.stringify(file));
+    expect(
+      result.issues.some((issue) => issue.code === 'QUESTION_OPTION_VALUE_DUPLICATE'),
+    ).toBe(true);
   });
 });
 

@@ -91,3 +91,88 @@ export interface BranchingSaveAnswerEntry {
   selectedValues?: number[];
   durationMs: number;
 }
+
+/**
+ * ============================================================================
+ * ADMIN QATLAMI — `docs/18` §5 (Admin API), P52-A6 (superadmin konstruktor UI).
+ *
+ * Backend A5 (bo'limlar/savol kengaytmasi admin endpointlari) hali `schema.d.ts`da yo'q,
+ * shu sabab shu yerda ham xuddi yuqoridagi ommaviy qatlam kabi MUVAQQAT qo'lda yozilgan.
+ * Nomlash xuddi shu sabab bilan (`eslint.config.js` "qo'lda DTO yozilmasin" qoidasi)
+ * `Dto`/`Request`/`Response`/`Result`/`Item`/`Detail` bilan TUGAMAYDI. Backend chiqib
+ * `npm run generate:api` ishga tushgach: bu blok o'chiriladi, `features/catalog/model/
+ * types.ts`/`questionPayload.ts` importlari `shared/api/schema`dan generatsiya qilingan
+ * tiplarga almashtiriladi.
+ * ============================================================================
+ */
+
+/**
+ * docs/18 §5 — `SingleChoice`/`ForcedChoice`/`MultiChoice` savolining bitta javob varianti
+ * (`AnswerOption` proyeksiyasi). `id` faqat mavjud variantni tahrirlashda bo'ladi — yangi
+ * variant qo'shilganda frontend hali ID bilmaydi (backend yaratadi).
+ */
+export interface AdminQuestionOption {
+  id?: string;
+  textUz: string;
+  value: number;
+  displayOrder: number;
+}
+
+/**
+ * docs/18 §2.2, §5 — `GET/POST/PUT .../sections` javobi (`QuestionSection` entity
+ * proyeksiyasi). `visibility` — bo'lim ko'rinish sharti (o'zi ham `null` bo'lishi mumkin —
+ * bo'lim shartsiz, hammaga ko'rinadi).
+ */
+export interface AdminSection {
+  id: string;
+  testDefinitionId: string;
+  code: string;
+  titleUz: string;
+  descriptionUz: string | null;
+  displayOrder: number;
+  visibility: VisibilityRule | null;
+}
+
+/**
+ * docs/18 §5 — bo'lim yaratish/tahrirlash so'rov tanasi. `code` faqat YARATISHDA
+ * yuboriladi (`SectionDialog`da tahrirlashda kod qulflangan — savol konstruktoridagi
+ * naqshga o'xshab).
+ */
+export interface AdminSectionPayload {
+  code?: string;
+  titleUz: string;
+  descriptionUz: string | null;
+  displayOrder: number;
+  visibility: VisibilityRule | null;
+}
+
+/**
+ * docs/18 §2.3, §5 — `CatalogQuestionItemDto`ga (sxemada hali yo'q) qo'shiladigan
+ * tarmoqlanuvchi so'rovnoma maydonlari. `features/catalog/model/types.ts` da
+ * `CatalogQuestionItem` shu bilan kesishtiriladi.
+ */
+export interface AdminQuestionBranchingFields {
+  sectionId: string | null;
+  visibility: VisibilityRule | null;
+  placeholder: string | null;
+  inputPattern: string | null;
+  maxLength: number | null;
+  minSelections: number | null;
+  maxSelections: number | null;
+  options: AdminQuestionOption[] | null;
+}
+
+/**
+ * docs/18 §5 — `POST/PUT .../questions` so'rov tanasiga qo'shiladigan yangi maydonlar.
+ * Bari ixtiyoriy: savol turiga mos kelmagani yuborilmaydi (`model/questionPayload.ts`).
+ */
+export interface AdminQuestionPayloadFields {
+  sectionCode?: string | null;
+  visibility?: VisibilityRule | null;
+  placeholder?: string | null;
+  inputPattern?: string | null;
+  maxLength?: number | null;
+  minSelections?: number | null;
+  maxSelections?: number | null;
+  options?: AdminQuestionOption[] | null;
+}

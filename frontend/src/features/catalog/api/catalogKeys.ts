@@ -4,4 +4,6 @@ export const CATALOG_QUERY_KEYS = {
   detail: (id: string) => ['catalog', 'tests', 'detail', id] as const,
   questions: (id: string) => ['catalog', 'tests', 'questions', id] as const,
   scales: (id: string) => ['catalog', 'tests', 'scales', id] as const,
+  /** `docs/18` §5 — bo'limlar ro'yxati (`GET /api/admin/catalog/tests/{id}/sections`). */
+  sections: (id: string) => ['catalog', 'tests', 'sections', id] as const,
 };

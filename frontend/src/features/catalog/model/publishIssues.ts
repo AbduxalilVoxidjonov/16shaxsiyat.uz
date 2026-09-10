@@ -55,3 +55,33 @@ export function parsePublishIssues(error: unknown): PublishIssue[] {
 
   return issues;
 }
+
+/**
+ * Backend `PublishIssueDto.Code` → i18n kaliti (`docs/18` §5 jadvali + eski shkala/savol
+ * kodlari). ATAYLAB TO'LIQ EMAS: `SCALE_TOO_FEW_QUESTIONS` va `TEST_NAME_DUPLICATE` backend
+ * xabarlari ICHIDA aniq sonni/nomni olib keladi — ularni umumiy tarjima bilan almashtirish
+ * ma'lumot yo'qotardi, shu sabab bu kodlarda backend `message` ko'rsatiladi
+ * (`PublishTestDialog.tsx`dagi `PublishIssueText`ga qarang).
+ */
+export const PUBLISH_ISSUE_MESSAGE_KEYS: Record<string, string> = {
+  TEST_HAS_NO_QUESTIONS: 'catalog.publish.issues.TEST_HAS_NO_QUESTIONS',
+  TEST_HAS_NO_SCALES: 'catalog.publish.issues.TEST_HAS_NO_SCALES',
+  QUESTION_WITHOUT_SCALE: 'catalog.publish.issues.QUESTION_WITHOUT_SCALE',
+  SCALE_BANDS_MISSING: 'catalog.bands.issues.SCALE_BANDS_MISSING',
+  SCALE_BAND_NOT_INTEGER: 'catalog.bands.issues.SCALE_BAND_NOT_INTEGER',
+  SCALE_BAND_INVALID: 'catalog.bands.issues.SCALE_BAND_INVALID',
+  SCALE_BAND_INCOMPLETE: 'catalog.bands.issues.SCALE_BAND_INCOMPLETE',
+  SCALE_BAND_GAP: 'catalog.bands.issues.SCALE_BAND_GAP',
+  SCALE_BAND_OVERLAP: 'catalog.bands.issues.SCALE_BAND_OVERLAP',
+  // `docs/18` §5 — tarmoqlanuvchi so'rovnoma nashr validatsiyasi (10 ta yangi kod).
+  VISIBILITY_UNKNOWN_QUESTION: 'catalog.publish.issues.VISIBILITY_UNKNOWN_QUESTION',
+  VISIBILITY_FORWARD_REFERENCE: 'catalog.publish.issues.VISIBILITY_FORWARD_REFERENCE',
+  VISIBILITY_OPERATOR_MISMATCH: 'catalog.publish.issues.VISIBILITY_OPERATOR_MISMATCH',
+  VISIBILITY_VALUE_UNKNOWN: 'catalog.publish.issues.VISIBILITY_VALUE_UNKNOWN',
+  BRANCHING_NOT_ALLOWED_IN_SCORED: 'catalog.publish.issues.BRANCHING_NOT_ALLOWED_IN_SCORED',
+  QUESTION_TYPE_NOT_SCORABLE: 'catalog.publish.issues.QUESTION_TYPE_NOT_SCORABLE',
+  QUESTION_OPTIONS_REQUIRED: 'catalog.publish.issues.QUESTION_OPTIONS_REQUIRED',
+  QUESTION_OPTION_VALUE_DUPLICATE: 'catalog.publish.issues.QUESTION_OPTION_VALUE_DUPLICATE',
+  SECTION_EMPTY: 'catalog.publish.issues.SECTION_EMPTY',
+  INPUT_PATTERN_INVALID: 'catalog.publish.issues.INPUT_PATTERN_INVALID',
+};

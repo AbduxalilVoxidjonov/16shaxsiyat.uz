@@ -1274,7 +1274,11 @@
       "Likert7": "Likert (7 ball)",
       "Binary": "Ha / Yo'q",
       "SingleChoice": "Bitta variant",
-      "ForcedChoice": "Majburiy tanlov"
+      "ForcedChoice": "Majburiy tanlov",
+      "ShortText": "Qisqa matn",
+      "LongText": "Uzun matn",
+      "MultiChoice": "Bir nechta variant",
+      "Phone": "Telefon raqami"
     },
     "meta": {
       "title": "Anketa ma'lumotlarini tahrirlash",
@@ -1310,7 +1314,17 @@
       "weightHint": "Ballash formulasidagi og'irlik koeffitsiyenti.",
       "systemLockedHint": "Tizim metodikasida shkala, yo'nalish va og'irlik o'zgartirilmaydi — ular ballash formulalariga bog'liq (faqat ko'rish uchun).",
       "createSuccess": "Savol qo'shildi",
-      "editSuccess": "Savol saqlandi"
+      "editSuccess": "Savol saqlandi",
+      "sectionLabel": "Bo'lim",
+      "sectionNoneOption": "Bo'limsiz",
+      "placeholderLabel": "Placeholder matni",
+      "inputPatternLabel": "Kiritish shabloni (regex)",
+      "inputPatternHint": "Ixtiyoriy. Masalan telefon uchun: ^\\+?998[0-9]{9}$",
+      "inputPatternInvalid": "Regex noto'g'ri — sinov bekor bo'ldi (masalan qavslar yopilmagan).",
+      "maxLengthLabel": "Maksimal uzunlik (belgi)",
+      "minSelectionsLabel": "Kamida nechta variant tanlansin",
+      "maxSelectionsLabel": "Ko'pi bilan nechta variant tanlansin",
+      "surveyOnlyNotice": "Bu imkoniyat faqat so'rovnoma (\"Survey\") rejimidagi anketalarda mavjud — bu turdagi savollarni ballash formulasi yo'q."
     },
     "questionDelete": {
       "title": "Savolni o'chirish",
@@ -1359,6 +1373,16 @@
         "TEST_HAS_NO_QUESTIONS": "Anketada kamida bitta faol savol bo'lishi kerak.",
         "TEST_HAS_NO_SCALES": "Anketada kamida bitta shkala bo'lishi kerak.",
         "QUESTION_WITHOUT_SCALE": "Savolga shkala biriktirilmagan.",
+        "VISIBILITY_UNKNOWN_QUESTION": "Ko'rsatish sharti mavjud bo'lmagan savol kodiga havola qiladi.",
+        "VISIBILITY_FORWARD_REFERENCE": "Ko'rsatish sharti keyingi (yoki o'zidan keyin turgan) savolga havola qiladi — shart faqat OLDINROQdagi savolga havola qilishi mumkin.",
+        "VISIBILITY_OPERATOR_MISMATCH": "Shartdagi operator manba savol turiga mos emas (masalan \"bir nechtasi tanlangan\" operatori bitta variantli savolga qo'llanilgan).",
+        "VISIBILITY_VALUE_UNKNOWN": "Shartdagi qiymat manba savolning variantlari yoki darajalari orasida yo'q.",
+        "BRANCHING_NOT_ALLOWED_IN_SCORED": "Ko'rsatish sharti faqat so'rovnoma (\"Survey\") rejimidagi anketalarda ishlaydi.",
+        "QUESTION_TYPE_NOT_SCORABLE": "Bu savol turi (matn/ko'p tanlov) faqat so'rovnoma (\"Survey\") rejimidagi anketalarda ishlaydi.",
+        "QUESTION_OPTIONS_REQUIRED": "Savolda kamida 2 ta variant bo'lishi kerak.",
+        "QUESTION_OPTION_VALUE_DUPLICATE": "Savolda bir xil qiymatli variant takrorlangan.",
+        "SECTION_EMPTY": "Bo'limda bitta ham faol savol yo'q.",
+        "INPUT_PATTERN_INVALID": "Kiritish shabloni (regex) noto'g'ri — kompilyatsiya qilinmadi.",
         "unknown": "Nashrga to'sqinlik qilayotgan muammo aniqlandi."
       }
     },
@@ -1393,7 +1417,12 @@
       "generic": "Amalni bajarib bo'lmadi. Birozdan keyin qayta urinib ko'ring.",
       "importFileInvalid": "Faylni o'qib bo'lmadi. Faqat .xlsx (Excel Workbook) qabul qilinadi.",
       "payloadTooLarge": "Fayl juda katta — ko'pi bilan 2 MB.",
-      "uniqueConstraintConflict": "Bu kod bilan anketa allaqachon bor."
+      "uniqueConstraintConflict": "Bu kod bilan anketa allaqachon bor.",
+      "sectionInUse": "Bu bo'limda savollar bor — avval ularni boshqa bo'limga ko'chiring yoki o'chiring.",
+      "sectionCodeDuplicate": "Bu kod bilan bo'lim allaqachon mavjud.",
+      "questionTypeNotScorable": "Bu savol turi (matn/ko'p tanlov) faqat so'rovnoma (\"Survey\") rejimidagi anketalarda ishlaydi.",
+      "branchingNotAllowedInScored": "Ko'rsatish sharti faqat so'rovnoma (\"Survey\") rejimidagi anketalarda ishlaydi.",
+      "questionNotVisible": "Bu savol joriy javoblar bo'yicha yashirilgan — unga javob yuborib bo'lmaydi."
     },
     "bands": {
       "heading": "Talqin oraliqlari",
@@ -1438,6 +1467,82 @@
       "pageSizeHint": "Bitta ekranda nechta savol ko'rsatilsin.",
       "submitCta": "Yaratish",
       "successTitle": "Anketa Qoralama holatida yaratildi"
+    },
+    "optionsEditor": {
+      "heading": "Variantlar",
+      "emptyHint": "Hali variant qo'shilmagan. Kamida 2 ta variant kerak.",
+      "addOption": "Variant qo'shish",
+      "textLabel": "Variant matni",
+      "textAria": "{{index}}-variant matni",
+      "valueLabel": "Qiymati",
+      "valueAria": "{{index}}-variant qiymati",
+      "moveUpAria": "{{index}}-variantni yuqoriga ko'chirish",
+      "moveDownAria": "{{index}}-variantni pastga ko'chirish",
+      "removeAria": "{{index}}-variantni o'chirish",
+      "duplicateValues": "Takroriy qiymat(lar): {{values}}. Har bir variantning qiymati o'ziga xos bo'lishi kerak.",
+      "minTwoRequired": "Kamida 2 ta variant kerak."
+    },
+    "visibilityEditor": {
+      "heading": "Ko'rsatish sharti",
+      "addRule": "Shart qo'shish",
+      "removeRule": "Shartni olib tashlash",
+      "noSourceQuestions": "Bu yerda shart qo'yish uchun oldinroq turgan savol yo'q.",
+      "matchLabel": "Shartlarni qanday birlashtirish",
+      "matchAll": "Hammasi bajarilsin (VA)",
+      "matchAny": "Kamida bittasi bajarilsin (YOKI)",
+      "conditionSourceLabel": "Manba savol",
+      "conditionOperatorLabel": "Operator",
+      "conditionValueLabel": "Qiymat",
+      "addConditionCta": "Yana shart qo'shish",
+      "removeConditionAria": "{{index}}-shartni o'chirish",
+      "previewHeading": "Jonli oldindan ko'rish",
+      "maxConditionsReached": "Bitta shartda ko'pi bilan 10 ta shart bo'lishi mumkin.",
+      "operator": {
+        "Equals": "teng bo'lsa",
+        "NotEquals": "teng bo'lmasa",
+        "AnyOf": "biriga teng bo'lsa",
+        "NoneOf": "hech biriga teng bo'lmasa",
+        "ContainsAny": "kamida bittasi tanlangan bo'lsa",
+        "ContainsAll": "hammasi tanlangan bo'lsa",
+        "Answered": "javob berilgan bo'lsa",
+        "NotAnswered": "javob berilmagan bo'lsa"
+      }
+    },
+    "sections": {
+      "heading": "Bo'limlar",
+      "addSection": "Bo'lim qo'shish",
+      "emptyTitle": "Bo'lim yo'q",
+      "emptyDescription": "Anketani bo'limlarga bo'lib, har biriga shart qo'yish orqali tarmoqlanuvchi so'rovnoma yaratasiz (\"Bo'lim qo'shish\").",
+      "systemNotice": "Tizim metodikasida bo'limlar qo'shilmaydi/o'chirilmaydi (BR-8).",
+      "questionCount": "{{count}} ta savol",
+      "hasVisibility": "Shartli",
+      "noVisibility": "Har doim ko'rinadi",
+      "editAria": "{{code}} bo'limini tahrirlash",
+      "deleteAria": "{{code}} bo'limini o'chirish",
+      "moveUpAria": "{{code}} bo'limini yuqoriga ko'chirish",
+      "moveDownAria": "{{code}} bo'limini pastga ko'chirish",
+      "deleteTitle": "Bo'limni o'chirish",
+      "deleteWarning": "Bo'lim o'chiriladi. Bo'limda savol bo'lsa, backend o'chirishga ruxsat bermaydi (avval savollarni ko'chiring yoki o'chiring).",
+      "deleteSuccessTitle": "Bo'lim o'chirildi",
+      "notAllowedInScored": "Bo'limlar faqat so'rovnoma (\"Survey\") rejimidagi anketalarda ishlaydi."
+    },
+    "sectionForm": {
+      "createTitle": "Yangi bo'lim",
+      "editTitle": "Bo'limni tahrirlash",
+      "codeLabel": "Bo'lim kodi",
+      "codeHint": "Anketa ichida unikal, masalan S2A.",
+      "codeLockedHint": "Bo'lim kodi yaratilgandan keyin o'zgarmaydi.",
+      "titleLabel": "Sarlavha",
+      "descriptionLabel": "Tavsif",
+      "displayOrderLabel": "Tartib raqami",
+      "createSuccess": "Bo'lim qo'shildi",
+      "editSuccess": "Bo'lim saqlandi"
+    },
+    "branchingPreview": {
+      "heading": "Oqim ko'rinishi",
+      "description": "Qaysi javob qaysi bo'limga olib borishini ko'rsatadi (faqat ko'rish uchun).",
+      "alwaysVisible": "Har doim ko'rinadi",
+      "emptyHint": "Hali bo'lim yo'q."
     }
   },
   "aiSettings": {

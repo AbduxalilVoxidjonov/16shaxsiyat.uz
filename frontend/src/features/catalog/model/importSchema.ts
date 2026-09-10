@@ -22,8 +22,53 @@ import {
  * `docs/03` §6.1 — superadmin anketasida javob turi `Likert5` (standart) yoki `Likert7`.
  * Seed JSON fayllarining hammasi `Likert5`; `Likert7` Excel yo'li bilan qo'shildi, chunki
  * eksport→import aylanmasida u JIMGINA `Likert5`ga aylanib ballash formulasini buzardi.
+ *
+ * `docs/18` §2.1, §7 kengaytmasi: `SingleChoice`/`ForcedChoice`/`Binary` (avvaldan domenda
+ * bor, lekin JSON importda ishlatilmagan edi) va yangi `ShortText`/`LongText`/`MultiChoice`/
+ * `Phone` — `docs/examples/sorovnoma-intellect.json` namunasi shularning barchasini ishlatadi.
  */
-const QUESTION_TYPE_VALUES = ['Likert5', 'Likert7'] as const;
+const QUESTION_TYPE_VALUES = [
+  'Likert5',
+  'Likert7',
+  'Binary',
+  'SingleChoice',
+  'ForcedChoice',
+  'ShortText',
+  'LongText',
+  'MultiChoice',
+  'Phone',
+] as const;
+
+const CHOICE_TYPES = new Set(['SingleChoice', 'ForcedChoice', 'MultiChoice']);
+
+/** `docs/18` §2.4 — bo'lim/savol darajasidagi ko'rsatish sharti (jsonb saqlash shakli). */
+const visibilityConditionSchema = z.object({
+  questionCode: z.string().trim().min(1),
+  operator: z.enum([
+    'Equals',
+    'NotEquals',
+    'AnyOf',
+    'NoneOf',
+    'ContainsAny',
+    'ContainsAll',
+    'Answered',
+    'NotAnswered',
+  ]),
+  values: z.array(z.number()),
+});
+const visibilitySchema = z
+  .object({
+    match: z.enum(['All', 'Any']),
+    conditions: z.array(visibilityConditionSchema).min(1),
+  })
+  .nullable();
+
+/** `docs/18` §2.3, §5 — `SingleChoice`/`ForcedChoice`/`MultiChoice` savol varianti. */
+const importOptionSchema = z.object({
+  textUz: z.string().trim().min(1),
+  value: z.number(),
+  displayOrder: z.number().int(),
+});
 
 const questionSchema = z.object({
   code: z.string().trim().min(1),
@@ -34,6 +79,16 @@ const questionSchema = z.object({
   direction: z.union([z.literal(1), z.literal(-1)]),
   weight: z.number().positive(),
   isRequired: z.boolean().optional(),
+  // `docs/18` §2.2–§2.3 kengaytmasi — bo'limsiz/shartsiz eski fayllarda bulari YO'Q, shu
+  // sabab hammasi ixtiyoriy (`.optional()`/`.nullish()`), mavjud sxema o'zgarishsiz qoladi.
+  sectionCode: z.string().trim().nullish(),
+  visibility: visibilitySchema.optional(),
+  placeholder: z.string().nullish(),
+  inputPattern: z.string().nullish(),
+  maxLength: z.number().int().positive().nullish(),
+  minSelections: z.number().int().nonnegative().nullish(),
+  maxSelections: z.number().int().positive().nullish(),
+  options: z.array(importOptionSchema).optional(),
 });
 
 /** `docs/03` §6.1 saqlash shakli: `{ "from": 0, "to": 33, "label": "Past" }`. */
@@ -54,6 +109,15 @@ const scaleSchema = z.object({
   interpretationBands: z.array(bandSchema).default([]),
 });
 
+/** `docs/18` §2.2, §7 — bo'lim (mavjud bo'limsiz fayllarda bu maydon umuman yo'q). */
+const sectionSchema = z.object({
+  code: z.string().trim().min(1),
+  titleUz: z.string().trim().min(1),
+  descriptionUz: z.string().trim().nullish(),
+  displayOrder: z.number().int(),
+  visibility: visibilitySchema.optional(),
+});
+
 export const testImportFileSchema = z.object({
   code: z
     .string()
@@ -72,6 +136,9 @@ export const testImportFileSchema = z.object({
   shuffleQuestions: z.boolean().optional(),
   scoringMode: z.enum(['Scored', 'Survey']).optional(),
   scales: z.array(scaleSchema).optional(),
+  // `docs/18` §7 — `sorovnoma-intellect.json` 5 bo'lim bilan keladi; eski (`big5.json` va
+  // h.k.) fayllarda bu maydon YO'Q, shu sabab ixtiyoriy.
+  sections: z.array(sectionSchema).optional(),
   questions: z.array(questionSchema).min(1, 'Kamida bitta savol bo‘lishi kerak.'),
 });
 
@@ -201,6 +268,32 @@ export function validateTestImportObject(
     seenOrders.add(question.order);
 
     scaleCounts.set(question.scale, (scaleCounts.get(question.scale) ?? 0) + 1);
+
+    // `docs/18` §5 — `QUESTION_OPTIONS_REQUIRED`/`QUESTION_OPTION_VALUE_DUPLICATE` nashr
+    // bosqichida backend tomonidan ham tekshiriladi; bu yerda yuklashdan OLDIN ko'rsatish
+    // uchun yengil, mos nomlangan tekshiruv (`SCALE_TOO_FEW_QUESTIONS` naqshiga o'xshab).
+    if (CHOICE_TYPES.has(question.type)) {
+      const options = question.options ?? [];
+      if (options.length < 2) {
+        issues.push({
+          code: 'QUESTION_OPTIONS_REQUIRED',
+          questionCode: question.code,
+          message: `"${question.code}" savolida kamida 2 ta variant bo'lishi kerak.`,
+        });
+      }
+      const seenValues = new Set<number>();
+      for (const option of options) {
+        if (seenValues.has(option.value)) {
+          issues.push({
+            code: 'QUESTION_OPTION_VALUE_DUPLICATE',
+            questionCode: question.code,
+            message: `"${question.code}" savolida takroriy variant qiymati: ${String(option.value)}.`,
+          });
+          break;
+        }
+        seenValues.add(option.value);
+      }
+    }
   }
 
   const declaredScales = data.scales ?? [];

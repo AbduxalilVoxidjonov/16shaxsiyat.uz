@@ -354,6 +354,25 @@ Tafsilotlar:
 - **Umumiy vaqt ogohlantirishi:** barcha faol testlar yig'indisi 40 daqiqadan oshsa,
   ro'yxat ekrani tepasida sariq banner: "Sessiya juda uzun — o'quvchilar tashlab ketishi mumkin".
 
+**Tarmoqlanuvchi so'rovnoma (P52, `docs/18`, haqiqiy joriy amalga oshirish
+`CatalogTestDetailPage.tsx` — yuqoridagi drawer sxemasi emas, Card-larga bo'lingan sahifa):**
+- **Bo'limlar** bo'limi (`SectionsSection`) — savollar bo'limi tepasida, faqat `Survey`
+  rejimidagi anketalarda; `Scored`da o'rniga bitta izoh qatori ("faqat so'rovnoma rejimida
+  ishlaydi"). Har bo'lim qatorida: nomi (kodi), savollar soni, "Shartli"/"Har doim ko'rinadi"
+  yorlig'i, tartiblash/tahrirlash/o'chirish tugmalari.
+- **Savol oynasi** (`QuestionEditorDialog`) — `Survey` anketada savol turi tanlanganda
+  (`Qisqa matn`/`Uzun matn`/`Bir nechta variant`/`Telefon`) turga mos maydonlar (placeholder,
+  belgi chegarasi, kiritish shabloni, tanlov soni chegarasi, variantlar muharriri) ochiladi;
+  shkala/yo'nalish/og'irlik esa bu turlarda umuman ko'rinmaydi (ular ballanmaydi). Har bir
+  savol/bo'limda ixtiyoriy **"Ko'rsatish sharti"**: manba savol (faqat oldinroqdagi), operator,
+  qiymat — va pastda o'zbekcha gap ko'rinishida jonli oldindan ko'rish, masalan: «**Q1_6**
+  savoliga javob **"Ha, Intellect o'quv markazida o'qiyman"** bo'lsa ko'rsatilsin.»
+- **Oqim ko'rinishi** (`BranchingPreview`, faqat o'qish) — bo'limlar ro'yxati tartib bo'yicha,
+  har biri savollar soni va ko'rsatish sharti (yoki "Har doim ko'rinadi") bilan.
+- Import (JSON) — `docs/examples/sorovnoma-intellect.json` namunasi (5 bo'lim, 25 savol)
+  xatosiz o'qiladi; nashr qilishdan oldingi 10 ta yangi tekshiruv kodi (`VISIBILITY_*`,
+  `QUESTION_TYPE_NOT_SCORABLE`, `SECTION_EMPTY` va h.k.) o'zbekcha matn bilan ko'rsatiladi.
+
 ### A-9 Audit log (`/admin/audit`)
 Filtr: harakat turi, obyekt, sana. Qator kengaytirilsa `before/after` JSON diff ko'rinadi.
 

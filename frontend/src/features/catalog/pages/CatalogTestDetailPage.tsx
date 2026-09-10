@@ -11,7 +11,8 @@ import { Skeleton } from '@/shared/ui/Skeleton';
 import { ErrorState } from '@/shared/ui/ErrorState';
 import { useToast } from '@/shared/ui/useToast';
 import { ROUTES } from '@/shared/config/routes';
-import { useCatalogTestDetailQuery } from '../api/useCatalogTestDetailQuery';
+import { useCatalogSectionsQuery } from '../api/useCatalogSections';
+import { useCatalogQuestionsQuery, useCatalogTestDetailQuery } from '../api/useCatalogTestDetailQuery';
 import {
   useArchiveCatalogTest,
   useToggleCatalogTestActive,
@@ -19,11 +20,13 @@ import {
 import { useDeleteCatalogTest } from '../api/useCatalogTestMutations';
 import { useCatalogErrorMessage } from '../lib/useCatalogErrorMessage';
 import { TEST_STATUS_BADGE_VARIANT } from '../model/types';
+import { BranchingPreview } from '../components/BranchingPreview';
 import { DuplicateTestDialog } from '../components/DuplicateTestDialog';
 import { PublishTestDialog } from '../components/PublishTestDialog';
 import { PublishedEditWarning } from '../components/PublishedEditWarning';
 import { QuestionsSection } from '../components/QuestionsSection';
 import { ScalesSection } from '../components/ScalesSection';
+import { SectionsSection } from '../components/SectionsSection';
 import { SystemScalesInfoSection } from '../components/SystemScalesInfoSection';
 import { TestMetaDialog } from '../components/TestMetaDialog';
 
@@ -48,6 +51,19 @@ export default function CatalogTestDetailPage() {
   const toggleActive = useToggleCatalogTestActive();
   const archiveTest = useArchiveCatalogTest();
   const deleteTest = useDeleteCatalogTest();
+
+  // `docs/18` §6.3: "Oqim ko'rinishi" faqat `Survey` anketalarda kerak — boshqa holatda
+  // so'rov `enabled: false` bilan o'chirilgan qoladi. Bir xil so'rov kalitlari
+  // `SectionsSection`/`QuestionsSection` bilan, shu sabab qo'shimcha tarmoq chaqiruvi
+  // bo'lmaydi (TanStack Query keshi). Hook'lar SHARTSIZ chaqiriladi (Rules of Hooks) —
+  // pastdagi erta `return`lardan OLDIN turishi shart.
+  const showBranching = detailQuery.data?.scoringMode === 'Survey';
+  const branchingSectionsQuery = useCatalogSectionsQuery(
+    showBranching ? (detailQuery.data?.id ?? null) : null,
+  );
+  const branchingQuestionsQuery = useCatalogQuestionsQuery(
+    showBranching ? (detailQuery.data?.id ?? null) : null,
+  );
 
   const [metaOpen, setMetaOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
@@ -242,7 +258,18 @@ export default function CatalogTestDetailPage() {
         )}
       </Card>
 
+      {/* Bo'limlar — `docs/18` §6.3. `Scored` anketalarda `SectionsSection` o'zi B-2
+          tushuntirishini ko'rsatadi (bloklanmaydi, faqat yashiriladi). */}
+      <SectionsSection testId={test.id} isSystem={test.isSystem} scoringMode={test.scoringMode} />
+
       <QuestionsSection test={test} />
+
+      {showBranching && (
+        <BranchingPreview
+          sections={branchingSectionsQuery.data ?? []}
+          questions={branchingQuestionsQuery.data ?? []}
+        />
+      )}
 
       {/* Shkalalar CRUD faqat `Custom` uchun (BR-8, `docs/07` §3.4). Tizim metodikasida uning
           o'rniga FAQAT O'QISH bloki chiqadi — aks holda admin `EI`/`ART` nima ekanini

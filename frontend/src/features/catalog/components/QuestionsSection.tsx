@@ -10,6 +10,7 @@ import { ErrorState } from '@/shared/ui/ErrorState';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/Table';
 import { useToast } from '@/shared/ui/useToast';
+import { useCatalogSectionsQuery } from '../api/useCatalogSections';
 import { useCatalogQuestionsQuery } from '../api/useCatalogTestDetailQuery';
 import {
   useDeleteCatalogQuestion,
@@ -45,6 +46,9 @@ export function QuestionsSection({ test }: QuestionsSectionProps) {
   const toErrorMessage = useCatalogErrorMessage();
 
   const questionsQuery = useCatalogQuestionsQuery(test.id);
+  // Bo'limlar bo'yicha alohida so'rov — `SectionsSection` bilan BIR XIL kalit, shu sabab
+  // TanStack Query keshi tufayli qo'shimcha tarmoq chaqiruvi bo'lmaydi (`docs/18` §6.3).
+  const sectionsQuery = useCatalogSectionsQuery(test.id);
   const reorderQuestions = useReorderCatalogQuestions(test.id);
   const deleteQuestion = useDeleteCatalogQuestion(test.id);
 
@@ -237,6 +241,9 @@ export function QuestionsSection({ test }: QuestionsSectionProps) {
           isSystem={test.isSystem}
           isPublished={test.status === 'Published'}
           nextOrder={nextOrder}
+          scoringMode={test.scoringMode}
+          sections={sectionsQuery.data ?? []}
+          allQuestions={questions}
           onClose={() => {
             setEditorOpen(false);
           }}

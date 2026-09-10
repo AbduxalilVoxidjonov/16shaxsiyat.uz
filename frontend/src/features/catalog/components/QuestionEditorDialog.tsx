@@ -1,5 +1,5 @@
 import { useEffect, useId } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { Lock } from 'lucide-react';
@@ -25,8 +25,19 @@ import {
   toQuestionFormValues,
   toQuestionType,
 } from '../model/questionPayload';
-import { QUESTION_TYPE_VALUES, type CatalogQuestionItem } from '../model/types';
+import {
+  isChoiceQuestionType,
+  isSurveyOnlyQuestionType,
+  isTextQuestionType,
+  QUESTION_TYPE_VALUES,
+  type CatalogQuestionItem,
+  type CatalogSection,
+  type TestScoringMode,
+} from '../model/types';
+import { questionsBeforeOrder, toVisibilityEditorQuestion } from '../model/visibilityEditorHelpers';
+import { OptionsEditor } from './OptionsEditor';
 import { PublishedEditWarning } from './PublishedEditWarning';
+import { VisibilityRuleEditor } from './VisibilityRuleEditor';
 
 export interface QuestionEditorDialogProps {
   open: boolean;
@@ -37,10 +48,16 @@ export interface QuestionEditorDialogProps {
   isPublished: boolean;
   /** Yangi savolning boshlang'ich tartib raqami (oxirgi savoldan keyin). */
   nextOrder: number;
+  /** B-1/B-2 (`docs/18` §1): yangi turlar va shart faqat `Survey` anketalarda. */
+  scoringMode: TestScoringMode;
+  sections: CatalogSection[];
+  /** Butun anketaning savollari — ko'rsatish sharti muharriri "oldingi savollar"ni shundan tanlaydi. */
+  allQuestions: CatalogQuestionItem[];
   onClose: () => void;
 }
 
 const FORM_ID = 'catalog-question-form';
+const NO_SECTION_VALUE = '';
 
 const EMPTY_VALUES: QuestionDialogFormValues = {
   code: '',
@@ -54,6 +71,14 @@ const EMPTY_VALUES: QuestionDialogFormValues = {
   scale: '',
   direction: 1,
   weight: 1,
+  sectionCode: '',
+  placeholder: '',
+  inputPattern: '',
+  maxLength: Number.NaN,
+  minSelections: Number.NaN,
+  maxSelections: Number.NaN,
+  options: [],
+  visibility: null,
 };
 
 /**
@@ -63,6 +88,11 @@ const EMPTY_VALUES: QuestionDialogFormValues = {
  * ko'rsatiladi (`disabled` + sabab `aria-describedby` orqali) va so'rov tanasiga UMUMAN
  * qo'shilmaydi — `buildQuestionUpdatePayload` ga qarang (aks holda backend
  * `409 SYSTEM_TEST_LOCKED` beradi).
+ *
+ * **`docs/18` B-1/B-2:** `Scored` anketada (`scoringMode !== 'Survey'`) yangi savol turlari
+ * (`ShortText`/`LongText`/`MultiChoice`/`Phone`) tanlov ro'yxatidan chiqarib tashlanadi va
+ * bo'lim/ko'rsatish sharti bloklari umuman ko'rsatilmaydi — sababi o'zbekcha izoh bilan
+ * (`surveyOnlyNotice`).
  */
 export function QuestionEditorDialog({
   open,
@@ -71,6 +101,9 @@ export function QuestionEditorDialog({
   isSystem,
   isPublished,
   nextOrder,
+  scoringMode,
+  sections,
+  allQuestions,
   onClose,
 }: QuestionEditorDialogProps) {
   const { t } = useTranslation();
@@ -78,6 +111,7 @@ export function QuestionEditorDialog({
   const toErrorMessage = useCatalogErrorMessage();
   const lockedHintId = useId();
   const isEdit = question !== null;
+  const allowBranching = scoringMode === 'Survey';
 
   const createQuestion = useCreateCatalogQuestion(testId);
   const updateQuestion = useUpdateCatalogQuestion(testId);
@@ -86,6 +120,8 @@ export function QuestionEditorDialog({
     register,
     handleSubmit,
     reset,
+    control,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<QuestionDialogFormValues>({
     resolver: zodResolver(createQuestionFormSchema(isEdit ? 'edit' : 'create')),
@@ -95,31 +131,61 @@ export function QuestionEditorDialog({
   useEffect(() => {
     if (!open) return;
     if (question) {
+      const sectionCode = question.sectionId
+        ? (sections.find((s) => s.id === question.sectionId)?.code ?? '')
+        : '';
       reset({
         ...toQuestionFormValues(question),
         code: question.code,
         type: toQuestionType(question.type),
+        sectionCode,
       });
       return;
     }
     reset({ ...EMPTY_VALUES, order: nextOrder });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, question, nextOrder, reset]);
+
+  const type = useWatch({ control, name: 'type' });
+  const optionsValue = useWatch({ control, name: 'options' }) ?? [];
+  const visibilityValue = useWatch({ control, name: 'visibility' }) ?? null;
+
+  const isSurveyOnlyType = isSurveyOnlyQuestionType(type);
+  const isTextType = isTextQuestionType(type);
+  const isChoiceType = isChoiceQuestionType(type);
+
+  const typeOptions = QUESTION_TYPE_VALUES.filter(
+    (value) => allowBranching || !isSurveyOnlyQuestionType(value),
+  ).map((value) => ({ value, label: t(`catalog.questionType.${value}`) }));
+
+  const referenceOrder = isEdit ? (question?.order ?? nextOrder) : nextOrder;
+  const visibilityAvailableQuestions = questionsBeforeOrder(
+    allQuestions.map(toVisibilityEditorQuestion),
+    referenceOrder,
+  );
+
+  const sectionOptions = [
+    { value: NO_SECTION_VALUE, label: t('catalog.questionForm.sectionNoneOption') },
+    ...sections.map((section) => ({
+      value: section.code,
+      label: `${section.titleUz} (${section.code})`,
+    })),
+  ];
 
   const onSubmit = handleSubmit(async (values) => {
     try {
       if (question) {
         await updateQuestion.mutateAsync({
           questionId: question.id,
-          payload: buildQuestionUpdatePayload(question, values, { isSystem }),
+          payload: buildQuestionUpdatePayload(question, values, { isSystem, allowBranching }),
         });
         toast.show({ variant: 'success', title: t('catalog.questionForm.editSuccess') });
       } else {
         await createQuestion.mutateAsync(
-          buildQuestionCreatePayload({
-            ...values,
-            code: values.code,
-            type: values.type,
-          }),
+          buildQuestionCreatePayload(
+            { ...values, code: values.code, type: values.type },
+            { allowBranching },
+          ),
         );
         toast.show({ variant: 'success', title: t('catalog.questionForm.createSuccess') });
       }
@@ -130,10 +196,8 @@ export function QuestionEditorDialog({
   });
 
   const isMutating = createQuestion.isPending || updateQuestion.isPending || isSubmitting;
-  const typeOptions = QUESTION_TYPE_VALUES.map((value) => ({
-    value,
-    label: t(`catalog.questionType.${value}`),
-  }));
+  const optionsError =
+    typeof errors.options?.message === 'string' ? errors.options.message : undefined;
 
   return (
     <Dialog
@@ -256,30 +320,106 @@ export function QuestionEditorDialog({
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            <Input
-              label={t('catalog.questionsTable.scale')}
-              hint={t('catalog.questionForm.scaleHint')}
-              error={errors.scale?.message}
-              {...register('scale')}
-            />
-            <Select
-              label={t('catalog.questionsTable.direction')}
-              hint={t('catalog.questionForm.directionHint')}
-              options={[
-                { value: '1', label: t('catalog.questionsTable.directionForward') },
-                { value: '-1', label: t('catalog.questionsTable.directionReverse') },
-              ]}
-              error={errors.direction?.message}
-              {...register('direction', { valueAsNumber: true })}
-            />
-            <Input
-              type="number"
-              step="0.1"
-              label={t('catalog.questionsTable.weight')}
-              hint={t('catalog.questionForm.weightHint')}
-              error={errors.weight?.message}
-              {...register('weight', { valueAsNumber: true })}
-            />
+            {!isSurveyOnlyType && (
+              <>
+                <Input
+                  label={t('catalog.questionsTable.scale')}
+                  hint={t('catalog.questionForm.scaleHint')}
+                  error={errors.scale?.message}
+                  {...register('scale')}
+                />
+                <Select
+                  label={t('catalog.questionsTable.direction')}
+                  hint={t('catalog.questionForm.directionHint')}
+                  options={[
+                    { value: '1', label: t('catalog.questionsTable.directionForward') },
+                    { value: '-1', label: t('catalog.questionsTable.directionReverse') },
+                  ]}
+                  error={errors.direction?.message}
+                  {...register('direction', { valueAsNumber: true })}
+                />
+                <Input
+                  type="number"
+                  step="0.1"
+                  label={t('catalog.questionsTable.weight')}
+                  hint={t('catalog.questionForm.weightHint')}
+                  error={errors.weight?.message}
+                  {...register('weight', { valueAsNumber: true })}
+                />
+              </>
+            )}
+
+            {isTextType && (
+              <>
+                <Input
+                  label={t('catalog.questionForm.placeholderLabel')}
+                  error={errors.placeholder?.message}
+                  {...register('placeholder')}
+                />
+                {(type === 'ShortText' || type === 'Phone') && (
+                  <Input
+                    label={t('catalog.questionForm.inputPatternLabel')}
+                    hint={t('catalog.questionForm.inputPatternHint')}
+                    error={errors.inputPattern?.message}
+                    {...register('inputPattern')}
+                  />
+                )}
+                <Input
+                  type="number"
+                  label={t('catalog.questionForm.maxLengthLabel')}
+                  error={errors.maxLength?.message}
+                  {...register('maxLength', { valueAsNumber: true })}
+                />
+              </>
+            )}
+
+            {type === 'MultiChoice' && (
+              <>
+                <Input
+                  type="number"
+                  label={t('catalog.questionForm.minSelectionsLabel')}
+                  error={errors.minSelections?.message}
+                  {...register('minSelections', { valueAsNumber: true })}
+                />
+                <Input
+                  type="number"
+                  label={t('catalog.questionForm.maxSelectionsLabel')}
+                  error={errors.maxSelections?.message}
+                  {...register('maxSelections', { valueAsNumber: true })}
+                />
+              </>
+            )}
+
+            {isChoiceType && (
+              <OptionsEditor
+                options={optionsValue}
+                onChange={(next) => {
+                  setValue('options', next, { shouldValidate: true, shouldDirty: true });
+                }}
+                disabled={isMutating}
+                error={optionsError}
+              />
+            )}
+
+            {allowBranching ? (
+              <>
+                <Select
+                  label={t('catalog.questionForm.sectionLabel')}
+                  options={sectionOptions}
+                  {...register('sectionCode')}
+                />
+                <VisibilityRuleEditor
+                  value={visibilityValue}
+                  onChange={(rule) => {
+                    setValue('visibility', rule, { shouldValidate: true, shouldDirty: true });
+                  }}
+                  availableQuestions={visibilityAvailableQuestions}
+                  disabled={isMutating}
+                />
+              </>
+            ) : (
+              <p className="text-sm text-neutral-500">{t('catalog.questionForm.surveyOnlyNotice')}</p>
+            )}
           </div>
         )}
 
