@@ -120,52 +120,94 @@ internal sealed class GetTestQuestionsQueryHandler : IRequestHandler<GetTestQues
         }
 
         var questions = await _catalogCache.GetActiveQuestionsAsync(testDefinition.Id, assessment.LanguageCode, cancellationToken).ConfigureAwait(false);
+        var sections = await _catalogCache.GetSectionsAsync(testDefinition.Id, cancellationToken).ConfigureAwait(false);
 
         // Qayta kirganda AYNAN o'sha tartib qaytishi shart (`prompts/11`) — `QuestionOrder`
         // bo'sh bo'lmasa (aralashtirilgan bo'lsa), shu ketma-ketlik bo'yicha saralanadi.
         var orderedQuestions = OrderQuestions(questions, assessmentTest.QuestionOrder);
 
         var totalQuestions = orderedQuestions.Count;
-        var totalPages = totalQuestions == 0 ? 0 : (int)Math.Ceiling(totalQuestions / (double)testDefinition.PageSize);
 
-        var pageItems = orderedQuestions
-            .Skip((request.Page - 1) * testDefinition.PageSize)
-            .Take(testDefinition.PageSize)
-            .ToList();
+        // `docs/18` §4.1: bo'lim bo'lsa sahifalash O'CHADI — `page = 1`, `totalPages = 1`,
+        // BARCHA faol savollar (tarmoqlanishni mijoz `shared/lib/visibility.ts` bilan o'zi
+        // hisoblaydi, server ko'rinishga qarab FILTRLAB bermaydi — aks holda boshqa sahifadagi
+        // savolga bog'liq shart mijozda hisoblanmay qolardi). Bo'limsiz anketada mavjud
+        // `pageSize` sahifalash AYNAN o'zgarishsiz qoladi.
+        var hasSections = sections.Count > 0;
+
+        int page;
+        int totalPages;
+        IReadOnlyList<CachedQuestionDto> pageItems;
+
+        if (hasSections)
+        {
+            page = 1;
+            totalPages = totalQuestions == 0 ? 0 : 1;
+            pageItems = orderedQuestions;
+        }
+        else
+        {
+            page = request.Page;
+            totalPages = totalQuestions == 0 ? 0 : (int)Math.Ceiling(totalQuestions / (double)testDefinition.PageSize);
+            pageItems = orderedQuestions
+                .Skip((request.Page - 1) * testDefinition.PageSize)
+                .Take(testDefinition.PageSize)
+                .ToList();
+        }
 
         var pageQuestionIds = pageItems.Select(q => q.Id).ToList();
         var currentValues = await _executor.ToListAsync(
             _context.AsNoTracking(_context.Answers)
                 .Where(a => a.AssessmentTestId == assessmentTest.Id && pageQuestionIds.Contains(a.QuestionId))
-                .Select(a => new { a.QuestionId, a.RawValue }),
+                .Select(a => new { a.QuestionId, a.RawValue, a.TextValue, a.SelectedValues }),
             cancellationToken).ConfigureAwait(false);
 
-        var currentValueByQuestionId = currentValues.ToDictionary(a => a.QuestionId, a => a.RawValue);
+        var currentValueByQuestionId = currentValues.ToDictionary(a => a.QuestionId);
 
         var questionDtos = pageItems
-            .Select(q => new PublicQuestionDto(
-                q.Id,
-                q.Code,
-                q.DisplayOrder,
-                q.Text,
-                q.QuestionType.ToString(),
-                q.IsRequired,
-                q.QuestionType is QuestionType.SingleChoice or QuestionType.ForcedChoice
-                    ? q.Options.Select(o => new PublicAnswerOptionDto(o.Id, o.TextUz, o.Value, o.DisplayOrder)).ToList()
-                    : null,
-                currentValueByQuestionId.TryGetValue(q.Id, out var value) ? value : null))
+            .Select(q =>
+            {
+                currentValueByQuestionId.TryGetValue(q.Id, out var currentAnswer);
+                var currentValues = currentAnswer?.SelectedValues is { Count: > 0 } selected ? selected : null;
+
+                return new PublicQuestionDto(
+                    q.Id,
+                    q.Code,
+                    q.DisplayOrder,
+                    q.Text,
+                    q.QuestionType.ToString(),
+                    q.IsRequired,
+                    q.QuestionType is QuestionType.SingleChoice or QuestionType.ForcedChoice or QuestionType.MultiChoice
+                        ? q.Options.Select(o => new PublicAnswerOptionDto(o.Id, o.TextUz, o.Value, o.DisplayOrder)).ToList()
+                        : null,
+                    currentAnswer?.RawValue,
+                    q.SectionId,
+                    q.Placeholder,
+                    q.InputPattern,
+                    q.MaxLength,
+                    q.MinSelections,
+                    q.MaxSelections,
+                    q.Visibility,
+                    currentAnswer?.TextValue,
+                    currentValues);
+            })
             .ToList();
 
         var scaleLabels = pageItems.Count > 0 ? BuildScaleLabels(pageItems[0].QuestionType, assessment.LanguageCode) : null;
 
+        IReadOnlyList<PublicSectionDto>? sectionDtos = hasSections
+            ? sections.Select(s => new PublicSectionDto(s.Id, s.Code, s.TitleUz, s.DescriptionUz, s.DisplayOrder, s.Visibility)).ToList()
+            : null;
+
         var result = new GetTestQuestionsResult(
             testDefinition.Code,
-            request.Page,
+            page,
             testDefinition.PageSize,
             totalPages,
             totalQuestions,
             scaleLabels,
-            questionDtos);
+            questionDtos,
+            sectionDtos);
 
         return Result.Success(result);
     }

@@ -159,13 +159,21 @@ public sealed record AdminAssessmentAnswersDto(
 /// BELGILANMAYDI: `docs/03` §7.1 band 1 bo'yicha bu holatda faqat `AllSameAnswer` jarimasi
 /// qo'llanadi, straight-lining esa qo'llanmaydi — UI ham shu bilan izchil bo'lishi kerak.
 /// </para>
+/// <para>
+/// P52 (`docs/18` §2.1/§2.7): `RawValue` endi `int?` — `ShortText`/`LongText`/`Phone`
+/// javoblari `TextValue`da, `MultiChoice` javoblari `SelectedValues`da (bo'sh bo'lsa
+/// `null` — tanlov yo'q). Bitta savolda uchtadan FAQAT bittasi to'ldirilgan bo'ladi
+/// (`Answer` shakl invarianti). `EffectiveValue`/`ScaleDirection`/`Weight` matn/ko'p tanlov
+/// javoblari uchun MA'NOSIZ (`Scale = "SURVEY"`, `Direction = 1`) — bunday qatorlarda
+/// `EffectiveValue` shunchaki `0`.
+/// </para>
 /// </summary>
 public sealed record AdminAssessmentAnswerDto(
     Guid QuestionId,
     string QuestionCode,
     string TestCode,
     string QuestionText,
-    int RawValue,
+    int? RawValue,
     string? SelectedOptionText,
     int DurationMs,
     int RevisionCount,
@@ -177,7 +185,9 @@ public sealed record AdminAssessmentAnswerDto(
     decimal Weight,
     int EffectiveValue,
     bool IsFastAnswer,
-    int? StraightLiningBlockIndex);
+    int? StraightLiningBlockIndex,
+    string? TextValue,
+    IReadOnlyList<int>? SelectedValues);
 
 /// <summary>
 /// Sessiya darajasidagi ishonchlilik signallari (`docs/03` §7) — bo'lim boshida ko'rsatiladi.

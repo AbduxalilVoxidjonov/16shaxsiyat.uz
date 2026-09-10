@@ -231,14 +231,25 @@ Testni boshlash (aralashtirish tartibi shu yerda qat'iylashadi).
     { "value": 4, "label": "Qo'shilaman" },
     { "value": 5, "label": "To'liq qo'shilaman" }
   ],
+  "sections": null,
   "questions": [
     { "id": "…", "code": "B5-Q01", "order": 1, "text": "Yangi g'oyalarni sinab ko'rishni yaxshi ko'raman",
-      "type": "Likert5", "isRequired": true, "options": null, "currentValue": 4 }
+      "type": "Likert5", "isRequired": true, "options": null, "currentValue": 4,
+      "sectionId": null, "placeholder": null, "inputPattern": null, "maxLength": null,
+      "minSelections": null, "maxSelections": null, "visibility": null,
+      "currentText": null, "currentValues": null }
   ]
 }
 ```
 
 > `scale` va `scaleDirection` **hech qachon** frontendga yuborilmaydi.
+
+> **P52 tarmoqlanuvchi so'rovnoma** (`docs/18` §4.1) — to'liq shakl, `sections[]` va yangi
+> savol maydonlari (`sectionId`/`placeholder`/`inputPattern`/`maxLength`/`minSelections`/
+> `maxSelections`/`visibility`/`currentText`/`currentValues`) o'sha yerda. **Qisqa qoida:**
+> anketada bo'lim bo'lsa sahifalash O'CHADI (`page=1`, `totalPages=1`, BARCHA faol savollar) —
+> tarmoqlanishni mijoz o'zi (`shared/lib/visibility.ts`) hisoblaydi. Yuqoridagi 4 ta tizim
+> metodikasida (`sections: null`) va bo'limsiz `Custom` anketalarda hech narsa o'zgarmagan.
 
 ---
 
@@ -253,6 +264,13 @@ Paketli, idempotent saqlash (autosave — har 5 s yoki sahifa almashganda).
 **200** `{ "savedCount": 2, "answered": 20, "total": 50 }`
 **410** `SESSION_EXPIRED`
 
+> **P52** (`docs/18` §4.2) — `value` endi `int?`; yangi `text`/`selectedValues` maydonlari
+> qo'shildi, uchtadan AYNAN bittasi savol turiga mos to'ldiriladi (`400 ANSWER_SHAPE_INVALID`).
+> Turga xos mazmun tekshiruvi (matn uzunligi/shablon, `MultiChoice` tanlovlari) va
+> **`400 QUESTION_NOT_VISIBLE`** qo'riqchisi (ko'rinmaydigan savolga yozishga urinish) —
+> to'liq jadval va ReDoS himoyasi `docs/18` §4.2 da. Likert/Binary/SingleChoice/ForcedChoice
+> uchun `value` — mavjudidek o'zgarishsiz.
+
 ---
 
 ### 1.7 `POST /api/public/sessions/tests/{testCode}/complete`
@@ -262,6 +280,10 @@ Paketli, idempotent saqlash (autosave — har 5 s yoki sahifa almashganda).
   "nextTestCode": "RIASEC", "allTestsCompleted": false }
 ```
 **400** `VALIDATION_ERROR` (`unansweredCount` bilan)
+
+> **P52** (`docs/18` §4.3) — majburiy savol tekshiruvi FAQAT ko'rinadigan savollar bo'yicha;
+> yashirilgan savollarning javoblari yakunlashda bazadan o'chiriladi. Tizim metodikalarida
+> (shart/bo'lim yo'q) xatti-harakat o'zgarishsiz.
 
 ---
 
@@ -868,7 +890,7 @@ O'girish backend'da bir joyda: `StudentProfileMapping.RiasecScaleToLetter`
   "answers": [
     { "questionId": "…", "questionCode": "BIG5-Q17", "testCode": "BIG5",
       "questionText": "Rejalarimni oxirigacha yetkazaman",
-      "rawValue": 5, "selectedOptionText": null,
+      "rawValue": 5, "textValue": null, "selectedValues": null, "selectedOptionText": null,
       "durationMs": 820, "revisionCount": 0, "answeredAt": "2026-08-30T09:11:02Z",
       "questionType": "Likert5",
       "scale": "C", "scaleNameUz": "Vijdonlilik", "scaleDirection": -1, "weight": 1.0,
@@ -896,6 +918,11 @@ O'girish backend'da bir joyda: `StudentProfileMapping.RiasecScaleToLetter`
 > `v' = (max + min) − v`). Xom `5` ni ko'rgan psixolog javobni BUTUNLAY teskari o'qirdi.
 > Qiymat `Domain/Scoring/ScoringMath.ApplyDirection` — strategiyalar ishlatadigan AYNAN o'sha
 > funksiya — orqali hisoblanadi, `Application`da formula qayta yozilmaydi.
+
+> **P52** (`docs/18` §2.1/§2.7): `rawValue` endi `int?` — `ShortText`/`LongText`/`Phone`
+> javoblari `textValue`da, `MultiChoice` javoblari `selectedValues[]`da (bo'sh bo'lsa
+> `null`). Bitta savolda uchtadan FAQAT bittasi to'ldirilgan bo'ladi. `Survey` (matn/ko'p
+> tanlov) javoblarida `effectiveValue` shunchaki `0` (ma'nosiz — `scale = "SURVEY"`).
 
 > ⚠️ **`scale`/`scaleNameUz`/`scaleDirection`/`effectiveValue` FAQAT ADMIN javobida.**
 > `CLAUDE.md` 9-bandi O'QUVCHI API'siga tegishli: u yerda bu maydonlar o'lchanayotgan

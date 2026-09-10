@@ -64,7 +64,9 @@ internal sealed class GetAssessmentAnswersQueryHandler : IRequestHandler<GetAsse
         string? ScaleNameUz,
         int ScaleDirection,
         decimal Weight,
-        int RawValue,
+        int? RawValue,
+        string? TextValue,
+        IReadOnlyList<int> SelectedValues,
         string? SelectedOptionText,
         int DurationMs,
         int RevisionCount,
@@ -105,7 +107,7 @@ internal sealed class GetAssessmentAnswersQueryHandler : IRequestHandler<GetAsse
         var scoredRows = rows.Where(r => r.IsScored).ToList();
 
         var orderedScored = OrderChronologically(scoredRows, sessionDuration);
-        var values = orderedScored.Select(r => r.RawValue).ToList();
+        var values = orderedScored.Select(RequireScoredRawValue).ToList();
 
         var allSame = values.Count > 0 && values.TrueForAll(v => v == values[0]);
 
@@ -156,9 +158,14 @@ internal sealed class GetAssessmentAnswersQueryHandler : IRequestHandler<GetAsse
                 r.ScaleNameUz,
                 r.ScaleDirection,
                 r.Weight,
-                EffectiveValueOf(r),
+                // `EffectiveValue` (teskari tuzatilgan Likert qiymati) faqat `Scored` qatorlarda
+                // ma'noli — `Survey` (matn/ko'p tanlov) javoblarida `Scale`/`Direction` shunchaki
+                // standart qiymat (`docs/18` §2.3), hisoblash yasama natija beradi (P52 A2).
+                r.IsScored ? EffectiveValueOf(r) : 0,
                 r.DurationMs < ScoringConstants.FastAnswerDurationThresholdMs,
-                blockIndexByQuestionId.TryGetValue(r.QuestionId, out var blockIndex) ? blockIndex : null))
+                blockIndexByQuestionId.TryGetValue(r.QuestionId, out var blockIndex) ? blockIndex : null,
+                r.TextValue,
+                r.SelectedValues.Count > 0 ? r.SelectedValues : null))
             .ToList();
 
         return Result.Success(new AdminAssessmentAnswersDto(answers, signals, scaleSignals, Thresholds));
@@ -172,8 +179,17 @@ internal sealed class GetAssessmentAnswersQueryHandler : IRequestHandler<GetAsse
     private static int EffectiveValueOf(AnswerRow row)
     {
         var (min, max) = ScoringMath.GetLikertBounds(row.QuestionType);
-        return ScoringMath.ApplyDirection(row.RawValue, row.ScaleDirection, min, max);
+        return ScoringMath.ApplyDirection(RequireScoredRawValue(row), row.ScaleDirection, min, max);
     }
+
+    /// <summary>
+    /// P52 A2: `AnswerRow.RawValue` endi `int?` (`docs/18` §2.7). `Scored` qatorlarda B-1
+    /// tufayli har doim to'ldirilgan — `null` kelishi domen invariantining buzilishi
+    /// (`CompleteTestCommandHandler.RequireRawValue` bilan bir xil himoya naqshi).
+    /// </summary>
+    private static int RequireScoredRawValue(AnswerRow row) =>
+        row.RawValue ?? throw new InvalidOperationException(
+            $"Savol {row.QuestionId} — ballanadigan (Scored) qatorda RawValue yo'q, bu kutilmagan holat.");
 
     /// <summary>
     /// ⚠️ P12-R1: xronologik tartib <see cref="ReliabilityInputBuilder"/> orqali quriladi —
@@ -185,7 +201,7 @@ internal sealed class GetAssessmentAnswersQueryHandler : IRequestHandler<GetAsse
     private static List<AnswerRow> OrderChronologically(IReadOnlyList<AnswerRow> scoredRows, TimeSpan sessionDuration)
     {
         var rowByQuestionId = scoredRows.ToDictionary(r => r.QuestionId);
-        var answers = scoredRows.ToDictionary(r => r.QuestionId, r => r.RawValue);
+        var answers = scoredRows.ToDictionary(r => r.QuestionId, RequireScoredRawValue);
         var durations = scoredRows.ToDictionary(r => r.QuestionId, r => r.DurationMs);
 
         var blocks = scoredRows
@@ -402,12 +418,14 @@ internal sealed class GetAssessmentAnswersQueryHandler : IRequestHandler<GetAsse
                 question.ScaleDirection,
                 question.Weight,
                 // `docs/18` §2.7: `Answer.RawValue` endi `int?` (matn/ko'p tanlov javoblari uchun
-                // `null`). Bu qator faqat `IsScored` (Scored) bloklar uchun signal/tahlil
-                // hisoblashda ishlatiladi (pastda `scoredRows`/`orderedScored` filtri) — u yerda
-                // `RawValue` har doim to'ldirilgan (B-1). `Survey` javoblarining matn/tanlov
-                // shaklini shu admin jadvalida ko'rsatish P52 A2 (Application) vazifasi doirasida;
-                // hozircha `0` — faqat ko'rinish uchun, hisoblashga ta'sir qilmaydi.
-                answer.RawValue ?? 0,
+                // `null`). Signal/tahlil hisoblash (`scoredRows`/`orderedScored`) faqat `IsScored`
+                // (Scored) bloklar uchun ishlaydi — u yerda `RawValue` har doim to'ldirilgan
+                // (B-1, `RequireScoredRawValue`). P52 A2: matn/ko'p tanlov javoblari endi
+                // `TextValue`/`SelectedValues` orqali HAQIQIY qiymati bilan ko'rinadi (`0`
+                // o'rniga) — audit jadvalida "javob nima edi" savoliga to'liq javob beriladi.
+                answer.RawValue,
+                answer.TextValue,
+                answer.SelectedValues,
                 answer.SelectedOptionId.HasValue ? optionTextById.GetValueOrDefault(answer.SelectedOptionId.Value) : null,
                 answer.DurationMs,
                 answer.RevisionCount,

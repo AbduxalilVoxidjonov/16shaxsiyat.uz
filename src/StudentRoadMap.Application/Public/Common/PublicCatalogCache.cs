@@ -56,6 +56,12 @@ internal sealed class PublicCatalogCache
     public static string QuestionsCacheKey(Guid testDefinitionId, string? languageCode) =>
         $"public-catalog:questions:{testDefinitionId}:{NormalizeLanguage(languageCode)}";
 
+    /// <summary>
+    /// P52 (`docs/18` §2.2) — bo'limlar tilga BOG'LIQ EMAS (`QuestionSection`da faqat `TitleUz`/
+    /// `DescriptionUz`), shu sabab `QuestionsCacheKey`dan farqli kalitda til yo'q.
+    /// </summary>
+    public static string SectionsCacheKey(Guid testDefinitionId) => $"public-catalog:sections:{testDefinitionId}";
+
     /// <summary>Bo'sh/noma'lum til → `uz` (fallback), aks holda kichik harfga tekislanadi (kesh kaliti barqaror bo'lishi uchun).</summary>
     public static string NormalizeLanguage(string? languageCode) =>
         string.IsNullOrWhiteSpace(languageCode) ? DefaultLanguageCode : languageCode.Trim().ToLowerInvariant();
@@ -130,7 +136,40 @@ internal sealed class PublicCatalogCache
                 q.IsRequired,
                 (optionsByQuestion.TryGetValue(q.Id, out var qOptions) ? qOptions : [])
                     .Select(o => new CachedAnswerOptionDto(o.Id, o.TextUz, o.Value, o.DisplayOrder))
-                    .ToList()))
+                    .ToList(),
+                q.SectionId,
+                q.VisibilityRule,
+                q.Placeholder,
+                q.InputPattern,
+                q.MaxLength,
+                q.MinSelections,
+                q.MaxSelections))
+            .ToList();
+
+        _cache.Set(cacheKey, result, CacheDuration);
+        return result;
+    }
+
+    /// <summary>
+    /// P52 (`docs/18` §2.2) — anketaning bo'limlarini `DisplayOrder` bo'yicha qaytaradi. Tilga
+    /// bog'liq EMAS kalit (`SectionsCacheKey`) — `QuestionsCacheKey`dan farqli.
+    /// </summary>
+    public async Task<IReadOnlyList<CachedSectionDto>> GetSectionsAsync(Guid testDefinitionId, CancellationToken cancellationToken)
+    {
+        var cacheKey = SectionsCacheKey(testDefinitionId);
+        if (_cache.TryGet<IReadOnlyList<CachedSectionDto>>(cacheKey, out var cached))
+        {
+            return cached;
+        }
+
+        var sections = await _executor.ToListAsync(
+            _context.AsNoTracking(_context.QuestionSections)
+                .Where(s => s.TestDefinitionId == testDefinitionId)
+                .OrderBy(s => s.DisplayOrder),
+            cancellationToken).ConfigureAwait(false);
+
+        IReadOnlyList<CachedSectionDto> result = sections
+            .Select(s => new CachedSectionDto(s.Id, s.Code, s.TitleUz, s.DescriptionUz, s.DisplayOrder, s.VisibilityRule))
             .ToList();
 
         _cache.Set(cacheKey, result, CacheDuration);
@@ -209,5 +248,6 @@ internal sealed class PublicCatalogCache
         _cache.Remove(QuestionsCacheKey(testDefinitionId, "uz"));
         _cache.Remove(QuestionsCacheKey(testDefinitionId, "ru"));
         _cache.Remove(QuestionsCacheKey(testDefinitionId, "en"));
+        _cache.Remove(SectionsCacheKey(testDefinitionId));
     }
 }

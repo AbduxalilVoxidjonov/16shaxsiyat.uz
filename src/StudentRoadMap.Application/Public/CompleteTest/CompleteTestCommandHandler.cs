@@ -4,6 +4,7 @@ using StudentRoadMap.Application.Common.Models;
 using StudentRoadMap.Application.Public.Common;
 using StudentRoadMap.Domain.Assessments;
 using StudentRoadMap.Domain.Catalog;
+using StudentRoadMap.Domain.Catalog.Branching;
 using StudentRoadMap.Domain.Common;
 using StudentRoadMap.Domain.Scoring;
 
@@ -101,7 +102,31 @@ internal sealed class CompleteTestCommandHandler : IRequestHandler<CompleteTestC
                 _context.AsNoTracking(_context.Questions).Where(q => q.TestDefinitionId == testDefinition.Id && q.IsActive),
                 cancellationToken).ConfigureAwait(false);
 
-            var requiredQuestionIds = questions.Where(q => q.IsRequired).Select(q => q.Id).ToList();
+            // `docs/18` §4.3: majburiy savol tekshiruvi FAQAT ko'rinadigan savollar bo'yicha —
+            // `VisibleQuestionResolver` joriy (bazadagi) javoblar bilan chaqiriladi. `Scored`
+            // testlarda (B-2) hech qanday savol/bo'lim `VisibilityRule`ga ega bo'lmaydi, shu
+            // sabab bu yerda hisoblangan ko'rinish har doim "hammasi ko'rinadi" bo'lib qoladi —
+            // 4 ta tizim metodikasi uchun xatti-harakat AYNAN o'zgarishsiz.
+            var sections = await _executor.ToListAsync(
+                _context.AsNoTracking(_context.QuestionSections).Where(s => s.TestDefinitionId == testDefinition.Id),
+                cancellationToken).ConfigureAwait(false);
+
+            var visibilityMap = ResolveVisibility(questions, sections, targetTest);
+
+            // Yashirilgan savollarning javoblari o'chiriladi (`docs/18` §2.7/§4.3) — o'quvchi
+            // filtr savolini o'zgartirsa, ochilmagan tarmoq javoblari eksport/AI tahliliga
+            // tushmasin. `Complete`dan OLDIN — natijada quyidagi `answeredQuestionIds` allaqachon
+            // tozalangan to'plamdan hisoblanadi (baribir faqat ko'rinadigan majburiylar so'raladi).
+            var hiddenQuestionIds = questions
+                .Where(q => !visibilityMap.VisibleQuestionIds.Contains(q.Id))
+                .Select(q => q.Id)
+                .ToList();
+            targetTest.RemoveAnswers(hiddenQuestionIds);
+
+            var requiredQuestionIds = questions
+                .Where(q => q.IsRequired && visibilityMap.VisibleQuestionIds.Contains(q.Id))
+                .Select(q => q.Id)
+                .ToList();
             var answeredQuestionIds = targetTest.Answers.Select(a => a.QuestionId).ToHashSet();
             var unansweredCount = requiredQuestionIds.Count(id => !answeredQuestionIds.Contains(id));
 
@@ -115,7 +140,8 @@ internal sealed class CompleteTestCommandHandler : IRequestHandler<CompleteTestC
 
             // Domen: `AssessmentTest.Status = Completed`, `TestCompletedEvent` ko'taradi.
             // `requiredQuestionIds` domenga ham uzatiladi — `AssessmentTest.Complete` invarianti
-            // shu bilan izchil (ixtiyoriy savol javobsiz qolsa ham domen bloklamasin).
+            // shu bilan izchil (ixtiyoriy savol yoki yashirilgan majburiy savol javobsiz qolsa
+            // ham domen bloklamasin).
             assessment.CompleteTest(testDefinition.Id, requiredQuestionIds, now);
 
             // `Survey` (`docs/06` 8-bo'lim, 2026-09-02 qaror, `prompts/34` D-band): javoblari
@@ -167,6 +193,39 @@ internal sealed class CompleteTestCommandHandler : IRequestHandler<CompleteTestC
         var result = new CompleteTestResult(testDefinition.Code, TestStatus.Completed.ToString(), nextTestCode, allTestsCompleted);
 
         return Result.Success(result);
+    }
+
+    /// <summary>
+    /// Butun test bloki bo'yicha ko'rinish xaritasini hisoblaydi — `docs/18` §2.6/§4.3. Manba
+    /// javob bazadagi (`targetTest.Answers`, fixup orqali tracked yuklangan) joriy holat;
+    /// `Complete`da yangi javob yozilmaydi, shu sabab so'rovdagi qo'shimcha javob yo'q
+    /// (`SaveAnswersCommandHandler.EnsureAllVisible`dan farqli — u yerda so'rovdagi javoblar
+    /// ham birlashtiriladi).
+    /// </summary>
+    private static VisibilityMap ResolveVisibility(IReadOnlyList<Question> questions, IReadOnlyList<QuestionSection> sections, AssessmentTest targetTest)
+    {
+        var questionByCode = questions.ToDictionary(q => q.Id);
+
+        var answersByCode = new Dictionary<string, AnswerSnapshot>(StringComparer.Ordinal);
+        foreach (var answer in targetTest.Answers)
+        {
+            if (questionByCode.TryGetValue(answer.QuestionId, out var question))
+            {
+                answersByCode[question.Code] = new AnswerSnapshot(answer.RawValue, answer.TextValue, answer.SelectedValues);
+            }
+        }
+
+        var sectionSnapshots = sections
+            .OrderBy(s => s.DisplayOrder)
+            .Select(s => new SectionSnapshot(s.Id, s.Code, s.DisplayOrder, s.VisibilityRule))
+            .ToList();
+
+        var questionSnapshots = questions
+            .OrderBy(q => q.DisplayOrder)
+            .Select(q => new QuestionSnapshot(q.Id, q.Code, q.DisplayOrder, q.IsActive, q.SectionId, q.VisibilityRule))
+            .ToList();
+
+        return VisibleQuestionResolver.Resolve(sectionSnapshots, questionSnapshots, answersByCode);
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 using StudentRoadMap.Domain.Catalog;
+using StudentRoadMap.Domain.Catalog.Branching;
 
 namespace StudentRoadMap.Application.Public.Common;
 
@@ -30,6 +31,11 @@ public sealed record CachedTestDefinitionDto(Guid Id, string Code, int PageSize,
 /// chunki kesh KALITI `languageCode`ni o'z ichiga oladi — bir tilda ishlagan javob boshqa
 /// tildagi o'quvchiga sizib chiqmasligi uchun).
 /// </summary>
+/// <summary>
+/// P52 (`docs/18` §2.2/§2.3): `SectionId`/`Visibility`/`Placeholder`/`InputPattern`/`MaxLength`/
+/// `MinSelections`/`MaxSelections` — tarmoqlanuvchi so'rovnoma maydonlari. `Visibility` — `Scale`
+/// EMAS (`CLAUDE.md` 9-qoida faqat shkalaga tegishli), shu sabab bu yerda bo'lishi xavfsiz.
+/// </summary>
 public sealed record CachedQuestionDto(
     Guid Id,
     string Code,
@@ -37,10 +43,29 @@ public sealed record CachedQuestionDto(
     string Text,
     QuestionType QuestionType,
     bool IsRequired,
-    IReadOnlyList<CachedAnswerOptionDto> Options);
+    IReadOnlyList<CachedAnswerOptionDto> Options,
+    Guid? SectionId,
+    VisibilityRule? Visibility,
+    string? Placeholder,
+    string? InputPattern,
+    int? MaxLength,
+    int? MinSelections,
+    int? MaxSelections);
 
-/// <summary>`SingleChoice`/`ForcedChoice` savollari uchun keshlangan variant (hozircha faqat uz — variant matni tilga bog'lanmagan, `AnswerOption`da Ru/En maydoni yo'q).</summary>
+/// <summary>`SingleChoice`/`ForcedChoice`/`MultiChoice` savollari uchun keshlangan variant (hozircha faqat uz — variant matni tilga bog'lanmagan, `AnswerOption`da Ru/En maydoni yo'q).</summary>
 public sealed record CachedAnswerOptionDto(Guid Id, string TextUz, int Value, int DisplayOrder);
+
+/// <summary>
+/// Keshlangan bo'lim (`docs/18` §2.2) — `PublicCatalogCache.GetSectionsAsync`. Tilga bog'liq
+/// EMAS (`QuestionSection`da `TitleRu`/`TitleEn` yo'q, faqat `TitleUz`/`DescriptionUz`).
+/// </summary>
+public sealed record CachedSectionDto(
+    Guid Id,
+    string Code,
+    string TitleUz,
+    string? DescriptionUz,
+    int DisplayOrder,
+    VisibilityRule? Visibility);
 
 /// <summary>
 /// `type_catalog` yozuvining ommaviy (marketing) proyeksiyasi — `PublicCatalogCache.GetTypeCatalogAsync`

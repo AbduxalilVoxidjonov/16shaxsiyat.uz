@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using StudentRoadMap.Domain.Catalog;
+using StudentRoadMap.Domain.Catalog.Branching;
 using StudentRoadMap.Domain.Schools;
 using StudentRoadMap.Infrastructure.Persistence;
 
@@ -548,6 +549,46 @@ internal static class TestDataFactory
         await db.SaveChangesAsync();
 
         return program;
+    }
+
+    /// <summary>
+    /// P52 (`docs/18` §8 "to'liq oqim" integratsiya testi) — minimal `Survey` anketa: filtr
+    /// savoli (`{code}-FILTER`, `SingleChoice`, qiymatlar 1/2, majburiy) va unga bog'liq
+    /// (`VisibilityRule`) savol (`{code}-FOLLOWUP`, `ShortText`, majburiy, FAQAT
+    /// `{code}-FILTER` = 1 bo'lganda ko'rinadi).
+    /// </summary>
+    public static async Task<TestDefinition> CreatePublishedBranchingFilterSurveyAsync(
+        AppDbContext db, DateTimeOffset now, string code, int displayOrder)
+    {
+        var testId = Guid.NewGuid();
+        var test = TestDefinition.Create(
+            testId, code, $"{code} nomi", displayOrder, estimatedMinutes: 5,
+            scoringStrategyCode: null, now: now, scoringMode: TestScoringMode.Survey, pageSize: 60);
+
+        var filterQuestion = Question.Create(
+            Guid.NewGuid(), testId, $"{code}-FILTER", 1, "Qo'shimcha kursga qatnashasizmi?", QuestionType.SingleChoice,
+            "SURVEY", scaleDirection: 1, weight: 1.0m, isRequired: true);
+        filterQuestion.AddOption(AnswerOption.Create(Guid.NewGuid(), filterQuestion.Id, "Ha", 1, 1));
+        filterQuestion.AddOption(AnswerOption.Create(Guid.NewGuid(), filterQuestion.Id, "Yo'q", 2, 2));
+        test.AddQuestion(filterQuestion, now);
+
+        var visibility = new VisibilityRule(
+            VisibilityMatch.All,
+            [new VisibilityCondition($"{code}-FILTER", VisibilityOperator.Equals, [1])]);
+
+        var followUpQuestion = Question.Create(
+            Guid.NewGuid(), testId, $"{code}-FOLLOWUP", 2, "Qaysi kurs?", QuestionType.ShortText,
+            "SURVEY", scaleDirection: 1, weight: 1.0m, isRequired: true, visibilityRule: visibility);
+        test.AddQuestion(followUpQuestion, now);
+
+        test.Publish(now);
+
+        db.TestDefinitions.Add(test);
+        await db.SaveChangesAsync();
+
+        await AttachTestToDefaultProgramAsync(db, now, testId, displayOrder);
+
+        return test;
     }
 
     public static string NewAccessToken(string seed) => $"access-token-{seed}-0123456789abcdef0123456789";
