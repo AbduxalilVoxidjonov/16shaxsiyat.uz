@@ -52,7 +52,7 @@ public sealed class PublicRegistrationModeEndpointTests : IClassFixture<PublicAp
         var program = AssessmentProgram.Create(
             Guid.NewGuid(), $"RM-PROG-{seed}", "Ro'yxatdan o'tishsiz dastur (sinov)", now,
             visibility: ProgramVisibility.Assigned, registrationMode: RegistrationMode.None);
-        program.AddTest(test.Id, 1, now);
+        program.AddTest(test.Id, 1, isPersonalityBatteryTest: false, now);
         program.Publish(now, hasPersonalityBattery: false);
 
         db.AssessmentPrograms.Add(program);

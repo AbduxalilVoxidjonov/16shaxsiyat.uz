@@ -21,7 +21,7 @@ public sealed class AssessmentProgramTests
         var program = CreateCustomProgram();
         var testDefinitionId = Guid.NewGuid();
 
-        program.AddTest(testDefinitionId, 1, Now);
+        program.AddTest(testDefinitionId, 1, isPersonalityBatteryTest: false, Now);
 
         program.Tests.Should().ContainSingle(t => t.TestDefinitionId == testDefinitionId && t.DisplayOrder == 1);
     }
@@ -31,9 +31,9 @@ public sealed class AssessmentProgramTests
     {
         var program = CreateCustomProgram();
         var testDefinitionId = Guid.NewGuid();
-        program.AddTest(testDefinitionId, 1, Now);
+        program.AddTest(testDefinitionId, 1, isPersonalityBatteryTest: false, Now);
 
-        var act = () => program.AddTest(testDefinitionId, 2, Now);
+        var act = () => program.AddTest(testDefinitionId, 2, isPersonalityBatteryTest: false, Now);
 
         var ex = act.Should().Throw<DomainException>().Which;
         ex.Code.Should().Be("PROGRAM_TEST_DUPLICATE");
@@ -44,7 +44,7 @@ public sealed class AssessmentProgramTests
     {
         var program = CreateCustomProgram();
         var testDefinitionId = Guid.NewGuid();
-        program.AddTest(testDefinitionId, 1, Now);
+        program.AddTest(testDefinitionId, 1, isPersonalityBatteryTest: false, Now);
 
         program.RemoveTest(testDefinitionId, Now);
 
@@ -66,7 +66,7 @@ public sealed class AssessmentProgramTests
     public void Publish_WithAtLeastOneTest_Succeeds()
     {
         var program = CreateCustomProgram();
-        program.AddTest(Guid.NewGuid(), 1, Now);
+        program.AddTest(Guid.NewGuid(), 1, isPersonalityBatteryTest: false, Now);
 
         program.Publish(Now, hasPersonalityBattery: false);
 
@@ -77,7 +77,7 @@ public sealed class AssessmentProgramTests
     public void Publish_AlreadyPublished_ThrowsDomainException()
     {
         var program = CreateCustomProgram();
-        program.AddTest(Guid.NewGuid(), 1, Now);
+        program.AddTest(Guid.NewGuid(), 1, isPersonalityBatteryTest: false, Now);
         program.Publish(Now, hasPersonalityBattery: false);
 
         var act = () => program.Publish(Now, hasPersonalityBattery: false);
@@ -103,8 +103,8 @@ public sealed class AssessmentProgramTests
         var program = CreateCustomProgram();
         var testId1 = Guid.NewGuid();
         var testId2 = Guid.NewGuid();
-        program.AddTest(testId1, 1, Now);
-        program.AddTest(testId2, 2, Now);
+        program.AddTest(testId1, 1, isPersonalityBatteryTest: false, Now);
+        program.AddTest(testId2, 2, isPersonalityBatteryTest: false, Now);
 
         program.ReorderTests([testId2, testId1], Now);
 
@@ -116,7 +116,7 @@ public sealed class AssessmentProgramTests
     public void ReorderTests_WithDifferentCount_ThrowsDomainException()
     {
         var program = CreateCustomProgram();
-        program.AddTest(Guid.NewGuid(), 1, Now);
+        program.AddTest(Guid.NewGuid(), 1, isPersonalityBatteryTest: false, Now);
 
         var act = () => program.ReorderTests([Guid.NewGuid(), Guid.NewGuid()], Now);
 
@@ -128,7 +128,7 @@ public sealed class AssessmentProgramTests
     public void ReorderTests_WithUnknownTestDefinitionId_ThrowsDomainException()
     {
         var program = CreateCustomProgram();
-        program.AddTest(Guid.NewGuid(), 1, Now);
+        program.AddTest(Guid.NewGuid(), 1, isPersonalityBatteryTest: false, Now);
 
         var act = () => program.ReorderTests([Guid.NewGuid()], Now);
 
@@ -164,7 +164,7 @@ public sealed class AssessmentProgramTests
         var program = AssessmentProgram.CreateSystemPublished(
             Guid.NewGuid(), "PERSONALITY_PROFILE", "Shaxsiyat profili", null, 1, [(Guid.NewGuid(), 1)], Now);
 
-        var act = () => program.AddTest(Guid.NewGuid(), 2, Now);
+        var act = () => program.AddTest(Guid.NewGuid(), 2, isPersonalityBatteryTest: false, Now);
 
         var ex = act.Should().Throw<DomainException>().Which;
         ex.Code.Should().Be("SYSTEM_PROGRAM_LOCKED");
@@ -210,7 +210,7 @@ public sealed class AssessmentProgramTests
     public void Publish_SetsProgramActive()
     {
         var program = CreateCustomProgram();
-        program.AddTest(Guid.NewGuid(), 1, Now);
+        program.AddTest(Guid.NewGuid(), 1, isPersonalityBatteryTest: false, Now);
 
         program.Publish(Now, hasPersonalityBattery: false);
 
@@ -447,7 +447,7 @@ public sealed class AssessmentProgramTests
     private static AssessmentProgram PublishedProgram()
     {
         var program = CreateCustomProgram();
-        program.AddTest(Guid.NewGuid(), 1, Now);
+        program.AddTest(Guid.NewGuid(), 1, isPersonalityBatteryTest: false, Now);
         program.Publish(Now, hasPersonalityBattery: false);
         return program;
     }
@@ -510,7 +510,7 @@ public sealed class AssessmentProgramTests
     public void Publish_NoneModeWithoutBattery_Succeeds()
     {
         var program = CreateCustomProgram();
-        program.AddTest(Guid.NewGuid(), 1, Now);
+        program.AddTest(Guid.NewGuid(), 1, isPersonalityBatteryTest: false, Now);
         program.SetRegistrationMode(RegistrationMode.None, hasPersonalityBattery: false, Now);
 
         program.Publish(Now, hasPersonalityBattery: false);
@@ -522,7 +522,7 @@ public sealed class AssessmentProgramTests
     public void Publish_NoneModeWithBattery_ThrowsDomainException()
     {
         var program = CreateCustomProgram();
-        program.AddTest(Guid.NewGuid(), 1, Now);
+        program.AddTest(Guid.NewGuid(), 1, isPersonalityBatteryTest: false, Now);
         program.SetRegistrationMode(RegistrationMode.None, hasPersonalityBattery: false, Now);
 
         // Nashr paytida chaqiruvchi tarkibni QAYTA hisoblaydi (`PublishProgramCommandHandler`) —
@@ -599,7 +599,7 @@ public sealed class AssessmentProgramTests
     public void Publish_BatteryWithOptionalBirthDate_ThrowsDomainException()
     {
         var program = CreateCustomProgram();
-        program.AddTest(Guid.NewGuid(), 1, Now);
+        program.AddTest(Guid.NewGuid(), 1, isPersonalityBatteryTest: false, Now);
         var custom = RegistrationFields.Default with { BirthDate = RegistrationFieldRequirement.Optional };
         program.SetRegistrationFields(custom, hasPersonalityBattery: false, Now);
 
@@ -617,10 +617,68 @@ public sealed class AssessmentProgramTests
     public void Publish_BatteryWithDefaultRegistrationFields_Succeeds()
     {
         var program = CreateCustomProgram();
-        program.AddTest(Guid.NewGuid(), 1, Now);
+        program.AddTest(Guid.NewGuid(), 1, isPersonalityBatteryTest: false, Now);
 
         program.Publish(Now, hasPersonalityBattery: true);
 
         program.Status.Should().Be(ProgramStatus.Published);
+    }
+
+    // --- P52 tuzatmasi (kod ko'rigi, 2026-09-11): `AddTest`ning UCHINCHI nazorat nuqtasi.
+    // Ilgari `AddTest` `isPersonalityBatteryTest`ni UMUMAN bilmas edi — quyidagi ANIQ yo'l
+    // ikkala mavjud nazorat nuqtasini (`SetRegistrationMode`/`SetRegistrationFields`, `Publish`)
+    // CHETLAB O'TIB, allaqachon nashr qilingan dasturga jimgina batareya biriktirar edi:
+    // 1) batareyasiz `Custom` dastur yaratiladi va nashr qilinadi (guard o'tadi — batareya yo'q);
+    // 2) `RegistrationFields.BirthDate`/`RegistrationMode` keyin bo'shashtiriladi (guard yana
+    //    o'tadi — bu payt ham batareya yo'q);
+    // 3) endi MBTI16/BIG5/... `AddTest` orqali biriktiriladi — `Publish()` QAYTA chaqirilmaydi,
+    //    shu sabab ikkinchi nazorat nuqtasi ishlamaydi. ---
+
+    [Fact]
+    public void AddTest_BatteryTestWhenRegistrationFieldsAlreadyLoosened_ThrowsDomainException()
+    {
+        var program = CreateCustomProgram();
+        program.AddTest(Guid.NewGuid(), 1, isPersonalityBatteryTest: false, Now);
+        program.Publish(Now, hasPersonalityBattery: false);
+
+        // Batareya HALI yo'q — guard o'tadi (BR-8/P52 buzilmaydi, chunki hozircha rost).
+        var loosenedFields = RegistrationFields.Default with { BirthDate = RegistrationFieldRequirement.Optional };
+        program.SetRegistrationFields(loosenedFields, hasPersonalityBattery: false, Now);
+
+        // Endi (allaqachon nashr qilingan dasturga) MBTI16 kabi batareya anketasi biriktiriladi —
+        // `Publish` qayta chaqirilmaydi, shu sabab bu — YAGONA qolgan nazorat nuqtasi.
+        var act = () => program.AddTest(Guid.NewGuid(), 2, isPersonalityBatteryTest: true, Now);
+
+        var ex = act.Should().Throw<DomainException>().Which;
+        ex.Code.Should().Be("REGISTRATION_FIELD_REQUIRED_FOR_BATTERY");
+        program.Tests.Should().HaveCount(1, "muvaffaqiyatsiz urinish tarkibni o'zgartirmasligi kerak");
+    }
+
+    [Fact]
+    public void AddTest_BatteryTestWhenRegistrationModeNone_ThrowsDomainException()
+    {
+        var program = CreateCustomProgram();
+        program.AddTest(Guid.NewGuid(), 1, isPersonalityBatteryTest: false, Now);
+        program.Publish(Now, hasPersonalityBattery: false);
+        program.SetRegistrationMode(RegistrationMode.None, hasPersonalityBattery: false, Now);
+
+        var act = () => program.AddTest(Guid.NewGuid(), 2, isPersonalityBatteryTest: true, Now);
+
+        var ex = act.Should().Throw<DomainException>().Which;
+        ex.Code.Should().Be("REGISTRATION_REQUIRED_FOR_BATTERY");
+        program.Tests.Should().HaveCount(1, "muvaffaqiyatsiz urinish tarkibni o'zgartirmasligi kerak");
+    }
+
+    [Fact]
+    public void AddTest_BatteryTestWithCompliantRegistration_Succeeds()
+    {
+        var program = CreateCustomProgram();
+        program.AddTest(Guid.NewGuid(), 1, isPersonalityBatteryTest: false, Now);
+        program.Publish(Now, hasPersonalityBattery: false);
+
+        var testDefinitionId = Guid.NewGuid();
+        program.AddTest(testDefinitionId, 2, isPersonalityBatteryTest: true, Now);
+
+        program.Tests.Should().Contain(t => t.TestDefinitionId == testDefinitionId);
     }
 }

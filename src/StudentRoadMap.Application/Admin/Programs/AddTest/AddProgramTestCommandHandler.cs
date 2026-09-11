@@ -2,6 +2,7 @@ using MediatR;
 using StudentRoadMap.Application.Admin.Common;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
+using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Common;
 using StudentRoadMap.Domain.Identity;
 
@@ -35,16 +36,21 @@ internal sealed class AddProgramTestCommandHandler : IRequestHandler<AddProgramT
             return Result.Failure<AdminProgramDetailDto>(new Error(ProblemCodes.NotFound, "Dastur topilmadi."));
         }
 
-        var testDefinitionExists = await _executor.AnyAsync(
+        var testDefinition = await _executor.FirstOrDefaultAsync(
             _context.TestDefinitions.Where(t => t.Id == request.TestDefinitionId),
             cancellationToken).ConfigureAwait(false);
 
-        if (!testDefinitionExists)
+        if (testDefinition is null)
         {
             return Result.Failure<AdminProgramDetailDto>(new Error(ProblemCodes.NotFound, "Anketa topilmadi."));
         }
 
-        program.AddTest(request.TestDefinitionId, request.DisplayOrder, now);
+        // P52: `AssessmentProgram.AddTest`ning UCHINCHI nazorat nuqtasi (kod ko'rigi, 2026-09-11) —
+        // biriktirilayotgan ANKETANING o'zi batareyaga kiradimi (`PersonalityBattery.Includes`),
+        // `Publish`/`SetRegistrationMode`dagi "dasturda batareya bormi" bayrog'idan farqli.
+        var isPersonalityBatteryTest = PersonalityBattery.Includes(testDefinition.Kind, testDefinition.ScoringMode);
+
+        program.AddTest(request.TestDefinitionId, request.DisplayOrder, isPersonalityBatteryTest, now);
 
         // ⚠️ QA topilmasi (SQLite VA Postgres'da bir xil): `program` avval SO'ROV orqali
         // (Add() EMAS) tracked qilingan — domen metodi ichida yaratilgan yangi `ProgramTest`

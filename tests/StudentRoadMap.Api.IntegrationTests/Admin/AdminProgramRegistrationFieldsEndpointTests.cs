@@ -208,7 +208,7 @@ public sealed class AdminProgramRegistrationFieldsEndpointTests : IClassFixture<
 
     /// <summary>IKKINCHI nazorat nuqtasi — `Publish`da ham qulflangan (`SetRegistrationFields`ni chetlab o'tib bo'lmaydi).</summary>
     [Fact]
-    public async Task Publish_OptionalBirthDateBatareyaliDastur_400REGISTRATION_FIELD_REQUIRED_FOR_BATTERYQaytaradi()
+    public async Task AddTest_BatareyaAnketasiBoshashtirilganSozlamagaBiriktirilsa_400REGISTRATION_FIELD_REQUIRED_FOR_BATTERYQaytaradi()
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -230,12 +230,18 @@ public sealed class AdminProgramRegistrationFieldsEndpointTests : IClassFixture<
             TestJson.Options);
         var created = await createResponse.Content.ReadFromJsonAsync<AdminProgramDetailDto>(TestJson.Options);
 
-        await client.PostAsJsonAsync($"/api/admin/programs/{created!.Id}/tests", new { testDefinitionId = mbtiTest.Id, displayOrder = 1 }, TestJson.Options);
+        // UCHINCHI nazorat nuqtasi (P52 kod ko'rigi tuzatmasi): buzilish endi NASHRDA emas,
+        // BIRIKTIRISH paytining O'ZIDA to'siladi — ya'ni "batareya bor, lekin sinf ixtiyoriy"
+        // holatiga umuman yetib bo'lmaydi. Nashr darajasidagi qulf domen testlarida qoladi
+        // (`AssessmentProgramTests.Publish_BatteryWithOptionalBirthDate_ThrowsDomainException`):
+        // u yerda bunday holatni sun'iy qurish mumkin, API orqali esa endi mumkin emas.
+        var addTestResponse = await client.PostAsJsonAsync(
+            $"/api/admin/programs/{created!.Id}/tests",
+            new { testDefinitionId = mbtiTest.Id, displayOrder = 1 },
+            TestJson.Options);
 
-        var publishResponse = await client.PostAsync(new Uri($"/api/admin/programs/{created.Id}/publish", UriKind.Relative), content: null);
-
-        publishResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var problem = await publishResponse.Content.ReadFromJsonAsync<JsonElement>();
+        addTestResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var problem = await addTestResponse.Content.ReadFromJsonAsync<JsonElement>();
         problem.GetProperty("code").GetString().Should().Be("REGISTRATION_FIELD_REQUIRED_FOR_BATTERY");
     }
 }

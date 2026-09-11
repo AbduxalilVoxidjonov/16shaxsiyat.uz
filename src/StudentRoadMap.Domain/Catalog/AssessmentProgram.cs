@@ -227,14 +227,34 @@ public sealed class AssessmentProgram : AggregateRoot
         return newlyAdded;
     }
 
-    /// <summary>Dasturga anketa biriktiradi. Tizim dasturida taqiqlangan (BR-8 ruhida).</summary>
-    public void AddTest(Guid testDefinitionId, int displayOrder, DateTimeOffset now)
+    /// <summary>
+    /// Dasturga anketa biriktiradi. Tizim dasturida taqiqlangan (BR-8 ruhida).
+    ///
+    /// <paramref name="isPersonalityBatteryTest"/> — biriktirilayotgan ANKETANING o'zi ilmiy
+    /// shaxsiyat batareyasiga kirimi (`Domain.Catalog.PersonalityBattery.Includes`, chaqiruvchi
+    /// — `AddProgramTestCommandHandler` — `TestDefinition.Kind`/`ScoringMode`dan hisoblab beradi:
+    /// domen agregatining o'zi `TestDefinition`ga to'g'ridan-to'g'ri murojaat qila olmaydi).
+    /// **P52 xato tuzatmasi (2026-09-11, kod ko'rigi):** ilgari `AddTest` bu haqda hech narsa
+    /// bilmas edi — batareyasiz `Custom` dastur nashr qilinib, `RegistrationMode`/`RegistrationFields`
+    /// keyin bo'shashtirilib (guard o'tadi, chunki o'sha payt batareya YO'Q), so'ng shu metod orqali
+    /// MBTI16/BIG5/RIASEC/ACTIVITY biriktirilsa ikkala nazorat nuqtasi (`SetRegistrationMode`/
+    /// `SetRegistrationFields`, `Publish`) CHETLAB O'TILARDI — natija `Age: 0`/`Grade: 0` bilan
+    /// jimgina buzilardi. Endi bu — UCHINCHI nazorat nuqtasi: batareya anketasi biriktirilayotgan
+    /// PAYTNING O'ZIDA joriy `RegistrationMode`/`RegistrationFields` tekshiriladi.
+    /// </summary>
+    public void AddTest(Guid testDefinitionId, int displayOrder, bool isPersonalityBatteryTest, DateTimeOffset now)
     {
         GuardNotLocked();
 
         if (_tests.Any(t => t.TestDefinitionId == testDefinitionId))
         {
             throw new DomainException("PROGRAM_TEST_DUPLICATE", "Bu anketa allaqachon dasturga biriktirilgan.");
+        }
+
+        if (isPersonalityBatteryTest)
+        {
+            GuardRegistrationModeAllowsBatteryAttachment();
+            GuardRegistrationFieldsAllowBatteryAttachment();
         }
 
         _tests.Add(ProgramTest.Create(Guid.NewGuid(), Id, testDefinitionId, displayOrder));
@@ -381,6 +401,35 @@ public sealed class AssessmentProgram : AggregateRoot
             throw new DomainException(
                 "REGISTRATION_REQUIRED_FOR_BATTERY",
                 "Shaxsiyat batareyasi bo'lgan dasturni ro'yxatdan o'tishsiz nashr qilib bo'lmaydi.");
+        }
+    }
+
+    /// <summary>
+    /// `AddTest`ning UCHINCHI nazorat nuqtasi (`GuardRegistrationModeAllowsBattery`/
+    /// `GuardRegistrationFieldsAllowBattery`dan farqli, bu yerda `hasPersonalityBattery` doim
+    /// `true` — chaqiruvchi allaqachon "biriktirilayotgan anketa batareyaga kiradi" deb bilgan).
+    /// Xato xabari aniq amal ko'rsatadi — admin nima qilishi kerakligini bilsin.
+    /// </summary>
+    private void GuardRegistrationModeAllowsBatteryAttachment()
+    {
+        if (RegistrationMode == RegistrationMode.None)
+        {
+            throw new DomainException(
+                "REGISTRATION_REQUIRED_FOR_BATTERY",
+                "Bu anketa ilmiy shaxsiyat batareyasiga kiradi. Avval dastur sozlamasida " +
+                "ro'yxatdan o'tishni yoqing (\"Ro'yxatdan o'tish rejimi\" — \"To'liq\"), so'ng bu anketani biriktiring.");
+        }
+    }
+
+    /// <summary>`GuardRegistrationModeAllowsBatteryAttachment` bilan bir xil naqsh, maydonlar uchun.</summary>
+    private void GuardRegistrationFieldsAllowBatteryAttachment()
+    {
+        if (!ResolveRegistrationFields().SatisfiesPersonalityBatteryInvariant())
+        {
+            throw new DomainException(
+                "REGISTRATION_FIELD_REQUIRED_FOR_BATTERY",
+                "Bu anketa ilmiy shaxsiyat batareyasiga kiradi. Avval dastur sozlamasida " +
+                "tug'ilgan sana va sinfni \"Majburiy\" qiling, so'ng bu anketani biriktiring.");
         }
     }
 

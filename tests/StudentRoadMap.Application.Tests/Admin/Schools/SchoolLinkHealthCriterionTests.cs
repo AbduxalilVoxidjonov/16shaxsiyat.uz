@@ -234,7 +234,7 @@ public sealed class SchoolLinkHealthCriterionTests
         switch (status)
         {
             case ProgramStatus.Published:
-                program.AddTest(Guid.NewGuid(), 1, Now);
+                program.AddTest(Guid.NewGuid(), 1, isPersonalityBatteryTest: false, Now);
                 program.Publish(Now, hasPersonalityBattery: false);
                 break;
             case ProgramStatus.Archived:

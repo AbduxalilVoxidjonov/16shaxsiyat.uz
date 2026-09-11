@@ -78,7 +78,7 @@ public sealed class AdminPublicSpaceEndpointTests : IClassFixture<PublicApiTestF
         var testDefinition = await TestDataFactory.CreatePublishedTestAsync(db, now, $"{code}-TEST", displayOrder: 1);
 
         var program = AssessmentProgram.Create(Guid.NewGuid(), code, "O'chirilgan dastur (sinov)", now, visibility: ProgramVisibility.Assigned);
-        program.AddTest(testDefinition.Id, 1, now);
+        program.AddTest(testDefinition.Id, 1, isPersonalityBatteryTest: false, now);
         program.Publish(now, hasPersonalityBattery: false);
         program.Deactivate(now);
         db.AssessmentPrograms.Add(program);

@@ -48,7 +48,7 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
         var program = AssessmentProgram.Create(
             Guid.NewGuid(), $"RF-PROG-{seed}", "Moslashtirilgan ro'yxatdan o'tish (sinov)", now,
             visibility: ProgramVisibility.Assigned, registrationFields: fields);
-        program.AddTest(test.Id, 1, now);
+        program.AddTest(test.Id, 1, isPersonalityBatteryTest: false, now);
         program.Publish(now, hasPersonalityBattery: false);
 
         db.AssessmentPrograms.Add(program);

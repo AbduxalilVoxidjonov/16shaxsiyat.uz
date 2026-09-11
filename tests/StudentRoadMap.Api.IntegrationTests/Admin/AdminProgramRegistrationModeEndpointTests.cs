@@ -145,7 +145,7 @@ public sealed class AdminProgramRegistrationModeEndpointTests : IClassFixture<Pu
 
     /// <summary>IKKINCHI nazorat nuqtasi — `Publish`da ham qulflangan (`SetRegistrationMode`ni chetlab o'tib bo'lmaydi).</summary>
     [Fact]
-    public async Task Publish_RegistrationModeNoneBatareyaliDastur_400REGISTRATION_REQUIRED_FOR_BATTERYQaytaradi()
+    public async Task AddTest_BatareyaAnketasiNoneRejimigaBiriktirilsa_400REGISTRATION_REQUIRED_FOR_BATTERYQaytaradi()
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -159,12 +159,17 @@ public sealed class AdminProgramRegistrationModeEndpointTests : IClassFixture<Pu
             TestJson.Options);
         var created = await createResponse.Content.ReadFromJsonAsync<AdminProgramDetailDto>(TestJson.Options);
 
-        await client.PostAsJsonAsync($"/api/admin/programs/{created!.Id}/tests", new { testDefinitionId = mbtiTest.Id, displayOrder = 1 }, TestJson.Options);
+        // Yuqoridagi `AdminProgramRegistrationFieldsEndpointTests`dagi bilan bir xil sabab:
+        // batareya anketasi `RegistrationMode = None` dasturga BIRIKTIRILAYOTGAN paytda rad
+        // etiladi, nashrni kutmaydi. Nashr qulfi domen testida saqlanadi
+        // (`AssessmentProgramTests.Publish_NoneModeWithBattery_ThrowsDomainException`).
+        var addTestResponse = await client.PostAsJsonAsync(
+            $"/api/admin/programs/{created!.Id}/tests",
+            new { testDefinitionId = mbtiTest.Id, displayOrder = 1 },
+            TestJson.Options);
 
-        var publishResponse = await client.PostAsync(new Uri($"/api/admin/programs/{created.Id}/publish", UriKind.Relative), content: null);
-
-        publishResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var problem = await publishResponse.Content.ReadFromJsonAsync<JsonElement>();
+        addTestResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var problem = await addTestResponse.Content.ReadFromJsonAsync<JsonElement>();
         problem.GetProperty("code").GetString().Should().Be("REGISTRATION_REQUIRED_FOR_BATTERY");
     }
 }

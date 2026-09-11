@@ -132,7 +132,7 @@ public sealed class ProgramStateRulesTests
             case ProgramState.Draft:
             {
                 var draft = Draft();
-                draft.AddTest(Guid.NewGuid(), 1, Now);
+                draft.AddTest(Guid.NewGuid(), 1, isPersonalityBatteryTest: false, Now);
                 return draft;
             }
 
@@ -196,7 +196,7 @@ public sealed class ProgramStateRulesTests
     private static AssessmentProgram Published()
     {
         var program = Draft();
-        program.AddTest(Guid.NewGuid(), 1, Now);
+        program.AddTest(Guid.NewGuid(), 1, isPersonalityBatteryTest: false, Now);
         program.Publish(Now, hasPersonalityBattery: false);
         return program;
     }

@@ -80,8 +80,9 @@ internal static class TestDataFactory
         if (existing is null)
         {
             var program = AssessmentProgram.Create(Guid.NewGuid(), DefaultProgramCode, "Standart dastur (sinov)", now, visibility: ProgramVisibility.Public);
-            program.AddTest(testDefinitionId, displayOrder, now);
-            program.Publish(now, hasPersonalityBattery: false);
+            var isPersonalityBatteryTest = await IsPersonalityBatteryTestAsync(db, testDefinitionId);
+            program.AddTest(testDefinitionId, displayOrder, isPersonalityBatteryTest, now);
+            program.Publish(now, hasPersonalityBattery: isPersonalityBatteryTest);
             db.AssessmentPrograms.Add(program);
             await db.SaveChangesAsync();
             db.Entry(program).State = EntityState.Detached;
@@ -104,6 +105,22 @@ internal static class TestDataFactory
             await db.Database.ExecuteSqlInterpolatedAsync(
                 $"UPDATE assessment_programs SET status = {(short)ProgramStatus.Published} WHERE id = {existing.Id}");
         }
+    }
+
+    /// <summary>
+    /// P52 (kod ko'rigi, 2026-09-11): `AssessmentProgram.AddTest`ning UCHINCHI nazorat nuqtasi
+    /// haqiqiy qiymat talab qiladi (`isPersonalityBatteryTest` — biriktirilayotgan ANKETANING
+    /// o'zi batareyaga kiradimi), shu sabab bu yerda ham ishlab chiqarish kodidagi bilan bir
+    /// xil qoida (`PersonalityBattery.Includes`) qo'llaniladi — qattiq kodlangan `false` o'rniga.
+    /// </summary>
+    private static async Task<bool> IsPersonalityBatteryTestAsync(AppDbContext db, Guid testDefinitionId)
+    {
+        var testDefinition = await db.TestDefinitions.AsNoTracking()
+            .Where(t => t.Id == testDefinitionId)
+            .Select(t => new { t.Kind, t.ScoringMode })
+            .FirstOrDefaultAsync();
+
+        return testDefinition is not null && PersonalityBattery.Includes(testDefinition.Kind, testDefinition.ScoringMode);
     }
 
     /// <summary>
@@ -543,12 +560,15 @@ internal static class TestDataFactory
     {
         var program = AssessmentProgram.Create(Guid.NewGuid(), code, $"{code} nomi", now, visibility: visibility);
 
+        var hasPersonalityBattery = false;
         foreach (var (testDefinitionId, displayOrder) in tests)
         {
-            program.AddTest(testDefinitionId, displayOrder, now);
+            var isPersonalityBatteryTest = await IsPersonalityBatteryTestAsync(db, testDefinitionId);
+            hasPersonalityBattery |= isPersonalityBatteryTest;
+            program.AddTest(testDefinitionId, displayOrder, isPersonalityBatteryTest, now);
         }
 
-        program.Publish(now, hasPersonalityBattery: false);
+        program.Publish(now, hasPersonalityBattery);
 
         db.AssessmentPrograms.Add(program);
         await db.SaveChangesAsync();
