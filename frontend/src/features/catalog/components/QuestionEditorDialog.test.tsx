@@ -239,6 +239,28 @@ describe('QuestionEditorDialog — turga qarab maydonlar', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("yangi savolda (ruscha/inglizcha bo'sh) 'Boshqa tillar' bloki yopiq boshlanadi", () => {
+    mockFetch();
+    const { container } = renderDialog();
+
+    const details = container.querySelector('details');
+    expect(details).not.toBeNull();
+    expect(details?.open).toBe(false);
+    expect(screen.getByText('Boshqa tillar (ixtiyoriy)')).toBeInTheDocument();
+
+    // Maydonlar DOM'da mavjud (register ishlashi uchun) — faqat vizual yig'ilgan.
+    expect(screen.getByLabelText('Matni (ruscha)')).toBeInTheDocument();
+    expect(screen.getByLabelText('Matni (inglizcha)')).toBeInTheDocument();
+  });
+
+  it("tahrirlashda ruscha/inglizcha tarjima mavjud bo'lsa 'Boshqa tillar' bloki ochiq boshlanadi", () => {
+    mockFetch();
+    const { container } = renderDialog({ question: priorQuestion({ textRu: 'Привет' }) });
+
+    const details = container.querySelector('details');
+    expect(details?.open).toBe(true);
+  });
+
   it("forma keng ekranda ikki ustunli grid, 390px'da esa bitta ustun bo'lib qoladi", () => {
     mockFetch();
     const { container } = renderDialog();

@@ -207,7 +207,7 @@ export function QuestionEditorDialog({
       description={isEdit ? question.code : t('catalog.questionForm.createDescription')}
       // Ikki ustunli forma uchun standart `max-w-md` tor — `Dialog`ning o'zi o'zgarmaydi,
       // faqat prop (`SchoolFormDialog` naqshi).
-      className="max-w-3xl"
+      className="max-w-4xl"
       footer={
         <>
           <Button variant="outline" onClick={onClose} disabled={isMutating}>
@@ -222,11 +222,12 @@ export function QuestionEditorDialog({
       {/*
         Ikki ustunli tartib (egasining talabi: oyna juda uzun bo'lib ketmasin). `sm:` dan
         yuqorida qisqa maydonlar ikkitalik ustunda, mobilda (390px) bitta ustun bo'lib qoladi
-        (`SchoolFormDialog` naqshi). Uzun/murakkab bloklar (matnlar, variantlar va ko'rsatish
-        sharti muharrirlari, qulflangan tizim izohi) doim to'liq kenglikda —
+        (`SchoolFormDialog` naqshi). Uzun/murakkab bloklar (matni (o'zbekcha), variantlar va
+        ko'rsatish sharti muharrirlari, qulflangan tizim izohi) doim to'liq kenglikda —
         `sm:col-span-2`. Bog'liq qisqa maydonlar (kod/tur/tartib, shkala/yo'nalish/og'irlik,
         placeholder/shablon/uzunlik, min/max tanlov) o'z ichki 2 ustunli mini-grid'iga
-        joylangan — shunda ular qo'shni sharti bilan aralashib ketmaydi.
+        joylangan — shunda ular qo'shni sharti bilan aralashib ketmaydi. Ruscha/inglizcha matni
+        `<details>` ichida yig'ilgan (mahsulot hozircha faqat o'zbekcha) — pastga qarang.
       */}
       <form
         id={FORM_ID}
@@ -286,26 +287,47 @@ export function QuestionEditorDialog({
         <div className="sm:col-span-2">
           <Textarea
             label={t('catalog.questionForm.textUzLabel')}
+            rows={3}
             error={errors.textUz?.message}
             {...register('textUz')}
           />
         </div>
-        <div className="sm:col-span-2">
-          <Textarea
-            label={t('catalog.questionForm.textRuLabel')}
-            hint={t('catalog.questionForm.optionalHint')}
-            error={errors.textRu?.message}
-            {...register('textRu')}
-          />
-        </div>
-        <div className="sm:col-span-2">
-          <Textarea
-            label={t('catalog.questionForm.textEnLabel')}
-            hint={t('catalog.questionForm.optionalHint')}
-            error={errors.textEn?.message}
-            {...register('textEn')}
-          />
-        </div>
+
+        {/*
+          Mahsulot hozircha faqat o'zbekcha (`ru`/`en` lokal fayllari bo'sh, `PROGRESS.md`),
+          shuning uchun bu ikki maydon 99% holatda bo'sh turadi va faqat balandlik yeydi.
+          `<details>` ichiga yig'ilgan — klaviatura/skrinrider uchun brauzerning o'zi ishlaydi,
+          qo'shimcha `aria-*` shart emas. Maydonlar DOM'da doim mavjud (faqat vizual yig'ilgan),
+          shuning uchun `register` va validatsiya buzilmaydi. Tahrirlashda mavjud tarjima
+          ko'rinmay qolmasligi uchun `textRu`/`textEn` to'ldirilgan bo'lsa blok ochiq boshlanadi
+          (mount vaqtida bir marta hisoblanadi — `QuestionsSection` bu oynani har safar qayta
+          o'qishda mount qiladi, shuning uchun foydalanuvchi qo'lda ochgan/yopgan holatiga
+          keyingi render aralashmaydi).
+        */}
+        <details
+          className="sm:col-span-2"
+          open={Boolean(question?.textRu || question?.textEn)}
+        >
+          <summary className="cursor-pointer text-sm font-medium text-ink-soft">
+            {t('catalog.questionForm.otherLanguagesToggle')}
+          </summary>
+          <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Textarea
+              label={t('catalog.questionForm.textRuLabel')}
+              hint={t('catalog.questionForm.optionalHint')}
+              rows={3}
+              error={errors.textRu?.message}
+              {...register('textRu')}
+            />
+            <Textarea
+              label={t('catalog.questionForm.textEnLabel')}
+              hint={t('catalog.questionForm.optionalHint')}
+              rows={3}
+              error={errors.textEn?.message}
+              {...register('textEn')}
+            />
+          </div>
+        </details>
 
         {isSystem ? (
           // Tizim savolida bu uch maydon FAQAT ko'rsatiladi — forma qiymatlaridan emas,

@@ -1305,6 +1305,7 @@
       "textUzLabel": "Matni (o'zbekcha)",
       "textRuLabel": "Matni (ruscha)",
       "textEnLabel": "Matni (inglizcha)",
+      "otherLanguagesToggle": "Boshqa tillar (ixtiyoriy)",
       "optionalHint": "Ixtiyoriy.",
       "orderLabel": "Tartib raqami",
       "isActiveLabel": "Savol faol (o'quvchiga ko'rsatiladi)",
