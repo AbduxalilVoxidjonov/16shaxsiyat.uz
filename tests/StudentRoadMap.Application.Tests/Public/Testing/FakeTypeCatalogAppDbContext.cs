@@ -90,6 +90,8 @@ internal sealed class FakeTypeCatalogAppDbContext : IAppDbContext
 
     public IQueryable<SchoolLinkView> SchoolLinkViews => throw NotUsed(nameof(SchoolLinkViews));
 
+    public IQueryable<Domain.Settings.RegistrationFormSettings> RegistrationFormSettings => throw NotUsed(nameof(RegistrationFormSettings));
+
     public IQueryable<AnalysisJob> AnalysisJobs => throw NotUsed(nameof(AnalysisJobs));
 
     public IQueryable<PublicUser> PublicUsers => throw NotUsed(nameof(PublicUsers));

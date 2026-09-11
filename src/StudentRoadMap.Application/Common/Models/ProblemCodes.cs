@@ -258,6 +258,34 @@ public static class ProblemCodes
     /// </summary>
     public const string ReferencedRecordExists = "REFERENCED_RECORD_EXISTS";
 
+    // --- P52-tarmoqlanuvchi-so'rovnoma davomi (2026-09-11/12, egasining talabi) —
+    // GLOBAL ro'yxatdan o'tish formasi sozlamasi (`RegistrationFormSettings`, `docs/18` §9.6). ---
+
+    /// <summary>
+    /// `PUT /api/admin/settings/registration-form` — `F.I.Sh.` maydonining `requirement`ini
+    /// `Required`dan boshqasiga o'rnatishga urinish. Ism kerak bo'lmasa dasturda
+    /// `RegistrationMode = None` bor (400).
+    /// </summary>
+    public const string RegistrationFormFullNameLocked = "REGISTRATION_FORM_FULL_NAME_LOCKED";
+
+    /// <summary>
+    /// O'z maydonining (`customFields[].code`) kodi noto'g'ri shaklda — faqat lotin harf,
+    /// raqam, `-`/`_` (1-20 belgi), anketa savol kodlari bilan bir xil qoida (400).
+    /// </summary>
+    public const string RegistrationFormFieldCodeInvalid = "REGISTRATION_FORM_FIELD_CODE_INVALID";
+
+    /// <summary>
+    /// O'z maydon kodi ikkinchi marta takrorlangan YOKI asosiy maydon nomi (`fullName`,
+    /// `birthDate`, ...) bilan to'qnashgan (409).
+    /// </summary>
+    public const string RegistrationFormFieldCodeDuplicate = "REGISTRATION_FORM_FIELD_CODE_DUPLICATE";
+
+    /// <summary>`SingleChoice`/`MultiChoice` maydonida 2 tadan kam tanlov varianti (400).</summary>
+    public const string RegistrationFormChoiceOptionsInsufficient = "REGISTRATION_FORM_CHOICE_OPTIONS_INSUFFICIENT";
+
+    /// <summary>Bitta maydon ichida takroriy tanlov qiymati (`options[].value`) (409).</summary>
+    public const string RegistrationFormOptionValueDuplicate = "REGISTRATION_FORM_OPTION_VALUE_DUPLICATE";
+
     /// <summary>`Error.Code` → HTTP status. Ro'yxatda yo'q kod uchun standart qiymat `409` (domen holat mashinasi konflikti).</summary>
     public static readonly IReadOnlyDictionary<string, int> HttpStatusByCode = new Dictionary<string, int>(StringComparer.Ordinal)
     {
@@ -312,6 +340,11 @@ public static class ProblemCodes
         [QuestionInUse] = StatusCodes.Status409Conflict,
         [QuestionReferencedByVisibility] = StatusCodes.Status409Conflict,
         [ReferencedRecordExists] = StatusCodes.Status409Conflict,
+        [RegistrationFormFullNameLocked] = StatusCodes.Status400BadRequest,
+        [RegistrationFormFieldCodeInvalid] = StatusCodes.Status400BadRequest,
+        [RegistrationFormFieldCodeDuplicate] = StatusCodes.Status409Conflict,
+        [RegistrationFormChoiceOptionsInsufficient] = StatusCodes.Status400BadRequest,
+        [RegistrationFormOptionValueDuplicate] = StatusCodes.Status409Conflict,
     };
 
     /// <summary>Default (`docs/06` jadvaliga kirmagan domen kodlari uchun) — holat mashinasi konflikti.</summary>

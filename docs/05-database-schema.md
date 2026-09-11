@@ -583,7 +583,7 @@ alter table admin_users add column pending_totp_created_at timestamptz null;
 | `SchoolKind` | 1 School (maktab havolasi oqimi), 2 PublicSpace (ommaviy makon) — `schools.kind` |
 | `PublicUserDeletionReason` | 1 NoLongerNeeded, 2 NotUseful, 3 PrivacyConcern, 4 CreatedByMistake, 5 Other — `public_users.deletion_reason` (2026-09-08) |
 | `RegistrationMode` | 1 Full, 2 None — `assessment_programs.registration_mode` (P52, 2026-09-11) |
-| `RegistrationFieldRequirement` | 1 Hidden, 2 Optional, 3 Required — `assessment_programs.registration_fields` jsonb ichida SATR sifatida (P52 kengaytmasi, 2026-09-11) |
+| `RegistrationFieldRequirement` | 1 Hidden, 2 Optional, 3 Required — QAYTA ISHLATILADI: ilgari `assessment_programs.registration_fields` (eskirgan), endi `registration_form_settings.definition` jsonb ichida ham SATR sifatida (2026-09-11/12) |
 
 ---
 
@@ -726,6 +726,61 @@ frontend/backend nomuvofiqligi tufayli (`docs/18` §9.5.1) `gender` standarti `O
 `RegistrationFields.Default` konstantasi o'zgardi, migratsiya qayta yozilmadi.
 
 **jsonb shakli** (camelCase, enum — satr): `docs/18` §9.5.1.
+
+> ⚠️ **2026-09-11/12: bu ustun ESKIRGAN.** Bir kun o'tib egasi ro'yxatdan o'tish sozlamasini
+> GLOBAL qilishga qaror qildi (pastdagi `registration_form_settings`) — sabab: ikki joyda bir
+> xil sozlama ushbu loyihada qayta-qayta chalkashlikka olib kelgan naqsh. `registration_fields`
+> ustuni HOZIRCHA qoladi (destruktiv o'zgarish ikki bosqichda, §4 siyosati) va 1-to'lqin
+> doirasida hali sessiya oqimi (`StartSessionCommandHandler`) tomonidan o'qiladi — ustunni
+> alohida keyingi migratsiyada o'chirish rejalashtirilgan (`PROGRESS.md` risklar jadvali).
+
+### 2026-09-11/12 da qo'shilgan — GLOBAL ro'yxatdan o'tish formasi sozlamasi (migratsiya `AddRegistrationFormSettings`)
+
+Egasining qarori (`docs/18` §9.6): yuqoridagi har-dasturda-alohida sozlama (`registration_fields`)
+GLOBAL sozlamaga almashtiriladi — bitta joydan barcha dasturlar uchun boshqariladi. Yangi jadval,
+destruktiv qadam yo'q, bir bosqichda bajarildi.
+
+```sql
+CREATE TABLE registration_form_settings (
+    id                        uuid PRIMARY KEY,      -- HAR DOIM bitta qat'iy qiymat (singleton, gen_random_uuid() YO'Q)
+    definition                jsonb        NOT NULL,
+    updated_at                timestamptz  NOT NULL DEFAULT now(),
+    updated_by_admin_user_id  uuid
+);
+```
+
+Yagona qatorlik PK orqali ta'minlanadi: dastur kodi (`RegistrationFormSettings.SingletonId`,
+qattiq kodlangan `Guid`) bilan yaratadi/yangilaydi — boshqa `id` bilan qator hech qachon
+yozilmaydi, shu sabab alohida `CHECK`/unique indeks shart emas. Jadvalda umuman qator
+bo'lmasligi ("hali hech kim `PUT` qilmagan") ham to'g'ri holat — bu holda
+`RegistrationFormDefinition.Default` ishlatiladi ("`NULL` = standart" naqshi).
+
+**`definition` jsonb shakli** (camelCase, enumlar — satr, `docs/18` §9.6.1):
+
+```json
+{
+  "coreFields": {
+    "fullName":    { "requirement": "Required", "labelUz": "F.I.Sh.", "placeholderUz": null, "order": 1 },
+    "birthDate":   { "requirement": "Required", "labelUz": "Tug'ilgan sana", "placeholderUz": null, "order": 2 },
+    "gender":      { "requirement": "Required", "labelUz": "Jins", "placeholderUz": null, "order": 3 },
+    "grade":       { "requirement": "Required", "labelUz": "Sinf", "placeholderUz": null, "order": 4 },
+    "classLetter": { "requirement": "Optional", "labelUz": "Sinf harfi", "placeholderUz": null, "order": 5 },
+    "phone":       { "requirement": "Required", "labelUz": "Telefon raqami", "placeholderUz": null, "order": 6 },
+    "parentPhone": { "requirement": "Optional", "labelUz": "Ota-ona telefoni", "placeholderUz": null, "order": 7 },
+    "email":       { "requirement": "Optional", "labelUz": "Email", "placeholderUz": null, "order": 8 }
+  },
+  "customFields": [
+    { "code": "PARENT_JOB", "type": "ShortText", "labelUz": "Ota-onangiz kasbi",
+      "placeholderUz": "Masalan: o'qituvchi", "requirement": "Optional",
+      "maxLength": 200, "inputPattern": null, "options": null, "order": 9 }
+  ]
+}
+```
+
+`customFields[].type` — mavjud `QuestionType` nomlaridan (yangi atama o'ylab topilmadi):
+FAQAT `ShortText`/`LongText`/`Phone`/`SingleChoice`/`MultiChoice`. Standart qiymat (sozlama
+umuman yaratilmagan bo'lganda) yuqoridagi `coreFields` bilan AYNAN mos — 2026-09-11 gacha
+bo'lgan `RegistrationFields.Default` bilan bayt-bayt bir xil (`gender` ham `Required`).
 
 ---
 

@@ -92,4 +92,10 @@ public static class AuditActions
 
     /// <summary>O'quvchilar ro'yxati `.xlsx` eksporti (`docs/08` §8) — kim, qachon, qaysi filtr, nechta qator.</summary>
     public const string ExportStudentsDownloaded = "Export.StudentsDownloaded";
+
+    // --- P52-tarmoqlanuvchi-so'rovnoma davomi (2026-09-11/12) — GLOBAL ro'yxatdan o'tish
+    // formasi sozlamasi (`RegistrationFormSettings`, `docs/18` §9.6). ---
+
+    /// <summary>`PUT /api/admin/settings/registration-form`.</summary>
+    public const string RegistrationFormSettingsUpdated = "Settings.RegistrationFormUpdated";
 }

@@ -181,6 +181,8 @@ public sealed class GetSchoolInfoQueryHandlerTests
 
         public IQueryable<SchoolLinkView> SchoolLinkViews => Enumerable.Empty<SchoolLinkView>().AsQueryable();
 
+        public IQueryable<Domain.Settings.RegistrationFormSettings> RegistrationFormSettings => Enumerable.Empty<Domain.Settings.RegistrationFormSettings>().AsQueryable();
+
         public IQueryable<TEntity> AsNoTracking<TEntity>(IQueryable<TEntity> query)
             where TEntity : class => query;
 

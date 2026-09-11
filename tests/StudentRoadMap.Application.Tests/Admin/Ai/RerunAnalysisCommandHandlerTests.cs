@@ -112,6 +112,8 @@ public sealed class RerunAnalysisCommandHandlerTests
         public IQueryable<Domain.Schools.RegistrationCounter> RegistrationCounters => throw new NotSupportedException();
 
         public IQueryable<Domain.Schools.SchoolLinkView> SchoolLinkViews => throw new NotSupportedException();
+
+        public IQueryable<Domain.Settings.RegistrationFormSettings> RegistrationFormSettings => throw new NotSupportedException();
     }
 
     private sealed class SpyBackgroundJobQueue : IBackgroundJobQueue

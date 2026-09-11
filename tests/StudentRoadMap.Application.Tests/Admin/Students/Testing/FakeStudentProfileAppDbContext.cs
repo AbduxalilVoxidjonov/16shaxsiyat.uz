@@ -116,6 +116,8 @@ internal sealed class FakeStudentProfileAppDbContext : IAppDbContext
     public IQueryable<RegistrationCounter> RegistrationCounters => throw new NotSupportedException();
 
     public IQueryable<SchoolLinkView> SchoolLinkViews => throw new NotSupportedException();
+
+    public IQueryable<Domain.Settings.RegistrationFormSettings> RegistrationFormSettings => throw new NotSupportedException();
 }
 
 /// <summary>LINQ-to-Objects ustida bevosita bajaradi — EF Core/DB yo'q.</summary>

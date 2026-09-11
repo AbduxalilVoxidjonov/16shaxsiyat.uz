@@ -14,6 +14,7 @@ using StudentRoadMap.Domain.Identity;
 using StudentRoadMap.Domain.Jobs;
 using StudentRoadMap.Domain.PublicUsers;
 using StudentRoadMap.Domain.Schools;
+using StudentRoadMap.Domain.Settings;
 using StudentRoadMap.Domain.Students;
 
 namespace StudentRoadMap.Infrastructure.Persistence;
@@ -84,6 +85,8 @@ public sealed class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<SchoolLinkView> SchoolLinkViews => Set<SchoolLinkView>();
 
+    public DbSet<RegistrationFormSettings> RegistrationFormSettings => Set<RegistrationFormSettings>();
+
     public DbSet<AnalysisJob> AnalysisJobs => Set<AnalysisJob>();
 
     public DbSet<PublicUser> PublicUsers => Set<PublicUser>();
@@ -146,6 +149,8 @@ public sealed class AppDbContext : DbContext, IAppDbContext
     IQueryable<PublicUser> IAppDbContext.PublicUsers => PublicUsers;
 
     IQueryable<PublicRefreshToken> IAppDbContext.PublicRefreshTokens => PublicRefreshTokens;
+
+    IQueryable<RegistrationFormSettings> IAppDbContext.RegistrationFormSettings => RegistrationFormSettings;
 
     IQueryable<TEntity> IAppDbContext.AsNoTracking<TEntity>(IQueryable<TEntity> query) => query.AsNoTracking();
 

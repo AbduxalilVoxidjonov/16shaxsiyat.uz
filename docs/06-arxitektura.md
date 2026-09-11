@@ -260,6 +260,12 @@ Barcha xatolar `application/problem+json`:
 | `QUESTION_IN_USE` | 409 | `DELETE .../questions/{id}`: savolga allaqachon javob berilgan — o'rniga "Faol emas" qilib qo'yish tavsiya etiladi (P52, 2026-09-11 QA topilmasi) |
 | `QUESTION_REFERENCED_BY_VISIBILITY` | 409 | `DELETE .../questions/{id}`: boshqa savol/bo'limning ko'rsatish sharti (`docs/18` B-5) shu savol kodiga tayanadi — xabarda havola qiluvchi kod ko'rsatiladi (P52, 2026-09-11) |
 | `REFERENCED_RECORD_EXISTS` | 409 | DB tashqi kalit (FK) cheklovi buzilishi — yuqoridagi ikkita aniq tekshiruvni CHETLAB o'tgan zaxira holat (poyga, boshqa endpointlar); xabar DOIM umumiy, DB tafsiloti chiqmaydi (P31, P52, 2026-09-11) |
+| `REGISTRATION_FORM_FULL_NAME_LOCKED` | 400 | `PUT /api/admin/settings/registration-form`: `F.I.Sh.` maydonining `requirement`ini `Required`dan boshqasiga o'rnatishga urinish (2026-09-11/12) |
+| `REGISTRATION_FORM_FIELD_CODE_INVALID` | 400 | O'z maydon (`customFields[].code`) kodi noto'g'ri shaklda (2026-09-11/12) |
+| `REGISTRATION_FORM_FIELD_CODE_DUPLICATE` | 409 | O'z maydon kodi takrorlangan YOKI asosiy maydon nomi bilan to'qnashgan (2026-09-11/12) |
+| `REGISTRATION_FORM_CHOICE_OPTIONS_INSUFFICIENT` | 400 | `SingleChoice`/`MultiChoice` maydonida 2 tadan kam tanlov varianti (2026-09-11/12) |
+| `REGISTRATION_FORM_OPTION_VALUE_DUPLICATE` | 409 | Bitta maydon ichida takroriy tanlov qiymati (2026-09-11/12) |
+| `INPUT_PATTERN_INVALID` | 400 | `ShortText`/`Phone` savoli YOKI ro'yxatdan o'tish formasi maydonining `inputPattern`i kompilyatsiya qilinmadi (P52; ro'yxatdan o'tish formasiga qo'llanilishi 2026-09-11/12) |
 
 > **`429` javobi.** `Retry-After` sarlavhasi (butun sekund) MAJBURIY, va bir xil qiymat
 > `ProblemDetails` tanasida `retryAfterSeconds` maydoni sifatida takrorlanadi — sarlavhani

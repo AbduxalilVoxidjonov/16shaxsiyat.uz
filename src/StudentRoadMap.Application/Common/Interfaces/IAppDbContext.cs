@@ -5,6 +5,7 @@ using StudentRoadMap.Domain.Identity;
 using StudentRoadMap.Domain.Jobs;
 using StudentRoadMap.Domain.PublicUsers;
 using StudentRoadMap.Domain.Schools;
+using StudentRoadMap.Domain.Settings;
 using StudentRoadMap.Domain.Students;
 
 namespace StudentRoadMap.Application.Common.Interfaces;
@@ -68,6 +69,13 @@ public interface IAppDbContext
     IQueryable<RegistrationCounter> RegistrationCounters { get; }
 
     IQueryable<SchoolLinkView> SchoolLinkViews { get; }
+
+    /// <summary>
+    /// Ro'yxatdan o'tish formasining GLOBAL sozlamasi — bitta yozuv (`RegistrationFormSettings.SingletonId`)
+    /// yoki bo'sh (`docs/18` §9.6, 2026-09-11/12). Bo'sh bo'lsa `RegistrationFormDefinition.Default`
+    /// ishlatiladi ("NULL = standart" naqshi).
+    /// </summary>
+    IQueryable<RegistrationFormSettings> RegistrationFormSettings { get; }
 
     /// <summary>Fon navbatidagi AI tahlil vazifalari — P18 (`prompts/18`), `AnalysisJobQueue`/`AnalysisWorkerBackgroundService`.</summary>
     IQueryable<AnalysisJob> AnalysisJobs { get; }

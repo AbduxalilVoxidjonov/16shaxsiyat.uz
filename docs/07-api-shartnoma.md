@@ -1572,6 +1572,62 @@ sessiyalarning bloklari (`assessment_id IN`), anketa nomlari (`id IN`).
 
 ---
 
+### 3.8 Sozlamalar — ro'yxatdan o'tish formasi (`/api/admin/settings`) — 2026-09-11/12
+
+Egasining talabi: "Sozlamalar" sahifasidan ro'yxatdan o'tish formasini GLOBAL boshqarish
+(`docs/18-tarmoqlanuvchi-sorovnoma.md` §9.6) — `AssessmentProgram.RegistrationFields`
+(har dasturda alohida, `docs/18` §9.5) O'RNIGA. Faqat superadmin.
+
+| Metod | Yo'l | Izoh |
+|-------|------|------|
+| GET | `/api/admin/settings/registration-form` | Sozlama yo'q bo'lsa STANDART qaytadi (`null` emas) |
+| PUT | `/api/admin/settings/registration-form` | To'liq almashtirish — `docs/05` jsonb shakli |
+
+**`GET`/`PUT ... → RegistrationFormDefinitionDto`** (ikkalasi ham BIR XIL shakl, round-trip):
+
+```json
+{
+  "coreFields": {
+    "fullName":    { "requirement": "Required", "labelUz": "F.I.Sh.", "placeholderUz": null, "order": 1 },
+    "birthDate":   { "requirement": "Required", "labelUz": "Tug'ilgan sana", "placeholderUz": null, "order": 2 },
+    "gender":      { "requirement": "Required", "labelUz": "Jins", "placeholderUz": null, "order": 3 },
+    "grade":       { "requirement": "Required", "labelUz": "Sinf", "placeholderUz": null, "order": 4 },
+    "classLetter": { "requirement": "Optional", "labelUz": "Sinf harfi", "placeholderUz": null, "order": 5 },
+    "phone":       { "requirement": "Required", "labelUz": "Telefon raqami", "placeholderUz": null, "order": 6 },
+    "parentPhone": { "requirement": "Optional", "labelUz": "Ota-ona telefoni", "placeholderUz": null, "order": 7 },
+    "email":       { "requirement": "Optional", "labelUz": "Email", "placeholderUz": null, "order": 8 }
+  },
+  "customFields": [
+    { "code": "PARENT_JOB", "type": "ShortText", "labelUz": "Ota-onangiz kasbi",
+      "placeholderUz": "Masalan: o'qituvchi", "requirement": "Optional",
+      "maxLength": 200, "inputPattern": null, "options": null, "order": 9 }
+  ]
+}
+```
+
+- `coreFields` — sakkizta QATTIQ KODLANGAN maydon. `fullName.requirement` faqat `Required`
+  bo'lishi mumkin (`PUT` boshqacha yuborsa `400 REGISTRATION_FORM_FULL_NAME_LOCKED`); yorlig'i/
+  placeholder'i erkin tahrirlanadi.
+- `customFields[].type` — `ShortText`/`LongText`/`Phone`/`SingleChoice`/`MultiChoice` (mavjud
+  `QuestionType` nomlari — yangi atama yo'q). `SingleChoice`/`MultiChoice` uchun `options[]`
+  (`{ textUz, value, order }`, kamida 2 ta, `value` unikal).
+- `customFields[].code` — `^[A-Za-z0-9_-]{1,20}$`, sozlama ichida unikal, `coreFields` kalitlari
+  (`fullName`, `birthDate`, ...) bilan to'qnashmaydi.
+- `PUT` — TO'LIQ almashtirish (`registrationFields` PUT bilan bir xil semantika):
+  `customFields` ro'yxati har safar to'liq beriladi, mijoz `GET`dan olgan obyektni tahrirlab
+  qaytarishi kutiladi. Muvaffaqiyatli bo'lsa audit: `Settings.RegistrationFormUpdated`.
+- Validatsiya xatolari — `docs/06` §6: `REGISTRATION_FORM_FULL_NAME_LOCKED` (400),
+  `REGISTRATION_FORM_FIELD_CODE_INVALID` (400), `REGISTRATION_FORM_FIELD_CODE_DUPLICATE` (409),
+  `REGISTRATION_FORM_CHOICE_OPTIONS_INSUFFICIENT` (400), `REGISTRATION_FORM_OPTION_VALUE_DUPLICATE`
+  (409), `INPUT_PATTERN_INVALID` (400).
+
+> **1-to'lqin qamrovi (joriy holat).** Bu endpoint domen + saqlash + admin API'ni beradi —
+> ommaviy ro'yxatdan o'tish oqimi (`POST /api/public/sessions`, §1.2) HALI shu sozlamani
+> o'qimaydi, o'zining eski `AssessmentProgram.RegistrationFields` mantig'iga tayanadi
+> (`docs/18` §9.5, `docs/04` §2.13/§2.14). Ulash keyingi to'lqinda (`PROGRESS.md`).
+
+---
+
 ## 4. Umumiy konvensiyalar
 
 **Pagination** — barcha ro'yxatlar:

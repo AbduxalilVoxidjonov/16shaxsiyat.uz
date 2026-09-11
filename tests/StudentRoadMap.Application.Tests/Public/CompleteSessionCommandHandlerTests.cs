@@ -394,5 +394,7 @@ public sealed class CompleteSessionCommandHandlerTests
         public IQueryable<RegistrationCounter> RegistrationCounters => throw Unsupported();
 
         public IQueryable<SchoolLinkView> SchoolLinkViews => throw Unsupported();
+
+        public IQueryable<Domain.Settings.RegistrationFormSettings> RegistrationFormSettings => throw Unsupported();
     }
 }

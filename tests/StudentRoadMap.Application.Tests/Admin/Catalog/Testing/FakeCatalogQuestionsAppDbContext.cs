@@ -121,6 +121,8 @@ internal sealed class FakeCatalogQuestionsAppDbContext : IAppDbContext
 
     public IQueryable<SchoolLinkView> SchoolLinkViews => throw new NotSupportedException();
 
+    public IQueryable<Domain.Settings.RegistrationFormSettings> RegistrationFormSettings => throw new NotSupportedException();
+
     public IQueryable<AnalysisJob> AnalysisJobs => throw new NotSupportedException();
 
     public IQueryable<PublicUser> PublicUsers => throw new NotSupportedException();

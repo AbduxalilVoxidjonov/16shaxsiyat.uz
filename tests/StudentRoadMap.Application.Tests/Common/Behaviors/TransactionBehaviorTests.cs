@@ -126,6 +126,8 @@ public sealed class TransactionBehaviorTests
 
         public IQueryable<SchoolLinkView> SchoolLinkViews => throw Unsupported();
 
+        public IQueryable<Domain.Settings.RegistrationFormSettings> RegistrationFormSettings => throw Unsupported();
+
         public IQueryable<TEntity> AsNoTracking<TEntity>(IQueryable<TEntity> query) where TEntity : class => query;
 
         public IQueryable<TEntity> IgnoreQueryFilters<TEntity>(IQueryable<TEntity> query) where TEntity : class => query;

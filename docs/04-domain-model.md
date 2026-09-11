@@ -409,7 +409,7 @@ sessiyaga faqat shu dasturning testlari qo'shiladi (`Assessment.ProgramId`).
 | `Kind` | `ProgramKind` | `System = 1` · `Custom = 2` |
 | `Visibility` | `ProgramVisibility` | `Public = 1` (barcha maktabda) · `Assigned = 2` (faqat biriktirilganda) |
 | `RegistrationMode` | `RegistrationMode` | **P52** — `Full = 1` (standart: o'quvchi ro'yxatdan o'tish anketasini to'ldiradi) · `None = 2` (registratsiya ekrani ko'rsatilmaydi, `Student` ANONIM yaratiladi — faqat batareyasiz dasturda ruxsat, pastga qarang) |
-| `RegistrationFields` | `RegistrationFields?` | **P52 kengaytmasi** (`docs/18` §9.5) — `RegistrationMode = Full` dasturda har bir maydonning (`birthDate`/`gender`/`grade`/`classLetter`/`phone`/`parentPhone`/`email`) holati (`Hidden`/`Optional`/`Required`). `null` — standart qiymatlar (`RegistrationFields.Default`, `ResolveRegistrationFields()`). `fullName` bu yerda YO'Q — u har doim majburiy |
+| `RegistrationFields` | `RegistrationFields?` | ⚠️ **ESKIRGAN (2026-09-11/12 dan) — GLOBAL sozlama bilan almashtirilmoqda.** P52 kengaytmasida (`docs/18` §9.5) har DASTURDA alohida sozlanadigan qilib qo'shilgan edi, lekin egasi bir kundan keyin buni GLOBAL sozlamaga (`RegistrationFormSettings`, §2.14) o'tkazishga qaror qildi — ikki joyda bir xil sozlama ushbu loyihada qayta-qayta chalkashlikka olib kelgan naqsh. **1-to'lqin holati (joriy):** `StartSessionCommandHandler`/`GetSchoolInfoQueryHandler`/admin `CreateProgram`/`UpdateProgram` HALI HAM shu maydonni o'qiydi/yozadi — sessiya oqimlariga bu to'lqinda TEGILMADI. **2-to'lqinda** shu handlerlar `RegistrationFormSettings`ga o'tkaziladi, shundan keyin bu maydon HAQIQATDA o'lik bo'ladi va ustun alohida migratsiyada o'chiriladi (`docs/06` 7-qoidasi — destruktiv o'zgarish ikki bosqichda, `PROGRESS.md` risklar jadvali) |
 | `Status` | `ProgramStatus` | `Draft = 1` · `Published = 2` · `Archived = 3` — **saqlash maydoni** |
 | `IsActive` | `bool` | **saqlash maydoni** |
 | `IsSystem` | `bool` | Seed'dan kelgan tizim dasturi; tarkibi qulflangan (`SYSTEM_PROGRAM_LOCKED`) |
@@ -481,6 +481,54 @@ tarzda tuzatiladi (`DbSeeder.ReconcileProgramStatesAsync` — migratsiya emas).
 
 ---
 
+### 2.14 `RegistrationFormSettings` (agregat ildizi, SINGLETON) — 2026-09-11/12, egasining talabi
+
+Ro'yxatdan o'tish formasining GLOBAL sozlamasi — `docs/18-tarmoqlanuvchi-sorovnoma.md` §9.6.
+`AssessmentProgram.RegistrationFields`ning O'RNIGA keladi (yuqoridagi jadval izohiga qarang):
+Superadmin "Sozlamalar" sahifasidan bitta joyda boshqaradi — barcha dasturlar uchun umumiy.
+
+| Maydon | Tip | Izoh |
+|--------|-----|------|
+| `Id` | `Guid` | Har doim `RegistrationFormSettings.SingletonId` (qattiq kodlangan `Guid`) — jadvalda bitta qatordan ortiq bo'lmaydi |
+| `Definition` | `RegistrationFormDefinition` | Formaning to'liq shakli (pastga qarang), `jsonb` |
+| `UpdatedAt` | `DateTimeOffset` | |
+| `UpdatedByAdminUserId` | `Guid?` | |
+
+DB'da yozuv UMUMAN bo'lmasligi mumkin (hali hech kim `PUT` qilmagan) — bu holda
+`RegistrationFormDefinition.Default` ishlatiladi ("`NULL` = standart" naqshi,
+`RegistrationFields.Default` bilan bir xil uslub).
+
+**`RegistrationFormDefinition`** — qiymat obyekti:
+
+- `CoreFields` (`RegistrationCoreFields`) — sakkizta QATTIQ KODLANGAN maydon: `fullName`,
+  `birthDate`, `gender`, `grade`, `classLetter`, `phone`, `parentPhone`, `email`. Har biri
+  `RegistrationCoreField { Requirement, LabelUz, PlaceholderUz?, Order }`.
+  **`fullName.Requirement` HAR DOIM `Required`** — o'zgartirib bo'lmaydi (ism kerak bo'lmasa
+  `AssessmentProgram.RegistrationMode = None` bor). Yorlig'i/placeholder'i esa tahrirlanadi.
+- `CustomFields` (`IReadOnlyList<RegistrationCustomField>`) — superadmin qo'shgan o'z
+  maydonlari (masalan "Ota-onangiz kasbi"). Har biri: `Code` (`^[A-Za-z0-9_-]{1,20}$`, unikal,
+  core maydon nomlari bilan to'qnashmaydi), `Type` (`QuestionType` dan FAQAT `ShortText`/
+  `LongText`/`Phone`/`SingleChoice`/`MultiChoice` — yangi atama o'ylab topilmadi), `LabelUz`,
+  `PlaceholderUz?`, `Requirement`, `MaxLength?`, `InputPattern?`, `Options?`
+  (`SingleChoice`/`MultiChoice` uchun, kamida 2 ta, qiymatlari unikal), `Order`.
+
+**Invariantlar (`RegistrationFormDefinition.Create`, buzilsa `DomainException`, `docs/06` §6):**
+
+| Qoida | Xato kodi |
+|-------|-----------|
+| `fullName.requirement != Required` | `REGISTRATION_FORM_FULL_NAME_LOCKED` |
+| `customFields[].code` noto'g'ri shaklda | `REGISTRATION_FORM_FIELD_CODE_INVALID` |
+| `code` takrorlangan YOKI core maydon nomi bilan to'qnashgan | `REGISTRATION_FORM_FIELD_CODE_DUPLICATE` |
+| `SingleChoice`/`MultiChoice`da 2 tadan kam variant | `REGISTRATION_FORM_CHOICE_OPTIONS_INSUFFICIENT` |
+| Bitta maydon ichida takroriy `options[].value` | `REGISTRATION_FORM_OPTION_VALUE_DUPLICATE` |
+| `inputPattern` kompilyatsiya qilinmaydi | `INPUT_PATTERN_INVALID` (`CachedInputPatternMatcher` bilan bir xil qoida, handler darajasida) |
+
+**Diqqat — 1-to'lqin qamrovi (joriy):** bu sozlama HALI sessiya oqimiga (`StartSessionCommandHandler`,
+ro'yxatdan o'tish formasining haqiqiy validatsiyasi) ULANMAGAN — faqat domen + saqlash + admin
+`GET`/`PUT` API tayyor. Ulash va frontend keyingi to'lqinda (`PROGRESS.md`).
+
+---
+
 ## 3. Domen hodisalari
 
 | Hodisa | Qachon | Kim tinglaydi |
@@ -504,6 +552,8 @@ tarzda tuzatiladi (`DbSeeder.ReconcileProgramStatesAsync` — migratsiya emas).
 - `PersonalityType` — 4 harf, validatsiya, `TypeCatalog` bilan bog'lanish.
 - `HollandCode` — 3 harf, `RIASEC` alifbosidan.
 - `ScorePercent` — 0..100 oralig'i kafolatlangan.
+- `RegistrationFormDefinition`, `RegistrationCoreFields`, `RegistrationCoreField`,
+  `RegistrationCustomField`, `RegistrationCustomFieldOption` — §2.14 (`RegistrationFormSettings`).
 
 **Domen yordamchilari (value object emas):**
 - `Common/TokenHash` — SHA-256 hex (64 belgi). `Assessment.SessionTokenHash` va

@@ -122,6 +122,8 @@ internal sealed class FakeBranchingSurveyAppDbContext : IAppDbContext
 
     public IQueryable<SchoolLinkView> SchoolLinkViews => throw Unsupported();
 
+    public IQueryable<Domain.Settings.RegistrationFormSettings> RegistrationFormSettings => throw Unsupported();
+
     public IQueryable<AnalysisJob> AnalysisJobs => throw Unsupported();
 
     public IQueryable<PublicUser> PublicUsers => throw Unsupported();

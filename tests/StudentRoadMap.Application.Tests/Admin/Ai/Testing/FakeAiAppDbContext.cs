@@ -130,6 +130,8 @@ internal sealed class FakeAiAppDbContext : IAppDbContext
     public IQueryable<RegistrationCounter> RegistrationCounters => throw new NotSupportedException();
 
     public IQueryable<SchoolLinkView> SchoolLinkViews => throw new NotSupportedException();
+
+    public IQueryable<Domain.Settings.RegistrationFormSettings> RegistrationFormSettings => throw new NotSupportedException();
 }
 
 internal sealed class InlineAsyncQueryExecutor : IAsyncQueryExecutor

@@ -601,6 +601,15 @@ qiladi (`docs/06` §8, 2026-09-05 qarori: ikki oqim ataylab ajratilgan).
 
 ## 9.5 Har dasturda alohida sozlanadigan maydonlar (`RegistrationFields`, 2026-09-11)
 
+> ⚠️ **2026-09-11/12: bu qaror BEKOR QILINDI, §9.6 ga qarang.** Bir kun o'tib egasi
+> ro'yxatdan o'tish sozlamasini har-dasturda-alohida emas, GLOBAL ("Sozlamalar" sahifasi)
+> qilishga qaror qildi — sabab ikki joyda bir xil sozlama saqlash ushbu loyihada
+> qayta-qayta chalkashlikka olib kelgan naqsh ekani. Quyidagi 9.5.x bo'limlar TARIXIY hujjat
+> sifatida saqlanadi (nima uchun bu yo'l tanlangan va keyin nega bekor qilingani tushunarli
+> bo'lishi uchun) — **amaldagi shartnoma §9.6 da**. `AssessmentProgram.RegistrationFields`
+> ustuni/xossasi HOZIRCHA koddan olib tashlanmagan (destruktiv o'zgarish ikki bosqichda),
+> lekin ENDI YANGI FUNKSIYA UNGA TAYANMAYDI.
+
 ### 9.5.0 Muammo
 
 §9 registratsiyani BUTUNLAY yoqish/o'chirish (`RegistrationMode`) imkonini berdi, lekin
@@ -742,3 +751,64 @@ sozlama regressiyasi — 2026-09-11 tuzatishdan keyin `gender` ham `fullName`/`p
 bir qatorda majburiy), `AdminProgramRegistrationFieldsEndpointTests.cs` (standart/qisman
 sozlama, jsonb roundtrip, ikki nazorat nuqtasi, batareyali dasturda `gender` erkin
 sozlanishi — `Hidden`/`Required` ikkalasi ham muvaffaqiyatli).
+
+## 9.6 GLOBAL ro'yxatdan o'tish formasi sozlamasi (`RegistrationFormSettings`, 2026-09-11/12)
+
+### 9.6.0 Nega §9.5 bekor qilindi
+
+§9.5 (yuqorida) har DASTURDA alohida sozlashni tanlagan edi. Bir kundan keyin egasi fikrini
+o'zgartirdi: sozlama **Sozlamalar** sahifasida, GLOBAL bo'lishi kerak — maydonlarni qo'shish/
+o'chirish, matnini tahrirlash, majburiy/ixtiyoriy/yashirin qilish bitta joydan, barcha
+dasturlar uchun umumiy. Sabab: **ikki joyda bir xil sozlama saqlash bu loyihada qayta-qayta
+muammo bo'lgan naqsh** (masalan `docs/18` boshqa joylarida ham shunga o'xshash tuzatishlar
+bo'lgan) — shu sabab endi yagona manba tanlandi.
+
+**Nima o'zgardi, nima o'zgarmadi:**
+- `AssessmentProgram.RegistrationMode` (`Full`/`None`) — **o'zgarmaydi**. Bu boshqa narsa:
+  formani UMUMAN ko'rsatish/ko'rsatmaslik (§9.1–9.4).
+- `AssessmentProgram.RegistrationFields` (har dasturda alohida, §9.5) — **ishlatilishdan
+  chiqadi**. Xossa/ustun HOZIRCHA qoladi (`docs/06` 7-qoidasi: destruktiv o'zgarish ikki
+  bosqichda), lekin YANGI funksiya (bu bo'lim) unga tayanmaydi. Ustunni o'chirish alohida
+  keyingi migratsiyaga qoldirilgan (`PROGRESS.md` risklar jadvali).
+- Superadmin qo'shadigan **o'z maydonlari** (masalan "Ota-onangiz kasbi") — YANGI imkoniyat,
+  §9.5 da yo'q edi (u faqat mavjud 7 ta core maydonning holatini sozlardi).
+
+### 9.6.1 Domen — `RegistrationFormSettings` (singleton)
+
+To'liq shartnoma — `docs/04-domain-model.md` §2.14 (entity/qiymat obyektlari tarkibi),
+`docs/05-database-schema.md` (DDL, jsonb shakli), `docs/06-arxitektura.md` §6 (xato kodlari),
+`docs/07-api-shartnoma.md` §3.8 (`GET`/`PUT /api/admin/settings/registration-form`).
+
+Qisqacha: bitta qator (`registration_form_settings`, `RegistrationFormSettings.SingletonId`
+bilan qulflangan), `definition jsonb` — sakkizta qattiq kodlangan `coreFields` (`fullName`
+har doim `Required`) + superadmin qo'shgan `customFields[]` (`ShortText`/`LongText`/`Phone`/
+`SingleChoice`/`MultiChoice`, mavjud `QuestionType` nomlari). Validatsiya (`docs/06` §6):
+`REGISTRATION_FORM_FULL_NAME_LOCKED`, `REGISTRATION_FORM_FIELD_CODE_INVALID`,
+`REGISTRATION_FORM_FIELD_CODE_DUPLICATE`, `REGISTRATION_FORM_CHOICE_OPTIONS_INSUFFICIENT`,
+`REGISTRATION_FORM_OPTION_VALUE_DUPLICATE`, `INPUT_PATTERN_INVALID`.
+
+### 9.6.2 Qamrov — 1-to'lqin (joriy) va keyingi to'lqinlar
+
+Bu vazifa (P52-tarmoqlanuvchi-sorovnoma davomi, 2026-09-11/12) **1-to'lqin**: domen + saqlash
++ admin `GET`/`PUT` API + hujjat. Ataylab QILINMAGAN (keyingi to'lqinlarga qoldirilgan):
+
+- **Sessiya oqimlariga ulash** — `StartSessionCommandHandler`/`StartPublicSessionCommandHandler`
+  hali `AssessmentProgram.RegistrationFields`ga (§9.5, eskirgan) tayanadi. Haqiqiy ro'yxatdan
+  o'tish formasi ekranida bu GLOBAL sozlama ishlatilishi uchun ular `RegistrationFormSettings`ga
+  o'tkazilishi kerak — bu qadam bajarilmaguncha yangi sozlama faqat admin panelda ko'rinadi,
+  o'quvchi formasiga TA'SIR QILMAYDI.
+- **`GetSchoolInfoQueryHandler`** (`GET /api/public/schools/{slug}`) — hamon eski
+  `registrationFields` (dastur darajasida) qaytaradi.
+- **Frontend** — superadmin "Sozlamalar" UI'si va ommaviy ro'yxatdan o'tish formasining
+  dinamik (custom maydonlarni render qiluvchi) versiyasi keyingi to'lqinda.
+- **Custom maydonlarning javoblari qayerda saqlanadi** (yangi jadval kerakmi, yoki
+  `students`ga qo'shimcha `jsonb` ustunmi) — bu savol HALI HAL QILINMAGAN, sessiya oqimiga
+  ulash to'lqinida PM'ga qaytariladi.
+
+### 9.6.3 Testlar (DoD)
+
+`tests/StudentRoadMap.Domain.Tests/Settings/RegistrationFormDefinitionTests.cs` (standart
+jadvalga moslik, har bir validatsiya qoidasi uchun kamida bitta test, jsonb roundtrip),
+`tests/StudentRoadMap.Api.IntegrationTests/Admin/AdminRegistrationFormSettingsEndpointTests.cs`
+(`GET` standart qaytarishi, `PUT` to'liq almashtirishi + audit, `fullName` qulfi, takroriy
+kod, tanlov soni, `inputPattern`, autentifikatsiyasiz `401`).
