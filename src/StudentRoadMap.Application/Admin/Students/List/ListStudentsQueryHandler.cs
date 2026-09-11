@@ -135,7 +135,7 @@ internal sealed class ListStudentsQueryHandler : IRequestHandler<ListStudentsQue
                     schoolNameById.GetValueOrDefault(s.SchoolId, "?"),
                     s.Grade,
                     s.ClassLetter,
-                    s.Phone.Value,
+                    s.Phone?.Value,
                     latestAssessment?.Status.ToString(),
                     s.LastPersonalityType,
                     s.LastPersonalityType is null ? null : typeNameByCode.GetValueOrDefault(s.LastPersonalityType),

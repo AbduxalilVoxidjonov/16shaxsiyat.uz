@@ -39,11 +39,19 @@ public sealed class Student : AggregateRoot
     /// </summary>
     public Guid? PublicUserId { get; private set; }
 
+    /// <summary>
+    /// Ro'yxatdan o'tishsiz dastur (`AssessmentProgram.RegistrationMode.None`, P52) orqali
+    /// yaratilgan anonim yozuv — shaxs ma'lumoti YO'Q (`Student.CreateAnonymous`). Bunday
+    /// yozuvda <see cref="BirthDate"/> va <see cref="Phone"/> DOIM `null`.
+    /// </summary>
+    public bool IsAnonymous { get; private set; }
+
     public string FullName { get; private set; } = null!;
 
     public string NormalizedName { get; private set; } = null!;
 
-    public DateOnly BirthDate { get; private set; }
+    /// <summary>Anonim o'quvchida `null` (`IsAnonymous`, P52). Aks holda DOIM to'ldirilgan (konstruktor invarianti).</summary>
+    public DateOnly? BirthDate { get; private set; }
 
     public Gender Gender { get; private set; }
 
@@ -51,7 +59,8 @@ public sealed class Student : AggregateRoot
 
     public string? ClassLetter { get; private set; }
 
-    public PhoneNumber Phone { get; private set; } = null!;
+    /// <summary>Anonim o'quvchida `null` (`IsAnonymous`, P52). Aks holda DOIM to'ldirilgan (konstruktor invarianti).</summary>
+    public PhoneNumber? Phone { get; private set; }
 
     public PhoneNumber? ParentPhone { get; private set; }
 
@@ -118,22 +127,35 @@ public sealed class Student : AggregateRoot
         Guid id,
         Guid schoolId,
         string fullName,
-        DateOnly birthDate,
+        DateOnly? birthDate,
         Gender gender,
         int grade,
         string? classLetter,
-        PhoneNumber phone,
+        PhoneNumber? phone,
         PhoneNumber? parentPhone,
         string? email,
         DateTimeOffset consentGivenAt,
         Guid? publicUserId,
         string? consentVersion,
         bool parentalConsent,
+        bool isAnonymous,
         DateTimeOffset now)
         : base(id)
     {
+        // Domen invarianti (P52, egasining qarori): anonim BO'LMAGAN o'quvchida tug'ilgan
+        // sana va telefon DOIM to'ldirilgan bo'lishi shart — aks holda mavjud oqim (scoring,
+        // BR-1, admin ro'yxati) jimgina buzilishi mumkin edi. Anonim o'quvchida esa ikkalasi
+        // ham DOIM `null` (`Student.CreateAnonymous`).
+        if (!isAnonymous && (birthDate is null || phone is null))
+        {
+            throw new DomainException(
+                "STUDENT_IDENTITY_REQUIRED",
+                "Anonim bo'lmagan o'quvchida tug'ilgan sana va telefon raqami to'ldirilishi shart.");
+        }
+
         SchoolId = schoolId;
         PublicUserId = publicUserId;
+        IsAnonymous = isAnonymous;
         FullName = fullName;
         NormalizedName = NameNormalizer.Normalize(fullName);
         BirthDate = birthDate;
@@ -200,6 +222,46 @@ public sealed class Student : AggregateRoot
             publicUserId,
             consentVersion,
             parentalConsent,
+            isAnonymous: false,
+            now);
+    }
+
+    /// <summary>
+    /// P52 (`RegistrationMode.None` dastur, egasining 2026-09-11 qarori): registratsiya
+    /// ekrani ko'rsatilmagan, shaxs ma'lumoti YO'Q. `FullName` — PII EMAS: "Anonim ishtirokchi"
+    /// + o'quvchining o'z `id`sidan olingan qisqa (6 belgili) noyob qo'shimcha — admin
+    /// ro'yxatida qatorlar bir-biridan ajralib turishi uchun (bir xil nom ostida bir nechta
+    /// qator chalkashtirmasin). Qo'shimcha uchun alohida tasodifiylik manbai kerak emas: `id`
+    /// (chaqiruvchi tomonidan `Guid.NewGuid()` bilan beriladi) allaqachon noyob.
+    /// `Grade = NoGrade`, `Gender = Unspecified` — mavjud sentinel qiymatlar (yangisi
+    /// o'ylab topilmadi).
+    /// </summary>
+    public static Student CreateAnonymous(Guid id, Guid schoolId, DateTimeOffset consentGivenAt, DateTimeOffset now)
+    {
+        if (consentGivenAt == default)
+        {
+            throw new ArgumentException("Rozilik vaqti ko'rsatilmasa o'quvchi yaratilmaydi.", nameof(consentGivenAt));
+        }
+
+        var suffix = id.ToString("N")[..6].ToUpperInvariant();
+        var fullName = $"Anonim ishtirokchi #{suffix}";
+
+        return new Student(
+            id,
+            schoolId,
+            fullName,
+            birthDate: null,
+            Gender.Unspecified,
+            NoGrade,
+            classLetter: null,
+            phone: null,
+            parentPhone: null,
+            email: null,
+            consentGivenAt,
+            publicUserId: null,
+            consentVersion: null,
+            parentalConsent: false,
+            isAnonymous: true,
             now);
     }
 

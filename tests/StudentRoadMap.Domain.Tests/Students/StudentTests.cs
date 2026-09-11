@@ -114,4 +114,41 @@ public sealed class StudentTests
         student.IsDeleted.Should().BeTrue();
         student.DeletedAt.Should().Be(deletedAt);
     }
+
+    // --- P52 (2026-09-11): `RegistrationMode.None` — anonim o'quvchi (`docs/18` §9). ---
+
+    [Fact]
+    public void CreateAnonymous_SetsIsAnonymousAndNullIdentityFields()
+    {
+        var id = Guid.NewGuid();
+
+        var student = Student.CreateAnonymous(id, Guid.NewGuid(), consentGivenAt: Now, now: Now);
+
+        student.IsAnonymous.Should().BeTrue();
+        student.BirthDate.Should().BeNull();
+        student.Phone.Should().BeNull();
+        student.Grade.Should().Be(Student.NoGrade);
+        student.Gender.Should().Be(Gender.Unspecified);
+        student.FullName.Should().StartWith("Anonim ishtirokchi #");
+        student.FullName.Should().NotContain(id.ToString());
+    }
+
+    [Fact]
+    public void CreateAnonymous_TwoCalls_ProduceDifferentFullNames()
+    {
+        var first = Student.CreateAnonymous(Guid.NewGuid(), Guid.NewGuid(), Now, Now);
+        var second = Student.CreateAnonymous(Guid.NewGuid(), Guid.NewGuid(), Now, Now);
+
+        first.FullName.Should().NotBe(second.FullName, "admin ro'yxatida qatorlar bir-biridan ajralib turishi kerak");
+    }
+
+    [Fact]
+    public void Create_NonAnonymous_AlwaysHasBirthDateAndPhone()
+    {
+        var student = CreateStudent();
+
+        student.IsAnonymous.Should().BeFalse();
+        student.BirthDate.Should().NotBeNull();
+        student.Phone.Should().NotBeNull();
+    }
 }

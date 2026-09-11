@@ -19,6 +19,9 @@ internal sealed class AssessmentProgramConfiguration : IEntityTypeConfiguration<
         builder.Property(p => p.DescriptionUz);
         builder.Property(p => p.Kind).HasConversion<short>().IsRequired().HasDefaultValue(ProgramKind.Custom).HasSentinel(default(ProgramKind));
         builder.Property(p => p.Visibility).HasConversion<short>().IsRequired().HasDefaultValue(ProgramVisibility.Assigned).HasSentinel(default(ProgramVisibility));
+        // P52 (2026-09-11): mavjud dasturlar `Full` bo'lib qoladi (default `1`) — xatti-harakati
+        // o'zgarmaydi (`docs/05` migratsiya siyosati).
+        builder.Property(p => p.RegistrationMode).HasConversion<short>().IsRequired().HasDefaultValue(RegistrationMode.Full).HasSentinel(default(RegistrationMode));
         builder.Property(p => p.Status).HasConversion<short>().IsRequired().HasDefaultValue(ProgramStatus.Draft).HasSentinel(default(ProgramStatus));
         builder.Property(p => p.IsActive).IsRequired().HasDefaultValue(true);
         builder.Property(p => p.DisplayOrder).IsRequired();

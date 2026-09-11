@@ -281,7 +281,7 @@ public sealed class StartPublicSessionWithProfileEndpointTests : IClassFixture<P
         var student = await verifyDb.Students.AsNoTracking().SingleAsync(s => s.Id == newAssessment.StudentId);
         student.FullName.Should().Be("Karimov Sardor Alisherovich", "bo'sh maydonlar bazadagini o'zgartirmaydi");
         student.BirthDate.Should().Be(new DateOnly(1995, 4, 12));
-        student.Phone.Value.Should().Be("+998901234567");
+        student.Phone!.Value.Should().Be("+998901234567");
         (await verifyDb.Students.CountAsync(s => s.Id == student.Id)).Should().Be(1, "bitta akkaunt → bitta profil");
     }
 
@@ -364,7 +364,7 @@ public sealed class StartPublicSessionWithProfileEndpointTests : IClassFixture<P
 
         student.FullName.Should().Be("Karimova Malika Alisherovna");
         student.NormalizedName.Should().Be("KARIMOVA MALIKA ALISHEROVNA");
-        student.Phone.Value.Should().Be("+998911112233");
+        student.Phone!.Value.Should().Be("+998911112233");
         student.Email.Should().Be("malika@example.com");
         student.Grade.Should().Be(Student.NoGrade, "`0` — sinfni aniq \"yo'q\" qilish");
         student.BirthDate.Should().Be(new DateOnly(1995, 4, 12), "yuborilmagan maydon o'zgarmaydi");

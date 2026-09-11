@@ -90,7 +90,43 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
             return Result.Failure<StartSessionResult>(new Error(ProblemCodes.AccessCodeInvalid, "Kirish kodi noto'g'ri."));
         }
 
-        var phoneResult = PhoneNumber.Create(request.Phone);
+        // `docs/06` 8-bo'lim (2026-09-02 qaror), `prompts/34` C9-band: dastur tanlanadi —
+        // bo'sh `programCode` + bitta mavjud dastur bo'lsa avtomatik, aks holda aniq
+        // ko'rsatilishi shart. P52 (2026-09-11): bu qadam endi shaxs maydonlarini
+        // O'QISHDAN OLDIN turadi — `RegistrationMode.None` dasturda ular umuman kerak emas
+        // (pastga qarang), shu sabab qaysi rejim ekanini bilmasdan ularni tekshirib bo'lmaydi.
+        // Muvaffaqiyatsiz bo'lsa (`400`/`404`) kunlik hisoblagich OSHIRILMAYDI (assessment
+        // hali yaratilmadi) — `RegistrationMode`dan qat'i nazar.
+        var programResult = await ResolveProgramAsync(school.Id, request.ProgramCode, cancellationToken).ConfigureAwait(false);
+        if (programResult.IsFailure)
+        {
+            return Result.Failure<StartSessionResult>(programResult.Error);
+        }
+
+        var program = programResult.Value;
+
+        // P52 (`RegistrationMode.None`, egasining 2026-09-11 qarori): registratsiya ekrani
+        // UMUMAN ko'rsatilmagan — o'quvchi ANONIM yaratiladi, BR-1/BR-5 (identifikatorga
+        // tayanadi) va "davom ettirish" (identifikator orqali qidiruv) SHU SABAB ishlamaydi
+        // (qabul qilingan cheklov — bir xil brauzerdan bir necha marta kirish mumkin).
+        // Domen invarianti (`AssessmentProgram.SetRegistrationMode`/`Publish`) bu rejimda
+        // shaxsiyat batareyasi BO'LMASLIGINI kafolatlaydi.
+        if (program.RegistrationMode == RegistrationMode.None)
+        {
+            return await HandleAnonymousAsync(school, program, request, now, cancellationToken).ConfigureAwait(false);
+        }
+
+        // `RegistrationMode.Full` — pastdagi oqim BAYT-BAYT o'zgarmagan (regressiya bilan
+        // qulflangan, `PublicSessionContractRegressionTests`). Shaxs maydonlari validator
+        // darajasida endi optsional (`StartSessionCommandValidator`), shu sabab MAJBURIYLIK
+        // shu yerda, dastur allaqachon `Full` ekani aniqlangach, tekshiriladi.
+        var requiredFieldsError = ValidateRequiredIdentityFields(request);
+        if (requiredFieldsError is not null)
+        {
+            return Result.Failure<StartSessionResult>(requiredFieldsError);
+        }
+
+        var phoneResult = PhoneNumber.Create(request.Phone!);
         if (phoneResult.IsFailure)
         {
             return Result.Failure<StartSessionResult>(phoneResult.Error);
@@ -108,7 +144,7 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
             parentPhone = parentPhoneResult.Value;
         }
 
-        var normalizedName = NameNormalizer.Normalize(request.FullName);
+        var normalizedName = NameNormalizer.Normalize(request.FullName!);
 
         var existingStudent = await _executor.FirstOrDefaultAsync(
             _context.Students.Where(s =>
@@ -116,19 +152,6 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
                 s.NormalizedName == normalizedName &&
                 s.BirthDate == request.BirthDate),
             cancellationToken).ConfigureAwait(false);
-
-        // `docs/06` 8-bo'lim (2026-09-02 qaror), `prompts/34` C9-band: dastur tanlanadi —
-        // bo'sh `programCode` + bitta mavjud dastur bo'lsa avtomatik, aks holda aniq
-        // ko'rsatilishi shart. SESSIYA HOLATI TEKSHIRUVIDAN OLDIN: BR-1/BR-5 dastur bo'yicha
-        // ishlaydi (sinf izohi, 3-qadam). Muvaffaqiyatsiz bo'lsa (`400`/`404`) kunlik
-        // hisoblagich OSHIRILMAYDI (assessment hali yaratilmadi).
-        var programResult = await ResolveProgramAsync(school.Id, request.ProgramCode, cancellationToken).ConfigureAwait(false);
-        if (programResult.IsFailure)
-        {
-            return Result.Failure<StartSessionResult>(programResult.Error);
-        }
-
-        var program = programResult.Value;
 
         Student student;
         var isNewStudent = existingStudent is null;
@@ -182,10 +205,10 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
             student = Student.Create(
                 Guid.NewGuid(),
                 school.Id,
-                request.FullName,
-                request.BirthDate,
-                request.Gender,
-                request.Grade,
+                request.FullName!,
+                request.BirthDate!.Value,
+                request.Gender ?? Gender.Unspecified,
+                request.Grade!.Value,
                 phoneResult.Value,
                 consentGivenAt: now,
                 now: now,
@@ -249,6 +272,113 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
             tests);
 
         return Result.Success(result);
+    }
+
+    /// <summary>
+    /// P52 (`RegistrationMode.None`): registratsiya ekrani ko'rsatilmagan dastur uchun ANONIM
+    /// oqim — shaxs maydonlari (kelgan bo'lsa ham) E'TIBORSIZ qoldiriladi, o'quvchi HAR DOIM
+    /// yangi (`Student.CreateAnonymous`) yaratiladi (identifikator yo'qligi sabab
+    /// BR-1/BR-5/"davom ettirish" ishlamaydi — qabul qilingan cheklov, `Handle` izohi).
+    /// Qolgan qadamlar (kunlik limit, sessiya, test biriktirish) `Full` yo'li bilan bir xil.
+    /// </summary>
+    private async Task<Result<StartSessionResult>> HandleAnonymousAsync(
+        School school,
+        AssessmentProgram program,
+        StartSessionCommand request,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var student = Student.CreateAnonymous(Guid.NewGuid(), school.Id, consentGivenAt: now, now: now);
+
+        // BR-1 kunlik ro'yxatdan o'tish limiti — `Full` yo'li bilan bir xil qoida
+        // (`Handle` izohi: faqat YANGI `Assessment` yaratilishidan oldin oshiriladi;
+        // anonim oqimda HAR so'rov yangi `Assessment` yaratadi, shu sabab har doim oshadi).
+        var dateUtc = DateOnly.FromDateTime(now.UtcDateTime);
+        var registrationCount = await _context
+            .IncrementRegistrationCounterAsync(school.Id, dateUtc, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (registrationCount > school.DailyRegistrationLimit)
+        {
+            return Result.Failure<StartSessionResult>(new Error(ProblemCodes.RateLimited, "Ushbu maktab uchun kunlik ro'yxatdan o'tish limiti tugadi."));
+        }
+
+        var sessionToken = _tokenGenerator.GenerateUrlSafeToken(SessionTokenByteLength);
+        var expiresAt = now.AddDays(_appSettings.SessionLifetimeDays);
+        var ipHash = _ipHasher.Hash(request.IpAddress);
+
+        var assessment = Assessment.Create(
+            Guid.NewGuid(),
+            student.Id,
+            school.Id,
+            sessionToken,
+            string.IsNullOrWhiteSpace(request.LanguageCode) ? "uz" : request.LanguageCode,
+            program.Id,
+            startedAt: now,
+            expiresAt: expiresAt,
+            now: now,
+            ipHash: ipHash,
+            userAgent: request.UserAgent);
+
+        var tests = await AssessmentTestAttacher.AttachAsync(_context, _executor, assessment, program.Id, cancellationToken)
+            .ConfigureAwait(false);
+
+        _context.Add(student);
+        _context.Add(assessment);
+
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        var result = new StartSessionResult(
+            sessionToken,
+            assessment.Id,
+            assessment.Status.ToString(),
+            expiresAt,
+            Resumed: false,
+            tests);
+
+        return Result.Success(result);
+    }
+
+    /// <summary>
+    /// `RegistrationMode.Full` dasturda shaxs maydonlari MAJBURIY — bu tekshiruv avval
+    /// `StartSessionCommandValidator`da (`NotEmpty`) turardi, endi u DB'ga bog'liq bo'lgani
+    /// (dastur rejimi) sabab shu yerga ko'chdi (`Handle` izohi). Xabarlar eski validator
+    /// xabarlari bilan AYNAN bir xil — kalitlar (`fullName`/`birthDate`/`grade`/`phone`)
+    /// `docs/07` shartnomasi bilan mos.
+    /// </summary>
+    private static Error? ValidateRequiredIdentityFields(StartSessionCommand request)
+    {
+        var errors = new Dictionary<string, string[]>();
+
+        if (string.IsNullOrWhiteSpace(request.FullName))
+        {
+            errors["fullName"] = ["F.I.Sh. kiritilishi shart."];
+        }
+
+        if (request.BirthDate is null)
+        {
+            errors["birthDate"] = ["Tug'ilgan sana kiritilishi shart."];
+        }
+
+        if (request.Grade is null)
+        {
+            errors["grade"] = ["Sinf kiritilishi shart."];
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Phone))
+        {
+            errors["phone"] = ["Telefon raqami kiritilishi shart."];
+        }
+
+        if (errors.Count == 0)
+        {
+            return null;
+        }
+
+        return new Error(
+            ProblemCodes.ValidationError,
+            "Kiritilgan ma'lumotlar noto'g'ri.",
+            new Dictionary<string, object> { ["errors"] = errors });
     }
 
     private async Task<IReadOnlyList<PublicTestSummaryDto>> BuildTestSummariesAsync(Guid assessmentId, CancellationToken cancellationToken)

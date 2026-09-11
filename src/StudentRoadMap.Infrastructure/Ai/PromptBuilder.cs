@@ -114,8 +114,12 @@ public sealed class PromptBuilder : IPromptBuilder
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
+        // P52: anonim o'quvchida (`RegistrationMode.None`) tug'ilgan sana yo'q — bunday
+        // dasturda shaxsiyat batareyasi TAQIQLANGAN (`REGISTRATION_REQUIRED_FOR_BATTERY`),
+        // shu sabab `0` faqat AI JSON sxemasining (`docs/09` §3, butun son) talabini
+        // qanoatlantiradi, natijaga ta'sir qilmaydi (`personality16`/`bigFive` bu yo'lda yo'q).
         var context = new AnalysisContext(
-            Age: CalculateAge(student.BirthDate, now),
+            Age: student.BirthDate is null ? 0 : CalculateAge(student.BirthDate.Value, now),
             Grade: student.Grade,
             Gender: MapGender(student.Gender),
             Language: assessment.LanguageCode);

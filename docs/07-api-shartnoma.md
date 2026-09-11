@@ -34,6 +34,7 @@ Maktab havolasi to'g'riligini tekshirish va boshlanish ekranini to'ldirish.
   "programs": [
     { "code": "PERSONALITY_PROFILE", "nameUz": "Shaxsiyat profili", "descriptionUz": "…",
       "testCount": 4, "questionCount": 190, "estimatedMinutes": 31, "hasPersonalityBattery": true,
+      "registrationMode": "Full",
       "tests": [
         { "code": "MBTI16", "name": "16 tipli shaxsiyat modeli", "questionCount": 60, "estimatedMinutes": 9, "order": 1 },
         { "code": "BIG5", "name": "Shaxsiyatning 5 omili", "questionCount": 50, "estimatedMinutes": 8, "order": 2 },
@@ -42,6 +43,7 @@ Maktab havolasi to'g'riligini tekshirish va boshlanish ekranini to'ldirish.
       ] },
     { "code": "CAREER_SURVEY", "nameUz": "Kasb so'rovnomasi", "descriptionUz": null,
       "testCount": 1, "questionCount": 20, "estimatedMinutes": 5, "hasPersonalityBattery": false,
+      "registrationMode": "None",
       "tests": [
         { "code": "CAREER_SURVEY_Q", "name": "Kasb so'rovnomasi savollari", "questionCount": 20, "estimatedMinutes": 5, "order": 1 }
       ] }
@@ -52,6 +54,15 @@ Maktab havolasi to'g'riligini tekshirish va boshlanish ekranini to'ldirish.
 bir nechta bo'lsa o'quvchi tanlaydi, `code` → `POST /sessions` `programCode`).
 `programs[].tests` — AYNAN shu dasturning test bloklari (`ProgramTest.DisplayOrder` bo'yicha),
 sessiya boshlanganda (`POST /sessions`) biriktiriladigan ro'yxat bilan BIR XIL manbadan keladi.
+
+**`programs[].registrationMode`** (P52, 2026-09-11) — `"Full"`/`"None"` (`AssessmentProgram.RegistrationMode`).
+`Full` bo'lsa mijoz registratsiya ekranini (F.I.Sh./tug'ilgan sana/jins/sinf/telefon) ko'rsatadi
+va shu maydonlarni `POST /sessions` ga yuboradi (1.2 — mavjud xatti-harakat, o'zgarmagan).
+`None` bo'lsa mijoz registratsiya ekranini UMUMAN KO'RSATMAYDI — `POST /sessions` shaxs
+maydonlarisiz (faqat `slug`/`accessToken`/`consentAccepted`/ixtiyoriy `programCode`) chaqiriladi,
+server anonim `Student` yaratadi (1.2 pastga qarang). Qat'iy invariant: `hasPersonalityBattery: true`
+bo'lgan dasturda `registrationMode` DOIM `"Full"` — bu ikkala maydon hech qachon
+`{ true, "None" }` kombinatsiyasida bo'lmaydi (domen darajasida qulflangan).
 
 **`tests[]` (yuqori daraja, P52 — 2026-09-11 jonli hodisadan keyin tuzatildi):** endi BUTUN
 katalogdan EMAS, FAQAT `programs[]` ichidagi MAVJUD dasturlar asosida hisoblanadi — bir nechta
@@ -185,6 +196,42 @@ Qoidalar:
 - Rate limit: IP bo'yicha soatiga 10; maktab kunlik limiti.
 
 **400** `VALIDATION_ERROR` · **409** `DUPLICATE_ASSESSMENT` · **429** `RATE_LIMITED`
+
+#### Anonim oqim — `registrationMode: "None"` dastur (P52, 2026-09-11)
+
+Tanlangan dastur (`programCode` orqali aniqlangan yoki maktabda yagona) `registrationMode
+= "None"` bo'lsa, yuqoridagi ODATIY (`Full`) oqim **umuman ishlamaydi** — mijoz registratsiya
+ekranini ko'rsatmaydi va so'rovni shaxs maydonlarisiz yuboradi:
+
+```json
+{
+  "slug": "12-maktab-kokand",
+  "accessToken": "…",
+  "consentAccepted": true,
+  "languageCode": "uz",
+  "programCode": "CAREER_SURVEY"
+}
+```
+
+- `fullName`/`birthDate`/`gender`/`grade`/`phone`/`parentPhone`/`email` **talab qilinmaydi** —
+  yuborilsa ham **e'tiborsiz qoldiriladi** (saqlanmaydi). `consentAccepted` HAMON majburiy —
+  bu huquqiy rozilik, rejimdan qat'i nazar.
+- Server o'quvchini **ANONIM** yaratadi (`Student.CreateAnonymous`) — `fullName` PII EMAS
+  (`"Anonim ishtirokchi #A1B2C3"` shaklida), `birthDate`/`phone` bazada `null`. Agar
+  so'rovnomaning O'ZIDA shaxs savollari bo'lsa (masalan `Survey` rejimdagi anketa `Q1_1`
+  kabi savol kodlari bilan), shaxs ma'lumoti O'SHA javoblarda qoladi — eksportda ko'rinadi,
+  lekin `Student` yozuvida YO'Q.
+- **BR-1 (90 kunlik takror topshirish) va "davom ettirish" (`resumed: true`) ISHLAMAYDI** —
+  identifikator (FISH+tug'ilgan sana) yo'q. HAR so'rov yangi anonim `Student` va yangi
+  `Assessment` yaratadi (`201`, `resumed: false`) — bir xil brauzerdan bir necha marta kirish
+  mumkin. Bu qabul qilingan cheklov (egasining qarori).
+- Qolgan qoidalar (`consentAccepted`, kunlik ro'yxatdan o'tish limiti, `accessCode`, rate limit)
+  `Full` rejimi bilan BIR XIL.
+
+**Qat'iy invariant:** `hasPersonalityBattery: true` bo'lgan dasturda `registrationMode` hech
+qachon `"None"` bo'lmaydi (domen darajasida qulflangan, `docs/06` §6
+`REGISTRATION_REQUIRED_FOR_BATTERY`) — ya'ni bu anonim oqim orqali shaxsiyat tipi/Holland
+kodi/`MaturityIndex` HECH QACHON hisoblanmaydi.
 
 ---
 
@@ -607,6 +654,33 @@ Dastur tomonidan biriktirish/olib tashlash uchun **yangi endpoint yo'q** — mav
 endpoint dastur holatini **tekshirmaydi** (`Draft` ham `200`, idempotent) — "faqat faol
 dastur biriktiriladi" cheklovi UI tomonida: `Active` bo'lmagan dastur ommaviy foydalanuvchiga
 baribir ko'rinmaydi (`ProgramAvailability`: `Published && IsActive`).
+
+#### Dastur `registrationMode` — admin CRUD (P52, 2026-09-11)
+
+`AdminProgramListItemDto`/`AdminProgramDetailDto` javoblarida (yuqoridagi `state` bilan bir
+qatorda) endi `registrationMode` (`"Full"`/`"None"`) ham keladi:
+
+```json
+{ "state": "Active", "registrationMode": "Full" }
+```
+
+`POST /api/admin/programs` va `PUT /api/admin/programs/{id}` so'rov tanasida ixtiyoriy
+`registrationMode` (satr, standart `"Full"`):
+
+```json
+{ "code": "CAREER_SURVEY", "nameUz": "Kasb so'rovnomasi", "descriptionUz": null,
+  "displayOrder": 5, "visibility": "Public", "registrationMode": "None" }
+```
+
+**Qat'iy invariant** (`docs/04` §2.13, `docs/06` §6): dasturda ilmiy shaxsiyat batareyasi
+bo'lsa (`Standard` + `Scored` metodika — `PersonalityBattery.ContainedIn`) `registrationMode`
+`"None"`ga o'rnatib bo'lmaydi — `PUT`da **`400 REGISTRATION_REQUIRED_FOR_BATTERY`**. Tekshiruv
+IKKI nazorat nuqtasida: `PUT` (rejim o'zgartirilganda) va `POST /publish` (nashr qilinganda —
+masalan `None` dasturga keyinroq batareya testi biriktirilib nashr qilinsa).
+
+`Code`/`Kind`/`IsSystem` bilan bir xil qoida: yangi (`Create`) dasturda hali test yo'q, shu
+sabab `registrationMode` bu bosqichda invariantni buza olmaydi — tekshiruv faqat testlar
+biriktirilgach (`PUT`/`publish`) ishlaydi.
 
 #### `GET /api/admin/programs/{id}/impact?action=…` — amaldan OLDIN oqibat (2026-09-03)
 

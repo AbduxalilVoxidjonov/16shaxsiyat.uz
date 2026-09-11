@@ -31,7 +31,8 @@ public sealed record AssessmentReportData(
     string SchoolName,
     int Grade,
     string? ClassLetter,
-    int Age,
+    /// <summary>P52: anonim o'quvchida (`IsAnonymous`) `null` — tug'ilgan sana yo'q.</summary>
+    int? Age,
     string Gender,
     DateTimeOffset StartedAt,
     DateTimeOffset? CompletedAt,

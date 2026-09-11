@@ -12,16 +12,24 @@ namespace StudentRoadMap.Application.Public.StartSession;
 /// tuzatish #3 — Swagger'da bu ikki maydon ko'rinmasligi/mijoz yubora olmasligi uchun). Bu yerda
 /// XOM IP saqlanmaydi (`IIpHasher` orqali handler ichida xeshlanadi, `CLAUDE.md` 9-band).
 /// </summary>
+/// <summary>
+/// P52 (2026-09-11, egasining qarori): `FullName`/`BirthDate`/`Gender`/`Grade`/`Phone`
+/// endi NULLABLE — `AssessmentProgram.RegistrationMode.None` dasturida registratsiya ekrani
+/// umuman ko'rsatilmaydi va bu maydonlar kelmaydi (kelsa ham e'tiborsiz qoldiriladi,
+/// `StartSessionCommandHandler`). `RegistrationMode.Full` dasturda esa hamon majburiy —
+/// bu tekshiruv (DB'ga bog'liqligi sabab) validator EMAS, handlerda (`ValidateRequiredIdentityFields`).
+/// `ConsentAccepted` ikkala rejimda ham majburiy (huquqiy rozilik).
+/// </summary>
 public sealed record StartSessionCommand(
     string Slug,
     string AccessToken,
     string? AccessCode,
-    string FullName,
-    DateOnly BirthDate,
-    Gender Gender,
-    int Grade,
+    string? FullName,
+    DateOnly? BirthDate,
+    Gender? Gender,
+    int? Grade,
     string? ClassLetter,
-    string Phone,
+    string? Phone,
     string? ParentPhone,
     string? Email,
     bool ConsentAccepted,

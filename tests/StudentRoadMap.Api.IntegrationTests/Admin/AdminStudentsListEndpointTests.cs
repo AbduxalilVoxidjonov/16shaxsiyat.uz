@@ -136,4 +136,31 @@ public sealed class AdminStudentsListEndpointTests : IClassFixture<PublicApiTest
         result.Should().NotBeNull();
         result!.PageSize.Should().Be(100);
     }
+
+    /// <summary>
+    /// P52 (2026-09-11): anonim o'quvchi (`RegistrationMode.None` dastur orqali yaratilgan,
+    /// `Student.IsAnonymous`) — telefon/tug'ilgan sana `null` bo'lsa ham ro'yxat YIQILMAYDI,
+    /// `phone` maydoni `null` qaytadi.
+    /// </summary>
+    [Fact]
+    public async Task List_AnonimOquvchiBorBolsa_YiqilmaydiVaPhoneNullQaytaradi()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var now = DateTimeOffset.UtcNow;
+
+        var school = await TestDataFactory.CreateSchoolAsync(db, now, "students-anon-list", TestDataFactory.NewAccessToken("students-anon-list"));
+        var anonymousStudent = Student.CreateAnonymous(Guid.NewGuid(), school.Id, now, now);
+        db.Students.Add(anonymousStudent);
+        await db.SaveChangesAsync();
+
+        using var client = await AuthenticatedClientAsync("students-anon-list-admin");
+
+        var result = await client.GetFromJsonAsync<PagedResult<AdminStudentListItemDto>>(
+            $"/api/admin/students?schoolId={school.Id}", TestJson.Options);
+
+        var item = result!.Items.Should().ContainSingle(s => s.Id == anonymousStudent.Id).Which;
+        item.Phone.Should().BeNull();
+        item.FullName.Should().StartWith("Anonim ishtirokchi #");
+    }
 }

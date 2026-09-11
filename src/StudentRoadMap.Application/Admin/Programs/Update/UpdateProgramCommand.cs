@@ -16,5 +16,11 @@ public sealed record UpdateProgramCommand(
     int DisplayOrder,
     string Visibility,
     Guid AdminUserId,
+    /// <summary>
+    /// P52 (2026-09-11): `"Full"`/`"None"`. `None`ga o'zgartirishga urinishda dasturda
+    /// shaxsiyat batareyasi bo'lsa `400 REGISTRATION_REQUIRED_FOR_BATTERY`
+    /// (`AssessmentProgram.SetRegistrationMode`).
+    /// </summary>
+    string RegistrationMode = "Full",
     string? IpAddress = null,
     string? UserAgent = null) : IRequest<Result<AdminProgramDetailDto>>;

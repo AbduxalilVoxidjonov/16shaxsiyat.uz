@@ -21,5 +21,9 @@ public sealed class CreateProgramCommandValidator : AbstractValidator<CreateProg
         RuleFor(x => x.Visibility)
             .Must(v => Enum.TryParse<Domain.Catalog.ProgramVisibility>(v, ignoreCase: true, out _))
             .WithMessage("Ko'rinish 'Public' yoki 'Assigned' bo'lishi kerak.");
+
+        RuleFor(x => x.RegistrationMode)
+            .Must(v => Enum.TryParse<Domain.Catalog.RegistrationMode>(v, ignoreCase: true, out _))
+            .WithMessage("Ro'yxatdan o'tish rejimi 'Full' yoki 'None' bo'lishi kerak.");
     }
 }

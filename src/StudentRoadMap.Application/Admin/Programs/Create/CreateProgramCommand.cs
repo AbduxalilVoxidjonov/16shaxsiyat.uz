@@ -16,5 +16,7 @@ public sealed record CreateProgramCommand(
     int DisplayOrder,
     string Visibility,
     Guid AdminUserId,
+    /// <summary>P52 (2026-09-11): `"Full"`/`"None"`. Yangi dasturda hali test yo'q, shu sabab batareya invarianti bu yerda buzila olmaydi.</summary>
+    string RegistrationMode = "Full",
     string? IpAddress = null,
     string? UserAgent = null) : IRequest<Result<AdminProgramDetailDto>>;

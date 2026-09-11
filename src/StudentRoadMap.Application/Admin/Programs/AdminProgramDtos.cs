@@ -19,6 +19,8 @@ public sealed record AdminProgramListItemDto(
     string NameUz,
     string Kind,
     string Visibility,
+    /// <summary>P52 (2026-09-11): `"Full"`/`"None"` — `AssessmentProgram.RegistrationMode`.</summary>
+    string RegistrationMode,
     string State,
     bool IsSystem,
     int DisplayOrder,
@@ -45,6 +47,8 @@ public sealed record AdminProgramDetailDto(
     string? DescriptionUz,
     string Kind,
     string Visibility,
+    /// <summary>P52 (2026-09-11): `"Full"`/`"None"` — `AssessmentProgram.RegistrationMode`.</summary>
+    string RegistrationMode,
     string State,
     bool IsSystem,
     int DisplayOrder,

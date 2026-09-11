@@ -26,6 +26,12 @@ public sealed class AssessmentProgram : AggregateRoot
 
     public ProgramVisibility Visibility { get; private set; }
 
+    /// <summary>
+    /// P52 (2026-09-11 qaror) — `RegistrationMode.cs` izohiga qarang. Qat'iy invariant:
+    /// dasturda shaxsiyat batareyasi bo'lsa bu maydon DOIM `Full`.
+    /// </summary>
+    public RegistrationMode RegistrationMode { get; private set; }
+
     public ProgramStatus Status { get; private set; }
 
     public bool IsActive { get; private set; }
@@ -68,6 +74,7 @@ public sealed class AssessmentProgram : AggregateRoot
         int displayOrder,
         ProgramKind kind,
         ProgramVisibility visibility,
+        RegistrationMode registrationMode,
         bool isSystem,
         Guid? createdByAdminUserId,
         DateTimeOffset now)
@@ -79,6 +86,7 @@ public sealed class AssessmentProgram : AggregateRoot
         DisplayOrder = displayOrder;
         Kind = kind;
         Visibility = visibility;
+        RegistrationMode = registrationMode;
         Status = ProgramStatus.Draft;
         IsActive = true;
         IsSystem = isSystem;
@@ -87,6 +95,11 @@ public sealed class AssessmentProgram : AggregateRoot
         UpdatedAt = now;
     }
 
+    /// <summary>
+    /// Yangi (bo'sh, `Draft`) dastur — hali test biriktirilmagan, shu sabab
+    /// <paramref name="registrationMode"/> bu bosqichda hech qanday batareya invariantini
+    /// buza olmaydi (tekshiruv `SetRegistrationMode`/`Publish`da, test biriktirilgach ishlaydi).
+    /// </summary>
     public static AssessmentProgram Create(
         Guid id,
         string code,
@@ -95,6 +108,7 @@ public sealed class AssessmentProgram : AggregateRoot
         int displayOrder = 1,
         ProgramKind kind = ProgramKind.Custom,
         ProgramVisibility visibility = ProgramVisibility.Assigned,
+        RegistrationMode registrationMode = RegistrationMode.Full,
         string? descriptionUz = null,
         Guid? createdByAdminUserId = null)
     {
@@ -108,7 +122,8 @@ public sealed class AssessmentProgram : AggregateRoot
             throw new ArgumentException("Dastur nomi bo'sh bo'lishi mumkin emas.", nameof(nameUz));
         }
 
-        return new AssessmentProgram(id, code, nameUz, descriptionUz, displayOrder, kind, visibility, isSystem: false, createdByAdminUserId, now);
+        return new AssessmentProgram(
+            id, code, nameUz, descriptionUz, displayOrder, kind, visibility, registrationMode, isSystem: false, createdByAdminUserId, now);
     }
 
     /// <summary>
@@ -133,9 +148,12 @@ public sealed class AssessmentProgram : AggregateRoot
             throw new ArgumentException("Tizim dasturida kamida bitta test bo'lishi kerak.", nameof(tests));
         }
 
+        // Tizim dasturi HAR DOIM ilmiy batareyani o'z ichiga oladi — `RegistrationMode` bu
+        // yerda parametr sifatida ochilmaydi, DOIM `Full` (invariant: batareya bor dastur
+        // registratsiyasiz bo'lolmaydi, `RegistrationMode.cs` izohi).
         var program = new AssessmentProgram(
             id, code, nameUz, descriptionUz, displayOrder, ProgramKind.System, ProgramVisibility.Public,
-            isSystem: true, createdByAdminUserId: null, now);
+            RegistrationMode.Full, isSystem: true, createdByAdminUserId: null, now);
 
         foreach (var (testDefinitionId, testDisplayOrder) in tests)
         {
@@ -259,7 +277,16 @@ public sealed class AssessmentProgram : AggregateRoot
     /// ma'nosiz (`ProgramState.Draft` uni umuman o'qimaydi), shu sabab u qanday qolganidan
     /// qat'i nazar, nashr natijasi DOIM aniq — `Published + IsActive = true`.
     /// </summary>
-    public void Publish(DateTimeOffset now)
+    /// <summary>
+    /// <paramref name="hasPersonalityBattery"/> — chaqiruvchi (`PublishProgramCommandHandler`)
+    /// biriktirilgan testlarni (`TestDefinition.Kind`/`ScoringMode`) yuklab,
+    /// `Domain.Catalog.PersonalityBattery.ContainedIn` bilan hisoblab beradi: domenning o'zi
+    /// `TestDefinition` agregatlariga to'g'ridan-to'g'ri murojaat qila olmaydi (faqat
+    /// `ProgramTest.TestDefinitionId` saqlaydi), shu sabab tayyor bayroq PARAMETR sifatida
+    /// keladi — `RegistrationMode.cs` invarianti IKKINCHI nazorat nuqtasi (birinchisi —
+    /// <see cref="SetRegistrationMode"/>).
+    /// </summary>
+    public void Publish(DateTimeOffset now, bool hasPersonalityBattery)
     {
         if (Status != ProgramStatus.Draft)
         {
@@ -271,9 +298,39 @@ public sealed class AssessmentProgram : AggregateRoot
             throw new DomainException("PROGRAM_NOT_PUBLISHABLE", "Kamida bitta test biriktirilmasa dasturni nashr qilib bo'lmaydi.");
         }
 
+        GuardRegistrationModeAllowsBattery(hasPersonalityBattery);
+
         Status = ProgramStatus.Published;
         IsActive = true;
         UpdatedAt = now;
+    }
+
+    /// <summary>
+    /// Ro'yxatdan o'tish rejimini o'zgartiradi — BIRINCHI nazorat nuqtasi (ikkinchisi —
+    /// <see cref="Publish"/>). <paramref name="hasPersonalityBattery"/> chaqiruvchi tomonidan
+    /// hisoblanadi (<see cref="Publish"/> izohiga qarang).
+    /// </summary>
+    public void SetRegistrationMode(RegistrationMode registrationMode, bool hasPersonalityBattery, DateTimeOffset now)
+    {
+        if (registrationMode == RegistrationMode.None && hasPersonalityBattery)
+        {
+            throw new DomainException(
+                "REGISTRATION_REQUIRED_FOR_BATTERY",
+                "Shaxsiyat batareyasi bo'lgan dasturda ro'yxatdan o'tish o'chirilishi mumkin emas.");
+        }
+
+        RegistrationMode = registrationMode;
+        UpdatedAt = now;
+    }
+
+    private void GuardRegistrationModeAllowsBattery(bool hasPersonalityBattery)
+    {
+        if (RegistrationMode == RegistrationMode.None && hasPersonalityBattery)
+        {
+            throw new DomainException(
+                "REGISTRATION_REQUIRED_FOR_BATTERY",
+                "Shaxsiyat batareyasi bo'lgan dasturni ro'yxatdan o'tishsiz nashr qilib bo'lmaydi.");
+        }
     }
 
     /// <summary>

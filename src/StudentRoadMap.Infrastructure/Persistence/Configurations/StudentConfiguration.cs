@@ -22,17 +22,26 @@ internal sealed class StudentConfiguration : IEntityTypeConfiguration<Student>
         // Maktab oqimida `null`, ommaviy makonda — akkaunt identifikatori.
         builder.Property(s => s.PublicUserId);
 
+        // P52 (2026-09-11): ro'yxatdan o'tishsiz dastur (`RegistrationMode.None`) orqali
+        // yaratilgan anonim yozuv — `BirthDate`/`Phone` bunday yozuvda DOIM `null`.
+        builder.Property(s => s.IsAnonymous).IsRequired().HasDefaultValue(false);
+
         builder.Property(s => s.FullName).HasMaxLength(200).IsRequired();
         builder.Property(s => s.NormalizedName).HasMaxLength(200).IsRequired();
-        builder.Property(s => s.BirthDate).HasColumnType("date").IsRequired();
+        // NULLABLE (P52) — anonim o'quvchida tug'ilgan sana yo'q. Domen invarianti
+        // (`Student` konstruktori) anonim BO'LMAGAN yozuvda buni majburiy qiladi.
+        builder.Property(s => s.BirthDate).HasColumnType("date");
         builder.Property(s => s.Gender).HasConversion<short>().IsRequired().HasDefaultValue(Gender.Unspecified);
         builder.Property(s => s.Grade).IsRequired();
         builder.Property(s => s.ClassLetter).HasMaxLength(2);
 
+        // NULLABLE (P52) — anonim o'quvchida telefon yo'q; konversiya `ParentPhone`dagi bilan
+        // bir xil naqsh (`value != null ? ... : null`).
         builder.Property(s => s.Phone)
-            .HasConversion(phone => phone.Value, value => PhoneNumber.Create(value).Value)
-            .HasMaxLength(20)
-            .IsRequired();
+            .HasConversion(
+                phone => phone != null ? phone.Value : null,
+                value => value != null ? PhoneNumber.Create(value).Value : null)
+            .HasMaxLength(20);
 
         builder.Property(s => s.ParentPhone)
             .HasConversion(

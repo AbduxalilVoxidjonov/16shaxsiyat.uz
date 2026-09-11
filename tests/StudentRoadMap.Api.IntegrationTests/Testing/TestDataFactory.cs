@@ -81,7 +81,7 @@ internal static class TestDataFactory
         {
             var program = AssessmentProgram.Create(Guid.NewGuid(), DefaultProgramCode, "Standart dastur (sinov)", now, visibility: ProgramVisibility.Public);
             program.AddTest(testDefinitionId, displayOrder, now);
-            program.Publish(now);
+            program.Publish(now, hasPersonalityBattery: false);
             db.AssessmentPrograms.Add(program);
             await db.SaveChangesAsync();
             db.Entry(program).State = EntityState.Detached;
@@ -548,7 +548,7 @@ internal static class TestDataFactory
             program.AddTest(testDefinitionId, displayOrder, now);
         }
 
-        program.Publish(now);
+        program.Publish(now, hasPersonalityBattery: false);
 
         db.AssessmentPrograms.Add(program);
         await db.SaveChangesAsync();

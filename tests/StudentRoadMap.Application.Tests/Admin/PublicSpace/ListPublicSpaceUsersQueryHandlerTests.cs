@@ -62,7 +62,7 @@ public sealed class ListPublicSpaceUsersQueryHandlerTests
 
         item.StudentId.Should().Be(student.Id);
         item.FullName.Should().Be("Karimova Zulfiya");
-        item.Phone.Should().Be(student.Phone.Value, "manba — anketadagi `Student.Phone`");
+        item.Phone.Should().Be(student.Phone!.Value, "manba — anketadagi `Student.Phone`");
         item.Age.Should().Be(17);
         item.Grade.Should().Be(9);
         item.LastAssessment.Should().BeNull();
@@ -207,15 +207,15 @@ public sealed class ListPublicSpaceUsersQueryHandlerTests
         AddUser("Boshqa", "Odam", "boshqa_odam");
 
         // To'liq mahalliy raqam (+998 siz, 9 xona).
-        (await HandleAsync(search: student.Phone.Value["+998".Length..])).Items
+        (await HandleAsync(search: student.Phone!.Value["+998".Length..])).Items
             .Should().ContainSingle(i => i.PublicUserId == user.Id);
 
         // To'liq xalqaro shakl (+998 bilan, 12 xona).
-        (await HandleAsync(search: student.Phone.Value)).Items
+        (await HandleAsync(search: student.Phone!.Value)).Items
             .Should().ContainSingle(i => i.PublicUserId == user.Id);
 
         // Qisman raqam — moslik YO'Q (faqat to'liq tenglik).
-        (await HandleAsync(search: student.Phone.Value[..7])).TotalCount.Should().Be(0);
+        (await HandleAsync(search: student.Phone!.Value[..7])).TotalCount.Should().Be(0);
     }
 
     [Fact]

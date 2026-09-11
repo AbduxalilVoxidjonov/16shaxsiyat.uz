@@ -79,7 +79,7 @@ public sealed class AdminPublicSpaceEndpointTests : IClassFixture<PublicApiTestF
 
         var program = AssessmentProgram.Create(Guid.NewGuid(), code, "O'chirilgan dastur (sinov)", now, visibility: ProgramVisibility.Assigned);
         program.AddTest(testDefinition.Id, 1, now);
-        program.Publish(now);
+        program.Publish(now, hasPersonalityBattery: false);
         program.Deactivate(now);
         db.AssessmentPrograms.Add(program);
         await db.SaveChangesAsync();

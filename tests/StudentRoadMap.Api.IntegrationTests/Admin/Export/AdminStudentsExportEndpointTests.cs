@@ -119,6 +119,33 @@ public sealed class AdminStudentsExportEndpointTests : IClassFixture<PublicApiTe
         phoneCell.GetString().Should().StartWith("+998");
     }
 
+    /// <summary>P52 (2026-09-11): anonim o'quvchi (telefon/tug'ilgan sana `null`) eksportda YIQILMASDAN bo'sh katak bilan chiqadi.</summary>
+    [Fact]
+    public async Task ExportStudents_AnonimOquvchiBorBolsa_YiqilmaydiVaBoShKataklarBilanChiqadi()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var now = DateTimeOffset.UtcNow;
+
+        var school = await TestDataFactory.CreateSchoolAsync(db, now, "export-anon", TestDataFactory.NewAccessToken("export-anon"));
+        var anonymousStudent = Student.CreateAnonymous(Guid.NewGuid(), school.Id, now, now);
+        db.Students.Add(anonymousStudent);
+        await db.SaveChangesAsync();
+
+        using var client = await AuthenticatedClientAsync("export-anon-admin");
+
+        var response = await client.GetAsync(new Uri($"/api/admin/students/export?schoolId={school.Id}", UriKind.Relative));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        using var workbook = new XLWorkbook(new MemoryStream(bytes));
+        var worksheet = workbook.Worksheets.First();
+
+        worksheet.Cell(2, 1).GetString().Should().Be(anonymousStudent.FullName);
+        worksheet.Cell(2, 7).GetString().Should().BeEmpty("anonim o'quvchida telefon yo'q");
+        worksheet.Cell(2, 6).GetString().Should().BeEmpty("anonim o'quvchida tug'ilgan sana yo'q — yosh hisoblanmaydi");
+    }
+
     [Fact]
     public async Task ExportStudents_QidiruvFiltriBilan_AuditYozadiVaQidiruvMatniniYozmaydi()
     {

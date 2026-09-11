@@ -2,6 +2,7 @@ using MediatR;
 using StudentRoadMap.Application.Admin.Common;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
+using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Common;
 using StudentRoadMap.Domain.Identity;
 
@@ -41,11 +42,20 @@ internal sealed class PublishProgramCommandHandler : IRequestHandler<PublishProg
         // kolleksiyaga tayanadi, shu sabab haqiqiy tarkib avval SHU DbContext orqali
         // yuklanadi (`AddProgramTestCommandHandler`dagi izohga qarang — bu yerda faqat
         // O'QISH uchun, yangi yozuv qo'shilmaydi, shu sabab qo'shimcha `Add()` shart emas).
-        _ = await _executor.ToListAsync(
+        var programTests = await _executor.ToListAsync(
             _context.ProgramTests.Where(pt => pt.ProgramId == program.Id),
             cancellationToken).ConfigureAwait(false);
 
-        program.Publish(now);
+        // P52: `REGISTRATION_REQUIRED_FOR_BATTERY` invariantining IKKINCHI nazorat nuqtasi
+        // (`AssessmentProgram.Publish` izohi) — biriktirilgan testlar yuklanib, ilmiy
+        // batareya bayrog'i domenga TAYYOR holda beriladi (`PersonalityBattery.ContainedIn`).
+        var testDefinitionIds = programTests.Select(pt => pt.TestDefinitionId).ToList();
+        var testDefinitions = await _executor.ToListAsync(
+            _context.TestDefinitions.Where(t => testDefinitionIds.Contains(t.Id)),
+            cancellationToken).ConfigureAwait(false);
+        var hasPersonalityBattery = PersonalityBattery.ContainedIn(testDefinitions);
+
+        program.Publish(now, hasPersonalityBattery);
 
         _context.Add(AuditLog.Create(
             AuditActions.ProgramPublished,

@@ -77,13 +77,14 @@ makon (faqat `DbSeeder.SeedPublicSpaceAsync` chaqiradi, slug `ommaviy`, `ShowRes
 | `Id` | `Guid` | |
 | `SchoolId` | `Guid` | FK → School (ommaviy oqimda — ommaviy makon `Id`si) |
 | `PublicUserId` | `Guid?` | **P47** — FK → `PublicUser`. Maktab oqimida `null` |
-| `FullName` | `string(200)` | FISH, kiritilgani bo'yicha |
+| `IsAnonymous` | `bool` | **P52** — `AssessmentProgram.RegistrationMode.None` dasturi orqali yaratilgan (`Student.CreateAnonymous`). `true` bo'lsa `BirthDate`/`Phone` DOIM `null` |
+| `FullName` | `string(200)` | FISH, kiritilgani bo'yicha. Anonim o'quvchida PII EMAS: `"Anonim ishtirokchi #XXXXXX"` (o'z `Id`sidan olingan 6 belgili qo'shimcha — ro'yxatda qatorlar ajralib tursin) |
 | `NormalizedName` | `string(200)` | Katta harf, ortiqcha probel olib tashlangan — dublikat uchun |
-| `BirthDate` | `DateOnly` | |
+| `BirthDate` | `DateOnly?` | **P52** — NULLABLE: anonim o'quvchida `null` |
 | `Gender` | `enum` | `Male`, `Female`, `Unspecified` |
-| `Grade` | `int` | 1..11, yoki `0` = `Student.NoGrade` (**P47** — maktabda o'qimaydigan ommaviy foydalanuvchi) |
+| `Grade` | `int` | 1..11, yoki `0` = `Student.NoGrade` (**P47** — maktabda o'qimaydigan ommaviy foydalanuvchi; **P52** — anonim o'quvchida ham shu sentinel) |
 | `ClassLetter` | `string(2)?` | "A", "B" |
-| `Phone` | `string(20)` | |
+| `Phone` | `string(20)?` | **P52** — NULLABLE: anonim o'quvchida `null` |
 | `ParentPhone` | `string(20)?` | |
 | `Email` | `string(150)?` | |
 | `ConsentGivenAt` | `DateTimeOffset` | Rozilik vaqti (topshiriqdagi `ConsentAcceptedAt` — AYNAN shu maydon, dublikat ustun qo'shilmadi) |
@@ -107,10 +108,23 @@ Sessiya **`Completed`** bo'lganda (ya'ni `CompleteSession` da, scoring tugagach)
 - Yosh `Student.MinAge`..`Student.MaxAge` = **6..99** (ilgari validator 6–20 talab qilardi —
   kattalar ro'yxatdan o'ta olmasdi). Domen `CalculateAge`/`IsAgeAllowed` yordamchilarini beradi.
 - `ConsentGivenAt` bo'lmasa student yaratilmaydi.
+- **P52 (2026-09-11, egasining qarori):** `IsAnonymous == false` bo'lsa `BirthDate` va `Phone`
+  IKKALASI HAM to'ldirilgan bo'lishi SHART — aks holda konstruktor
+  `DomainException("STUDENT_IDENTITY_REQUIRED")` beradi. Bu invariant mavjud (maktab/ommaviy
+  makon) oqimni JIMGINA buzilishdan himoya qiladi: `Student.Create` (nomlangan, to'liq profil)
+  va `Student.CreateAnonymous` (anonim, ikkalasi ham `null`) — ikkita alohida fabrika, oraliq
+  holat yo'q.
 
 **Metodlar:** `UpdateSnapshot()`, `MarkDeleted()`, `LinkToPublicUser()` (**P47** — eski yozuvni
 Telegram akkauntga ulash; boshqa akkauntga bog'langan yozuv qayta bog'lanmaydi:
 `DomainException("STUDENT_ALREADY_LINKED")`), `RecordConsent()`.
+
+**Fabrikalar:** `Create()` — to'liq profil (`IsAnonymous = false`, `BirthDate`/`Phone` majburiy);
+`CreateAnonymous()` (**P52**) — `RegistrationMode.None` dasturi uchun, shaxs maydonlarisiz
+(`Grade = NoGrade`, `Gender = Unspecified`, `BirthDate`/`Phone = null`), faqat maktab oqimida
+(`StartSessionCommandHandler`) chaqiriladi. BR-1 (90 kunlik takror topshirish) va sessiyani
+identifikator bo'yicha davom ettirish anonim yozuvda ISHLAMAYDI (`NormalizedName`+`BirthDate`
+yo'q) — qabul qilingan cheklov: har so'rov yangi anonim `Student` yaratadi.
 
 ---
 
@@ -389,6 +403,7 @@ sessiyaga faqat shu dasturning testlari qo'shiladi (`Assessment.ProgramId`).
 | `NameUz` / `DescriptionUz` | `string` | |
 | `Kind` | `ProgramKind` | `System = 1` · `Custom = 2` |
 | `Visibility` | `ProgramVisibility` | `Public = 1` (barcha maktabda) · `Assigned = 2` (faqat biriktirilganda) |
+| `RegistrationMode` | `RegistrationMode` | **P52** — `Full = 1` (standart: o'quvchi ro'yxatdan o'tish anketasini to'ldiradi) · `None = 2` (registratsiya ekrani ko'rsatilmaydi, `Student` ANONIM yaratiladi — faqat batareyasiz dasturda ruxsat, pastga qarang) |
 | `Status` | `ProgramStatus` | `Draft = 1` · `Published = 2` · `Archived = 3` — **saqlash maydoni** |
 | `IsActive` | `bool` | **saqlash maydoni** |
 | `IsSystem` | `bool` | Seed'dan kelgan tizim dasturi; tarkibi qulflangan (`SYSTEM_PROGRAM_LOCKED`) |
@@ -439,6 +454,15 @@ Draft ──Publish()──▶ Active ──Deactivate()──▶ Paused ──A
   (bo'sh dastur `Paused` bo'lib qoladi — ommaviy oqim uni `ProgramsWithoutTests` deb ko'rsatadi).
 - Tizim dasturida (`IsSystem`) tarkib o'zgartirilmaydi: `AddTest`/`RemoveTest`/`ReorderTests`
   — `SYSTEM_PROGRAM_LOCKED` (BR-8 ruhida).
+- **P52 (2026-09-11, egasining qarori):** dasturda ilmiy shaxsiyat batareyasi (`Standard` +
+  `Scored` metodika, `Domain.Catalog.PersonalityBattery.ContainedIn`) bo'lsa `RegistrationMode`
+  DOIM `Full` bo'lishi SHART — scoring, normalar va AI tahlili yosh/sinf/jinsga tayanadi,
+  ularsiz natija ma'nosiz bo'ladi. Buzilsa `DomainException("REGISTRATION_REQUIRED_FOR_BATTERY")`.
+  Tekshiruv IKKI nazorat nuqtasida: `SetRegistrationMode()` (rejim o'zgartirilganda) va
+  `Publish()` (nashr qilinganda) — ikkalasi ham `hasPersonalityBattery` bayrog'ini PARAMETR
+  sifatida qabul qiladi, chunki domen agregatining o'zi `TestDefinition`larga to'g'ridan-to'g'ri
+  murojaat qila olmaydi (faqat `ProgramTest.TestDefinitionId` saqlaydi) — chaqiruvchi
+  (`UpdateProgramCommandHandler`/`PublishProgramCommandHandler`) tarkibni yuklab hisoblaydi.
 
 **Eski ma'lumot:** `Archived + IsActive` juftligi bazada qolgan bo'lsa, `State` uni baribir
 `Archived` deb ko'rsatadi (`Status` ustuvor), ustunning o'zi esa seed bosqichida idempotent

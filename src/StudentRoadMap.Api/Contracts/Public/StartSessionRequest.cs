@@ -10,16 +10,20 @@ namespace StudentRoadMap.Api.Contracts.Public;
 /// ko'rinmaydi. Bu ikkalasini kontroller (`PublicSessionController`) `HttpContext`dan o'zi
 /// to'ldirib, `StartSessionCommand`ga aylantiradi (`ToCommand`).
 /// </summary>
+/// <summary>
+/// P52 (2026-09-11): shaxs maydonlari NULLABLE — `RegistrationMode.None` dasturda mijoz
+/// registratsiya ekranini umuman ko'rsatmaydi, shu maydonlarni yubormaydi.
+/// </summary>
 public sealed record StartSessionRequest(
     string Slug,
     string AccessToken,
     string? AccessCode,
-    string FullName,
-    DateOnly BirthDate,
-    Gender Gender,
-    int Grade,
+    string? FullName,
+    DateOnly? BirthDate,
+    Gender? Gender,
+    int? Grade,
     string? ClassLetter,
-    string Phone,
+    string? Phone,
     string? ParentPhone,
     string? Email,
     bool ConsentAccepted,

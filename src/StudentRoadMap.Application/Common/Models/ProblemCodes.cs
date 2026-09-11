@@ -204,6 +204,17 @@ public static class ProblemCodes
     /// <summary>Ko'rsatish sharti (`visibility`) faqat `Survey` anketalarda — `Scored`da taqiqlangan (B-2).</summary>
     public const string BranchingNotAllowedInScored = "BRANCHING_NOT_ALLOWED_IN_SCORED";
 
+    // --- P52 (tarmoqlanuvchi so'rovnoma davomi, 2026-09-11) — ro'yxatdan o'tishsiz dasturlar
+    // (`AssessmentProgram.RegistrationMode`, `docs/18` §9) ---
+
+    /// <summary>
+    /// `AssessmentProgram.SetRegistrationMode`/`Publish`: shaxsiyat batareyasi (`Standard` +
+    /// `Scored` metodika) bor dasturda `RegistrationMode` `None`ga o'rnatilishga yoki shu
+    /// holatda nashr qilinishga urinildi. Scoring/normalar/AI tahlili yosh-sinf-jinsga
+    /// tayanadi — ularsiz natija ma'nosiz bo'ladi (400).
+    /// </summary>
+    public const string RegistrationRequiredForBattery = "REGISTRATION_REQUIRED_FOR_BATTERY";
+
     /// <summary>
     /// `ShortText`/`Phone` savolining `inputPattern`i (admin tomonidan) kompilyatsiya qilinmadi
     /// (`docs/18` §5) — `CachedInputPatternMatcher.IsValidPattern` bilan bir xil qoida
@@ -260,6 +271,7 @@ public static class ProblemCodes
         [QuestionTypeNotScorable] = StatusCodes.Status400BadRequest,
         [BranchingNotAllowedInScored] = StatusCodes.Status400BadRequest,
         [InputPatternInvalid] = StatusCodes.Status400BadRequest,
+        [RegistrationRequiredForBattery] = StatusCodes.Status400BadRequest,
     };
 
     /// <summary>Default (`docs/06` jadvaliga kirmagan domen kodlari uchun) — holat mashinasi konflikti.</summary>

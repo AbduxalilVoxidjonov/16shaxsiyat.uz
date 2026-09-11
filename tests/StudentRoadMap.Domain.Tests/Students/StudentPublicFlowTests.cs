@@ -192,7 +192,7 @@ public sealed class StudentPublicFlowTests
     {
         var student = CreateStudent();
 
-        student.UpdateProfile("Aliyev Sardor", student.BirthDate, student.Gender, student.Grade, Phone, "   ", Now);
+        student.UpdateProfile("Aliyev Sardor", student.BirthDate!.Value, student.Gender, student.Grade, Phone, "   ", Now);
 
         student.Email.Should().BeNull("bo'sh satr — emailni tozalash");
     }
@@ -204,7 +204,7 @@ public sealed class StudentPublicFlowTests
     {
         var student = CreateStudent();
 
-        var act = () => student.UpdateProfile(fullName, student.BirthDate, student.Gender, student.Grade, Phone, null, Now);
+        var act = () => student.UpdateProfile(fullName, student.BirthDate!.Value, student.Gender, student.Grade, Phone, null, Now);
 
         act.Should().Throw<ArgumentException>();
     }
@@ -216,7 +216,7 @@ public sealed class StudentPublicFlowTests
     {
         var student = CreateStudent();
 
-        var act = () => student.UpdateProfile("Aliyev Sardor", student.BirthDate, student.Gender, grade, Phone, null, Now);
+        var act = () => student.UpdateProfile("Aliyev Sardor", student.BirthDate!.Value, student.Gender, grade, Phone, null, Now);
 
         act.Should().Throw<ArgumentOutOfRangeException>();
     }

@@ -141,4 +141,28 @@ public sealed class AdminStudentGetByIdEndpointTests : IClassFixture<PublicApiTe
             "shartnoma kaliti — `MBTI16` (anketa KODI `GBI-MBTI` bo'lsa ham: kalit rolga bog'liq, kodga emas)");
         rawResults.TryGetProperty("mbti16", out _).Should().BeFalse("camelCase kalit shartnomani buzadi");
     }
+
+    /// <summary>P52 (2026-09-11): anonim o'quvchi profili `birthDate`/`age`/`phone` `null` bilan YIQILMASDAN qaytadi.</summary>
+    [Fact]
+    public async Task GetById_AnonimOquvchi_BirthDateVaPhoneNullBilanQaytadi()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var now = DateTimeOffset.UtcNow;
+
+        var school = await TestDataFactory.CreateSchoolAsync(db, now, "students-anon-getbyid", TestDataFactory.NewAccessToken("students-anon-getbyid"));
+        var anonymousStudent = Student.CreateAnonymous(Guid.NewGuid(), school.Id, now, now);
+        db.Students.Add(anonymousStudent);
+        await db.SaveChangesAsync();
+
+        using var client = await AuthenticatedClientAsync("students-anon-getbyid-admin");
+
+        var response = await client.GetAsync(new Uri($"/api/admin/students/{anonymousStudent.Id}", UriKind.Relative));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = (await response.Content.ReadFromJsonAsync<AdminStudentProfileDto>(TestJson.Options))!;
+        body.Student.BirthDate.Should().BeNull();
+        body.Student.Age.Should().BeNull();
+        body.Student.Phone.Should().BeNull();
+    }
 }

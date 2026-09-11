@@ -56,7 +56,7 @@ public sealed class AssessmentProgramTests
     {
         var program = CreateCustomProgram();
 
-        var act = () => program.Publish(Now);
+        var act = () => program.Publish(Now, hasPersonalityBattery: false);
 
         var ex = act.Should().Throw<DomainException>().Which;
         ex.Code.Should().Be("PROGRAM_NOT_PUBLISHABLE");
@@ -68,7 +68,7 @@ public sealed class AssessmentProgramTests
         var program = CreateCustomProgram();
         program.AddTest(Guid.NewGuid(), 1, Now);
 
-        program.Publish(Now);
+        program.Publish(Now, hasPersonalityBattery: false);
 
         program.Status.Should().Be(ProgramStatus.Published);
     }
@@ -78,9 +78,9 @@ public sealed class AssessmentProgramTests
     {
         var program = CreateCustomProgram();
         program.AddTest(Guid.NewGuid(), 1, Now);
-        program.Publish(Now);
+        program.Publish(Now, hasPersonalityBattery: false);
 
-        var act = () => program.Publish(Now);
+        var act = () => program.Publish(Now, hasPersonalityBattery: false);
 
         var ex = act.Should().Throw<DomainException>().Which;
         ex.Code.Should().Be("PROGRAM_INVALID_TRANSITION");
@@ -212,7 +212,7 @@ public sealed class AssessmentProgramTests
         var program = CreateCustomProgram();
         program.AddTest(Guid.NewGuid(), 1, Now);
 
-        program.Publish(Now);
+        program.Publish(Now, hasPersonalityBattery: false);
 
         program.IsActive.Should().BeTrue();
         program.State.Should().Be(ProgramState.Active);
@@ -448,7 +448,7 @@ public sealed class AssessmentProgramTests
     {
         var program = CreateCustomProgram();
         program.AddTest(Guid.NewGuid(), 1, Now);
-        program.Publish(Now);
+        program.Publish(Now, hasPersonalityBattery: false);
         return program;
     }
 
@@ -460,4 +460,77 @@ public sealed class AssessmentProgramTests
         typeof(AssessmentProgram)
             .GetProperty(nameof(AssessmentProgram.IsActive))!
             .SetValue(program, value);
+
+    // --- P52 (2026-09-11): `RegistrationMode` invarianti — batareyali dasturga `None`
+    // qo'yib bo'lmaydi (`REGISTRATION_REQUIRED_FOR_BATTERY`), tekshiruv IKKI joyda:
+    // `SetRegistrationMode`da va `Publish`da (`docs/18` §9). ---
+
+    [Fact]
+    public void Create_DefaultRegistrationMode_IsFull()
+    {
+        var program = CreateCustomProgram();
+
+        program.RegistrationMode.Should().Be(RegistrationMode.Full);
+    }
+
+    [Fact]
+    public void SetRegistrationMode_NoneWithoutBattery_Succeeds()
+    {
+        var program = CreateCustomProgram();
+
+        program.SetRegistrationMode(RegistrationMode.None, hasPersonalityBattery: false, Now);
+
+        program.RegistrationMode.Should().Be(RegistrationMode.None);
+    }
+
+    [Fact]
+    public void SetRegistrationMode_NoneWithBattery_ThrowsDomainException()
+    {
+        var program = CreateCustomProgram();
+
+        var act = () => program.SetRegistrationMode(RegistrationMode.None, hasPersonalityBattery: true, Now);
+
+        var ex = act.Should().Throw<DomainException>().Which;
+        ex.Code.Should().Be("REGISTRATION_REQUIRED_FOR_BATTERY");
+        program.RegistrationMode.Should().Be(RegistrationMode.Full, "muvaffaqiyatsiz urinish holatni o'zgartirmasligi kerak");
+    }
+
+    [Fact]
+    public void SetRegistrationMode_FullWithBattery_Succeeds()
+    {
+        var program = CreateCustomProgram();
+        program.SetRegistrationMode(RegistrationMode.None, hasPersonalityBattery: false, Now);
+
+        program.SetRegistrationMode(RegistrationMode.Full, hasPersonalityBattery: true, Now);
+
+        program.RegistrationMode.Should().Be(RegistrationMode.Full);
+    }
+
+    [Fact]
+    public void Publish_NoneModeWithoutBattery_Succeeds()
+    {
+        var program = CreateCustomProgram();
+        program.AddTest(Guid.NewGuid(), 1, Now);
+        program.SetRegistrationMode(RegistrationMode.None, hasPersonalityBattery: false, Now);
+
+        program.Publish(Now, hasPersonalityBattery: false);
+
+        program.Status.Should().Be(ProgramStatus.Published);
+    }
+
+    [Fact]
+    public void Publish_NoneModeWithBattery_ThrowsDomainException()
+    {
+        var program = CreateCustomProgram();
+        program.AddTest(Guid.NewGuid(), 1, Now);
+        program.SetRegistrationMode(RegistrationMode.None, hasPersonalityBattery: false, Now);
+
+        // Nashr paytida chaqiruvchi tarkibni QAYTA hisoblaydi (`PublishProgramCommandHandler`) —
+        // bu yerda batareya keyinroq qo'shilgan holatni taqlid qiladi (IKKINCHI nazorat nuqtasi).
+        var act = () => program.Publish(Now, hasPersonalityBattery: true);
+
+        var ex = act.Should().Throw<DomainException>().Which;
+        ex.Code.Should().Be("REGISTRATION_REQUIRED_FOR_BATTERY");
+        program.Status.Should().Be(ProgramStatus.Draft, "muvaffaqiyatsiz nashr holatni o'zgartirmasligi kerak");
+    }
 }

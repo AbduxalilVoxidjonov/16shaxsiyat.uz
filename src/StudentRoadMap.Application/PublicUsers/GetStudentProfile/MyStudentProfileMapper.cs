@@ -33,15 +33,17 @@ internal static class MyStudentProfileMapper
                 SuggestedFullName: suggestedFullName);
         }
 
-        var isMinor = student.BirthDate <= today
-            && Student.CalculateAge(student.BirthDate, today) < PublicConsent.ParentalConsentRequiredBelowAge;
+        // Ommaviy foydalanuvchi oqimi anonim (`RegistrationMode.None`) yaratmaydi — bu yerga
+        // yetib kelgan `Student` doim to'liq profilli (`BirthDate`/`Phone` != null).
+        var isMinor = student.BirthDate!.Value <= today
+            && Student.CalculateAge(student.BirthDate.Value, today) < PublicConsent.ParentalConsentRequiredBelowAge;
 
         return new MyStudentProfileDto(
             HasProfile: true,
             FullName: student.FullName,
-            BirthDate: student.BirthDate,
+            BirthDate: student.BirthDate.Value,
             Gender: student.Gender,
-            Phone: student.Phone.Value,
+            Phone: student.Phone!.Value,
             Grade: student.Grade == Student.NoGrade ? null : student.Grade,
             Email: student.Email,
             ConsentVersion: student.ConsentVersion,

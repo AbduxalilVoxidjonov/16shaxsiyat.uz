@@ -548,3 +548,53 @@ endi qo'lda import qilish shart emas.
 | Regressiya | 4 ta tizim metodikasi uchun `GetTestQuestions` javobi va scoring **bayt-bayt o'zgarmagan** |
 | Frontend | Oltin fikstura testi; `TextQuestion`/`MultiChoiceQuestion` a11y va validatsiya; `TestPage` bo'lim-qadam va sakrash testi; `VisibilityRuleEditor` |
 | E2E | `screens.e2e.ts` ga tarmoqlanuvchi so'rovnoma oqimi (390px va 1440px) |
+
+---
+
+## 9. Ro'yxatdan o'tishsiz dasturlar (`RegistrationMode`, 2026-09-11)
+
+### 9.0 Muammo
+
+Maktab kodini kiritgach o'quvchi **ro'yxatdan o'tish anketasini** to'ldiradi (F.I.Sh.,
+tug'ilgan sana, jins, sinf, telefon), keyin so'rovnomaga kiradi va u yerda **yana o'sha
+ma'lumotlar** so'raladi (masalan `INTELLECT-SURVEY` ning `Q1_1`–`Q1_4`: F.I.Sh., maktab/sinf,
+telefon, ota-ona telefoni). Ikki marta so'ralar edi.
+
+### 9.1 Qaror
+
+Ro'yxatdan o'tish **dasturga** biriktiriladi (`AssessmentProgram.RegistrationMode`, `docs/04`
+§2.13): dastur "ro'yxatdan o'tishsiz" (`None`) bo'lsa — registratsiya ekrani UMUMAN
+ko'rsatilmaydi, o'quvchi yozuvi **anonim** yaratiladi (`Student.CreateAnonymous`, `docs/04`
+§2.2), shaxs ma'lumoti (agar so'rovnomaning o'z savollarida bo'lsa) o'sha javoblarda qoladi
+(eksportda ko'rinadi, `Student` yozuvida emas).
+
+**Qabul qilingan kamchiliklar** (egasi bilib turib tanladi):
+- Anonim sessiyada admin "O'quvchilar" ro'yxatida ism ko'rinmaydi (`"Anonim ishtirokchi #XXXXXX"`);
+- BR-1 (90 kunlik takror topshirish) tekshiruvi ishlamaydi — bir xil brauzerdan bir necha
+  marta kirish mumkin.
+
+### 9.2 Qat'iy invariant
+
+Dasturda ilmiy shaxsiyat batareyasi (`PersonalityBattery` — `Standard` + `Scored` metodika)
+bo'lsa `RegistrationMode` **DOIM `Full`** bo'lishi SHART. Sabab: scoring, normalar va AI
+tahlili yosh/sinf/jinsga tayanadi — ularsiz natija ma'nosiz bo'ladi. Buzilsa —
+`DomainException("REGISTRATION_REQUIRED_FOR_BATTERY")` → `400` (`docs/06` §6). Tekshiruv IKKI
+nazorat nuqtasida: `AssessmentProgram.SetRegistrationMode()` (rejim o'zgartirilganda) va
+`Publish()` (nashr qilinganda).
+
+### 9.3 Qamrov
+
+Faqat maktab oqimi (`POST /api/public/sessions`, `StartSessionCommandHandler`) — ommaviy
+makon/Telegram oqimi (`StartPublicSessionCommand`) TEGILMAGAN, u har doim to'liq profil talab
+qiladi (`docs/06` §8, 2026-09-05 qarori: ikki oqim ataylab ajratilgan).
+
+### 9.4 Shartnoma
+
+- `GET /api/public/schools/{slug}` → `programs[].registrationMode` (`docs/07` §1.1).
+- `POST /api/public/sessions` — `registrationMode = None` dasturda shaxs maydonlari talab
+  qilinmaydi va berilsa ham e'tiborsiz qoldiriladi (`docs/07` §1.2 "Anonim oqim").
+- Admin: `POST`/`PUT /api/admin/programs` `registrationMode` qabul qiladi/qaytaradi
+  (`docs/07` §3.5).
+- DDL: `assessment_programs.registration_mode`, `students.is_anonymous`,
+  `students.birth_date`/`students.phone` → NULLABLE (`docs/05`, migratsiya
+  `AddProgramRegistrationModeAndAnonymousStudents`).

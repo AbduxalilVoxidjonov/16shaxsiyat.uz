@@ -130,12 +130,14 @@ internal static class PublicStudentProfile
             }
             else
             {
-                phone = student.Phone;
+                // Ommaviy foydalanuvchi oqimi anonim (`RegistrationMode.None`) yaratmaydi —
+                // bu yerga yetib kelgan `Student` doim to'liq profilli (`Phone` != null).
+                phone = student.Phone!;
             }
 
             student.UpdateProfile(
                 input.FullName ?? student.FullName,
-                input.BirthDate ?? student.BirthDate,
+                input.BirthDate ?? student.BirthDate!.Value,
                 input.Gender ?? student.Gender,
                 input.Grade ?? student.Grade,
                 phone,

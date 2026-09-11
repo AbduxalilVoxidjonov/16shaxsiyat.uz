@@ -167,7 +167,7 @@ internal sealed class PdfExporter : IPdfExporter
                 col.Spacing(5);
                 InfoItem(col, "Maktab", data.SchoolName);
                 InfoItem(col, "Sinf", data.ClassLetter is null ? data.Grade.ToString(CultureInfo.InvariantCulture) : $"{data.Grade}-{data.ClassLetter}");
-                InfoItem(col, "Yosh", $"{data.Age} yosh");
+                InfoItem(col, "Yosh", data.Age is null ? "—" : $"{data.Age} yosh");
                 InfoItem(col, "Jins", TranslateGender(data.Gender));
             });
             row.RelativeItem().Column(col =>

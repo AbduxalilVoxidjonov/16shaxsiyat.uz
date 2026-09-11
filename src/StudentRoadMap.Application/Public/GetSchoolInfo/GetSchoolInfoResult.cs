@@ -44,6 +44,11 @@ public sealed record PublicTestCatalogItemDto(
 /// `Tests` (P52) — aynan shu dasturning test bloklari, `ProgramTest.DisplayOrder` bo'yicha
 /// (`ProgramTestCatalog` — sessiya biriktirgan testlar bilan bir xil manba/mezon).
 /// </summary>
+/// <summary>
+/// `RegistrationMode` (P52, 2026-09-11) — `"Full"`/`"None"`. Frontend shunga qarab
+/// registratsiya ekranini ko'rsatadi (`Full`) yoki umuman o'tkazib yuboradi (`None`,
+/// `POST /sessions` shaxs maydonlarisiz chaqiriladi).
+/// </summary>
 public sealed record PublicProgramSummaryDto(
     string Code,
     string NameUz,
@@ -52,4 +57,5 @@ public sealed record PublicProgramSummaryDto(
     int QuestionCount,
     int EstimatedMinutes,
     bool HasPersonalityBattery,
-    IReadOnlyList<PublicTestCatalogItemDto> Tests);
+    IReadOnlyList<PublicTestCatalogItemDto> Tests,
+    string RegistrationMode);

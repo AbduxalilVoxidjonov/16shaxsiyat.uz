@@ -582,6 +582,7 @@ alter table admin_users add column pending_totp_created_at timestamptz null;
 | `AdminRole` | 1 SuperAdmin, 2 SchoolAdmin (v2), 3 Psychologist (v2) |
 | `SchoolKind` | 1 School (maktab havolasi oqimi), 2 PublicSpace (ommaviy makon) — `schools.kind` |
 | `PublicUserDeletionReason` | 1 NoLongerNeeded, 2 NotUseful, 3 PrivacyConcern, 4 CreatedByMistake, 5 Other — `public_users.deletion_reason` (2026-09-08) |
+| `RegistrationMode` | 1 Full, 2 None — `assessment_programs.registration_mode` (P52, 2026-09-11) |
 
 ---
 
@@ -669,6 +670,35 @@ Shartda savol **kodi** ishlatiladi, ID emas (`docs/18` B-5) — jsonb o'qiladiga
 qoladi va import/eksport aylanmasi buzilmaydi. Shart faqat `display_order` kichikroq
 savolga havola qila oladi (B-4), bu nashr validatsiyasida `VISIBILITY_FORWARD_REFERENCE`
 bilan qulflangan.
+
+### 2026-09-11 da qo'shilgan — ro'yxatdan o'tishsiz dasturlar (migratsiya `AddProgramRegistrationModeAndAnonymousStudents`)
+
+Egasining qarori (`docs/18` §9): ro'yxatdan o'tish endi DASTURGA biriktiriladi. Dastur
+"ro'yxatdan o'tishsiz" (`RegistrationMode.None`) bo'lsa registratsiya ekrani UMUMAN
+ko'rsatilmaydi va o'quvchi yozuvi ANONIM yaratiladi (`Student.CreateAnonymous`). Faqat
+kengaytirish va NOT NULL → NULLABLE kengaytirish — destruktiv qadam yo'q, shu sabab bir
+bosqichda bajarildi (`docs/05` §4 siyosati).
+
+```sql
+alter table assessment_programs
+    add column registration_mode smallint not null default 1;  -- 1 Full, 2 None; mavjud dasturlar Full bo'lib qoladi
+
+alter table students
+    add column is_anonymous boolean not null default false;
+
+-- Anonim o'quvchida shaxs ma'lumoti yo'q — ikkalasi NULLABLE bo'ladi. Domen invarianti
+-- (`Student` konstruktori, `docs/04` §2.2) `is_anonymous = false` bo'lgan yozuvda ikkalasi
+-- HAM to'ldirilganini kafolatlaydi — DB darajasida CHECK cheklovi QO'SHILMADI (Postgres
+-- shartli — "agar X bo'lsa Y NOT NULL" — CHECK'i domendagi bilan bir xil ikki ustunli
+-- shartni takrorlashi kerak edi, murakkablik foydasiz: yagona yozish yo'li domen orqali).
+alter table students alter column birth_date drop not null;
+alter table students alter column phone      drop not null;
+```
+
+> `ux_students_identity` indeksi (`school_id, normalized_name, birth_date`) o'zgarmaydi:
+> Postgres unique indeksda `NULL` qiymatlar bir-biriga TENG deb hisoblanmaydi, shu sabab
+> bir nechta anonim o'quvchi (`birth_date IS NULL`, turli `normalized_name`) hech qachon
+> to'qnashmaydi.
 
 ---
 

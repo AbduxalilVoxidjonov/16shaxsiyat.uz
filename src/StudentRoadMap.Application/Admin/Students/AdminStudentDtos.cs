@@ -33,7 +33,8 @@ public sealed record AdminStudentListItemDto(
     string SchoolName,
     int Grade,
     string? ClassLetter,
-    string Phone,
+    /// <summary>P52: anonim o'quvchida (`IsAnonymous`) `null` — UI "—" ko'rsatadi.</summary>
+    string? Phone,
     string? LastAssessmentStatus,
     string? PersonalityType,
     string? PersonalityTypeName,
@@ -47,12 +48,15 @@ public sealed record AdminStudentListItemDto(
 public sealed record AdminStudentDetailDto(
     Guid Id,
     string FullName,
-    DateOnly BirthDate,
-    int Age,
+    /// <summary>P52: anonim o'quvchida (`IsAnonymous`) `null`.</summary>
+    DateOnly? BirthDate,
+    /// <summary>P52: anonim o'quvchida (`IsAnonymous`) `null` (yosh hisoblab bo'lmaydi).</summary>
+    int? Age,
     string Gender,
     int Grade,
     string? ClassLetter,
-    string Phone,
+    /// <summary>P52: anonim o'quvchida (`IsAnonymous`) `null`.</summary>
+    string? Phone,
     string? ParentPhone,
     string? Email,
     AdminStudentSchoolRefDto School,

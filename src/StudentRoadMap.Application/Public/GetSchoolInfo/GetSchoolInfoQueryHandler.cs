@@ -174,7 +174,8 @@ internal sealed class GetSchoolInfoQueryHandler : IRequestHandler<GetSchoolInfoQ
                 // `docs/06` 8-bo'lim: dasturda ilmiy batareya BO'LMASLIGI mumkin — mezon
                 // `PersonalityBattery` domen qoidasida, bu yerda kod ro'yxati YO'Q.
                 HasPersonalityBattery: items.Any(i => PersonalityBattery.Includes(i.Kind, i.ScoringMode)),
-                Tests: programTests));
+                Tests: programTests,
+                RegistrationMode: program.RegistrationMode.ToString()));
 
             foreach (var item in items)
             {

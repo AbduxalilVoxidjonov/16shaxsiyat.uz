@@ -101,7 +101,7 @@ public sealed class ProgramStateRulesTests
         var program = InState(from);
         Action act = action switch
         {
-            "Publish" => () => program.Publish(Now),
+            "Publish" => () => program.Publish(Now, hasPersonalityBattery: false),
             "Archive" => () => program.Archive(Now),
             "Activate" => () => program.Activate(Now),
             "Deactivate" => () => program.Deactivate(Now),
@@ -197,7 +197,7 @@ public sealed class ProgramStateRulesTests
     {
         var program = Draft();
         program.AddTest(Guid.NewGuid(), 1, Now);
-        program.Publish(Now);
+        program.Publish(Now, hasPersonalityBattery: false);
         return program;
     }
 

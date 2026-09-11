@@ -79,7 +79,7 @@ internal sealed class GenerateAssessmentReportQueryHandler : IRequestHandler<Gen
             school?.Name ?? "?",
             student.Grade,
             student.ClassLetter,
-            AgeCalculator.CalculateAge(student.BirthDate, now),
+            student.BirthDate is null ? null : AgeCalculator.CalculateAge(student.BirthDate.Value, now),
             student.Gender.ToString(),
             assessment.StartedAt,
             assessment.CompletedAt,

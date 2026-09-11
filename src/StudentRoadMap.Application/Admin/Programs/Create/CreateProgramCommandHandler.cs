@@ -29,6 +29,7 @@ internal sealed class CreateProgramCommandHandler : IRequestHandler<CreateProgra
         var now = _dateTime.UtcNow;
 
         var visibility = Enum.Parse<ProgramVisibility>(request.Visibility, ignoreCase: true);
+        var registrationMode = Enum.Parse<RegistrationMode>(request.RegistrationMode, ignoreCase: true);
 
         var program = AssessmentProgram.Create(
             Guid.NewGuid(),
@@ -38,6 +39,7 @@ internal sealed class CreateProgramCommandHandler : IRequestHandler<CreateProgra
             displayOrder: request.DisplayOrder,
             kind: ProgramKind.Custom,
             visibility: visibility,
+            registrationMode: registrationMode,
             descriptionUz: request.DescriptionUz,
             createdByAdminUserId: request.AdminUserId);
 

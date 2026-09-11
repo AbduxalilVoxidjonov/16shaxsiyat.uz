@@ -8,6 +8,16 @@ namespace StudentRoadMap.Application.Public.StartSession;
 /// `docs/07-api-shartnoma.md`/`prompts/10` talablari: FISH ≥ 5 belgi, tug'ilgan sana 6–20 yosh
 /// oralig'ida, sinf 1–11, telefon `+998...`, rozilik `true`.
 ///
+/// <para>
+/// **P52 (2026-09-11):** shaxs maydonlari (`FullName`/`BirthDate`/`Grade`/`Phone`) bu yerda
+/// ATAYLAB MAJBURIY EMAS — `RegistrationMode.None` dasturda ular umuman kelmaydi. FORMAT
+/// tekshiruvi (uzunlik/oralig'/`+998...`) FAQAT qiymat KELGANDA ishlaydi (`When`). Haqiqiy
+/// "majburiymi" qarori dasturga bog'liq (DB'dan resolve qilinadi) — bu validator DB'ga
+/// murojaat qilmaydi, shu sabab `RegistrationMode.Full` dastur uchun majburiylik
+/// `StartSessionCommandHandler.ValidateRequiredIdentityFields`da tekshiriladi (ikkinchi
+/// bosqich). `ConsentAccepted` ikkala rejimda ham SHU YERDA majburiy qolaveradi.
+/// </para>
+///
 /// **`public` (`docs/06` 4-bo'lim namunasida `internal` ko'rsatilgan, lekin bu yerda ataylab
 /// farq qilinadi):** `FluentValidation.DependencyInjectionExtensions` 12.1.1'dagi
 /// `AssemblyScanner.FindValidatorsInAssembly` faqat OCHIQ (public) validatorlarni topadi —
@@ -32,20 +42,23 @@ public sealed class StartSessionCommandValidator : AbstractValidator<StartSessio
             .NotEmpty().WithMessage("Havola tokeni noto'g'ri.");
 
         RuleFor(x => x.FullName)
-            .NotEmpty().WithMessage("F.I.Sh. kiritilishi shart.")
-            .MinimumLength(MinFullNameLength).WithMessage($"F.I.Sh. kamida {MinFullNameLength} belgidan iborat bo'lishi kerak.");
+            .MinimumLength(MinFullNameLength)
+            .When(x => !string.IsNullOrWhiteSpace(x.FullName))
+            .WithMessage($"F.I.Sh. kamida {MinFullNameLength} belgidan iborat bo'lishi kerak.");
 
         RuleFor(x => x.BirthDate)
-            .Must(birthDate => IsAgeInRange(birthDate, dateTime.UtcNow))
+            .Must(birthDate => IsAgeInRange(birthDate!.Value, dateTime.UtcNow))
+            .When(x => x.BirthDate.HasValue)
             .WithMessage($"Tug'ilgan sana {MinAge}-{MaxAge} yosh oralig'iga to'g'ri kelishi kerak.");
 
         RuleFor(x => x.Grade)
             .InclusiveBetween(Student.MinGrade, Student.MaxGrade)
+            .When(x => x.Grade.HasValue)
             .WithMessage($"Sinf {Student.MinGrade}-{Student.MaxGrade} oralig'ida bo'lishi kerak.");
 
         RuleFor(x => x.Phone)
-            .NotEmpty().WithMessage("Telefon raqami kiritilishi shart.")
-            .Must(phone => PhoneNumber.Create(phone).IsSuccess)
+            .Must(phone => PhoneNumber.Create(phone!).IsSuccess)
+            .When(x => !string.IsNullOrWhiteSpace(x.Phone))
             .WithMessage("Telefon raqami noto'g'ri formatda (+998XXXXXXXXX).");
 
         RuleFor(x => x.ParentPhone)
