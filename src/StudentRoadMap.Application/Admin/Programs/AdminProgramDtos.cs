@@ -13,6 +13,15 @@ namespace StudentRoadMap.Application.Admin.Programs;
 /// Orqaga moslik saqlanmadi: bu ICHKI admin API va uning yagona mijozi — shu repodagi
 /// frontend (`docs/07` 3.5).
 /// </summary>
+/// <summary>
+/// `HasPersonalityBattery` (P52, 2026-09-11) — dastur tarkibida kamida bitta ilmiy shaxsiyat
+/// batareyasi anketasi (`Standard` + `Scored`) bormi. Mezon — YAGONA domen qoidasi
+/// `Domain.Catalog.PersonalityBattery` (`PersonalityBattery.Includes`), kod ro'yxati (`"MBTI16"`
+/// va h.k.) EMAS. Ilgari admin javobida bu bayroq umuman yo'q edi — frontend
+/// `programComputations.ts` da qattiq kod ro'yxatiga tayanardi (`PROGRESS.md` risklar jadvali),
+/// bu esa `Custom` batareya yoki kod o'zgarganda JIMGINA buzilardi. Ommaviy API'dagi
+/// `PublicProgramSummaryDto.HasPersonalityBattery` bilan AYNAN bir xil manba.
+/// </summary>
 public sealed record AdminProgramListItemDto(
     Guid Id,
     string Code,
@@ -24,7 +33,8 @@ public sealed record AdminProgramListItemDto(
     string State,
     bool IsSystem,
     int DisplayOrder,
-    int TestCount);
+    int TestCount,
+    bool HasPersonalityBattery);
 
 /// <summary>
 /// `GET /api/admin/programs/{id}` — batafsil: tarkib (testlar) va biriktirilgan maktablar.
@@ -55,6 +65,8 @@ public sealed record AdminProgramDetailDto(
     IReadOnlyList<AdminProgramTestItemDto> Tests,
     IReadOnlyList<Guid> AssignedSchoolIds,
     bool IsAssignedToPublicSpace,
+    /// <summary>P52 (2026-09-11): `AdminProgramListItemDto.HasPersonalityBattery` izohiga qarang — bir xil mezon.</summary>
+    bool HasPersonalityBattery,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt);
 

@@ -14,7 +14,7 @@ namespace StudentRoadMap.Application.Admin.Programs;
 /// </summary>
 internal static class ProgramMapping
 {
-    public static AdminProgramListItemDto ToListItemDto(AssessmentProgram program, int testCount) => new(
+    public static AdminProgramListItemDto ToListItemDto(AssessmentProgram program, int testCount, bool hasPersonalityBattery) => new(
         program.Id,
         program.Code,
         program.NameUz,
@@ -24,7 +24,8 @@ internal static class ProgramMapping
         program.State.ToString(),
         program.IsSystem,
         program.DisplayOrder,
-        testCount);
+        testCount,
+        hasPersonalityBattery);
 
     /// <summary>
     /// Tarkib (`ProgramTest` + `TestDefinition` proyeksiyasi, `DisplayOrder` bo'yicha DB
@@ -37,7 +38,11 @@ internal static class ProgramMapping
         AssessmentProgram program,
         CancellationToken cancellationToken)
     {
-        var testItems = await executor.ToListAsync(
+        // `Kind`/`ScoringMode` shu bitta qo'shilgan (`JOIN`) so'rovda birga olinadi —
+        // `HasPersonalityBattery` uchun ALOHIDA so'rov YO'Q (N+1 emas). DTO'ga faqat
+        // ko'rinadigan maydonlar chiqadi, `Kind`/`ScoringMode` xotirada `.Any(...)` bilan
+        // batareya bayrog'iga aylantiriladi (`PersonalityBattery.Includes`, `docs/06` 8-bo'lim).
+        var testRows = await executor.ToListAsync(
             context.AsNoTracking(context.ProgramTests)
                 .Where(pt => pt.ProgramId == program.Id)
                 .OrderBy(pt => pt.DisplayOrder)
@@ -45,8 +50,14 @@ internal static class ProgramMapping
                     context.AsNoTracking(context.TestDefinitions),
                     pt => pt.TestDefinitionId,
                     t => t.Id,
-                    (pt, t) => new AdminProgramTestItemDto(t.Id, t.Code, t.NameUz, pt.DisplayOrder)),
+                    (pt, t) => new { t.Id, t.Code, t.NameUz, pt.DisplayOrder, t.Kind, t.ScoringMode }),
             cancellationToken).ConfigureAwait(false);
+
+        var testItems = testRows
+            .Select(r => new AdminProgramTestItemDto(r.Id, r.Code, r.NameUz, r.DisplayOrder))
+            .ToList();
+
+        var hasPersonalityBattery = testRows.Any(r => PersonalityBattery.Includes(r.Kind, r.ScoringMode));
 
         // Biriktirmalar makon TURI bilan birga o'qiladi (bitta `JOIN`): ommaviy makon
         // (`Kind = PublicSpace`) ro'yxatga KIRMAYDI — u alohida bayroqqa o'tadi
@@ -84,6 +95,7 @@ internal static class ProgramMapping
             testItems,
             assignedSchoolIds,
             isAssignedToPublicSpace,
+            hasPersonalityBattery,
             program.CreatedAt,
             program.UpdatedAt);
     }

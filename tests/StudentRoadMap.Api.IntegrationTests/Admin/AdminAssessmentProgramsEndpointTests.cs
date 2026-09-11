@@ -250,6 +250,52 @@ public sealed class AdminAssessmentProgramsEndpointTests : IClassFixture<PublicA
         result!.Items.Should().ContainSingle(p => p.Code == "LIST-PROG-1" && p.State == "Draft");
     }
 
+    /// <summary>
+    /// P52 (2026-09-11): `HasPersonalityBattery` — texnik qarz yopilishi. Ilgari admin javobida
+    /// bu bayroq YO'Q edi, frontend `"MBTI16"` kabi kod qidirib xulosa chiqarardi
+    /// (`PROGRESS.md` risklar jadvali). Mezon — `Domain.Catalog.PersonalityBattery` (`Kind ==
+    /// Standard &amp;&amp; ScoringMode == Scored`), kod ro'yxati EMAS: `Custom` test (hatto RIASEC
+    /// strategiyasi bilan) bayroqni `true` qilmasligi, faqat haqiqiy `Standard`+`Scored` test
+    /// qilishi shu testda tekshiriladi. Ro'yxat (`GET /api/admin/programs`) va batafsil
+    /// (`GET /api/admin/programs/{id}`) BIR XIL natija berishi ham shu yerda qulflanadi.
+    /// </summary>
+    [Fact]
+    public async Task AddTest_StandartIlmiyTest_HasPersonalityBatteryToGriHisoblanadi()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var now = DateTimeOffset.UtcNow;
+        var customTest = await TestDataFactory.CreateStandaloneRiasecShapedTestAsync(db, now, "BATTERYCUSTOM1", 1);
+        var systemTest = await TestDataFactory.CreateStandaloneSystemTestAsync(db, now, "BATTERYSYSTEM1", 2);
+
+        using var client = await AuthenticatedClientAsync("programs-battery-admin");
+        var createResponse = await client.PostAsJsonAsync(
+            "/api/admin/programs",
+            new { code = "BATTERY-PROG-1", nameUz = "Batareya dasturi", descriptionUz = (string?)null, displayOrder = 1, visibility = "Assigned" },
+            TestJson.Options);
+        var created = await createResponse.Content.ReadFromJsonAsync<AdminProgramDetailDto>(TestJson.Options);
+        created!.HasPersonalityBattery.Should().BeFalse("hali hech qanday test biriktirilmagan");
+
+        var addCustomResponse = await client.PostAsJsonAsync(
+            $"/api/admin/programs/{created.Id}/tests",
+            new { testDefinitionId = customTest.Id, displayOrder = 1 },
+            TestJson.Options);
+        var afterCustomAdd = await addCustomResponse.Content.ReadFromJsonAsync<AdminProgramDetailDto>(TestJson.Options);
+        afterCustomAdd!.HasPersonalityBattery.Should().BeFalse(
+            "RIASEC shaklidagi savollar bilan ham `Custom` test batareyaga kirmaydi — mezon KOD emas");
+
+        var addSystemResponse = await client.PostAsJsonAsync(
+            $"/api/admin/programs/{created.Id}/tests",
+            new { testDefinitionId = systemTest.Id, displayOrder = 2 },
+            TestJson.Options);
+        var afterSystemAdd = await addSystemResponse.Content.ReadFromJsonAsync<AdminProgramDetailDto>(TestJson.Options);
+        afterSystemAdd!.HasPersonalityBattery.Should().BeTrue("Standard+Scored test biriktirildi");
+
+        var listResult = await client.GetFromJsonAsync<PagedResult<AdminProgramListItemDto>>(
+            "/api/admin/programs?search=BATTERY-PROG-1", TestJson.Options);
+        listResult!.Items.Should().ContainSingle(p => p.Id == created.Id && p.HasPersonalityBattery);
+    }
+
     [Fact]
     public async Task ReorderTestsThenRemoveTest_ToGriOqim_TartibOzgaradiVaOlibTashlanadi()
     {

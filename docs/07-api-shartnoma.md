@@ -682,6 +682,27 @@ masalan `None` dasturga keyinroq batareya testi biriktirilib nashr qilinsa).
 sabab `registrationMode` bu bosqichda invariantni buza olmaydi — tekshiruv faqat testlar
 biriktirilgach (`PUT`/`publish`) ishlaydi.
 
+#### Dastur `hasPersonalityBattery` — admin ham (P52, 2026-09-11)
+
+`AdminProgramListItemDto`/`AdminProgramDetailDto` javoblarida (yuqoridagi `state`/
+`registrationMode` bilan bir qatorda) endi `hasPersonalityBattery` (bool) ham keladi:
+
+```json
+{ "state": "Active", "registrationMode": "Full", "hasPersonalityBattery": true }
+```
+
+**Texnik qarz yopildi** (`PROGRESS.md` risklar jadvali): ommaviy API'da bu bayroq
+(`PublicProgramSummaryDto.HasPersonalityBattery`, 1.1-bo'lim) ALLAQACHON bor edi, lekin admin
+javobida yo'q edi — frontend `programComputations.ts` da qattiq kod ro'yxati
+(`"MBTI16"`/`"BIG5"`/`"RIASEC"`/`"ACTIVITY"`) bilan taxmin qilardi. Bu ikkinchi "sehrli satr"
+edi (birinchisi — natija ekranidagi `"MBTI16"` qidiruvi, allaqachon domenga ko'chirilgan).
+
+Mezon — AYNAN bir xil domen qoidasi: `Domain.Catalog.PersonalityBattery` (`Kind ==
+TestKind.Standard && ScoringMode == TestScoringMode.Scored`), kod ro'yxati EMAS.
+Dastur tarkibida kamida bitta shunday anketa bo'lsa — `true`. Ro'yxat endpointi
+(`GET /api/admin/programs`) bayroqni BATCH so'rov bilan hisoblaydi — sahifadagi dasturlar soniga
+qarab N+1 so'rov YO'Q (`ListProgramsQueryHandler`, `testCount` bilan bir xil naqsh).
+
 #### `GET /api/admin/programs/{id}/impact?action=…` — amaldan OLDIN oqibat (2026-09-03)
 
 Quyidagi endpoint ayni shu hodisa uchun qo'shildi va shu yerda hujjatlashtiriladi.

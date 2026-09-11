@@ -56,18 +56,30 @@ internal sealed class ListProgramsQueryHandler : IRequestHandler<ListProgramsQue
 
         var programIds = pagePrograms.Select(p => p.Id).ToList();
 
-        var testCountRows = await _executor.ToListAsync(
+        // Bitta BATCH so'rov — sahifadagi dasturlar soniga qarab so'rov soni O'SMAYDI (N+1 emas,
+        // yuqoridagi sinf izohidagi naqshning davomi). `Kind`/`ScoringMode` shu yerda olinadi va
+        // `testCount` bilan bir qatorda `HasPersonalityBattery` (`PersonalityBattery.Includes`)
+        // ham xotirada hisoblanadi — ikkinchi so'rov QO'SHILMAYDI.
+        var testRows = await _executor.ToListAsync(
             _context.AsNoTracking(_context.ProgramTests)
                 .Where(pt => programIds.Contains(pt.ProgramId))
-                .Select(pt => pt.ProgramId),
+                .Join(
+                    _context.AsNoTracking(_context.TestDefinitions),
+                    pt => pt.TestDefinitionId,
+                    t => t.Id,
+                    (pt, t) => new { pt.ProgramId, t.Kind, t.ScoringMode }),
             cancellationToken).ConfigureAwait(false);
 
-        var testCountByProgramId = testCountRows
-            .GroupBy(id => id)
-            .ToDictionary(g => g.Key, g => g.Count());
+        var testRowsByProgramId = testRows.ToLookup(r => r.ProgramId);
 
         var items = pagePrograms
-            .Select(p => ProgramMapping.ToListItemDto(p, testCountByProgramId.GetValueOrDefault(p.Id)))
+            .Select(p =>
+            {
+                var rows = testRowsByProgramId[p.Id];
+                var hasPersonalityBattery = rows.Any(r => PersonalityBattery.Includes(r.Kind, r.ScoringMode));
+
+                return ProgramMapping.ToListItemDto(p, rows.Count(), hasPersonalityBattery);
+            })
             .ToList();
 
         return Result.Success(PagedResult<AdminProgramListItemDto>.Create(items, page, pageSize, totalCount));
