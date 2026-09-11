@@ -270,6 +270,17 @@ himoya: (1) preview server build ichida `16shaxsiyat.uz` topsa umuman ishga tush
 **Fayl nomlash:** stsenariylar `*.e2e.ts` (`*.test.ts`/`*.spec.ts` EMAS) — shu tufayli
 `npm run test` (vitest) ularni yig'ib olmaydi va E2E alohida `npm run test:e2e` bilan yuradi.
 
+**Diqqat — eski bundle sinalib qolishi mumkin (P52 topilmasi):** `playwright.config.ts`
+dagi `webServer.command` har run `npm run e2e:build && npm run e2e:serve` ni bajaradi, ya'ni
+odatda `npx playwright test`/`npm run test:e2e` frontendni O'ZI qayta quradi. Lekin agar
+oldingi run to'g'ri to'xtatilmagan bo'lsa (masalan `Ctrl+C`, jarayon qulab tushishi,
+`E2E_REUSE_STACK=1`/`E2E_KEEP_STACK=1` bilan qo'lda ishlagan sessiya) va `127.0.0.1:5199`
+portida ESKI `preview-server.mjs` hamon tirik qolgan bo'lsa — yangi run O'ZGARISHLARSIZ
+eski buildga qarshi sinovdan o'tishi mumkin, natija esa jimgina noto'g'ri (yashil) chiqadi.
+**Ehtiyot chorasi:** shubha bo'lsa avval qo'lda `VITE_API_BASE_URL= npm run e2e:build`
+ishga tushiring va portni band qilgan qoldiq jarayonlarni tekshiring
+(`lsof -i:5199` yoki `E2E_WEB_PORT` o'zgaruvchisiga mos port) — keyin `npm run test:e2e`.
+
 **Tezlik cheklovi:** `POST /api/public/sessions` IP bo'yicha soatiga 10 ta. Har test
 o'zining "mijoz IP"sini cookie orqali e'lon qiladi, preview server uni `X-Forwarded-For`
 ga aylantiradi (E2E stekida `App__KnownProxies=0.0.0.0/0`) — shu tufayli to'plam ketma-ket

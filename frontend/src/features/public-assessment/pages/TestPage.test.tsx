@@ -690,4 +690,41 @@ describe("TestPage — bo'lim-qadam rejimi (docs/18)", () => {
       expect(screen.queryByText('Qaysi fan?')).not.toBeInTheDocument();
     });
   });
+
+  /**
+   * P52 BLOKLOVCHI regressiyasi (jonliqda topilgan, tuzatildi 6f81dc0). Matn savoliga bitta
+   * harf yozilgach keyingilari kirmasdi: bo'lim sarlavhasiga fokus ko'chiruvchi effektning
+   * bog'liqligida `visibility` (`draftAnswers`ga tayanadigan `useMemo`, HAR harfda yangi
+   * obyekt) turar edi — effekt har harfda qayta ishga tushib fokusni inputdan sarlavhaga
+   * olib qochardi.
+   *
+   * MUHIM: `user.type()` EMAS — u sintetik hodisalarni to'g'ridan-to'g'ri nishonlangan
+   * elementga yo'naltiradi va `document.activeElement`ga E'TIBOR BERMAYDI, shu sabab bu
+   * xatoni ushlamas edi (E2E'dagi `fill()` bilan bir xil ko'r nuqta). `user.keyboard()`
+   * — HAQIQIY klaviatura kabi HOZIRGI FOKUSDAGI elementga yo'naltiradi, shu sabab fokus
+   * boshqa joyga o'g'irlansa keyingi harflar YO'QOLADI — aynan shu narsa tekshiriladi.
+   *
+   * Mutatsiya sinovi (qo'lda tasdiqlangan): `TestPage.tsx`dagi fokus effektining
+   * bog'liqligini vaqtincha `[currentSectionId, visibility]`ga qaytarsangiz bu test YIQILADI.
+   */
+  it("matn maydoniga ketma-ket yozilganda fokus MAYDONDA qoladi va butun matn kiradi (P52, 6f81dc0)", async () => {
+    seedSession();
+    mockBranchingFetch();
+    const user = userEvent.setup();
+    renderBranching();
+
+    await screen.findByText('F.I.Sh.');
+    const input = screen.getByLabelText(/F\.I\.Sh\./);
+    await user.click(input);
+    expect(input).toHaveFocus();
+
+    const text = 'Aliyev Vali Davronovich';
+    for (const char of text) {
+      await user.keyboard(char);
+      // Har harfdan keyin fokus HAMON shu maydonda — aks holda keyingi harflar yo'qoladi.
+      expect(input).toHaveFocus();
+    }
+
+    expect(input).toHaveValue(text);
+  });
 });

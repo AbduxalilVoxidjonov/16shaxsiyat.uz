@@ -2,7 +2,7 @@ import { test, expect } from '../support/fixtures';
 import { expectNoSeriousA11yViolations } from '../support/a11y';
 import { waitForAnimationsToSettle } from '../support/animation';
 import { expectNoConsoleErrors, expectNoHorizontalScroll } from '../support/layout';
-import { UI, fillRegistration, uniqueStudentName } from '../support/flow';
+import { UI, fillRegistration, typeAndVerifyFocus, uniqueStudentName } from '../support/flow';
 import { createAndPublishBranchingSurvey, createProgramWithTest } from '../support/adminApi';
 import type { Browser, Page } from '@playwright/test';
 import { WEB_BASE_URL } from '../support/config';
@@ -17,11 +17,16 @@ import { WEB_BASE_URL } from '../support/config';
  *
  * ```
  * S1 (hamma)      Q1 [FILTR] SingleChoice — A(1) / B(2) / C(3)
- * S2A (Q1=1)      Q2A ShortText
+ * S2A (Q1=1)      Q2A ShortText, Q2A_PHONE Phone, Q2A_LONG LongText
  * S2B (Q1=2)      Q2B SingleChoice — "Oddiy javob"(1) / "Boshqa (kiriting)"(99)
  *                 Q2B_OTHER ShortText — FAQAT Q2B=99 da ko'rinadi (B-6 naqshi)
  * S2C (Q1=3)      Q2C ShortText
  * ```
+ *
+ * S2A ning uchta matn savoli (`ShortText`/`Phone`/`LongText`) ATAYLAB
+ * `typeAndVerifyFocus` (`support/flow.ts`) bilan HARFMA-HARF to'ldiriladi — P52 jonli
+ * bloklovchisi (6f81dc0) qamrovi: `.fill()` bu sinf xatosini (fokus o'g'irlanishi)
+ * UMUMAN sinamaydi.
  */
 const SURVEY_CODE_PREFIX = 'E2E-BRANCH';
 
@@ -82,8 +87,31 @@ function surveyDefinition(code: string) {
         maxLength: 200,
       },
       {
-        code: 'Q2B',
+        code: 'Q2A_PHONE',
         order: 3,
+        sectionCode: 'S2A',
+        textUz: 'Aloqa uchun telefon raqamingiz',
+        type: 'Phone',
+        scale: 'SURVEY',
+        direction: 1,
+        weight: 1,
+        isRequired: true,
+      },
+      {
+        code: 'Q2A_LONG',
+        order: 4,
+        sectionCode: 'S2A',
+        textUz: 'Batafsil fikringizni yozing',
+        type: 'LongText',
+        scale: 'SURVEY',
+        direction: 1,
+        weight: 1,
+        isRequired: true,
+        maxLength: 500,
+      },
+      {
+        code: 'Q2B',
+        order: 5,
         sectionCode: 'S2B',
         textUz: 'B guruhi uchun savol',
         type: 'SingleChoice',
@@ -98,7 +126,7 @@ function surveyDefinition(code: string) {
       },
       {
         code: 'Q2B_OTHER',
-        order: 4,
+        order: 6,
         sectionCode: 'S2B',
         textUz: 'Iltimos, aniqlashtiring',
         type: 'ShortText',
@@ -111,7 +139,7 @@ function surveyDefinition(code: string) {
       },
       {
         code: 'Q2C',
-        order: 5,
+        order: 7,
         sectionCode: 'S2C',
         textUz: 'C guruhi uchun savol',
         type: 'ShortText',
@@ -211,7 +239,18 @@ test('tarmoqlanuvchi so\'rovnoma: 1.6 ning A/B/C tarmoqlari va "Boshqa (kiriting
     await expect(page.getByLabel('C guruhi uchun savol')).toHaveCount(0);
     await checkScreen(page, consoleErrors, 'BRANCH-2 A tarmog\'i');
 
-    await page.getByLabel('A guruhi uchun savol').fill('Matematika bo\'yicha qo\'shimcha kurs');
+    // P52 QA topilmasi (6f81dc0): matn maydoniga bitta harf yozilgach fokus o'g'irlanib
+    // qolgan bloklovchi — shu sabab BU YERDA `.fill()` EMAS, HAQIQIY harfma-harf yozish
+    // ishlatiladi, uchala matn turi (ShortText/Phone/LongText) uchun ham.
+    await typeAndVerifyFocus(
+      page.getByLabel('A guruhi uchun savol'),
+      'Matematika bo\'yicha qo\'shimcha kurs',
+    );
+    await typeAndVerifyFocus(page.getByLabel('Aloqa uchun telefon raqamingiz'), '+998901234567');
+    await typeAndVerifyFocus(
+      page.getByLabel('Batafsil fikringizni yozing'),
+      'Bu yerda batafsil fikrimni yozyapman, bu uzun matn maydoni sinovi uchun.',
+    );
     await page.getByRole('button', { name: UI.next }).click();
 
     await expect(page).toHaveURL(new RegExp(`/t/${school.slug}/finish$`));

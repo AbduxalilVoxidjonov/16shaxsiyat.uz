@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import type { E2ESchool } from './adminApi';
 
 export interface RegistrationInput {
@@ -52,6 +52,27 @@ export async function fillRegistration(page: Page, input: RegistrationInput): Pr
   await page.getByLabel("Ma'lumotlarim ta'lim maqsadida ishlatilishiga roziman").check();
 
   await page.getByRole('button', { name: UI.submitRegistration }).click();
+}
+
+/**
+ * Matn maydoniga HAQIQIY foydalanuvchi kabi HARFMA-HARF yozadi va yozib bo'lgach fokus
+ * O'SHA maydonda qolganini tasdiqlaydi.
+ *
+ * NEGA `fill()` EMAS: P52 jonli bloklovchisi (6f81dc0) aynan shu ko'r nuqtadan o'tib
+ * ketgan edi — `TestPage.tsx`dagi bo'lim sarlavhasiga fokus ko'chiruvchi effektning
+ * bog'liqligida beqaror obyekt (`visibility`, `draftAnswers`ga tayanadigan `useMemo`, HAR
+ * BOSILGAN HARFDA yangi obyekt) turgani sabab matn maydoniga bitta harfdan keyin fokus
+ * o'g'irlanib qolardi. Playwright `fill()` qiymatni BIR MARTA (CDP `Input.insertText`)
+ * qo'yadi — na harfma-harf yozishni, na fokus xatti-harakatini sinaydi, shu sabab bu
+ * sinfdagi regressiyani UMUMAN ushlamaydi. `pressSequentially` esa har harfni HAQIQIY
+ * klaviatura hodisasi sifatida yuboradi — fokus boshqa joyga ko'chib ketsa, keyingi
+ * harflar maydonga YETIB BORMAYDI va quyidagi `toHaveValue` tekshiruvi yiqiladi.
+ */
+export async function typeAndVerifyFocus(locator: Locator, text: string): Promise<void> {
+  await locator.click();
+  await locator.pressSequentially(text, { delay: 30 });
+  await expect(locator).toHaveValue(text);
+  await expect(locator).toBeFocused();
 }
 
 /** Landing → anketa → birinchi test bloki. */

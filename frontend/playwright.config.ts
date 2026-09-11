@@ -68,7 +68,11 @@ export default defineConfig({
     command: 'npm run e2e:build && npm run e2e:serve',
     cwd: FRONTEND_DIR,
     url: WEB_BASE_URL,
-    // Har run yangi build — eski `dist` bilan yashil natija bermasin.
+    // Har run yangi build — eski `dist` bilan yashil natija bermasin. DIQQAT (P52 topilmasi,
+    // `docs/12` 8.1-bo'lim): bu FAQAT shu portda boshqa jarayon TIRIK QOLMAGAN bo'lsa ishlaydi
+    // — oldingi run noto'g'ri to'xtatilgan bo'lsa (masalan `Ctrl+C`), qoldiq
+    // `preview-server.mjs` eski buildni davom ettirib xizmat qilishi mumkin. Shubha bo'lsa
+    // qo'lda `VITE_API_BASE_URL= npm run e2e:build` bilan tekshiring.
     reuseExistingServer: false,
     timeout: 180_000,
     stdout: 'pipe',
