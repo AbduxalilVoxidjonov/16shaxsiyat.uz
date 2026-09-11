@@ -681,14 +681,30 @@ natijasiga tayanadi:
 - `Optional` — hozirgidek: kelsa saqlanadi, kelmasa `null`/standart sentinel (`Student.NoGrade`
   — `grade` uchun) bilan davom etadi.
 
-**Takrorlanishni aniqlash (BR-1) — nozik joy.** Mavjud tekshiruv `NormalizedName == ... &&
-BirthDate == ...` bo'yicha ishlaydi. `birthDate` `Required` BO'LMASA va o'quvchi uni
-kiritmasa, bu tekshiruv ishonchsiz bo'lib qoladi (bir xil ismli ikki o'quvchi bitta yozuvga
-qo'shilib ketishi mumkin — ma'lumot buzilishi). Shu sabab: **`birthDate` yo'q bo'lsa
-(`Optional`/`Hidden` va bo'sh) takrorlanish tekshiruvi UMUMAN bajarilmaydi** va har doim
-YANGI `Student` yaratiladi (`RegistrationMode.None` anonim oqimidagi qaror bilan bir xil
-naqsh — bu yerda esa o'quvchi anonim EMAS, F.I.Sh. bor). Qulflangan:
-`PublicRegistrationFieldsEndpointTests.StartSession_OptionalBirthDate_...`.
+**O'quvchini topish kaliti — nozik joy (2026-09-11 kod ko'rigidan keyin qayta ishlangan).**
+
+Bu qidiruv IKKI vazifani bajaradi: takrorlanishni aniqlash (BR-1) **va** yarim qolgan
+sessiyani tiklash (BR-5, `resumed: true`). Shu sabab uni butunlay o'chirib qo'yib bo'lmaydi —
+aks holda o'quvchi qaytib kelganda testi noldan boshlanib, javoblari yo'qoladi.
+
+Kalit **mavjud bo'lgan eng kuchli identifikator** bo'yicha tanlanadi:
+
+| # | Kalit | Qachon |
+|---|-------|--------|
+| 1 | `NormalizedName` + `BirthDate` | `birthDate` bor (standart yo'l) |
+| 2 | `NormalizedName` + `Phone` | `birthDate` yo'q, telefon bor — bir xil ism VA bir xil telefon amalda bitta odam |
+| 3 | qidiruvsiz, har doim yangi `Student` | ikkalasi ham yo'q |
+
+3-holat ataylab shunday: faqat ism bo'yicha izlash bir xil ismli ikki o'quvchini bitta
+yozuvga qo'shib yuborardi — **ma'lumot buzilishi takroriy yozuvdan yomonroq**. Anonim
+yozuvlar (`RegistrationMode.None`) qidiruvdan chiqariladi.
+
+Qulflangan: `PublicRegistrationFieldsEndpointTests.StartSession_OptionalBirthDate_TelefonBoLsaOquvchiTopiladiVaSessiyaTiklanadi`
+va `...StartSession_BirthDateVaTelefonYoQ_HarSafarYangiOquvchiYaratiladi`.
+
+> **Tarix:** dastlabki yechim "`birthDate` yo'q bo'lsa qidiruv UMUMAN bajarilmasin" edi. Kod
+> ko'rigi ko'rsatdiki, o'sha qidiruv sessiyani tiklash uchun ham ishlatiladi — ya'ni yechim
+> BR-1 ni saqlab, BR-5 ni jimgina o'chirib qo'ygan edi.
 
 **Domen tomoni:** `Student.Create` (`birthDate`/`phone` endi `DateOnly?`/`PhoneNumber?`) —
 2026-09-11dagi "anonim BO'LMAGAN o'quvchida ikkalasi DOIM to'ldirilgan" invarianti

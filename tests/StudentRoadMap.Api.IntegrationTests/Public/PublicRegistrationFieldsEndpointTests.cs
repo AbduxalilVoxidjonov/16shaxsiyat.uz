@@ -93,8 +93,14 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
     }
 
     [Fact]
-    public async Task StartSession_OptionalBirthDate_BoSHQoldirilsaSessionOchiladiVaTakrorlanishTekshiruviBajarilmaydi()
+    public async Task StartSession_OptionalBirthDate_TelefonBoLsaOquvchiTopiladiVaSessiyaTiklanadi()
     {
+        // P52 kod ko'rigi tuzatmasi (2026-09-11). Ilgari bu test TESKARISINI qulflardi:
+        // `birthDate` yo'q bo'lsa qidiruv butunlay o'chirilib, HAR DOIM yangi o'quvchi
+        // yaratilardi. Bu xato edi — o'sha qidiruv sessiyani TIKLASH (BR-5) uchun ham
+        // ishlatiladi, ya'ni o'quvchi qaytib kelganda yarim qolgan testi yo'qolardi.
+        // Endi kalit sifatida F.I.Sh. + TELEFON ishlatiladi (bir xil ism va bir xil telefon —
+        // amalda bitta odam).
         var fields = RegistrationFields.Default with { BirthDate = RegistrationFieldRequirement.Optional };
         var (school, accessToken, programCode) = await SeedCustomFieldsProgramAsync("ob1", fields);
         using var client = _factory.CreateClient();
@@ -116,7 +122,58 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
         var second = await client.PostAsJsonAsync("/api/public/sessions", Body(), TestJson.Options);
 
         first.StatusCode.Should().Be(HttpStatusCode.Created);
-        second.StatusCode.Should().Be(HttpStatusCode.Created, "`birthDate` yo'q bo'lsa BR-1 takrorlanish tekshiruvi bajarilmasligi kerak");
+        // Tiklangan sessiya `200` qaytaradi, `201` EMAS — yangi resurs yaratilmagan
+        // (`docs/07` §1.2 `resumed: true` shartnomasi).
+        second.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var firstBody = (await first.Content.ReadFromJsonAsync<StartSessionResult>(TestJson.Options))!;
+        var secondBody = (await second.Content.ReadFromJsonAsync<StartSessionResult>(TestJson.Options))!;
+
+        secondBody.Resumed.Should().BeTrue("yarim qolgan sessiya tiklanishi kerak, noldan boshlanmasligi");
+        secondBody.AssessmentId.Should().Be(firstBody.AssessmentId);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var assessment = await db.Assessments.AsNoTracking().SingleAsync(a => a.Id == firstBody.AssessmentId);
+        var student = await db.Students.AsNoTracking().SingleAsync(s => s.Id == assessment.StudentId);
+
+        student.IsAnonymous.Should().BeFalse("F.I.Sh. bor — bu anonim oqim EMAS, faqat `birthDate` ixtiyoriy");
+        student.BirthDate.Should().BeNull();
+        (await db.Students.AsNoTracking().CountAsync(s => s.SchoolId == school.Id)).Should().Be(1, "ikkinchi so'rov yangi o'quvchi yaratmasligi kerak");
+    }
+
+    [Fact]
+    public async Task StartSession_BirthDateVaTelefonYoQ_HarSafarYangiOquvchiYaratiladi()
+    {
+        // Uchinchi holat: hech qanday ishonchli kalit yo'q (`birthDate` ixtiyoriy va
+        // kiritilmagan, telefon esa `Hidden`). Faqat ism bo'yicha izlash bir xil ismli ikki
+        // o'quvchini bitta yozuvga qo'shib yuborardi — ma'lumot buzilishi takroriy yozuvdan
+        // yomonroq, shu sabab qidiruv ataylab bajarilmaydi.
+        var fields = RegistrationFields.Default with
+        {
+            BirthDate = RegistrationFieldRequirement.Optional,
+            Phone = RegistrationFieldRequirement.Hidden,
+        };
+        var (school, accessToken, programCode) = await SeedCustomFieldsProgramAsync("ob2", fields);
+        using var client = _factory.CreateClient();
+
+        object Body() => new
+        {
+            slug = school.Slug.Value,
+            accessToken,
+            fullName = "Karimova Nodira",
+            gender = "Female",
+            grade = 7,
+            consentAccepted = true,
+            languageCode = "uz",
+            programCode,
+        };
+
+        var first = await client.PostAsJsonAsync("/api/public/sessions", Body(), TestJson.Options);
+        var second = await client.PostAsJsonAsync("/api/public/sessions", Body(), TestJson.Options);
+
+        first.StatusCode.Should().Be(HttpStatusCode.Created);
+        second.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var firstBody = (await first.Content.ReadFromJsonAsync<StartSessionResult>(TestJson.Options))!;
         var secondBody = (await second.Content.ReadFromJsonAsync<StartSessionResult>(TestJson.Options))!;
@@ -126,11 +183,7 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
         var firstAssessment = await db.Assessments.AsNoTracking().SingleAsync(a => a.Id == firstBody.AssessmentId);
         var secondAssessment = await db.Assessments.AsNoTracking().SingleAsync(a => a.Id == secondBody.AssessmentId);
 
-        firstAssessment.StudentId.Should().NotBe(secondAssessment.StudentId, "identifikator ishonchsiz bo'lgani uchun HAR DOIM yangi o'quvchi yaratilishi kerak");
-
-        var firstStudent = await db.Students.AsNoTracking().SingleAsync(s => s.Id == firstAssessment.StudentId);
-        firstStudent.IsAnonymous.Should().BeFalse("F.I.Sh. bor — bu anonim oqim EMAS, faqat `birthDate` ixtiyoriy");
-        firstStudent.BirthDate.Should().BeNull();
+        firstAssessment.StudentId.Should().NotBe(secondAssessment.StudentId, "ishonchli kalit yo'q — har doim yangi o'quvchi");
     }
 
     [Fact]

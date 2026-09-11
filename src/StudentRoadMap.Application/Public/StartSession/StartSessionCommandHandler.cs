@@ -168,20 +168,45 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
 
         var normalizedName = NameNormalizer.Normalize(request.FullName!);
 
-        // BR-1 nozik joy (P52 kengaytmasi, `docs/18` §9.5): `birthDate` YO'Q bo'lsa (`Optional`/
-        // `Hidden` va o'quvchi kiritmagan) takrorlanish tekshiruvi (FISH+tug'ilgan sana bo'yicha)
-        // ISHONCHSIZ bo'lib qoladi — bir xil ismli ikki o'quvchi bitta yozuvga qo'shilib ketishi
-        // mumkin edi (ma'lumot buzilishi). Shu sabab bunday holatda tekshiruv UMUMAN
-        // BAJARILMAYDI va HAR DOIM yangi `Student` yaratiladi (`RegistrationMode.None`dagi
-        // anonim qaror bilan bir xil naqsh, faqat bu yerda o'quvchi anonim EMAS).
-        var existingStudent = effectiveBirthDate is null
-            ? null
-            : await _executor.FirstOrDefaultAsync(
+        // O'quvchini topish kaliti — MAVJUD BO'LGAN ENG KUCHLI identifikator bo'yicha
+        // (P52 kod ko'rigi tuzatmasi, 2026-09-11):
+        //
+        //   1. FISH + tug'ilgan sana — eng kuchli, standart sozlamadagi yo'l;
+        //   2. FISH + telefon — tug'ilgan sana yo'q bo'lsa (`Optional`/`Hidden`). Bir xil ism
+        //      VA bir xil telefon amalda bitta odam;
+        //   3. ikkalasi ham yo'q — qidiruvsiz, har doim yangi yozuv.
+        //
+        // NEGA MUHIM: bu qidiruv faqat takrorlanishni aniqlash (BR-1) uchun emas, sessiyani
+        // TIKLASH (BR-5, `resumed: true`) uchun HAM ishlatiladi. Ilgari bu yerda `birthDate`
+        // yo'q bo'lsa qidiruv BUTUNLAY o'chirilardi — natijada o'quvchi qaytib kelganda yarim
+        // qolgan sessiyasi topilmay, noldan yangi sessiya boshlanardi va javoblari yo'qolardi.
+        // Bu takroriy yozuvdan YOMONROQ. Uchinchi holat (hech qanday kalit yo'q) ataylab
+        // qidiruvsiz qoladi: faqat ism bo'yicha izlash bir xil ismli ikki o'quvchini bitta
+        // yozuvga qo'shib yuborardi (ma'lumot buzilishi).
+        //
+        // Anonim yozuvlar (`RegistrationMode.None`) qidiruvdan ataylab chiqariladi — ularning
+        // ismi generatsiya qilingan va hech qachon haqiqiy o'quvchiga mos kelmasligi kerak.
+        Student? existingStudent = null;
+        if (effectiveBirthDate is not null)
+        {
+            existingStudent = await _executor.FirstOrDefaultAsync(
                 _context.Students.Where(s =>
                     s.SchoolId == school.Id &&
+                    !s.IsAnonymous &&
                     s.NormalizedName == normalizedName &&
                     s.BirthDate == effectiveBirthDate),
                 cancellationToken).ConfigureAwait(false);
+        }
+        else if (phone is not null)
+        {
+            existingStudent = await _executor.FirstOrDefaultAsync(
+                _context.Students.Where(s =>
+                    s.SchoolId == school.Id &&
+                    !s.IsAnonymous &&
+                    s.NormalizedName == normalizedName &&
+                    s.Phone == phone),
+                cancellationToken).ConfigureAwait(false);
+        }
 
         Student student;
         var isNewStudent = existingStudent is null;
