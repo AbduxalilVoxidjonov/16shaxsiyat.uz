@@ -5,7 +5,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
 import { jsonResponse, problemResponse, typedResponse, type Schemas } from '@/test/apiMock';
-import type { PublicSchoolInfoWithRegistration } from '@/shared/api/registrationModeTypes';
+import {
+  DEFAULT_REGISTRATION_FIELDS,
+  type PublicSchoolInfoWithRegistration,
+  type RegistrationFields,
+} from '@/shared/api/registrationModeTypes';
 import RegistrationPage from './RegistrationPage';
 import { useSessionStore } from '../store/sessionStore';
 
@@ -68,6 +72,56 @@ const TWO_PROGRAMS = [
     hasPersonalityBattery: false,
   },
 ] satisfies Schemas['PublicProgramSummaryDto'][];
+
+/**
+ * `registrationFields` (P52, 2026-09-11, `docs/18` §9) — `schoolInfoBody()` kabi
+ * (raqamli `Schemas['GetSchoolInfoResult']` emas, `registrationMode`/`registrationFields`
+ * bilan to'liq shakl kerak — pastdagi "None" holati testidagi naqsh bilan bir xil).
+ */
+function schoolInfoWithRegistrationFields(
+  fieldsOverrides: Partial<RegistrationFields>,
+): PublicSchoolInfoWithRegistration {
+  return {
+    schoolId: 'school-1',
+    name: "12-son umumiy o'rta ta'lim maktabi",
+    region: "Farg'ona",
+    district: "Qo'qon",
+    requiresAccessCode: false,
+    tests: [
+      {
+        code: 'MBTI16',
+        name: '16 tipli shaxsiyat modeli',
+        questionCount: 60,
+        estimatedMinutes: 9,
+        order: 1,
+      },
+    ],
+    totalEstimatedMinutes: 9,
+    consentText: CONSENT_TEXT,
+    programs: [
+      {
+        code: 'PERSONALITY_PROFILE',
+        nameUz: 'Shaxsiyat profili',
+        descriptionUz: null,
+        testCount: 1,
+        questionCount: 60,
+        estimatedMinutes: 9,
+        hasPersonalityBattery: false,
+        registrationMode: 'Full',
+        registrationFields: { ...DEFAULT_REGISTRATION_FIELDS, ...fieldsOverrides },
+        tests: [
+          {
+            code: 'MBTI16',
+            name: '16 tipli shaxsiyat modeli',
+            questionCount: 60,
+            estimatedMinutes: 9,
+            order: 1,
+          },
+        ],
+      },
+    ],
+  };
+}
 
 interface RouterMockOptions {
   schoolInfo?: Schemas['GetSchoolInfoResult'];
@@ -548,5 +602,93 @@ describe('RegistrationPage', () => {
 
     expect(await screen.findByText('LANDING_STUB')).toBeInTheDocument();
     expect(screen.queryByLabelText('F.I.Sh.')).not.toBeInTheDocument();
+  });
+
+  // ---------------------------------------------------------------------------------------
+  // `registrationFields` — har bir shaxs maydonining "Yashirin"/"Ixtiyoriy"/"Majburiy"
+  // sozlamasi (P52, 2026-09-11, `docs/18` §9). Standart sozlama bilan yuqoridagi testlar
+  // o'zgarmasdan yashil qoladi (regressiya qulfi) — bu bo'lim faqat sozlamani o'zgartirganda.
+  // ---------------------------------------------------------------------------------------
+  it("'Hidden' qilingan maydon ko'rsatilmaydi va so'rovga qo'shilmaydi (email)", async () => {
+    const fetchMock = mockFetch({
+      schoolInfo: schoolInfoWithRegistrationFields({ email: 'Hidden' }),
+    });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderRegistration();
+
+    await screen.findByText(CONSENT_TEXT);
+    expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
+
+    await fillValidForm(user);
+    await user.click(screen.getByLabelText(CONSENT_LABEL));
+    await user.click(screen.getByRole('button', { name: 'Testni boshlash' }));
+
+    await waitFor(() => {
+      expect(useSessionStore.getState().sessionToken).toBe('sess-token-1');
+    });
+
+    const sessionCall = fetchMock.mock.calls.find(
+      ([input, init]) =>
+        String(input).includes('/api/public/sessions') &&
+        (init as RequestInit | undefined)?.method === 'POST',
+    );
+    const body = JSON.parse((sessionCall?.[1] as RequestInit).body as string) as Record<
+      string,
+      unknown
+    >;
+    expect('email' in body).toBe(false);
+  });
+
+  it("'Optional' qilingan maydon bo'sh qoldirilganda ham forma yuboriladi (sinf)", async () => {
+    mockFetch({ schoolInfo: schoolInfoWithRegistrationFields({ grade: 'Optional' }) });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderRegistration();
+
+    await screen.findByText(CONSENT_TEXT);
+    await user.type(screen.getByLabelText('F.I.Sh.'), 'Aliyev Sardor Bekzodovich');
+    await user.selectOptions(screen.getByLabelText("Tug'ilgan kun"), '17');
+    await user.selectOptions(screen.getByLabelText("Tug'ilgan oy"), '4');
+    await user.selectOptions(screen.getByLabelText("Tug'ilgan yil"), '2015');
+    await user.click(screen.getByLabelText("O'g'il bola"));
+    // Sinf ATAYLAB tanlanmaydi — endi `Optional`.
+    await user.type(screen.getByLabelText('Telefon raqami'), '901234567');
+    await user.click(screen.getByLabelText(CONSENT_LABEL));
+    await user.click(screen.getByRole('button', { name: 'Testni boshlash' }));
+
+    await waitFor(() => {
+      expect(useSessionStore.getState().sessionToken).toBe('sess-token-1');
+    });
+  });
+
+  it("'Required' qilingan maydon bo'sh bo'lsa yuborishga urinishda xato ko'rsatadi (sinf harfi)", async () => {
+    mockFetch({ schoolInfo: schoolInfoWithRegistrationFields({ classLetter: 'Required' }) });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderRegistration();
+
+    await screen.findByText(CONSENT_TEXT);
+    // `fillValidForm` "Sinf harfi"ni ataylab to'ldirmaydi.
+    await fillValidForm(user);
+    await user.click(screen.getByLabelText(CONSENT_LABEL));
+    await user.click(screen.getByRole('button', { name: 'Testni boshlash' }));
+
+    expect(await screen.findByText('Sinf harfini kiriting.')).toBeInTheDocument();
+    expect(useSessionStore.getState().sessionToken).toBeNull();
+  });
+
+  it("tug'ilgan sana 'Required' bo'lmasa takror topshirish haqida ogohlantirish ko'rsatiladi", async () => {
+    mockFetch({ schoolInfo: schoolInfoWithRegistrationFields({ birthDate: 'Optional' }) });
+    renderRegistration();
+
+    expect(
+      await screen.findByText(/Takror topshirishni aniqlash F\.I\.Sh\. va tug'ilgan sanaga tayanadi/),
+    ).toBeInTheDocument();
+  });
+
+  it("tug'ilgan sana standart (Required) bo'lganda ogohlantirish ko'rsatilmaydi (regressiya)", async () => {
+    mockFetch({});
+    renderRegistration();
+
+    await screen.findByText(CONSENT_TEXT);
+    expect(screen.queryByText(/Takror topshirishni aniqlash/)).not.toBeInTheDocument();
   });
 });

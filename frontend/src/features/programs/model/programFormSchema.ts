@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import { PROGRAM_VISIBILITY_VALUES, REGISTRATION_MODE_VALUES } from './types';
+import {
+  DEFAULT_REGISTRATION_FIELDS,
+  PROGRAM_VISIBILITY_VALUES,
+  REGISTRATION_FIELD_MODE_VALUES,
+  REGISTRATION_MODE_VALUES,
+} from './types';
 
 /**
  * Dastur yaratish/tahrirlash forma validatsiyasi. Backend yakuniy haqiqat manbai
@@ -68,6 +73,24 @@ export const programFormSchema = z.object({
    * sxema faqat qiymat to'g'ri enum ekanini tekshiradi.
    */
   registrationMode: z.enum(REGISTRATION_MODE_VALUES, { message: 'Rejimni tanlang.' }),
+  /**
+   * P52 (2026-09-11, `docs/18` §9) — har bir shaxs maydonining "Yashirin"/"Ixtiyoriy"/
+   * "Majburiy" sozlamasi. Shaxsiyat batareyasi bor dasturda `birthDate`/`grade`ni
+   * `"Required"`dan boshqa qiymatga o'zgartirib bo'lmasligi (`400
+   * REGISTRATION_FIELD_REQUIRED_FOR_BATTERY`) shu yerda EMAS — `RegistrationFieldsFieldset`
+   * tanlovni OLDINDAN bloklaydi (`ProgramFormDialog`dagi `registrationMode`/`hasPersonalityBattery`
+   * naqshi bilan bir xil), shu sabab bu sxema faqat har bir qiymat to'g'ri enum ekanini
+   * tekshiradi.
+   */
+  registrationFields: z.object({
+    birthDate: z.enum(REGISTRATION_FIELD_MODE_VALUES),
+    gender: z.enum(REGISTRATION_FIELD_MODE_VALUES),
+    grade: z.enum(REGISTRATION_FIELD_MODE_VALUES),
+    classLetter: z.enum(REGISTRATION_FIELD_MODE_VALUES),
+    phone: z.enum(REGISTRATION_FIELD_MODE_VALUES),
+    parentPhone: z.enum(REGISTRATION_FIELD_MODE_VALUES),
+    email: z.enum(REGISTRATION_FIELD_MODE_VALUES),
+  }),
 });
 
 export type ProgramFormValues = z.infer<typeof programFormSchema>;
@@ -79,4 +102,5 @@ export const PROGRAM_FORM_DEFAULT_VALUES: ProgramFormValues = {
   displayOrder: DEFAULT_DISPLAY_ORDER,
   visibility: 'Assigned',
   registrationMode: 'Full',
+  registrationFields: DEFAULT_REGISTRATION_FIELDS,
 };

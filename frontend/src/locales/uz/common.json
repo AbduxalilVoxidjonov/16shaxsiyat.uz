@@ -169,7 +169,8 @@
       "rateLimited": "Juda ko'p urinish bo'ldi. Birozdan keyin qayta urinib ko'ring.",
       "resumedNotice": "Boshlagan testingni davom ettiramiz.",
       "resumeHint": "Avval boshlagan bo'lsangiz, xuddi shu ma'lumotlarni kiriting — test davom etadi.",
-      "genericSubmitError": "Yuborishda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
+      "genericSubmitError": "Yuborishda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring.",
+      "birthDateOptionalWarning": "Takror topshirishni aniqlash F.I.Sh. va tug'ilgan sanaga tayanadi. Tug'ilgan sana majburiy bo'lmasa, bir xil ismli ikki o'quvchi ajratilmay qolishi mumkin — har safar yangi yozuv yaratiladi."
     },
     "test": {
       "title": "Test savollari"
@@ -1075,6 +1076,26 @@
       "registrationModeLabel": "Ro'yxatdan o'tish",
       "registrationModeHint": "So'raladi — o'quvchi F.I.Sh./tug'ilgan sana/telefonini alohida anketada to'ldiradi; So'ralmaydi — bu ma'lumotlar so'rovnoma savollari ichida so'raladi (agar kerak bo'lsa).",
       "registrationModeBatteryHint": "Bu dasturda shaxsiyat batareyasi (16 tip/Big Five/RIASEC/Aktivlik) bor — natija yosh/sinf/jinsga tayanadi, shu sabab \"So'ralmaydi\" tanlanmaydi.",
+      "registrationFields": {
+        "heading": "Ro'yxatdan o'tish maydonlari",
+        "noneModeHint": "Ro'yxatdan o'tish \"So'ralmaydi\" bo'lgani uchun bu maydonlar ishlatilmaydi.",
+        "batteryHint": "Shaxsiyat batareyasi bor dasturda ball normalari yosh va sinfga tayanadi — shu ikkitasi majburiy bo'lishi shart.",
+        "lockedHint": "Ball normalari uchun majburiy — o'zgartirib bo'lmaydi.",
+        "fields": {
+          "birthDate": "Tug'ilgan sana",
+          "gender": "Jins",
+          "grade": "Sinf",
+          "classLetter": "Sinf harfi",
+          "phone": "Telefon",
+          "parentPhone": "Ota-ona telefoni",
+          "email": "Email"
+        }
+      },
+      "registrationFieldMode": {
+        "hidden": "Yashirin",
+        "optional": "Ixtiyoriy",
+        "required": "Majburiy"
+      },
       "submitCreateCta": "Yaratish",
       "submitEditCta": "Saqlash",
       "createSuccess": "Dastur yaratildi",
@@ -1167,7 +1188,8 @@
     },
     "errors": {
       "systemProgramLocked": "Tizim dasturining tarkibini o'zgartirib bo'lmaydi",
-      "registrationRequiredForBattery": "Bu dasturda shaxsiyat batareyasi bor — ro'yxatdan o'tishni \"So'ralmaydi\" qilib bo'lmaydi."
+      "registrationRequiredForBattery": "Bu dasturda shaxsiyat batareyasi bor — ro'yxatdan o'tishni \"So'ralmaydi\" qilib bo'lmaydi.",
+      "registrationFieldRequiredForBattery": "Bu dasturda shaxsiyat batareyasi bor — tug'ilgan sana va sinf majburiy bo'lishi kerak, ball normalari shularga tayanadi."
     },
     "visibilityChange": {
       "title": "Dastur ommaviy bo'lmay qoladi",

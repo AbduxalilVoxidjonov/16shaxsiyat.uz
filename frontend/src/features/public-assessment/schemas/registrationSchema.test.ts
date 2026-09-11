@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_REGISTRATION_FIELDS } from '@/shared/api/registrationModeTypes';
 import { birthDateToIso, buildRegistrationSchema, calculateAge } from './registrationSchema';
 
 function validValues(overrides: Record<string, unknown> = {}) {
@@ -125,6 +126,86 @@ describe('buildRegistrationSchema', () => {
     const schema = buildRegistrationSchema(false);
     const result = schema.safeParse(validValues({ accessCode: '' }));
     expect(result.success).toBe(true);
+  });
+
+  // ── `registrationFields` (P52, 2026-09-11, `docs/18` §9) ─────────────────────────────────
+  it("registrationFields berilmasa standart (DEFAULT_REGISTRATION_FIELDS) xatti-harakat bilan bir xil natija beradi", () => {
+    const withDefaultArg = buildRegistrationSchema(false, DEFAULT_REGISTRATION_FIELDS);
+    const withoutArg = buildRegistrationSchema(false);
+    const values = validValues();
+    expect(withDefaultArg.safeParse(values).success).toBe(true);
+    expect(withoutArg.safeParse(values).success).toBe(true);
+    // Standartda `email` bo'sh telefon kabi ixtiyoriy bo'lib qoladi.
+    expect(withoutArg.safeParse(validValues({ email: '' })).success).toBe(true);
+  });
+
+  it("'email' maydoni 'Required' qilinsa bo'sh qiymatni rad etadi", () => {
+    const schema = buildRegistrationSchema(false, { ...DEFAULT_REGISTRATION_FIELDS, email: 'Required' });
+    const result = schema.safeParse(validValues({ email: '' }));
+    expect(result.success).toBe(false);
+  });
+
+  it("'email' maydoni 'Required' qilinsa to'g'ri email bilan o'tadi", () => {
+    const schema = buildRegistrationSchema(false, { ...DEFAULT_REGISTRATION_FIELDS, email: 'Required' });
+    const result = schema.safeParse(validValues({ email: 'ali@example.com' }));
+    expect(result.success).toBe(true);
+  });
+
+  it("'phone' maydoni 'Optional' qilinsa bo'sh qiymatni qabul qiladi", () => {
+    const schema = buildRegistrationSchema(false, { ...DEFAULT_REGISTRATION_FIELDS, phone: 'Optional' });
+    const result = schema.safeParse(validValues({ phone: '' }));
+    expect(result.success).toBe(true);
+  });
+
+  it("'phone' maydoni 'Hidden' qilinganda ham bo'sh qiymatni qabul qiladi", () => {
+    const schema = buildRegistrationSchema(false, { ...DEFAULT_REGISTRATION_FIELDS, phone: 'Hidden' });
+    const result = schema.safeParse(validValues({ phone: '' }));
+    expect(result.success).toBe(true);
+  });
+
+  it("'gender' maydoni 'Optional' qilinsa bo'sh qiymatni qabul qiladi", () => {
+    const schema = buildRegistrationSchema(false, { ...DEFAULT_REGISTRATION_FIELDS, gender: 'Optional' });
+    const result = schema.safeParse(validValues({ gender: '' }));
+    expect(result.success).toBe(true);
+  });
+
+  it("'grade' maydoni 'Optional' qilinsa bo'sh qiymatni qabul qiladi", () => {
+    const schema = buildRegistrationSchema(false, { ...DEFAULT_REGISTRATION_FIELDS, grade: 'Optional' });
+    const result = schema.safeParse(validValues({ grade: '' }));
+    expect(result.success).toBe(true);
+  });
+
+  it("'birthDate' maydoni 'Optional' qilinsa to'liq bo'sh sanani qabul qiladi", () => {
+    const schema = buildRegistrationSchema(false, {
+      ...DEFAULT_REGISTRATION_FIELDS,
+      birthDate: 'Optional',
+    });
+    const result = schema.safeParse(
+      validValues({ birthDate: { day: '', month: '', year: '' } }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("'birthDate' maydoni 'Optional' bo'lsa ham qisman to'ldirilgan sanani rad etadi", () => {
+    const schema = buildRegistrationSchema(false, {
+      ...DEFAULT_REGISTRATION_FIELDS,
+      birthDate: 'Optional',
+    });
+    const result = schema.safeParse(
+      validValues({ birthDate: { day: '17', month: '', year: '' } }),
+    );
+    expect(result.success).toBe(false);
+  });
+
+  it("'birthDate' maydoni 'Optional' bo'lsa ham to'liq to'ldirilgan noto'g'ri sanani rad etadi", () => {
+    const schema = buildRegistrationSchema(false, {
+      ...DEFAULT_REGISTRATION_FIELDS,
+      birthDate: 'Optional',
+    });
+    const result = schema.safeParse(
+      validValues({ birthDate: { day: '1', month: '1', year: '2000' } }),
+    );
+    expect(result.success).toBe(false);
   });
 });
 

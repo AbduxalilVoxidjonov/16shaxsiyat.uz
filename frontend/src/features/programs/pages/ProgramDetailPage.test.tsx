@@ -6,7 +6,7 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
 import ProgramDetailPage from './ProgramDetailPage';
 import { jsonResponse, problemResponse, type Schemas } from '@/test/apiMock';
-import type { AdminProgramDetailWithRegistration } from '../model/types';
+import { DEFAULT_REGISTRATION_FIELDS, type AdminProgramDetailWithRegistration } from '../model/types';
 
 /**
  * `GET /api/admin/programs/{id}` javobi — backend `AdminProgramDetailDto` shakli +
@@ -346,5 +346,116 @@ describe('ProgramDetailPage', () => {
       unknown
     >;
     expect(body.registrationMode).toBe('None');
+  });
+
+  // ── Ro'yxatdan o'tish maydonlari jadvali (P52, 2026-09-11, `docs/18` §9) ─────────────────
+
+  it("registrationMode 'None' bo'lsa maydonlar jadvali o'chirilgan turadi", async () => {
+    mockFetch(programDetail({ registrationMode: 'None', hasPersonalityBattery: false }));
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Tahrirlash' }));
+
+    const birthDateSelect = (await screen.findByLabelText("Tug'ilgan sana")) as HTMLSelectElement;
+    expect(birthDateSelect).toBeDisabled();
+    expect(screen.getByText(/bu maydonlar ishlatilmaydi/i)).toBeInTheDocument();
+  });
+
+  it("shaxsiyat batareyasi bor dasturda tug'ilgan sana va sinf faqat 'Majburiy' tanlanadi", async () => {
+    mockFetch(programDetail({ hasPersonalityBattery: true }));
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Tahrirlash' }));
+
+    const birthDateSelect = (await screen.findByLabelText("Tug'ilgan sana")) as HTMLSelectElement;
+    expect(birthDateSelect).toBeDisabled();
+    const birthDateHidden = birthDateSelect.querySelector('option[value="Hidden"]') as HTMLOptionElement;
+    const birthDateOptional = birthDateSelect.querySelector(
+      'option[value="Optional"]',
+    ) as HTMLOptionElement;
+    const birthDateRequired = birthDateSelect.querySelector(
+      'option[value="Required"]',
+    ) as HTMLOptionElement;
+    expect(birthDateHidden.disabled).toBe(true);
+    expect(birthDateOptional.disabled).toBe(true);
+    expect(birthDateRequired.disabled).toBe(false);
+
+    const gradeSelect = screen.getByLabelText('Sinf') as HTMLSelectElement;
+    expect(gradeSelect).toBeDisabled();
+
+    // Batareyaga aloqasi bo'lmagan maydon (masalan email) erkin qoladi.
+    const emailSelect = screen.getByLabelText('Email') as HTMLSelectElement;
+    expect(emailSelect).toBeEnabled();
+  });
+
+  it("batareyasiz dasturda maydon sozlamasini o'zgartirib saqlash mumkin (PUT registrationFields)", async () => {
+    const detail = programDetail({ hasPersonalityBattery: false });
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+      if (url.includes('/api/admin/programs/program-1') && method === 'GET') {
+        return Promise.resolve(jsonResponse<'AdminProgramDetailDto'>(detail));
+      }
+      if (url.includes('/api/admin/programs/program-1') && method === 'PUT') {
+        return Promise.resolve(jsonResponse<'AdminProgramDetailDto'>(detail));
+      }
+      return Promise.resolve(problemResponse('NOT_FOUND', 404));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Tahrirlash' }));
+
+    const classLetterSelect = (await screen.findByLabelText('Sinf harfi')) as HTMLSelectElement;
+    await user.selectOptions(classLetterSelect, 'Required');
+    await user.click(screen.getByText('Saqlash'));
+
+    await waitFor(() => {
+      const putCall = fetchMock.mock.calls.find(
+        ([, requestInit]) => (requestInit as RequestInit | undefined)?.method === 'PUT',
+      );
+      expect(putCall).toBeDefined();
+    });
+    const putCall = fetchMock.mock.calls.find(
+      ([, requestInit]) => (requestInit as RequestInit | undefined)?.method === 'PUT',
+    )!;
+    const body = JSON.parse((putCall[1] as RequestInit).body as string) as {
+      registrationFields?: Record<string, string>;
+    };
+    expect(body.registrationFields).toEqual({
+      ...DEFAULT_REGISTRATION_FIELDS,
+      classLetter: 'Required',
+    });
+  });
+
+  it("400 REGISTRATION_FIELD_REQUIRED_FOR_BATTERY kelsa tushunarli xabar ko'rsatadi", async () => {
+    const detail = programDetail({ hasPersonalityBattery: false });
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+      if (url.includes('/api/admin/programs/program-1') && method === 'GET') {
+        return Promise.resolve(jsonResponse<'AdminProgramDetailDto'>(detail));
+      }
+      if (url.includes('/api/admin/programs/program-1') && method === 'PUT') {
+        return Promise.resolve(problemResponse('REGISTRATION_FIELD_REQUIRED_FOR_BATTERY', 400));
+      }
+      return Promise.resolve(problemResponse('NOT_FOUND', 404));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Tahrirlash' }));
+    await screen.findByLabelText("Tug'ilgan sana");
+    await user.click(screen.getByText('Saqlash'));
+
+    expect(
+      await screen.findByText(
+        "Bu dasturda shaxsiyat batareyasi bor — tug'ilgan sana va sinf majburiy bo'lishi kerak, ball normalari shularga tayanadi.",
+      ),
+    ).toBeInTheDocument();
   });
 });

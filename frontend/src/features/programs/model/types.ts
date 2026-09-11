@@ -7,10 +7,17 @@ import {
   type ProgramState,
 } from '@/shared/lib/programState';
 import {
+  DEFAULT_REGISTRATION_FIELDS,
+  REGISTRATION_FIELD_KEYS,
+  REGISTRATION_FIELD_MODE_VALUES,
   REGISTRATION_MODE_VALUES,
+  resolveRegistrationFields,
   type AdminProgramDetailWithRegistration,
   type AdminProgramListItemWithRegistration,
   type CreateProgramRequestWithRegistration,
+  type RegistrationFieldKey,
+  type RegistrationFieldMode,
+  type RegistrationFields,
   type RegistrationMode,
   type UpdateProgramRequestWithRegistration,
 } from '@/shared/api/registrationModeTypes';
@@ -39,11 +46,20 @@ export type ReorderProgramTestsRequestBody = components['schemas']['ReorderProgr
  * `AdminProgramDetail`/`CreateProgramRequestBody`/`UpdateProgramRequestBody` ularning o'rnini
  * bosadi (maydon o'shanda ular ichida allaqachon bo'ladi).
  */
-export { REGISTRATION_MODE_VALUES };
+export {
+  DEFAULT_REGISTRATION_FIELDS,
+  REGISTRATION_FIELD_KEYS,
+  REGISTRATION_FIELD_MODE_VALUES,
+  REGISTRATION_MODE_VALUES,
+  resolveRegistrationFields,
+};
 export type {
   AdminProgramDetailWithRegistration,
   AdminProgramListItemWithRegistration,
   CreateProgramRequestWithRegistration,
+  RegistrationFieldKey,
+  RegistrationFieldMode,
+  RegistrationFields,
   RegistrationMode,
   UpdateProgramRequestWithRegistration,
 };

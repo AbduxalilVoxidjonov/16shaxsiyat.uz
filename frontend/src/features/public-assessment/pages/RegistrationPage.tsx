@@ -19,7 +19,9 @@ import { ROUTES } from '@/shared/config/routes';
 import { AppError } from '@/shared/api/AppError';
 import { cn } from '@/shared/lib/cn';
 import { toE164UzPhone } from '@/shared/lib/formatPhone';
-import type { Gender, StartSessionRequestBody } from '@/shared/api/types';
+import type { Gender } from '@/shared/api/types';
+import type { StartSessionRegistrationRequestBody } from '@/shared/api/registrationModeTypes';
+import { resolveRegistrationFields } from '@/shared/api/registrationModeTypes';
 import { useSchoolInfo } from '../api/useSchoolInfo';
 import { useStartSession } from '../api/useStartSession';
 import { useSessionStore } from '../store/sessionStore';
@@ -91,7 +93,6 @@ export default function RegistrationPage() {
   usePageTitle(t('pages.register.title'));
 
   const requiresAccessCode = schoolInfoQuery.data?.requiresAccessCode ?? false;
-  const schema = useMemo(() => buildRegistrationSchema(requiresAccessCode), [requiresAccessCode]);
 
   // `prompts/36` — Landing (E-1) bir nechta dastur bo'lganda tanlovni talab qiladi. Bitta
   // dastur bo'lsa (ORQAGA MOSLIK — hozirgi oqim) `programCode` umuman yuborilmaydi (backend
@@ -99,6 +100,22 @@ export default function RegistrationPage() {
   const programs = schoolInfoQuery.data?.programs ?? [];
   const requiresProgramSelection = programs.length > 1;
   const selectedProgramCode = storedSelectedProgramSlug === slug ? storedSelectedProgramCode : null;
+
+  // `activeProgram` — shu render uchun "amaldagi" dastur (bitta bo'lsa yagonasi, ko'p bo'lsa
+  // tanlangani). Pastdagi shart bilan bir xil hisoblash — pastda `registrationMode === 'None'`
+  // tekshiruvi uchun ham qayta ishlatiladi. Hook EMAS, shu sabab shartli qaytishlardan oldin
+  // hisoblash xavfsiz (faqat hook chaqiruvlari tartibi muhim).
+  const activeProgram =
+    programs.length === 1 ? programs[0] : programs.find((program) => program.code === selectedProgramCode);
+
+  // P52 (`docs/18` §9) — dasturning har bir shaxs maydoni uchun "Yashirin"/"Ixtiyoriy"/
+  // "Majburiy" sozlamasi. Javobda kelmasa (eski fixture/hali yangilanmagan backend) standart
+  // qiymatlar bilan to'ldiriladi — 20 ta mavjud test shu sabab o'zgarmasdan yashil qoladi.
+  const registrationFields = resolveRegistrationFields(activeProgram?.registrationFields);
+  const schema = useMemo(
+    () => buildRegistrationSchema(requiresAccessCode, registrationFields),
+    [requiresAccessCode, registrationFields],
+  );
 
   const {
     register,
@@ -178,20 +195,41 @@ export default function RegistrationPage() {
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
 
-    const payload: StartSessionRequestBody = {
+    // Har bir shaxs maydoni `registrationFields`ga qarab yuboriladi/tashlab ketiladi (`Hidden`
+    // — umuman yuborilmaydi, `docs/18` §9). Bo'sh qoldirilgan `Optional` maydon ham
+    // yuborilmaydi (backend `undefined`ni "berilmagan" deb o'qiydi) — faqat haqiqiy qiymat
+    // borida jo'natiladi.
+    const hasBirthDate = Boolean(
+      values.birthDate.day && values.birthDate.month && values.birthDate.year,
+    );
+    const payload: StartSessionRegistrationRequestBody = {
       slug,
       accessToken,
       accessCode: requiresAccessCode ? values.accessCode : undefined,
       fullName: values.fullName,
-      birthDate: birthDateToIso(values.birthDate),
-      gender: values.gender as Gender,
-      grade: Number(values.grade),
-      classLetter: values.classLetter ? values.classLetter.toUpperCase() : undefined,
-      phone: toE164UzPhone(values.phone) ?? '',
-      parentPhone: values.parentPhone
-        ? (toE164UzPhone(values.parentPhone) ?? undefined)
-        : undefined,
-      email: values.email || undefined,
+      birthDate:
+        registrationFields.birthDate !== 'Hidden' && hasBirthDate
+          ? birthDateToIso(values.birthDate)
+          : undefined,
+      gender:
+        registrationFields.gender !== 'Hidden' && values.gender
+          ? (values.gender as Gender)
+          : undefined,
+      grade:
+        registrationFields.grade !== 'Hidden' && values.grade ? Number(values.grade) : undefined,
+      classLetter:
+        registrationFields.classLetter !== 'Hidden' && values.classLetter
+          ? values.classLetter.toUpperCase()
+          : undefined,
+      phone:
+        registrationFields.phone !== 'Hidden' && values.phone
+          ? (toE164UzPhone(values.phone) ?? undefined)
+          : undefined,
+      parentPhone:
+        registrationFields.parentPhone !== 'Hidden' && values.parentPhone
+          ? (toE164UzPhone(values.parentPhone) ?? undefined)
+          : undefined,
+      email: registrationFields.email !== 'Hidden' && values.email ? values.email : undefined,
       consentAccepted: values.consentAccepted,
       languageCode: 'uz',
       programCode: requiresProgramSelection ? (selectedProgramCode ?? undefined) : undefined,
@@ -259,9 +297,8 @@ export default function RegistrationPage() {
   // `registrationMode: "None"` dastur — bu ekran UMUMAN ochilmaydi (`docs/18` §9,
   // `LandingPage` shu dastur uchun sessiyani o'zi to'g'ridan-to'g'ri ochadi). Oddiy oqimda
   // bu yerga hech qachon kelinmaydi (`LandingPage` navigatsiya qilmaydi), lekin to'g'ridan-
-  // to'g'ri havola/"orqaga" bilan kelish ehtimoliga qarshi himoya.
-  const activeProgram =
-    programs.length === 1 ? programs[0] : programs.find((program) => program.code === selectedProgramCode);
+  // to'g'ri havola/"orqaga" bilan kelish ehtimoliga qarshi himoya (`activeProgram` yuqorida,
+  // sxema qurish uchun hisoblangan).
   if (activeProgram?.registrationMode === 'None') {
     return (
       <Navigate
@@ -298,63 +335,98 @@ export default function RegistrationPage() {
           {...register('fullName')}
         />
 
-        <Controller
-          control={control}
-          name="birthDate"
-          render={({ field }) => (
-            <BirthDateSelect
-              value={field.value}
-              onChange={field.onChange}
-              onBlur={field.onBlur}
-              minAge={MIN_AGE}
-              maxAge={MAX_AGE}
-              errors={{
-                day: errors.birthDate?.day?.message,
-                month: errors.birthDate?.month?.message,
-                year: errors.birthDate?.year?.message,
-              }}
-            />
-          )}
-        />
+        {registrationFields.birthDate !== 'Hidden' && (
+          <Controller
+            control={control}
+            name="birthDate"
+            render={({ field }) => (
+              <BirthDateSelect
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                minAge={MIN_AGE}
+                maxAge={MAX_AGE}
+                errors={{
+                  day: errors.birthDate?.day?.message,
+                  month: errors.birthDate?.month?.message,
+                  year: errors.birthDate?.year?.message,
+                }}
+              />
+            )}
+          />
+        )}
 
-        <fieldset className="flex flex-col gap-1.5">
-          <legend className="mb-1.5 text-sm font-medium text-ink-soft">
-            {t('register.fields.gender')}
-          </legend>
-          <div className="flex gap-3">
-            {(['Male', 'Female'] as const).map((option) => (
-              <label
-                key={option}
-                className={cn(
-                  'flex h-11 flex-1 cursor-pointer items-center justify-center rounded-xl border text-sm font-semibold transition-colors',
-                  // Radio input `sr-only` (vizual jihatdan yashirilgan) — fokus halqasi shu sabab
-                  // o'rab turgan yorliqda ko'rsatiladi (`has-[:focus-visible]`), aks holda
-                  // klaviatura bilan navigatsiya qilganda fokus ko'rinmay qolardi (`docs/11`, 4-bo'lim).
-                  'has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-firuza-500',
-                  genderValue === option
-                    ? 'border-firuza-500 bg-firuza-50 text-firuza-800'
-                    : 'border-line bg-paper-card text-ink-soft hover:border-firuza-300',
-                )}
-              >
-                <input type="radio" value={option} className="sr-only" {...register('gender')} />
-                {t(`register.genderOptions.${option === 'Male' ? 'male' : 'female'}`)}
-              </label>
-            ))}
-          </div>
-          {errors.gender && (
-            <p role="alert" className="text-sm text-terakota-700">
-              {errors.gender.message}
-            </p>
-          )}
-        </fieldset>
+        {/*
+          Ro'yxatdan o'tishni sozlagan superadmin tug'ilgan sanani `Optional`/`Hidden` qilgan
+          bo'lsa ham ko'rinadi (maydon ko'rsatilmasa ham) — takror topshirishni aniqlash
+          (F.I.Sh. + tug'ilgan sana) buzilishi mumkinligi haqida ogohlantiradi (P52, egasining
+          talabi, "ma'lumot buzilishining oldini olish" — taqiq emas, faqat eslatma).
+        */}
+        {registrationFields.birthDate !== 'Required' && (
+          <p role="note" className="rounded-2xl bg-zarhal-50 p-3 text-sm text-zarhal-800">
+            {t('pages.register.birthDateOptionalWarning')}
+          </p>
+        )}
+
+        {registrationFields.gender !== 'Hidden' && (
+          <fieldset className="flex flex-col gap-1.5">
+            <legend className="mb-1.5 text-sm font-medium text-ink-soft">
+              {t('register.fields.gender')}
+            </legend>
+            <div className="flex gap-3">
+              {(['Male', 'Female'] as const).map((option) => (
+                <label
+                  key={option}
+                  className={cn(
+                    'flex h-11 flex-1 cursor-pointer items-center justify-center rounded-xl border text-sm font-semibold transition-colors',
+                    // Radio input `sr-only` (vizual jihatdan yashirilgan) — fokus halqasi shu sabab
+                    // o'rab turgan yorliqda ko'rsatiladi (`has-[:focus-visible]`), aks holda
+                    // klaviatura bilan navigatsiya qilganda fokus ko'rinmay qolardi (`docs/11`, 4-bo'lim).
+                    'has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-firuza-500',
+                    genderValue === option
+                      ? 'border-firuza-500 bg-firuza-50 text-firuza-800'
+                      : 'border-line bg-paper-card text-ink-soft hover:border-firuza-300',
+                  )}
+                >
+                  <input type="radio" value={option} className="sr-only" {...register('gender')} />
+                  {t(`register.genderOptions.${option === 'Male' ? 'male' : 'female'}`)}
+                </label>
+              ))}
+            </div>
+            {errors.gender && (
+              <p role="alert" className="text-sm text-terakota-700">
+                {errors.gender.message}
+              </p>
+            )}
+          </fieldset>
+        )}
 
         {/*
           `minmax(0,…)` MAJBURIY: sof `1fr` ning eng kichik o'lchami `auto`, ya'ni
           "Sinf harfi" inputining brauzer standarti bo'yicha juda keng min-content
           o'lchami. 390px da shu tufayli nisbat teskarisiga aylanib ketardi — "Sinf"
-          ustuni siqilib, "Tanlang" matni "Tanl…" bo'lib kesilardi.
+          ustuni siqilib, "Tanlang" matni "Tanl…" bo'lib kesilardi. Ikkala maydon ham
+          ko'ringanda shu 2 ustunli grid ishlatiladi (standart holat, regressiya qulfi);
+          faqat bittasi ko'rinsa — to'liq kenglikda, bittasi ham ko'rinmasa — umuman yo'q.
         */}
-        <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-3">
+        {registrationFields.grade !== 'Hidden' && registrationFields.classLetter !== 'Hidden' && (
+          <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-3">
+            <Select
+              label={t('register.fields.grade')}
+              placeholder={t('register.fields.gradePlaceholder')}
+              options={GRADE_OPTIONS}
+              error={errors.grade?.message}
+              {...register('grade')}
+            />
+            <Input
+              label={t('register.fields.classLetter')}
+              maxLength={2}
+              error={errors.classLetter?.message}
+              {...register('classLetter')}
+            />
+          </div>
+        )}
+        {registrationFields.grade !== 'Hidden' && registrationFields.classLetter === 'Hidden' && (
           <Select
             label={t('register.fields.grade')}
             placeholder={t('register.fields.gradePlaceholder')}
@@ -362,52 +434,60 @@ export default function RegistrationPage() {
             error={errors.grade?.message}
             {...register('grade')}
           />
+        )}
+        {registrationFields.grade === 'Hidden' && registrationFields.classLetter !== 'Hidden' && (
           <Input
             label={t('register.fields.classLetter')}
             maxLength={2}
             error={errors.classLetter?.message}
             {...register('classLetter')}
           />
-        </div>
+        )}
 
-        <Controller
-          control={control}
-          name="phone"
-          render={({ field }) => (
-            <PhoneField
-              label={t('register.fields.phone')}
-              autoComplete="tel-national"
-              value={field.value}
-              onValueChange={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.phone?.message}
-            />
-          )}
-        />
+        {registrationFields.phone !== 'Hidden' && (
+          <Controller
+            control={control}
+            name="phone"
+            render={({ field }) => (
+              <PhoneField
+                label={t('register.fields.phone')}
+                autoComplete="tel-national"
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                error={errors.phone?.message}
+              />
+            )}
+          />
+        )}
 
-        <Controller
-          control={control}
-          name="parentPhone"
-          render={({ field }) => (
-            <PhoneField
-              label={t('register.fields.parentPhone')}
-              value={field.value}
-              onValueChange={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.parentPhone?.message}
-              hint={errors.parentPhone ? undefined : t('register.fields.parentPhoneHint')}
-            />
-          )}
-        />
+        {registrationFields.parentPhone !== 'Hidden' && (
+          <Controller
+            control={control}
+            name="parentPhone"
+            render={({ field }) => (
+              <PhoneField
+                label={t('register.fields.parentPhone')}
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                error={errors.parentPhone?.message}
+                hint={errors.parentPhone ? undefined : t('register.fields.parentPhoneHint')}
+              />
+            )}
+          />
+        )}
 
-        <Input
-          label={t('register.fields.email')}
-          type="email"
-          autoComplete="email"
-          hint={errors.email ? undefined : t('register.fields.emailHint')}
-          error={errors.email?.message}
-          {...register('email')}
-        />
+        {registrationFields.email !== 'Hidden' && (
+          <Input
+            label={t('register.fields.email')}
+            type="email"
+            autoComplete="email"
+            hint={errors.email ? undefined : t('register.fields.emailHint')}
+            error={errors.email?.message}
+            {...register('email')}
+          />
+        )}
 
         <Controller
           control={control}

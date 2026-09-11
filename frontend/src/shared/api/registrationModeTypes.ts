@@ -14,7 +14,7 @@
  * qilingan tiplarga qaytariladi.
  */
 import type { components } from './schema';
-import type { PublicSchoolInfo, PublicTestCatalogItem, StartSessionRequestBody } from './types';
+import type { Gender, PublicSchoolInfo, PublicTestCatalogItem } from './types';
 
 /**
  * Admin dastur DTO'lari — `shared/` `features/*`ni import QILMAYDI (`docs/10` §2 "features
@@ -33,6 +33,55 @@ export const REGISTRATION_MODE_VALUES = ['Full', 'None'] as const;
 export type RegistrationMode = (typeof REGISTRATION_MODE_VALUES)[number];
 
 /**
+ * `docs/18` §9 kengaytmasi (P52, 2026-09-11) — `RegistrationMode = "Full"` bo'lsa, HAR BIR
+ * shaxs maydoni (F.I.Sh.dan tashqari — u har doim majburiy) alohida "Yashirin"/"Ixtiyoriy"/
+ * "Majburiy" qilib sozlanadi. Backend `GET /api/public/schools/{slug}`ning
+ * `programs[].registrationFields`sida va admin `Create/UpdateProgramRequest`/
+ * `AdminProgramDetailDto`da shu shaklda qaytadi. Qattiq qoida: shaxsiyat batareyasi bor
+ * dasturda `birthDate`/`grade` DOIM `"Required"` — ball normalari shularga tayanadi
+ * (buzilsa `400 REGISTRATION_FIELD_REQUIRED_FOR_BATTERY`).
+ */
+export const REGISTRATION_FIELD_MODE_VALUES = ['Hidden', 'Optional', 'Required'] as const;
+export type RegistrationFieldMode = (typeof REGISTRATION_FIELD_MODE_VALUES)[number];
+
+/** `fullName` bu ro'yxatda YO'Q — `RegistrationMode = Full` bo'lsa har doim majburiy. */
+export const REGISTRATION_FIELD_KEYS = [
+  'birthDate',
+  'gender',
+  'grade',
+  'classLetter',
+  'phone',
+  'parentPhone',
+  'email',
+] as const;
+export type RegistrationFieldKey = (typeof REGISTRATION_FIELD_KEYS)[number];
+
+export type RegistrationFields = Record<RegistrationFieldKey, RegistrationFieldMode>;
+
+/**
+ * Standart sozlama — hozirgi (P52dan oldingi) qattiq yozilgan xatti-harakat bilan AYNAN mos:
+ * F.I.Sh./tug'ilgan sana/jins/sinf/telefon majburiy, sinf harfi/ota-ona telefoni/email
+ * ixtiyoriy. `registrationFields` javobda kelmasa (eski test fixture'lari, hali yangilanmagan
+ * backend javoblari) shu qiymatlar bilan to'ldiriladi — regressiya qulfi.
+ */
+export const DEFAULT_REGISTRATION_FIELDS: RegistrationFields = {
+  birthDate: 'Required',
+  gender: 'Required',
+  grade: 'Required',
+  classLetter: 'Optional',
+  phone: 'Required',
+  parentPhone: 'Optional',
+  email: 'Optional',
+};
+
+/** `registrationFields` qisman yoki umuman kelmagan javoblarni standart bilan to'ldiradi. */
+export function resolveRegistrationFields(
+  fields?: Partial<RegistrationFields> | null,
+): RegistrationFields {
+  return { ...DEFAULT_REGISTRATION_FIELDS, ...fields };
+}
+
+/**
  * ============================================================================
  * OMMAVIY QATLAM — `docs/07` §1.1/1.2.
  * ============================================================================
@@ -48,6 +97,16 @@ export type RegistrationMode = (typeof REGISTRATION_MODE_VALUES)[number];
 export interface PublicProgramRegistrationFields {
   registrationMode: RegistrationMode;
   tests: PublicTestCatalogItem[];
+  /**
+   * P52 kengaytmasi — har bir shaxs maydonining "Yashirin"/"Ixtiyoriy"/"Majburiy" holati.
+   * IXTIYORIY tip darajasida: eski javoblarda (hali yangilanmagan backend/eski test
+   * fixture, masalan `LandingPage.test.tsx`/`RegistrationPage.test.tsx`dagi ko'plab mavjud
+   * o'rnaklar) bu maydon umuman bo'lmasligi mumkin — o'qiydigan joy
+   * `resolveRegistrationFields()` bilan standart qiymatlarga to'ldiradi (regressiya qulfi,
+   * `registrationMode`/`hasPersonalityBattery`dan farqli — ular har doim majburiy edi,
+   * chunki mavjud testlar ularni allaqachon har joyda aniq bergan).
+   */
+  registrationFields?: RegistrationFields;
 }
 
 /** `PublicProgramSummaryDto` (generatsiya qilingan) + yuqoridagi yangi maydonlar. */
@@ -78,11 +137,36 @@ export interface StartSessionAnonymousRequestBody {
 }
 
 /**
- * `useStartSession` mutatsiyasi qabul qiladigan ikkala shakl — `registrationMode: "Full"`
- * (mavjud `StartSessionRequestBody`, `RegistrationPage`) yoki `"None"` (yuqoridagi anonim
- * shakl, `LandingPage`).
+ * `POST /api/public/sessions` — `registrationMode: "Full"` dasturdagi so'rov tanasi, P52
+ * kengaytmasi bilan: har bir shaxs maydoni endi dasturning `registrationFields`iga qarab
+ * **ixtiyoriy** (avvalgi `StartSessionRequestBody`, generatsiya qilingan `schema.d.ts`,
+ * ularni doim majburiy deb belgilagan edi — bu yerdagi qo'lda yozilgan nusxa haqiqiy
+ * shartnomaga mos, backend generatsiya qilingach olib tashlanadi). `fullName` bundan
+ * mustasno — u har doim majburiy (`docs/18` §9 "`fullName` sozlamada yo'q").
  */
-export type StartSessionPayload = StartSessionRequestBody | StartSessionAnonymousRequestBody;
+export interface StartSessionRegistrationRequestBody {
+  slug: string;
+  accessToken: string;
+  accessCode?: string;
+  fullName: string;
+  birthDate?: string;
+  gender?: Gender;
+  grade?: number;
+  classLetter?: string;
+  phone?: string;
+  parentPhone?: string;
+  email?: string;
+  consentAccepted: boolean;
+  languageCode?: string;
+  programCode?: string;
+}
+
+/**
+ * `useStartSession` mutatsiyasi qabul qiladigan ikkala shakl — `registrationMode: "Full"`
+ * (yuqoridagi `StartSessionRegistrationRequestBody`, `RegistrationPage`) yoki `"None"`
+ * (anonim shakl, `LandingPage`).
+ */
+export type StartSessionPayload = StartSessionRegistrationRequestBody | StartSessionAnonymousRequestBody;
 
 /**
  * ============================================================================
@@ -102,6 +186,12 @@ export type StartSessionPayload = StartSessionRequestBody | StartSessionAnonymou
 export interface AdminProgramRegistrationModeFields {
   registrationMode: RegistrationMode;
   hasPersonalityBattery: boolean;
+  /**
+   * P52 kengaytmasi — `docs/18` §9, faqat `AdminProgramDetailDto`da mazmunli. Ixtiyoriy —
+   * `ProgramFormDialog` `resolveRegistrationFields()` bilan standartga to'ldiradi (mavjud
+   * `ProgramDetailPage.test.tsx` o'rnaklari bu maydonsiz ham to'g'ri kompilyatsiya bo'lsin).
+   */
+  registrationFields?: RegistrationFields;
 }
 
 /** `AdminProgramListItemDto` (generatsiya qilingan) + `registrationMode`. */
@@ -118,6 +208,8 @@ export type AdminProgramDetailWithRegistration = AdminProgramDetail &
  */
 export interface AdminProgramRegistrationModePayload {
   registrationMode?: RegistrationMode;
+  /** Standart — `DEFAULT_REGISTRATION_FIELDS` (`docs/18` §9). */
+  registrationFields?: RegistrationFields;
 }
 
 export type CreateProgramRequestWithRegistration = CreateProgramRequestBody &
