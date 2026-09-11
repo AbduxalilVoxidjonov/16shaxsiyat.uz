@@ -112,9 +112,14 @@ export default function RegistrationPage() {
   // "Majburiy" sozlamasi. Javobda kelmasa (eski fixture/hali yangilanmagan backend) standart
   // qiymatlar bilan to'ldiriladi — 20 ta mavjud test shu sabab o'zgarmasdan yashil qoladi.
   const registrationFields = resolveRegistrationFields(activeProgram?.registrationFields);
+  // Diqqat: bog'liqlik ATAYLAB `registrationFields` EMAS — `resolveRegistrationFields()` har
+  // renderda YANGI obyekt qaytaradi (spread), shu obyekt memo bog'liqligida tursa memo hech
+  // qachon ishlamay qoladi (kod ko'rigi topilmasi, P52) va `zodResolver` har harf terilganda
+  // qayta quriladi. Xom `activeProgram?.registrationFields` esa so'rov ma'lumoti o'zgarmaguncha
+  // barqaror obyekt (`useSchoolInfo` — TanStack Query keshi) — shu sabab memo haqiqiy ishlaydi.
   const schema = useMemo(
-    () => buildRegistrationSchema(requiresAccessCode, registrationFields),
-    [requiresAccessCode, registrationFields],
+    () => buildRegistrationSchema(requiresAccessCode, resolveRegistrationFields(activeProgram?.registrationFields)),
+    [requiresAccessCode, activeProgram?.registrationFields],
   );
 
   const {
@@ -354,18 +359,6 @@ export default function RegistrationPage() {
               />
             )}
           />
-        )}
-
-        {/*
-          Ro'yxatdan o'tishni sozlagan superadmin tug'ilgan sanani `Optional`/`Hidden` qilgan
-          bo'lsa ham ko'rinadi (maydon ko'rsatilmasa ham) — takror topshirishni aniqlash
-          (F.I.Sh. + tug'ilgan sana) buzilishi mumkinligi haqida ogohlantiradi (P52, egasining
-          talabi, "ma'lumot buzilishining oldini olish" — taqiq emas, faqat eslatma).
-        */}
-        {registrationFields.birthDate !== 'Required' && (
-          <p role="note" className="rounded-2xl bg-zarhal-50 p-3 text-sm text-zarhal-800">
-            {t('pages.register.birthDateOptionalWarning')}
-          </p>
         )}
 
         {registrationFields.gender !== 'Hidden' && (

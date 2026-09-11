@@ -74,6 +74,7 @@ export function ProgramFormDialog({ open, programId, onClose, onCreated }: Progr
       return;
     }
     if (detailQuery.data) {
+      const resolvedFields = resolveRegistrationFields(detailQuery.data.registrationFields);
       reset({
         code: detailQuery.data.code,
         nameUz: detailQuery.data.nameUz,
@@ -81,7 +82,15 @@ export function ProgramFormDialog({ open, programId, onClose, onCreated }: Progr
         displayOrder: detailQuery.data.displayOrder,
         visibility: detailQuery.data.visibility === 'Public' ? 'Public' : 'Assigned',
         registrationMode: detailQuery.data.registrationMode === 'None' ? 'None' : 'Full',
-        registrationFields: resolveRegistrationFields(detailQuery.data.registrationFields),
+        // Kod ko'rigi topilmasi (P52): batareya bor dasturda `birthDate`/`grade` doim
+        // "Majburiy" bo'lishi shart. `RegistrationFieldsFieldset` bu ikkitasini `disabled`
+        // qiladi, lekin saqlangan qiymat boshqacha bo'lib qolgan taqdirda (masalan eski
+        // yozuv/parallel tuzatilayotgan backend yo'li) tanlov MUZLAB qolmasin — forma
+        // ochilganda majburiy qiymatga MAJBURLANADI, admin buzuq holatdan chiqa olmay
+        // qolmaydi.
+        registrationFields: detailQuery.data.hasPersonalityBattery
+          ? { ...resolvedFields, birthDate: 'Required', grade: 'Required' }
+          : resolvedFields,
       });
     }
   }, [open, isEdit, detailQuery.data, reset]);

@@ -243,6 +243,28 @@ describe('RegistrationPage', () => {
     expect(screen.getAllByText('+998').length).toBeGreaterThan(0);
   });
 
+  it("F.I.Sh. maydoniga harfma-harf yozish ishlaydi va fokus maydonda qoladi", async () => {
+    // REGRESSIYA (P52 kod ko'rigi): zod sxemasi `useMemo` ichida quriladi va uning
+    // bog'liqligi har renderda YANGI obyekt bo'lsa, `zodResolver` har bosilgan harfda
+    // qaytadan yaratiladi. Aynan shu naqsh (beqaror bog'liqlik) `TestPage.tsx` da matn
+    // savoliga bitta harfdan keyin yozib bo'lmaslikka olib kelgan edi.
+    //
+    // `fill`/`paste` EMAS, `user.keyboard` ishlatiladi: qiymatni bir marta qo'yadigan
+    // yordamchilar bu sinf xatolarini UMUMAN ushlamaydi (o'sha bug real E2E'dan ham
+    // `fill()` ishlatilgani uchun o'tib ketgan edi).
+    mockFetch({});
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderRegistration();
+
+    await screen.findByText(CONSENT_TEXT);
+    const nameInput = screen.getByLabelText('F.I.Sh.');
+    await user.click(nameInput);
+    await user.keyboard('Abdulaziz Vohidjonov');
+
+    expect(nameInput).toHaveValue('Abdulaziz Vohidjonov');
+    expect(nameInput).toHaveFocus();
+  });
+
   it("to'liq to'ldirilgan forma yuborilganda sessionStore yangilanadi va birinchi testga o'tadi", async () => {
     mockFetch({});
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
@@ -675,13 +697,12 @@ describe('RegistrationPage', () => {
     expect(useSessionStore.getState().sessionToken).toBeNull();
   });
 
-  it("tug'ilgan sana 'Required' bo'lmasa takror topshirish haqida ogohlantirish ko'rsatiladi", async () => {
+  it("tug'ilgan sana 'Optional' bo'lganda ham takror topshirish ogohlantirishi ko'rinmaydi (kod ko'rigi topilmasi: bu ogohlantirish superadmin dastur formasiga ko'chirildi)", async () => {
     mockFetch({ schoolInfo: schoolInfoWithRegistrationFields({ birthDate: 'Optional' }) });
     renderRegistration();
 
-    expect(
-      await screen.findByText(/Takror topshirishni aniqlash F\.I\.Sh\. va tug'ilgan sanaga tayanadi/),
-    ).toBeInTheDocument();
+    await screen.findByText(CONSENT_TEXT);
+    expect(screen.queryByText(/Takror topshirishni aniqlash/)).not.toBeInTheDocument();
   });
 
   it("tug'ilgan sana standart (Required) bo'lganda ogohlantirish ko'rsatilmaydi (regressiya)", async () => {

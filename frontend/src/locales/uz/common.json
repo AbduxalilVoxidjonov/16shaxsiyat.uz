@@ -169,8 +169,7 @@
       "rateLimited": "Juda ko'p urinish bo'ldi. Birozdan keyin qayta urinib ko'ring.",
       "resumedNotice": "Boshlagan testingni davom ettiramiz.",
       "resumeHint": "Avval boshlagan bo'lsangiz, xuddi shu ma'lumotlarni kiriting — test davom etadi.",
-      "genericSubmitError": "Yuborishda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring.",
-      "birthDateOptionalWarning": "Takror topshirishni aniqlash F.I.Sh. va tug'ilgan sanaga tayanadi. Tug'ilgan sana majburiy bo'lmasa, bir xil ismli ikki o'quvchi ajratilmay qolishi mumkin — har safar yangi yozuv yaratiladi."
+      "genericSubmitError": "Yuborishda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
     },
     "test": {
       "title": "Test savollari"
@@ -1081,6 +1080,7 @@
         "noneModeHint": "Ro'yxatdan o'tish \"So'ralmaydi\" bo'lgani uchun bu maydonlar ishlatilmaydi.",
         "batteryHint": "Shaxsiyat batareyasi bor dasturda ball normalari yosh va sinfga tayanadi — shu ikkitasi majburiy bo'lishi shart.",
         "lockedHint": "Ball normalari uchun majburiy — o'zgartirib bo'lmaydi.",
+        "birthDateOptionalWarning": "Takror topshirishni aniqlash F.I.Sh. va tug'ilgan sanaga tayanadi. Tug'ilgan sana majburiy bo'lmasa, bir xil ismli ikki o'quvchi ajratilmay qolishi mumkin — har safar yangi yozuv yaratiladi.",
         "fields": {
           "birthDate": "Tug'ilgan sana",
           "gender": "Jins",

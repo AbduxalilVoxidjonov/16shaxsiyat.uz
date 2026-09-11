@@ -1,4 +1,4 @@
-import { Controller, type Control } from 'react-hook-form';
+import { Controller, useWatch, type Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Select } from '@/shared/ui/Select';
 import {
@@ -43,6 +43,13 @@ export function RegistrationFieldsFieldset({
 }: RegistrationFieldsFieldsetProps) {
   const { t } = useTranslation();
 
+  // Kod ko'rigi topilmasi (P52): ogohlantirish AVVAL o'quvchining ommaviy ro'yxatdan o'tish
+  // formasida ko'rsatilardi — bu xato, o'quvchi bu haqda hech nima qila olmaydi va matn
+  // tizimning ichki mantig'ini oshkor qilardi. Qaror aynan shu yerda qabul qilinadi
+  // (superadmin tug'ilgan sanani "Majburiy"dan boshqasiga o'zgartirganda), shu sabab
+  // ogohlantirish shu yerga ko'chirildi.
+  const birthDateMode = useWatch({ control, name: 'registrationFields.birthDate' });
+
   return (
     <fieldset
       disabled={disabled}
@@ -64,28 +71,40 @@ export function RegistrationFieldsFieldset({
         {FIELD_ORDER.map((key) => {
           const locked = hasPersonalityBattery && BATTERY_LOCKED_FIELDS.has(key);
           return (
-            <Controller
-              key={key}
-              control={control}
-              name={`registrationFields.${key}`}
-              render={({ field }) => (
-                <Select
-                  label={t(`programs.form.registrationFields.fields.${key}`)}
-                  hint={locked ? t('programs.form.registrationFields.lockedHint') : undefined}
-                  disabled={disabled || locked}
-                  options={REGISTRATION_FIELD_MODE_VALUES.map((mode) => ({
-                    value: mode,
-                    label: t(`programs.form.registrationFieldMode.${mode.toLowerCase()}`),
-                    disabled: locked && mode !== 'Required',
-                  }))}
-                  name={field.name}
-                  value={field.value as RegistrationFieldMode}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  ref={field.ref}
-                />
+            <div key={key} className="flex flex-col gap-1.5">
+              <Controller
+                control={control}
+                name={`registrationFields.${key}`}
+                render={({ field }) => (
+                  <Select
+                    label={t(`programs.form.registrationFields.fields.${key}`)}
+                    hint={locked ? t('programs.form.registrationFields.lockedHint') : undefined}
+                    disabled={disabled || locked}
+                    options={REGISTRATION_FIELD_MODE_VALUES.map((mode) => ({
+                      value: mode,
+                      label: t(`programs.form.registrationFieldMode.${mode.toLowerCase()}`),
+                      disabled: locked && mode !== 'Required',
+                    }))}
+                    name={field.name}
+                    value={field.value as RegistrationFieldMode}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    ref={field.ref}
+                  />
+                )}
+              />
+              {/*
+                Superadmin tug'ilgan sanani "Majburiy"dan boshqasiga o'zgartirganda ko'rinadi
+                — takror topshirishni aniqlash (F.I.Sh. + tug'ilgan sana) buzilishi mumkinligi
+                haqidagi qaror aynan shu yerda qabul qilinadi (P52, kod ko'rigi topilmasi:
+                avval bu ogohlantirish xato ravishda o'quvchining ommaviy formasida ko'rinardi).
+              */}
+              {key === 'birthDate' && birthDateMode !== 'Required' && (
+                <p role="note" className="rounded-2xl bg-zarhal-50 p-3 text-sm text-zarhal-800">
+                  {t('programs.form.registrationFields.birthDateOptionalWarning')}
+                </p>
               )}
-            />
+            </div>
           );
         })}
       </div>

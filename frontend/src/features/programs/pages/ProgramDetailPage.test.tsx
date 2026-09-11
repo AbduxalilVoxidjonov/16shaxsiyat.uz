@@ -390,6 +390,80 @@ describe('ProgramDetailPage', () => {
     expect(emailSelect).toBeEnabled();
   });
 
+  it("tug'ilgan sana 'Majburiy' emas bo'lganda admin formada takror topshirish ogohlantirishi ko'rinadi (kod ko'rigi topilmasi: ommaviy formadan admin formaga ko'chirildi)", async () => {
+    mockFetch(
+      programDetail({
+        hasPersonalityBattery: false,
+        registrationFields: { ...DEFAULT_REGISTRATION_FIELDS, birthDate: 'Optional' },
+      }),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Tahrirlash' }));
+
+    await screen.findByLabelText("Tug'ilgan sana");
+    expect(
+      screen.getByText(/Takror topshirishni aniqlash F\.I\.Sh\. va tug'ilgan sanaga tayanadi/),
+    ).toBeInTheDocument();
+  });
+
+  it("tug'ilgan sana 'Majburiy' bo'lganda admin formada ogohlantirish ko'rinmaydi (regressiya)", async () => {
+    mockFetch(programDetail({ hasPersonalityBattery: false }));
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Tahrirlash' }));
+
+    await screen.findByLabelText("Tug'ilgan sana");
+    expect(screen.queryByText(/Takror topshirishni aniqlash/)).not.toBeInTheDocument();
+  });
+
+  it("buzuq holat — batareya bor, lekin saqlangan tug'ilgan sana 'Optional' — forma ochilganda 'Majburiy'ga majburlanadi va shunday saqlanadi", async () => {
+    const detail = programDetail({
+      hasPersonalityBattery: true,
+      registrationFields: { ...DEFAULT_REGISTRATION_FIELDS, birthDate: 'Optional' },
+    });
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+      if (url.includes('/api/admin/programs/program-1') && method === 'GET') {
+        return Promise.resolve(jsonResponse<'AdminProgramDetailDto'>(detail));
+      }
+      if (url.includes('/api/admin/programs/program-1') && method === 'PUT') {
+        return Promise.resolve(jsonResponse<'AdminProgramDetailDto'>(detail));
+      }
+      return Promise.resolve(problemResponse('NOT_FOUND', 404));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Tahrirlash' }));
+
+    const birthDateSelect = (await screen.findByLabelText("Tug'ilgan sana")) as HTMLSelectElement;
+    expect(birthDateSelect).toBeDisabled();
+    expect(birthDateSelect.value).toBe('Required');
+    // Buzuq holatda ham "Majburiy" ko'rsatilgani uchun ogohlantirish YO'Q.
+    expect(screen.queryByText(/Takror topshirishni aniqlash/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByText('Saqlash'));
+
+    await waitFor(() => {
+      const putCall = fetchMock.mock.calls.find(
+        ([, requestInit]) => (requestInit as RequestInit | undefined)?.method === 'PUT',
+      );
+      expect(putCall).toBeDefined();
+    });
+    const putCall = fetchMock.mock.calls.find(
+      ([, requestInit]) => (requestInit as RequestInit | undefined)?.method === 'PUT',
+    )!;
+    const body = JSON.parse((putCall[1] as RequestInit).body as string) as {
+      registrationFields?: Record<string, string>;
+    };
+    expect(body.registrationFields?.birthDate).toBe('Required');
+  });
+
   it("batareyasiz dasturda maydon sozlamasini o'zgartirib saqlash mumkin (PUT registrationFields)", async () => {
     const detail = programDetail({ hasPersonalityBattery: false });
     const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
