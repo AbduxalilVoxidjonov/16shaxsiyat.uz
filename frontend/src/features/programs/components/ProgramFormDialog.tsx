@@ -16,6 +16,7 @@ import { useCreateProgram } from '../api/useCreateProgram';
 import { useUpdateProgram } from '../api/useUpdateProgram';
 import { useProgramImpactQuery } from '../api/useProgramImpactQuery';
 import { ProgramImpactNotice } from './ProgramImpactNotice';
+import { hasPersonalityBattery } from '../model/programComputations';
 import {
   programFormSchema,
   PROGRAM_FORM_DEFAULT_VALUES,
@@ -77,6 +78,7 @@ export function ProgramFormDialog({ open, programId, onClose, onCreated }: Progr
         descriptionUz: detailQuery.data.descriptionUz ?? '',
         displayOrder: detailQuery.data.displayOrder,
         visibility: detailQuery.data.visibility === 'Public' ? 'Public' : 'Assigned',
+        registrationMode: detailQuery.data.registrationMode === 'None' ? 'None' : 'Full',
       });
     }
   }, [open, isEdit, detailQuery.data, reset]);
@@ -84,6 +86,12 @@ export function ProgramFormDialog({ open, programId, onClose, onCreated }: Progr
   // `Public → Assigned` o'zgarishi tasdiqlanmaguncha shu yerda kutib turadi.
   const [pendingValues, setPendingValues] = useState<ProgramFormValues | null>(null);
   const impactQuery = useProgramImpactQuery(programId, 'makeAssigned', pendingValues !== null);
+
+  // `docs/18` §9.2 qat'iy invarianti — yangi (`Create`) dasturda hali test yo'q, shu sabab
+  // faqat TAHRIRLASHDA (mavjud tarkib bilan) bloklanadi (`docs/07` §3.5: "yangi dasturda hali
+  // test yo'q, shu sabab bu bosqichda invariantni buza olmaydi"). `None` UI'da OLDINDAN
+  // o'chirib qo'yiladi — backend `400 REGISTRATION_REQUIRED_FOR_BATTERY` bilan ajablantirmaydi.
+  const programHasBattery = isEdit && hasPersonalityBattery(detailQuery.data?.tests ?? []);
 
   async function submitValues(values: ProgramFormValues) {
     try {
@@ -95,6 +103,7 @@ export function ProgramFormDialog({ open, programId, onClose, onCreated }: Progr
             descriptionUz: values.descriptionUz ? values.descriptionUz : null,
             displayOrder: values.displayOrder,
             visibility: values.visibility,
+            registrationMode: values.registrationMode,
           },
         });
         toast.show({ variant: 'success', title: t('programs.form.editSuccess') });
@@ -105,13 +114,19 @@ export function ProgramFormDialog({ open, programId, onClose, onCreated }: Progr
           descriptionUz: values.descriptionUz ? values.descriptionUz : null,
           displayOrder: values.displayOrder,
           visibility: values.visibility,
+          registrationMode: values.registrationMode,
         });
         toast.show({ variant: 'success', title: t('programs.form.createSuccess') });
         onCreated?.(created.id);
       }
       onClose();
     } catch (caught) {
-      const message = caught instanceof AppError ? caught.message : t('programs.form.genericError');
+      const message =
+        caught instanceof AppError && caught.code === 'REGISTRATION_REQUIRED_FOR_BATTERY'
+          ? t('programs.errors.registrationRequiredForBattery')
+          : caught instanceof AppError
+            ? caught.message
+            : t('programs.form.genericError');
       toast.show({ variant: 'danger', title: message });
     }
   }
@@ -218,6 +233,24 @@ export function ProgramFormDialog({ open, programId, onClose, onCreated }: Progr
               ]}
               error={errors.visibility?.message}
               {...register('visibility')}
+            />
+            <Select
+              label={t('programs.form.registrationModeLabel')}
+              hint={
+                programHasBattery
+                  ? t('programs.form.registrationModeBatteryHint')
+                  : t('programs.form.registrationModeHint')
+              }
+              options={[
+                { value: 'Full', label: t('programs.registrationMode.full') },
+                {
+                  value: 'None',
+                  label: t('programs.registrationMode.none'),
+                  disabled: programHasBattery,
+                },
+              ]}
+              error={errors.registrationMode?.message}
+              {...register('registrationMode')}
             />
           </form>
         )}

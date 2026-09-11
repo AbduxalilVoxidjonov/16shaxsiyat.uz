@@ -160,7 +160,8 @@
         "BIG5": "Xarakteringning 5 asosiy jihatini o'lchaydi.",
         "RIASEC": "Qanday kasb yo'nalishlari senga ko'proq mos kelishini aniqlaydi.",
         "ACTIVITY": "O'quv faolligi va motivatsiyangni o'lchaydi."
-      }
+      },
+      "anonymousNotice": "Bu so'rovnomada alohida ro'yxatdan o'tish yo'q — F.I.Sh. va boshqa ma'lumotlar kerak bo'lsa, savollar ichida so'raladi."
     },
     "register": {
       "title": "Ro'yxatdan o'tish",
@@ -1039,6 +1040,10 @@
       "public": "Ommaviy",
       "assigned": "Biriktirilgan"
     },
+    "registrationMode": {
+      "full": "So'raladi",
+      "none": "So'ralmaydi"
+    },
     "state": {
       "draft": "Qoralama",
       "active": "Faol",
@@ -1067,6 +1072,9 @@
       "displayOrderLabel": "Tartib raqami",
       "visibilityLabel": "Ko'rinishi",
       "visibilityHint": "Ommaviy — barcha maktabda; Biriktirilgan — faqat tanlangan maktablarda",
+      "registrationModeLabel": "Ro'yxatdan o'tish",
+      "registrationModeHint": "So'raladi — o'quvchi F.I.Sh./tug'ilgan sana/telefonini alohida anketada to'ldiradi; So'ralmaydi — bu ma'lumotlar so'rovnoma savollari ichida so'raladi (agar kerak bo'lsa).",
+      "registrationModeBatteryHint": "Bu dasturda shaxsiyat batareyasi (16 tip/Big Five/RIASEC/Aktivlik) bor — natija yosh/sinf/jinsga tayanadi, shu sabab \"So'ralmaydi\" tanlanmaydi.",
       "submitCreateCta": "Yaratish",
       "submitEditCta": "Saqlash",
       "createSuccess": "Dastur yaratildi",
@@ -1158,7 +1166,8 @@
       }
     },
     "errors": {
-      "systemProgramLocked": "Tizim dasturining tarkibini o'zgartirib bo'lmaydi"
+      "systemProgramLocked": "Tizim dasturining tarkibini o'zgartirib bo'lmaydi",
+      "registrationRequiredForBattery": "Bu dasturda shaxsiyat batareyasi bor — ro'yxatdan o'tishni \"So'ralmaydi\" qilib bo'lmaydi."
     },
     "visibilityChange": {
       "title": "Dastur ommaviy bo'lmay qoladi",

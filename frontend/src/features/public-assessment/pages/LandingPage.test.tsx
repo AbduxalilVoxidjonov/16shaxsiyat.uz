@@ -3,12 +3,39 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
-import { jsonResponse, problemResponse, type Schemas } from '@/test/apiMock';
+import { jsonResponse, problemResponse, typedResponse, type Schemas } from '@/test/apiMock';
 import { STORAGE_KEYS } from '@/shared/config/storageKeys';
 import { QUERY_KEYS } from '@/shared/config/queryKeys';
+import type { PublicSchoolInfoWithRegistration } from '@/shared/api/registrationModeTypes';
 import LandingPage from './LandingPage';
 import { useSessionStore } from '../store/sessionStore';
 import { readAnswerStore, upsertAnswer, writeAnswerStore } from '../lib/answerQueue';
+
+/** `programs[0].tests` — 1.1-bo'lim, `PERSONALITY_PROFILE` dasturining 4 bloki. */
+const PERSONALITY_PROFILE_TESTS = [
+  {
+    code: 'MBTI16',
+    name: '16 tipli shaxsiyat modeli',
+    questionCount: 60,
+    estimatedMinutes: 9,
+    order: 1,
+  },
+  {
+    code: 'BIG5',
+    name: 'Shaxsiyatning 5 omili',
+    questionCount: 50,
+    estimatedMinutes: 8,
+    order: 2,
+  },
+  { code: 'RIASEC', name: 'Kasb qiziqishlari', questionCount: 48, estimatedMinutes: 7, order: 3 },
+  {
+    code: 'ACTIVITY',
+    name: 'Aktivlik va motivatsiya',
+    questionCount: 32,
+    estimatedMinutes: 5,
+    order: 4,
+  },
+];
 
 const SCHOOL_INFO_BODY = {
   schoolId: 'school-1',
@@ -16,30 +43,7 @@ const SCHOOL_INFO_BODY = {
   region: "Farg'ona",
   district: "Qo'qon",
   requiresAccessCode: false,
-  tests: [
-    {
-      code: 'MBTI16',
-      name: '16 tipli shaxsiyat modeli',
-      questionCount: 60,
-      estimatedMinutes: 9,
-      order: 1,
-    },
-    {
-      code: 'BIG5',
-      name: 'Shaxsiyatning 5 omili',
-      questionCount: 50,
-      estimatedMinutes: 8,
-      order: 2,
-    },
-    { code: 'RIASEC', name: 'Kasb qiziqishlari', questionCount: 48, estimatedMinutes: 7, order: 3 },
-    {
-      code: 'ACTIVITY',
-      name: 'Aktivlik va motivatsiya',
-      questionCount: 32,
-      estimatedMinutes: 5,
-      order: 4,
-    },
-  ],
+  tests: PERSONALITY_PROFILE_TESTS,
   totalEstimatedMinutes: 31,
   consentText: "Farzandimning testdan o'tishiga roziman.",
   // Migratsiyadan keyingi haqiqiy holat — bitta tizim dasturi (`docs/06` 8-bo'lim, `prompts/34`
@@ -53,9 +57,13 @@ const SCHOOL_INFO_BODY = {
       questionCount: 190,
       estimatedMinutes: 31,
       hasPersonalityBattery: true,
+      // P52 (2026-09-11) — `docs/07` §1.1: `Full` bo'lgani sabab `RegistrationPage` avvalgidek
+      // ishlaydi (regressiya himoyasi), `tests` esa AYNAN shu dasturning bloklari.
+      registrationMode: 'Full',
+      tests: PERSONALITY_PROFILE_TESTS,
     },
   ],
-} satisfies Schemas['GetSchoolInfoResult'];
+} satisfies PublicSchoolInfoWithRegistration;
 
 const TWO_PROGRAMS_BODY = {
   ...SCHOOL_INFO_BODY,
@@ -68,6 +76,8 @@ const TWO_PROGRAMS_BODY = {
       questionCount: 190,
       estimatedMinutes: 31,
       hasPersonalityBattery: true,
+      registrationMode: 'Full',
+      tests: PERSONALITY_PROFILE_TESTS,
     },
     {
       code: 'CAREER_SURVEY',
@@ -78,14 +88,24 @@ const TWO_PROGRAMS_BODY = {
       estimatedMinutes: 4,
       // Shaxsiyat batareyasisiz dastur (`Survey` blok) — `docs/06` 8-bo'lim.
       hasPersonalityBattery: false,
+      registrationMode: 'Full',
+      tests: [
+        {
+          code: 'CAREER_SURVEY_Q',
+          name: "Kasb so'rovnomasi savollari",
+          questionCount: 20,
+          estimatedMinutes: 4,
+          order: 1,
+        },
+      ],
     },
   ],
-} satisfies Schemas['GetSchoolInfoResult'];
+} satisfies PublicSchoolInfoWithRegistration;
 
 const NO_PROGRAMS_BODY = {
   ...SCHOOL_INFO_BODY,
   programs: [],
-} satisfies Schemas['GetSchoolInfoResult'];
+} satisfies PublicSchoolInfoWithRegistration;
 
 function renderLanding(
   initialPath = '/t/demo-school?k=tok123',
@@ -120,7 +140,7 @@ describe('LandingPage', () => {
   it("maktab ma'lumotini yuklab, sarlavha, 4 ta test kartasi va Boshlash tugmasini ko'rsatadi", async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(jsonResponse<'GetSchoolInfoResult'>(SCHOOL_INFO_BODY)),
+      vi.fn().mockResolvedValue(typedResponse<PublicSchoolInfoWithRegistration>(SCHOOL_INFO_BODY)),
     );
 
     renderLanding();
@@ -136,7 +156,7 @@ describe('LandingPage', () => {
   it("so'rov to'g'ri manzil va query bilan yuboriladi (k parametri)", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValue(jsonResponse<'GetSchoolInfoResult'>(SCHOOL_INFO_BODY));
+      .mockResolvedValue(typedResponse<PublicSchoolInfoWithRegistration>(SCHOOL_INFO_BODY));
     vi.stubGlobal('fetch', fetchMock);
 
     renderLanding('/t/demo-school?k=tok123');
@@ -191,7 +211,7 @@ describe('LandingPage', () => {
   it("'Boshlash' bosilganda k parametri saqlangan holda ro'yxatdan o'tish sahifasiga o'tadi", async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(jsonResponse<'GetSchoolInfoResult'>(SCHOOL_INFO_BODY)),
+      vi.fn().mockResolvedValue(typedResponse<PublicSchoolInfoWithRegistration>(SCHOOL_INFO_BODY)),
     );
     const user = userEvent.setup();
 
@@ -217,7 +237,7 @@ describe('LandingPage', () => {
           );
           return Promise.resolve(sessionResponse());
         }
-        return Promise.resolve(jsonResponse<'GetSchoolInfoResult'>(SCHOOL_INFO_BODY));
+        return Promise.resolve(typedResponse<PublicSchoolInfoWithRegistration>(SCHOOL_INFO_BODY));
       }),
     );
     return { sessionTokens };
@@ -339,7 +359,7 @@ describe('LandingPage', () => {
     );
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(jsonResponse<'GetSchoolInfoResult'>(SCHOOL_INFO_BODY)),
+      vi.fn().mockResolvedValue(typedResponse<PublicSchoolInfoWithRegistration>(SCHOOL_INFO_BODY)),
     );
 
     renderLanding('/t/demo-school?k=tok123');
@@ -352,7 +372,7 @@ describe('LandingPage', () => {
   it('?k= bilan kelganda sessiya/savol/natija query keshi bekor qilinadi (removeQueries)', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(jsonResponse<'GetSchoolInfoResult'>(SCHOOL_INFO_BODY)),
+      vi.fn().mockResolvedValue(typedResponse<PublicSchoolInfoWithRegistration>(SCHOOL_INFO_BODY)),
     );
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     queryClient.setQueryData(QUERY_KEYS.publicSessionMe(), ACTIVE_SESSION_STATE);
@@ -381,7 +401,7 @@ describe('LandingPage', () => {
     );
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(jsonResponse<'GetSchoolInfoResult'>(SCHOOL_INFO_BODY)),
+      vi.fn().mockResolvedValue(typedResponse<PublicSchoolInfoWithRegistration>(SCHOOL_INFO_BODY)),
     );
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const removeSpy = vi.spyOn(queryClient, 'removeQueries');
@@ -424,7 +444,7 @@ describe('LandingPage', () => {
   it("bitta dastur bo'lganda tanlov ekrani ko'rsatilmaydi (regressiya)", async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(jsonResponse<'GetSchoolInfoResult'>(SCHOOL_INFO_BODY)),
+      vi.fn().mockResolvedValue(typedResponse<PublicSchoolInfoWithRegistration>(SCHOOL_INFO_BODY)),
     );
 
     renderLanding();
@@ -438,7 +458,7 @@ describe('LandingPage', () => {
   it("bir nechta dastur bo'lganda tanlov kartalarini ko'rsatadi, tanlanmaguncha Boshlash o'chiq bo'ladi", async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(jsonResponse<'GetSchoolInfoResult'>(TWO_PROGRAMS_BODY)),
+      vi.fn().mockResolvedValue(typedResponse<PublicSchoolInfoWithRegistration>(TWO_PROGRAMS_BODY)),
     );
     const user = userEvent.setup();
 
@@ -457,7 +477,7 @@ describe('LandingPage', () => {
   it("dastur tanlab 'Boshlash' bosilganda tanlov sessionStore'da saqlanadi va ro'yxatdan o'tishga o'tadi", async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(jsonResponse<'GetSchoolInfoResult'>(TWO_PROGRAMS_BODY)),
+      vi.fn().mockResolvedValue(typedResponse<PublicSchoolInfoWithRegistration>(TWO_PROGRAMS_BODY)),
     );
     const user = userEvent.setup();
 
@@ -474,7 +494,7 @@ describe('LandingPage', () => {
   it("maktabda dastur yo'q bo'lsa tushunarli xabar ko'rsatadi (Boshlash tugmasisiz)", async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(jsonResponse<'GetSchoolInfoResult'>(NO_PROGRAMS_BODY)),
+      vi.fn().mockResolvedValue(typedResponse<PublicSchoolInfoWithRegistration>(NO_PROGRAMS_BODY)),
     );
 
     renderLanding();
@@ -484,5 +504,271 @@ describe('LandingPage', () => {
       screen.getByText('Bu maktab uchun test hali tayyorlanmagan, maktabingizga murojaat qiling.'),
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Boshlash' })).not.toBeInTheDocument();
+  });
+
+  // ---------------------------------------------------------------------------------------
+  // Egasi topgan jonli xato (2026-09-11): dastur arxivlangandan keyin ham uning testlari
+  // kirish ekranida ko'rinishda davom etardi, chunki `SingleProgramView` yuqori darajadagi
+  // `tests[]`ga (BUTUN katalog) tayanardi. Endi `programs[0].tests` ishlatiladi — bitta
+  // dasturli tarmoqda yuqori darajadagi `tests[]` boshqa (arxivlangan) dastur testini o'z
+  // ichiga olsa ham u ko'rinmasligi kerak.
+  // ---------------------------------------------------------------------------------------
+  it("bitta dasturli tarmoqda faqat SHU dasturning testlari ko'rsatiladi (arxivlangan dastur testi sizib chiqmaydi)", async () => {
+    const bodyWithStaleTopLevelTests = {
+      ...SCHOOL_INFO_BODY,
+      // Yuqori darajadagi `tests[]` — endi arxivlangan boshqa dastur testini ham o'z ichiga
+      // olganini simulyatsiya qiladi (backend jonli hodisadan oldingi noto'g'ri holat).
+      tests: [
+        ...PERSONALITY_PROFILE_TESTS,
+        {
+          code: 'ARCHIVED_PROGRAM_TEST',
+          name: 'Arxivlangan dastur testi',
+          questionCount: 10,
+          estimatedMinutes: 2,
+          order: 5,
+        },
+      ],
+    } satisfies PublicSchoolInfoWithRegistration;
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(typedResponse<PublicSchoolInfoWithRegistration>(bodyWithStaleTopLevelTests)),
+    );
+
+    renderLanding();
+
+    await screen.findByText('16 tipli shaxsiyat modeli');
+    expect(screen.queryByText('Arxivlangan dastur testi')).not.toBeInTheDocument();
+  });
+
+  // ---------------------------------------------------------------------------------------
+  // `registrationMode: "None"` (P52, 2026-09-11, `docs/18` §9) — ro'yxatdan o'tish o'tkazib
+  // yuboriladi, rozilik shu ekranda, sessiya to'g'ridan-to'g'ri shu yerdan ochiladi.
+  // ---------------------------------------------------------------------------------------
+  const NONE_MODE_TESTS = [
+    {
+      code: 'CAREER_SURVEY_Q',
+      name: "Kasb so'rovnomasi savollari",
+      questionCount: 20,
+      estimatedMinutes: 4,
+      order: 1,
+    },
+  ];
+
+  const NONE_MODE_BODY = {
+    schoolId: 'school-1',
+    name: "12-son umumiy o'rta ta'lim maktabi",
+    region: "Farg'ona",
+    district: "Qo'qon",
+    requiresAccessCode: false,
+    tests: NONE_MODE_TESTS,
+    totalEstimatedMinutes: 4,
+    consentText: "Farzandimning testdan o'tishiga roziman.",
+    programs: [
+      {
+        code: 'CAREER_SURVEY',
+        nameUz: "Kasb so'rovnomasi",
+        descriptionUz: null,
+        testCount: 1,
+        questionCount: 20,
+        estimatedMinutes: 4,
+        hasPersonalityBattery: false,
+        registrationMode: 'None',
+        tests: NONE_MODE_TESTS,
+      },
+    ],
+  } satisfies PublicSchoolInfoWithRegistration;
+
+  const ANONYMOUS_START_SESSION_RESULT = {
+    sessionToken: 'anon-token-1',
+    assessmentId: 'assessment-anon-1',
+    status: 'Draft',
+    expiresAt: '2026-09-10T00:00:00Z',
+    resumed: false,
+    tests: [
+      {
+        code: 'CAREER_SURVEY_Q',
+        name: "Kasb so'rovnomasi savollari",
+        status: 'NotStarted',
+        answered: 0,
+        total: 20,
+        order: 1,
+        estimatedMinutes: 4,
+      },
+    ],
+  } satisfies Schemas['StartSessionResult'];
+
+  function mockNoneModeFetch(overridePostResponse?: () => Response) {
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes('/api/public/schools/')) {
+        return Promise.resolve(typedResponse<PublicSchoolInfoWithRegistration>(NONE_MODE_BODY));
+      }
+      if (url.includes('/api/public/sessions') && init?.method === 'POST') {
+        return Promise.resolve(
+          overridePostResponse
+            ? overridePostResponse()
+            : jsonResponse<'StartSessionResult'>(ANONYMOUS_START_SESSION_RESULT),
+        );
+      }
+      return Promise.reject(new Error(`unexpected fetch: ${url}`));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    return fetchMock;
+  }
+
+  it("registrationMode 'None' dasturda ro'yxatdan o'tish o'tkazib yuboriladi: rozilik ekranida ko'rsatiladi, belgilanmaguncha Boshlash o'chiq", async () => {
+    mockNoneModeFetch();
+
+    renderLanding();
+
+    await screen.findByText(NONE_MODE_BODY.name);
+    expect(screen.getByText(NONE_MODE_BODY.consentText)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Boshlash' })).toBeDisabled();
+  });
+
+  it("registrationMode 'None' dasturda rozilik belgilab 'Boshlash' bosilganda RegistrationPage ochilmaydi — sessiya to'g'ridan-to'g'ri shu yerdan, shaxs maydonlarisiz ochiladi", async () => {
+    const fetchMock = mockNoneModeFetch();
+    const user = userEvent.setup();
+
+    renderLanding();
+
+    await screen.findByText(NONE_MODE_BODY.name);
+    await user.click(
+      screen.getByLabelText("Ma'lumotlarim ta'lim maqsadida ishlatilishiga roziman"),
+    );
+    await user.click(screen.getByRole('button', { name: 'Boshlash' }));
+
+    // `RegistrationPage` UMUMAN ochilmagan — to'g'ridan-to'g'ri test blokiga o'tadi.
+    expect(await screen.findByText('TEST_STUB')).toBeInTheDocument();
+    expect(screen.queryByText('REGISTER_STUB')).not.toBeInTheDocument();
+    expect(useSessionStore.getState().sessionToken).toBe('anon-token-1');
+    expect(useSessionStore.getState().assessmentId).toBe('assessment-anon-1');
+
+    const sessionCall = fetchMock.mock.calls.find(
+      ([input, init]) =>
+        String(input).includes('/api/public/sessions') &&
+        (init as RequestInit | undefined)?.method === 'POST',
+    );
+    const body = JSON.parse((sessionCall?.[1] as RequestInit).body as string) as Record<
+      string,
+      unknown
+    >;
+    // Faqat shaxs maydonlarisiz anonim shakl (`docs/07` §1.2 "Anonim oqim") — bitta dastur
+    // bo'lgani uchun `programCode` ham yo'q.
+    expect(body).toEqual({
+      slug: 'demo-school',
+      accessToken: 'tok123',
+      consentAccepted: true,
+      languageCode: 'uz',
+    });
+  });
+
+  it("registrationMode 'None' dasturda rozilik belgilanmaguncha 'Boshlash' bosilsa ham so'rov yuborilmaydi", async () => {
+    const fetchMock = mockNoneModeFetch();
+
+    renderLanding();
+
+    await screen.findByText(NONE_MODE_BODY.name);
+    const startButton = screen.getByRole('button', { name: 'Boshlash' });
+    expect(startButton).toBeDisabled();
+
+    const sessionCallsBefore = fetchMock.mock.calls.filter(
+      ([, init]) => (init as RequestInit | undefined)?.method === 'POST',
+    );
+    expect(sessionCallsBefore).toHaveLength(0);
+  });
+
+  it("registrationMode 'None' — server 429 RATE_LIMITED qaytarsa tushunarli xato ko'rsatadi, sessiya ochilmaydi", async () => {
+    mockNoneModeFetch(() => problemResponse('RATE_LIMITED', 429));
+    const user = userEvent.setup();
+
+    renderLanding();
+
+    await screen.findByText(NONE_MODE_BODY.name);
+    await user.click(
+      screen.getByLabelText("Ma'lumotlarim ta'lim maqsadida ishlatilishiga roziman"),
+    );
+    await user.click(screen.getByRole('button', { name: 'Boshlash' }));
+
+    expect(
+      await screen.findByText('Juda ko\'p urinish bo\'ldi. Birozdan keyin qayta urinib ko\'ring.'),
+    ).toBeInTheDocument();
+    expect(useSessionStore.getState().sessionToken).toBeNull();
+  });
+
+  it("bir nechta dastur orasida 'None' rejimlisi tanlansa rozilik ekranida ko'rsatiladi va programCode bilan yuboriladi", async () => {
+    const mixedBody = {
+      ...SCHOOL_INFO_BODY,
+      programs: [
+        SCHOOL_INFO_BODY.programs[0]!,
+        {
+          code: 'CAREER_SURVEY',
+          nameUz: "Kasb so'rovnomasi",
+          descriptionUz: "Qisqa so'rovnoma",
+          testCount: 1,
+          questionCount: 20,
+          estimatedMinutes: 4,
+          hasPersonalityBattery: false,
+          registrationMode: 'None',
+          tests: NONE_MODE_TESTS,
+        },
+      ],
+    } satisfies PublicSchoolInfoWithRegistration;
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes('/api/public/schools/')) {
+        return Promise.resolve(typedResponse<PublicSchoolInfoWithRegistration>(mixedBody));
+      }
+      if (url.includes('/api/public/sessions') && init?.method === 'POST') {
+        return Promise.resolve(jsonResponse<'StartSessionResult'>(ANONYMOUS_START_SESSION_RESULT));
+      }
+      return Promise.reject(new Error(`unexpected fetch: ${url}`));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+
+    renderLanding();
+
+    await user.click(await screen.findByText("Kasb so'rovnomasi"));
+    // Rozilik faqat TANLANGAN dastur `None` bo'lgach ko'rinadi.
+    expect(await screen.findByText(mixedBody.consentText)).toBeInTheDocument();
+    const startButton = screen.getByRole('button', { name: 'Boshlash' });
+    expect(startButton).toBeDisabled();
+
+    await user.click(
+      screen.getByLabelText("Ma'lumotlarim ta'lim maqsadida ishlatilishiga roziman"),
+    );
+    await user.click(startButton);
+
+    expect(await screen.findByText('TEST_STUB')).toBeInTheDocument();
+    const sessionCall = fetchMock.mock.calls.find(
+      ([input, init]) =>
+        String(input).includes('/api/public/sessions') &&
+        (init as RequestInit | undefined)?.method === 'POST',
+    );
+    const body = JSON.parse((sessionCall?.[1] as RequestInit).body as string) as Record<
+      string,
+      unknown
+    >;
+    expect(body.programCode).toBe('CAREER_SURVEY');
+    expect(body.fullName).toBeUndefined();
+  });
+
+  it("bir nechta dastur orasida 'Full' rejimlisi tanlansa ESKI oqim ishlaydi — rozilik ekranida ko'rsatilmaydi, ro'yxatdan o'tishga o'tadi", async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(typedResponse<PublicSchoolInfoWithRegistration>(TWO_PROGRAMS_BODY)),
+    );
+    const user = userEvent.setup();
+
+    renderLanding();
+
+    await user.click(await screen.findByText('Shaxsiyat profili'));
+    expect(screen.queryByText(TWO_PROGRAMS_BODY.consentText)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Boshlash' }));
+
+    expect(await screen.findByText('REGISTER_STUB')).toBeInTheDocument();
   });
 });

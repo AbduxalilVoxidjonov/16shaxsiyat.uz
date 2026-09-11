@@ -256,6 +256,21 @@ export default function RegistrationPage() {
     );
   }
 
+  // `registrationMode: "None"` dastur — bu ekran UMUMAN ochilmaydi (`docs/18` §9,
+  // `LandingPage` shu dastur uchun sessiyani o'zi to'g'ridan-to'g'ri ochadi). Oddiy oqimda
+  // bu yerga hech qachon kelinmaydi (`LandingPage` navigatsiya qilmaydi), lekin to'g'ridan-
+  // to'g'ri havola/"orqaga" bilan kelish ehtimoliga qarshi himoya.
+  const activeProgram =
+    programs.length === 1 ? programs[0] : programs.find((program) => program.code === selectedProgramCode);
+  if (activeProgram?.registrationMode === 'None') {
+    return (
+      <Navigate
+        to={`${ROUTES.public.landing(slug)}?k=${encodeURIComponent(accessToken)}`}
+        replace
+      />
+    );
+  }
+
   return (
     <div className="flex animate-fade-up flex-col gap-6 motion-reduce:animate-none">
       <header className="flex flex-col items-center gap-2 text-center">

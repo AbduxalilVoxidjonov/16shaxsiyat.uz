@@ -1,5 +1,9 @@
 import type { CatalogTestOption } from '../api/useCatalogTestOptionsQuery';
-import { MATURITY_BATTERY_TEST_CODES, type AdminProgramTestItem } from './types';
+import {
+  MATURITY_BATTERY_TEST_CODES,
+  PERSONALITY_BATTERY_TEST_CODES,
+  type AdminProgramTestItem,
+} from './types';
 
 /**
  * `docs/06` §8 (2026-09-02): `MaturityIndex` faqat BIG5 **va** ACTIVITY sessiyada birga
@@ -10,6 +14,18 @@ import { MATURITY_BATTERY_TEST_CODES, type AdminProgramTestItem } from './types'
 export function hasFullMaturityBattery(tests: readonly AdminProgramTestItem[]): boolean {
   const codes = new Set(tests.map((test) => test.code));
   return MATURITY_BATTERY_TEST_CODES.every((code) => codes.has(code));
+}
+
+/**
+ * Dasturda ilmiy shaxsiyat batareyasi (`Domain.Catalog.PersonalityBattery`, `docs/18` §9.2)
+ * bormi — BIRON BITTA `PERSONALITY_BATTERY_TEST_CODES`dan bo'lsa kifoya (backend
+ * `PersonalityBattery.Includes`, `Any` mantig'i, `hasFullMaturityBattery`dagi "hammasi birga"
+ * emas). Admin forma shu bilan `registrationMode: "None"` tanlovini OLDINDAN bloklaydi —
+ * backend `400 REGISTRATION_REQUIRED_FOR_BATTERY` bilan ajablantirmasin (`docs/07` §3.5).
+ */
+export function hasPersonalityBattery(tests: readonly AdminProgramTestItem[]): boolean {
+  const codes = new Set(tests.map((test) => test.code));
+  return PERSONALITY_BATTERY_TEST_CODES.some((code) => codes.has(code));
 }
 
 export interface ProgramDurationSummary {

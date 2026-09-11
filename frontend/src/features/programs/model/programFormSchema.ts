@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PROGRAM_VISIBILITY_VALUES } from './types';
+import { PROGRAM_VISIBILITY_VALUES, REGISTRATION_MODE_VALUES } from './types';
 
 /**
  * Dastur yaratish/tahrirlash forma validatsiyasi. Backend yakuniy haqiqat manbai
@@ -61,6 +61,13 @@ export const programFormSchema = z.object({
     }
   }),
   visibility: z.enum(PROGRAM_VISIBILITY_VALUES, { message: "Ko'rinishni tanlang." }),
+  /**
+   * `docs/18` §9 (P52, 2026-09-11). Backend qat'iy invarianti (shaxsiyat batareyasi bo'lsa
+   * `None` bo'lolmaydi, `400 REGISTRATION_REQUIRED_FOR_BATTERY`) bu yerda emas —
+   * `ProgramFormDialog` tanlovni OLDINDAN bloklaydi (`hasPersonalityBattery`), shu sabab bu
+   * sxema faqat qiymat to'g'ri enum ekanini tekshiradi.
+   */
+  registrationMode: z.enum(REGISTRATION_MODE_VALUES, { message: 'Rejimni tanlang.' }),
 });
 
 export type ProgramFormValues = z.infer<typeof programFormSchema>;
@@ -71,4 +78,5 @@ export const PROGRAM_FORM_DEFAULT_VALUES: ProgramFormValues = {
   descriptionUz: '',
   displayOrder: DEFAULT_DISPLAY_ORDER,
   visibility: 'Assigned',
+  registrationMode: 'Full',
 };

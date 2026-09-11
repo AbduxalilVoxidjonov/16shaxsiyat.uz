@@ -3,12 +3,16 @@ import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { usePageTitle } from '@/shared/hooks/usePageTitle';
-import { Button, EmptyState, ErrorState, Skeleton } from '@/shared/ui';
+import { Button, ConsentBlock, EmptyState, ErrorState, Skeleton } from '@/shared/ui';
 import { Divider, GirihStar } from '@/shared/ui/brand';
 import { ROUTES } from '@/shared/config/routes';
 import { AppError } from '@/shared/api/AppError';
+import type { PublicTestCatalogItem } from '@/shared/api/types';
+import type { PublicProgramWithRegistration } from '@/shared/api/registrationModeTypes';
+import { pickNextTestCode } from '@/shared/lib/nextTest';
 import { useSchoolInfo } from '../api/useSchoolInfo';
 import { useSessionState } from '../api/useSessionState';
+import { useStartSession } from '../api/useStartSession';
 import { useSessionStore } from '../store/sessionStore';
 import { beginFreshVisit } from '../lib/freshVisit';
 import { TestIntroCard } from '../components/TestIntroCard';
@@ -66,16 +70,28 @@ function FlowSteps() {
  *
  * **Dastur tanlovi (`docs/06` 8-bo'lim, 2026-09-02 qarorlari, `prompts/36`):**
  * `GetSchoolInfoResult.programs[]` — maktab uchun mavjud dastur(lar).
- * - **Aynan bitta bo'lsa** — pastdagi tarmoq (branch) ESKI holatidek ishlaydi: `school.tests`
- *   (ORQAGA MOSLIK maydoni) asosida test kartalari + shartsiz "Boshlash" tugmasi, tanlov
- *   ekrani YO'Q. Bu ataylab qilingan REGRESSIYA HIMOYASI — jonli sayt (`16shaxsiyat.uz`) da
- *   bitta dastur bor, u yerdagi oqim bitta baytga ham o'zgarmasligi kerak.
+ * - **Aynan bitta bo'lsa** — pastdagi tarmoq (branch) ESKI holatidek ishlaydi: `programs[0].tests`
+ *   asosida test kartalari + (`Full` rejimida) shartsiz "Boshlash" tugmasi, tanlov ekrani YO'Q.
+ *   Bu ataylab qilingan REGRESSIYA HIMOYASI — jonli sayt (`16shaxsiyat.uz`) da bitta dastur
+ *   bor, u yerdagi oqim bitta baytga ham o'zgarmasligi kerak. **2026-09-11 tuzatildi:** ilgari
+ *   bu yerda `school.tests` (dasturdan qat'i nazar BUTUN katalog) ishlatilardi — egasi
+ *   dasturni arxivlagandan keyin ham uning testlari kirish ekranida ko'rinishda davom etgani
+ *   shu yerdan kelib chiqqan (`docs/07` §1.1 izohi).
  * - **Bir nechtasi bo'lsa** — `ProgramSelectCard` ro'yxati (`programs[]`dan), tanlov
  *   `sessionStore.selectedProgramCode`ga yoziladi (persist — sahifa yangilanganda saqlanadi),
  *   "Boshlash" tanlanmaguncha o'chiq. `RegistrationPage` shu kodni `POST /sessions`ga
  *   `programCode` sifatida uzatadi.
  * - **Hech qanday dastur yo'q bo'lsa** — tushunarli xabar (CLAUDE.md MAXSUS DIQQAT 4-band),
  *   "Boshlash" umuman ko'rsatilmaydi.
+ *
+ * **Ro'yxatdan o'tishsiz dastur (`registrationMode: "None"`, P52, 2026-09-11, `docs/18` §9):**
+ * Tanlangan (yoki yagona) dastur `None` bo'lsa `RegistrationPage` UMUMAN ochilmaydi — bu
+ * ekranning o'zida rozilik belgisi (`ConsentBlock`, `school.consentText`) ko'rsatiladi va
+ * "Boshlash" bosilganda `POST /sessions` shaxs maydonlarisiz to'g'ridan-to'g'ri shu yerdan
+ * yuboriladi (`useStartSession`), keyin `RegistrationPage.onSubmit` bilan BIR XIL navigatsiya
+ * (`pickNextTestCode` → test yoki yakun sahifasi). `consentAccepted` HAMON majburiy — huquqiy
+ * rozilik rejimdan qat'i nazar. `Full` rejim BUTUNLAY tegilmagan: `registerHref`ga navigatsiya
+ * ESKI holatidek ishlaydi (regressiya bilan qulflangan, `LandingPage.test.tsx`).
  *
  * **Havola/kod bilan yangi kirish = toza boshlanish (2026-09-07, egasining qarori):**
  * `?k=` bilan kelish (`/kirish` → maktab kodi → `/t/:slug?k=`, SMS/Telegram'dagi havola) —
@@ -111,6 +127,24 @@ export default function LandingPage() {
   const storedSelectedProgramSlug = useSessionStore((state) => state.selectedProgramSlug);
   const storedSelectedProgramCode = useSessionStore((state) => state.selectedProgramCode);
   const setSelectedProgram = useSessionStore((state) => state.setSelectedProgram);
+  const setSession = useSessionStore((state) => state.setSession);
+
+  // `registrationMode: "None"` dastur — rozilik shu ekranda, sessiya to'g'ridan-to'g'ri
+  // shu yerdan ochiladi (yuqoridagi docstring). `Full` dasturda bu mutatsiya UMUMAN
+  // chaqirilmaydi (`handleStart` pastda).
+  const startSession = useStartSession();
+  const [anonymousConsent, setAnonymousConsent] = useState(false);
+  const [anonymousError, setAnonymousError] = useState<string | null>(null);
+
+  // Boshqa maktab havolasi ochilganda eski rozilik belgisi/xatosi sizib qolmasin. Effekt
+  // EMAS ("kaskadli render" ogohlantiradi, `react-hooks/set-state-in-effect`) — render
+  // vaqtida moslashtirish (React'ning tavsiya qilingan "adjusting state" naqshi).
+  const [consentSlug, setConsentSlug] = useState(slug);
+  if (consentSlug !== slug) {
+    setConsentSlug(slug);
+    setAnonymousConsent(false);
+    setAnonymousError(null);
+  }
 
   // Toza boshlanish — faqat `k` bilan kelganda (yuqoridagi izoh). Effekt ichida, chunki bu
   // tashqi holatni (store, `localStorage`, query keshi) o'zgartiradi; `startFresh` idempotent,
@@ -206,6 +240,45 @@ export default function LandingPage() {
   const school = schoolInfoQuery.data;
   const programs = school.programs;
 
+  // "Boshlash" bosilganda haqiqatda ishga tushadigan dastur — bitta bo'lsa avtomatik, bir
+  // nechtasi bo'lsa o'quvchi tanlagani (hali tanlanmagan bo'lsa `undefined`, tugma o'chiq).
+  const activeProgram: PublicProgramWithRegistration | undefined =
+    programs.length === 1 ? programs[0] : programs.find((program) => program.code === selectedProgramCode);
+  const isAnonymousStart = activeProgram?.registrationMode === 'None';
+
+  async function startAnonymousSession(program: PublicProgramWithRegistration) {
+    setAnonymousError(null);
+    try {
+      const result = await startSession.mutateAsync({
+        slug,
+        accessToken,
+        consentAccepted: true,
+        languageCode: 'uz',
+        programCode: programs.length > 1 ? program.code : undefined,
+      });
+      setSession(result.sessionToken, slug, result.assessmentId, accessToken);
+      const nextTestCode = pickNextTestCode(result.tests);
+      navigate(nextTestCode ? ROUTES.public.test(slug, nextTestCode) : ROUTES.public.finish(slug));
+    } catch (error) {
+      if (error instanceof AppError && error.code === 'RATE_LIMITED') {
+        setAnonymousError(t('pages.register.rateLimited'));
+      } else if (error instanceof AppError && error.message) {
+        setAnonymousError(error.message);
+      } else {
+        setAnonymousError(t('pages.register.genericSubmitError'));
+      }
+    }
+  }
+
+  function handleStart() {
+    if (!activeProgram) return;
+    if (activeProgram.registrationMode === 'None') {
+      void startAnonymousSession(activeProgram);
+      return;
+    }
+    navigate(registerHref);
+  }
+
   return (
     <div className="flex animate-fade-up flex-col gap-8 motion-reduce:animate-none">
       <section className="flex flex-col items-center gap-4 text-center">
@@ -225,8 +298,10 @@ export default function LandingPage() {
         {programs.length === 1 && (
           <p className="lead text-balance">
             {t('pages.landing.summary', {
-              count: school.tests.reduce((sum, test) => sum + test.questionCount, 0),
-              minutes: school.totalEstimatedMinutes,
+              // `programs.length === 1` yuqorida tekshirilgan — `noUncheckedIndexedAccess`
+              // buni indeks turida ko'rmaydi, shu sabab aniq tasdiq (`!`).
+              count: programs[0]!.questionCount,
+              minutes: programs[0]!.estimatedMinutes,
             })}
           </p>
         )}
@@ -266,7 +341,43 @@ export default function LandingPage() {
           description={t('publicAssessment.noPrograms.description')}
         />
       ) : programs.length === 1 ? (
-        <SingleProgramView school={school} onStart={() => navigate(registerHref)} />
+        <>
+          <SingleProgramView tests={programs[0]!.tests} />
+
+          {/*
+            `registrationMode: "None"` (P52, `docs/18` §9) — rozilik shu yerda, `Full`da
+            (ESKI holat) ko'rsatilmaydi va tugma shartsiz yoqilgan.
+          */}
+          {isAnonymousStart && (
+            <>
+              <p className="text-sm text-ink-soft">{t('pages.landing.anonymousNotice')}</p>
+              <ConsentBlock
+                consentText={school.consentText}
+                checked={anonymousConsent}
+                onChange={setAnonymousConsent}
+              />
+            </>
+          )}
+
+          {anonymousError && (
+            <p
+              role="alert"
+              className="rounded-2xl border border-terakota-200 bg-terakota-50 px-4 py-3 text-sm text-terakota-800"
+            >
+              {anonymousError}
+            </p>
+          )}
+
+          <Button
+            size="lg"
+            className={publicButtonClass('primary', 'lg', 'w-full')}
+            isLoading={startSession.isPending}
+            disabled={isAnonymousStart && !anonymousConsent}
+            onClick={handleStart}
+          >
+            {t('pages.landing.startCta')}
+          </Button>
+        </>
       ) : (
         <div className="flex flex-col gap-4">
           <p className="text-sm text-ink-soft">
@@ -286,11 +397,33 @@ export default function LandingPage() {
               />
             ))}
           </div>
+
+          {isAnonymousStart && (
+            <>
+              <p className="text-sm text-ink-soft">{t('pages.landing.anonymousNotice')}</p>
+              <ConsentBlock
+                consentText={school.consentText}
+                checked={anonymousConsent}
+                onChange={setAnonymousConsent}
+              />
+            </>
+          )}
+
+          {anonymousError && (
+            <p
+              role="alert"
+              className="rounded-2xl border border-terakota-200 bg-terakota-50 px-4 py-3 text-sm text-terakota-800"
+            >
+              {anonymousError}
+            </p>
+          )}
+
           <Button
             size="lg"
             className={publicButtonClass('primary', 'lg', 'w-full')}
-            disabled={!selectedProgramCode}
-            onClick={() => navigate(registerHref)}
+            isLoading={startSession.isPending}
+            disabled={!activeProgram || (isAnonymousStart && !anonymousConsent)}
+            onClick={handleStart}
           >
             {t('pages.landing.startCta')}
           </Button>
@@ -301,30 +434,23 @@ export default function LandingPage() {
 }
 
 /**
- * Bitta dastur bo'lgan holat — REGRESSIYA HIMOYASI: bugungi (`school.tests`ga tayanuvchi)
- * markup/mantiq bitta baytga ham o'zgarmagan (`prompts/36` "eng muhim" bandi).
+ * Bitta dastur bo'lgan holat — test kartalari ro'yxati. REGRESSIYA HIMOYASI: `Full` rejimida
+ * markup bugungidek qoladi (`prompts/36` "eng muhim" bandi) — "Boshlash" tugmasi va rozilik
+ * bloki endi YUQORIDA, `LandingPage`ning o'zida (ikkala tarmoq — bitta va bir nechta dastur —
+ * bir xil joydan boshqariladi, `docs/18` §9).
+ *
+ * **2026-09-11 tuzatildi:** `tests` endi `school.tests` (butun katalog) EMAS, AYNAN shu
+ * dasturning `programs[0].tests`i — arxivlangan boshqa dastur testi bu yerda ko'rinmasin
+ * (`docs/07` §1.1 izohi, egasi topgan jonli xato).
  */
-function SingleProgramView({
-  school,
-  onStart,
-}: {
-  school: NonNullable<ReturnType<typeof useSchoolInfo>['data']>;
-  onStart: () => void;
-}) {
-  const { t } = useTranslation();
-  const sortedTests = [...school.tests].sort((a, b) => a.order - b.order);
+function SingleProgramView({ tests }: { tests: PublicTestCatalogItem[] }) {
+  const sortedTests = [...tests].sort((a, b) => a.order - b.order);
 
   return (
-    <>
-      <div className="flex flex-col gap-3">
-        {sortedTests.map((test) => (
-          <TestIntroCard key={test.code} {...test} />
-        ))}
-      </div>
-
-      <Button size="lg" className={publicButtonClass('primary', 'lg', 'w-full')} onClick={onStart}>
-        {t('pages.landing.startCta')}
-      </Button>
-    </>
+    <div className="flex flex-col gap-3">
+      {sortedTests.map((test) => (
+        <TestIntroCard key={test.code} {...test} />
+      ))}
+    </div>
   );
 }

@@ -4,7 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
-import { jsonResponse, problemResponse, type Schemas } from '@/test/apiMock';
+import { jsonResponse, problemResponse, typedResponse, type Schemas } from '@/test/apiMock';
+import type { PublicSchoolInfoWithRegistration } from '@/shared/api/registrationModeTypes';
 import RegistrationPage from './RegistrationPage';
 import { useSessionStore } from '../store/sessionStore';
 
@@ -490,5 +491,62 @@ describe('RegistrationPage', () => {
     await user.click(screen.getByRole('button', { name: 'Testni boshlash' }));
 
     expect(await screen.findByText('LANDING_STUB')).toBeInTheDocument();
+  });
+
+  // ---------------------------------------------------------------------------------------
+  // `registrationMode: "None"` (P52, 2026-09-11, `docs/18` §9) — oddiy oqimda `LandingPage`
+  // bu ekranga UMUMAN navigatsiya qilmaydi (sessiyani o'zi ochadi), lekin himoya sifatida
+  // to'g'ridan-to'g'ri havola/"orqaga" bilan kelishga qarshi: bu holatda ham forma
+  // ko'rsatilmasdan landingga qaytariladi.
+  // ---------------------------------------------------------------------------------------
+  it("registrationMode 'None' dasturga to'g'ridan-to'g'ri havola bilan kirilsa forma ko'rsatilmaydi, landingga qaytariladi", async () => {
+    const noneModeSchoolInfo = {
+      schoolId: 'school-1',
+      name: "12-son umumiy o'rta ta'lim maktabi",
+      region: "Farg'ona",
+      district: "Qo'qon",
+      requiresAccessCode: false,
+      tests: [
+        {
+          code: 'CAREER_SURVEY_Q',
+          name: "Kasb so'rovnomasi savollari",
+          questionCount: 20,
+          estimatedMinutes: 4,
+          order: 1,
+        },
+      ],
+      totalEstimatedMinutes: 4,
+      consentText: CONSENT_TEXT,
+      programs: [
+        {
+          code: 'CAREER_SURVEY',
+          nameUz: "Kasb so'rovnomasi",
+          descriptionUz: null,
+          testCount: 1,
+          questionCount: 20,
+          estimatedMinutes: 4,
+          hasPersonalityBattery: false,
+          registrationMode: 'None',
+          tests: [
+            {
+              code: 'CAREER_SURVEY_Q',
+              name: "Kasb so'rovnomasi savollari",
+              questionCount: 20,
+              estimatedMinutes: 4,
+              order: 1,
+            },
+          ],
+        },
+      ],
+    } satisfies PublicSchoolInfoWithRegistration;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(typedResponse<PublicSchoolInfoWithRegistration>(noneModeSchoolInfo)),
+    );
+
+    renderRegistration();
+
+    expect(await screen.findByText('LANDING_STUB')).toBeInTheDocument();
+    expect(screen.queryByLabelText('F.I.Sh.')).not.toBeInTheDocument();
   });
 });

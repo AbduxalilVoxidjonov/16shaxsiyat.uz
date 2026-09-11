@@ -6,6 +6,14 @@ import {
   programStateLabelKey,
   type ProgramState,
 } from '@/shared/lib/programState';
+import {
+  REGISTRATION_MODE_VALUES,
+  type AdminProgramDetailWithRegistration,
+  type AdminProgramListItemWithRegistration,
+  type CreateProgramRequestWithRegistration,
+  type RegistrationMode,
+  type UpdateProgramRequestWithRegistration,
+} from '@/shared/api/registrationModeTypes';
 
 /**
  * `AssessmentProgram` admin DTO'lari — `docs/07-api-shartnoma.md` 3.4-bo'limida yozilmagan
@@ -21,6 +29,24 @@ export type CreateProgramRequestBody = components['schemas']['CreateProgramReque
 export type UpdateProgramRequestBody = components['schemas']['UpdateProgramRequest'];
 export type AddProgramTestRequestBody = components['schemas']['AddProgramTestRequest'];
 export type ReorderProgramTestsRequestBody = components['schemas']['ReorderProgramTestsRequest'];
+
+/**
+ * `registrationMode` (P52, 2026-09-11) — MUVAQQAT, `schema.d.ts`da hali yo'q
+ * (`shared/api/registrationModeTypes.ts`dagi izohga qarang, `docs/07` §3.5). `AdminProgram
+ * List/DetailWithRegistration` — ro'yxat/detal DTO'lari + shu maydon; `Create/
+ * UpdateProgramRequestWithRegistration` — yaratish/tahrirlash so'rov tanasi + shu maydon.
+ * Backend generatsiya qilingach bular olib tashlanadi, yuqoridagi `AdminProgramListItem`/
+ * `AdminProgramDetail`/`CreateProgramRequestBody`/`UpdateProgramRequestBody` ularning o'rnini
+ * bosadi (maydon o'shanda ular ichida allaqachon bo'ladi).
+ */
+export { REGISTRATION_MODE_VALUES };
+export type {
+  AdminProgramDetailWithRegistration,
+  AdminProgramListItemWithRegistration,
+  CreateProgramRequestWithRegistration,
+  RegistrationMode,
+  UpdateProgramRequestWithRegistration,
+};
 
 /**
  * Backend enum'larni JSON'da **string** qilib qaytaradi (docs/07 4-bo'lim), lekin Swagger
@@ -65,6 +91,23 @@ export interface ProgramsListQuery {
  * tarkibidagi test kodlarini shu ro'yxat bilan solishtirib "batareya to'liqmi" aniqlanadi.
  */
 export const MATURITY_BATTERY_TEST_CODES = ['BIG5', 'ACTIVITY'] as const;
+
+/**
+ * "Shaxsiyat batareyasi" test kodlari — `Domain.Catalog.PersonalityBattery` mezoni (`Kind ==
+ * Standard && ScoringMode == Scored`) faqat 4 ta tizim (seed'dan keladigan) metodikaga to'g'ri
+ * keladi (`PersonalityBattery.cs` izohi: "seed batareyani `TestDefinition.CreateSystemPublished`
+ * orqali quradi"). `Custom` dastur testlari HAR DOIM `Kind = Custom`, shu sabab hech qachon
+ * bu ro'yxatga tushmaydi. `AdminProgramTestItemDto` `Kind`/`ScoringMode`ni bermaydi (faqat
+ * `code`/`nameUz`/`displayOrder`) — mezon shu sabab `MATURITY_BATTERY_TEST_CODES`dagi kabi
+ * KOD bo'yicha (backend `PersonalityBattery`ning o'zi kod bo'yicha EMAS — domen sharhida
+ * ogohlantirilgan — lekin frontendda kod ro'yxati faqat shu 4 ta seed metodikasini
+ * ANIQLASH uchun, ularning aynan shu kodda ekanligi seed'da qulflangan).
+ *
+ * `MATURITY_BATTERY_TEST_CODES`dan farqi: bu yerda BIRON BITTASI kifoya (backend
+ * `PersonalityBattery.Includes` — `Any`), "hammasi birga" emas (`MaturityIndex` kabi
+ * "ikkalasi birga" qoidasi emas).
+ */
+export const PERSONALITY_BATTERY_TEST_CODES = ['MBTI16', 'BIG5', 'RIASEC', 'ACTIVITY'] as const;
 
 /** Dastur nashr qilinganda "juda uzun" ogohlantirishi chegarasi — `prompts/35` 12-band. */
 export const PROGRAM_DURATION_WARNING_MINUTES = 40;

@@ -266,4 +266,74 @@ describe('ProgramDetailPage', () => {
     expect(await screen.findByRole('button', { name: 'Faollashtirish' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: "To'xtatish" })).not.toBeInTheDocument();
   });
+
+  // ── Ro'yxatdan o'tish rejimi (P52, 2026-09-11, `docs/18` §9) ───────────────────────────
+  // Admin forma shaxsiyat batareyasi bo'lgan dasturda "So'ralmaydi"ni OLDINDAN bloklaydi —
+  // backend `400 REGISTRATION_REQUIRED_FOR_BATTERY` bilan ajablantirmaydi (`docs/07` §3.5).
+
+  it("shaxsiyat batareyasi (MBTI16) bo'lgan dasturda \"So'ralmaydi\" tanlovi o'chirilgan va sababi ko'rsatiladi", async () => {
+    // `programDetail()` standart holatida MBTI16 testi bor.
+    mockFetch(programDetail());
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Tahrirlash' }));
+
+    const select = (await screen.findByLabelText(
+      "Ro'yxatdan o'tish",
+    )) as HTMLSelectElement;
+    const noneOption = select.querySelector('option[value="None"]') as HTMLOptionElement;
+    expect(noneOption.disabled).toBe(true);
+    expect(
+      screen.getByText(/shaxsiyat batareyasi.*bor.*natija yosh\/sinf\/jinsga tayanadi/i),
+    ).toBeInTheDocument();
+  });
+
+  it("batareyasiz dasturda \"So'ralmaydi\" tanlab saqlash mumkin (PUT registrationMode: None)", async () => {
+    const detail = programDetail({
+      tests: [
+        { testDefinitionId: 't-1', code: 'CAREER_SURVEY_Q', nameUz: "So'rovnoma savollari", displayOrder: 1 },
+      ],
+    });
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+      if (url.includes('/api/admin/programs/program-1') && method === 'GET') {
+        return Promise.resolve(jsonResponse<'AdminProgramDetailDto'>(detail));
+      }
+      if (url.includes('/api/admin/programs/program-1') && method === 'PUT') {
+        return Promise.resolve(jsonResponse<'AdminProgramDetailDto'>(detail));
+      }
+      return Promise.resolve(problemResponse('NOT_FOUND', 404));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole('button', { name: 'Tahrirlash' }));
+
+    const select = (await screen.findByLabelText(
+      "Ro'yxatdan o'tish",
+    )) as HTMLSelectElement;
+    const noneOption = select.querySelector('option[value="None"]') as HTMLOptionElement;
+    expect(noneOption.disabled).toBe(false);
+
+    await user.selectOptions(select, 'None');
+    await user.click(screen.getByText('Saqlash'));
+
+    await waitFor(() => {
+      const putCall = fetchMock.mock.calls.find(
+        ([, requestInit]) => (requestInit as RequestInit | undefined)?.method === 'PUT',
+      );
+      expect(putCall).toBeDefined();
+    });
+    const putCall = fetchMock.mock.calls.find(
+      ([, requestInit]) => (requestInit as RequestInit | undefined)?.method === 'PUT',
+    )!;
+    const body = JSON.parse((putCall[1] as RequestInit).body as string) as Record<
+      string,
+      unknown
+    >;
+    expect(body.registrationMode).toBe('None');
+  });
 });
