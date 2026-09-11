@@ -241,14 +241,22 @@ export default function TestPage() {
 
   // Bo'lim almashganda fokus yangi sarlavhaga ko'chadi (a11y, docs/18 §6.2) — birinchi
   // ko'rsatishda EMAS (foydalanuvchi hali hech qanday harakat qilmagan).
+  //
+  // BOG'LIQLIKDA FAQAT `currentSectionId` BO'LISHI SHART. Ilgari bu yerda `visibility` ham
+  // bor edi va u MATN MAYDONINI ISHLATIB BO'LMAYDIGAN qilib qo'ygan edi (egasi topgan
+  // bloklovchi, 2026-09-11): `visibility` — `draftAnswers`ga tayanadigan `useMemo`, ya'ni
+  // HAR BOSILGAN HARFDA yangi obyekt bo'ladi; effekt qayta ishga tushib fokusni inputdan
+  // bo'lim sarlavhasiga olib qochardi va o'quvchi bitta harfdan keyin yozolmay qolardi.
+  // `visibility` bu yerda faqat "hali yuklanmagan" qo'riqchisi edi — uning o'rnini
+  // `currentSectionId` (u ham boshda `null`) to'liq bosadi.
   useEffect(() => {
-    if (!visibility) return;
+    if (!currentSectionId) return;
     if (isFirstSectionFocusRef.current) {
       isFirstSectionFocusRef.current = false;
       return;
     }
     sectionHeadingRef.current?.focus({ preventScroll: true });
-  }, [currentSectionId, visibility]);
+  }, [currentSectionId]);
 
   // Bu testning statusi allaqachon "Completed" bo'lsa (masalan orqaga qaytilgan) keyingi
   // blokka yoki yakuniy ekranga yo'naltiriladi.
