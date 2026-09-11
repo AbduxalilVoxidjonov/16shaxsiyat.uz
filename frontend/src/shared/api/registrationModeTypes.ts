@@ -90,9 +90,18 @@ export type StartSessionPayload = StartSessionRequestBody | StartSessionAnonymou
  * ============================================================================
  */
 
-/** `AdminProgramListItemDto`/`AdminProgramDetailDto`ga qo'shiladigan yangi maydon. */
+/**
+ * `AdminProgramListItemDto`/`AdminProgramDetailDto`ga qo'shiladigan yangi maydonlar.
+ * `hasPersonalityBattery` (P52, 2026-09-11, `docs/07` §3.5 "Dastur `hasPersonalityBattery` —
+ * admin ham") — backend `Domain.Catalog.PersonalityBattery` qoidasidan hisoblab beradi
+ * (`Kind == Standard && ScoringMode == Scored`), N+1 yo'q batch so'rov bilan. Frontend endi
+ * kod ro'yxati (`"MBTI16"`/`"BIG5"`/...) bilan TAXMIN QILMAYDI — shu bayroqqa ishonadi
+ * (`features/programs/model/programComputations.ts`dagi eski `PERSONALITY_BATTERY_TEST_CODES`
+ * o'chirildi).
+ */
 export interface AdminProgramRegistrationModeFields {
   registrationMode: RegistrationMode;
+  hasPersonalityBattery: boolean;
 }
 
 /** `AdminProgramListItemDto` (generatsiya qilingan) + `registrationMode`. */

@@ -16,7 +16,6 @@ import { useCreateProgram } from '../api/useCreateProgram';
 import { useUpdateProgram } from '../api/useUpdateProgram';
 import { useProgramImpactQuery } from '../api/useProgramImpactQuery';
 import { ProgramImpactNotice } from './ProgramImpactNotice';
-import { hasPersonalityBattery } from '../model/programComputations';
 import {
   programFormSchema,
   PROGRAM_FORM_DEFAULT_VALUES,
@@ -88,10 +87,12 @@ export function ProgramFormDialog({ open, programId, onClose, onCreated }: Progr
   const impactQuery = useProgramImpactQuery(programId, 'makeAssigned', pendingValues !== null);
 
   // `docs/18` §9.2 qat'iy invarianti — yangi (`Create`) dasturda hali test yo'q, shu sabab
-  // faqat TAHRIRLASHDA (mavjud tarkib bilan) bloklanadi (`docs/07` §3.5: "yangi dasturda hali
-  // test yo'q, shu sabab bu bosqichda invariantni buza olmaydi"). `None` UI'da OLDINDAN
-  // o'chirib qo'yiladi — backend `400 REGISTRATION_REQUIRED_FOR_BATTERY` bilan ajablantirmaydi.
-  const programHasBattery = isEdit && hasPersonalityBattery(detailQuery.data?.tests ?? []);
+  // yangi dasturda batareya BO'LISHI MUMKIN EMAS (`false`) — tekshiruv faqat TAHRIRLASHDA
+  // (mavjud tarkib bilan) mazmunli (`docs/07` §3.5: "yangi dasturda hali test yo'q, shu sabab
+  // bu bosqichda invariantni buza olmaydi"). Mezon — backend bayrog'i (`hasPersonalityBattery`,
+  // `AdminProgramDetail`, P52) — qattiq kod ro'yxati EMAS. `None` UI'da OLDINDAN o'chirib
+  // qo'yiladi — backend `400 REGISTRATION_REQUIRED_FOR_BATTERY` bilan ajablantirmaydi.
+  const programHasBattery = isEdit && (detailQuery.data?.hasPersonalityBattery ?? false);
 
   async function submitValues(values: ProgramFormValues) {
     try {

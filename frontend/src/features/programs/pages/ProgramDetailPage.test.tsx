@@ -6,16 +6,20 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
 import ProgramDetailPage from './ProgramDetailPage';
 import { jsonResponse, problemResponse, type Schemas } from '@/test/apiMock';
+import type { AdminProgramDetailWithRegistration } from '../model/types';
 
 /**
- * `GET /api/admin/programs/{id}` javobi — backend `AdminProgramDetailDto` shakli;
- * `overrides` ham shu sxema bilan cheklangan, shuning uchun testda yozilgan har qanday
- * maydon nomi backend shartnomasiga qarshi tekshiriladi.
+ * `GET /api/admin/programs/{id}` javobi — backend `AdminProgramDetailDto` shakli +
+ * `registrationMode`/`hasPersonalityBattery` (P52, `AdminProgramDetailWithRegistration`,
+ * `shared/api/registrationModeTypes.ts`dagi MUVAQQAT naqsh — `schema.d.ts` hali bu
+ * maydonlarni bilmaydi, `npm run generate:api` bu sessiyada ishga tushirilmagan). `overrides`
+ * shu kengaytirilgan shakl bilan cheklangan, shuning uchun testda yozilgan har qanday maydon
+ * nomi haqiqiy shartnomaga qarshi tekshiriladi.
  */
 function programDetail(
-  overrides: Partial<Schemas['AdminProgramDetailDto']> = {},
-): Schemas['AdminProgramDetailDto'] {
-  return {
+  overrides: Partial<AdminProgramDetailWithRegistration> = {},
+): AdminProgramDetailWithRegistration {
+  const base: Schemas['AdminProgramDetailDto'] = {
     id: 'program-1',
     code: 'CUSTOM_1',
     nameUz: 'Maxsus dastur',
@@ -30,11 +34,16 @@ function programDetail(
     isAssignedToPublicSpace: false,
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
+  };
+  return {
+    ...base,
+    registrationMode: 'Full',
+    hasPersonalityBattery: true,
     ...overrides,
   };
 }
 
-function mockFetch(detail: Schemas['AdminProgramDetailDto']) {
+function mockFetch(detail: AdminProgramDetailWithRegistration) {
   const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
     const url = String(input);
     if (url.includes('/api/admin/programs/program-1')) {
@@ -271,9 +280,10 @@ describe('ProgramDetailPage', () => {
   // Admin forma shaxsiyat batareyasi bo'lgan dasturda "So'ralmaydi"ni OLDINDAN bloklaydi —
   // backend `400 REGISTRATION_REQUIRED_FOR_BATTERY` bilan ajablantirmaydi (`docs/07` §3.5).
 
-  it("shaxsiyat batareyasi (MBTI16) bo'lgan dasturda \"So'ralmaydi\" tanlovi o'chirilgan va sababi ko'rsatiladi", async () => {
-    // `programDetail()` standart holatida MBTI16 testi bor.
-    mockFetch(programDetail());
+  it("shaxsiyat batareyasi bor dasturda \"So'ralmaydi\" tanlovi o'chirilgan va sababi ko'rsatiladi", async () => {
+    // Mezon — backend bayrog'i (`hasPersonalityBattery`), tarkibdagi test kodi EMAS
+    // (`programComputations.ts`dagi eski qattiq kod ro'yxati P52da olib tashlandi).
+    mockFetch(programDetail({ hasPersonalityBattery: true }));
     const user = userEvent.setup();
     renderPage();
 
@@ -294,6 +304,7 @@ describe('ProgramDetailPage', () => {
       tests: [
         { testDefinitionId: 't-1', code: 'CAREER_SURVEY_Q', nameUz: "So'rovnoma savollari", displayOrder: 1 },
       ],
+      hasPersonalityBattery: false,
     });
     const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);

@@ -92,22 +92,5 @@ export interface ProgramsListQuery {
  */
 export const MATURITY_BATTERY_TEST_CODES = ['BIG5', 'ACTIVITY'] as const;
 
-/**
- * "Shaxsiyat batareyasi" test kodlari — `Domain.Catalog.PersonalityBattery` mezoni (`Kind ==
- * Standard && ScoringMode == Scored`) faqat 4 ta tizim (seed'dan keladigan) metodikaga to'g'ri
- * keladi (`PersonalityBattery.cs` izohi: "seed batareyani `TestDefinition.CreateSystemPublished`
- * orqali quradi"). `Custom` dastur testlari HAR DOIM `Kind = Custom`, shu sabab hech qachon
- * bu ro'yxatga tushmaydi. `AdminProgramTestItemDto` `Kind`/`ScoringMode`ni bermaydi (faqat
- * `code`/`nameUz`/`displayOrder`) — mezon shu sabab `MATURITY_BATTERY_TEST_CODES`dagi kabi
- * KOD bo'yicha (backend `PersonalityBattery`ning o'zi kod bo'yicha EMAS — domen sharhida
- * ogohlantirilgan — lekin frontendda kod ro'yxati faqat shu 4 ta seed metodikasini
- * ANIQLASH uchun, ularning aynan shu kodda ekanligi seed'da qulflangan).
- *
- * `MATURITY_BATTERY_TEST_CODES`dan farqi: bu yerda BIRON BITTASI kifoya (backend
- * `PersonalityBattery.Includes` — `Any`), "hammasi birga" emas (`MaturityIndex` kabi
- * "ikkalasi birga" qoidasi emas).
- */
-export const PERSONALITY_BATTERY_TEST_CODES = ['MBTI16', 'BIG5', 'RIASEC', 'ACTIVITY'] as const;
-
 /** Dastur nashr qilinganda "juda uzun" ogohlantirishi chegarasi — `prompts/35` 12-band. */
 export const PROGRAM_DURATION_WARNING_MINUTES = 40;
