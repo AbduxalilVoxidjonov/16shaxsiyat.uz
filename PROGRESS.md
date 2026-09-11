@@ -4,7 +4,7 @@
 > PM har vazifa boshlanganda va tugaganda **darhol** yangilaydi.
 
 **Loyiha:** Shaxsiyat (`16shaxsiyat.uz`) · ichki nom `StudentRoadMap`
-**Oxirgi yangilanish:** 2026-09-11 · **Joriy bosqich:** B8 (Anketa konstruktori — tarmoqlanish) · **Joriy vazifa:** P52 yakunlandi; navbatdagi ish kutilmoqda
+**Oxirgi yangilanish:** 2026-09-11 · **Joriy bosqich:** B8 (Anketa konstruktori — tarmoqlanish) · **Joriy vazifa:** P52b (namunaviy so'rovnomani seed qilish) yakunlandi; navbatdagi ish kutilmoqda
 
 ---
 
@@ -70,6 +70,7 @@
 | P50 | Telegram kirish va kabinet UI | frontend-react | ✅ | — | `/kirish`, `/kabinet`, `/kabinet/test`, `/kabinet/natijalar/:id` · access token FAQAT xotirada (XSS) · Telegram obyekti qayta yig'ilmaydi (imzo) · maktab oqimi tegilmagan · 608 test · commit `c155c59` |
 | P51 | Docker: seed `init` profiliga, obraz bir marta quriladi | backend-dotnet | ✅ | — | Egasining talabi · `up --build` 4 emas 2 obraz · `migrate` ATAYLAB avtomatik qoldi (API sxema eskirganini tekshirmaydi) · commit `b7d69c5` |
 | P52 | Tarmoqlanuvchi so'rovnoma (bo'limlar, ko'rsatish sharti, matn/ko'p tanlovli savollar) | backend + frontend | ✅ | — | Egasining talabi · shartnoma `docs/18` · oltin fikstura `tests/fixtures/visibility-golden.json` **ikkala tomon o'qiydi** va 3 ta haqiqiy ajralishni ushladi · backend **1554 test**, frontend **920 test**, E2E 390px+1440px real Docker stekda PASS · namuna `docs/examples/sorovnoma-intellect.json` (5 bo'lim, 25 savol) import→nashr→ommaviy API testi bilan qulflangan · QA: PASS (1 bloklovchi + 2 muhim tuzatildi) |
+| P52b | Namunaviy so'rovnomani SEED qilish (egasining talabi: "bir marta qo'shib qo'y") | backend-dotnet | ✅ | — | Fayl ko'chirildi: `docs/examples/sorovnoma-intellect.json` → `src/.../Infrastructure/Persistence/SeedData/surveys/intellect-survey.json` (yagona manba, eski nusxa o'chirildi) · `DbSeeder.SeedSurveysAsync` + `SeedDataLoader.ParseSurvey`/`ToDomainCustomDraftSurvey` qo'shildi · idempotentlik TIZIM METODIKALARIDAN FARQLI: `Code` bazada bo'lsa BUTUNLAY o'tkazib yuboriladi (superadmin tahriri himoyalangan) · natija har doim `Kind=Custom/IsSystem=false/ScoringMode=Survey/Status=Draft` (2-B bo'lim markaz nomlari haqiqiy emas — superadmin to'ldirib nashr qiladi, `docs/18` §7) · `AdminCatalogBranchingImportEndpointTests` HTTP-import zanjiridan seed-yo'liga moslashtirildi (A5 bilan takrorlanmaslik uchun) · yangi testlar: `SeedDataLoaderSurveyRealFixtureTests` (8), `DbSeederSurveyTests` (3, jumladan "qo'lda tahrirlangan anketa qayta seeddan keyin o'zgarmaydi") · backend **1566 test** (jumladan `Migrations.Tests` real Postgres/Docker ustida — `SeedIdempotencyTests` PASS), frontend **921 test** — barchasi yashil · `dotnet build` 0 xato/0 ogohlantirish |
 
 ---
 

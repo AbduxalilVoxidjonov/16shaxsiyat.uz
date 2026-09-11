@@ -13,16 +13,18 @@ namespace StudentRoadMap.Infrastructure.Tests.Persistence.Seeding;
 /// <summary>
 /// `DbSeeder` — Docker/PostgreSQL bu muhitda yo'q (`prompts/04`), shu sabab **SQLite in-memory**
 /// ustida ishga tushiriladi (haqiqiy tranzaksiya/rollback beruvchi relational provayder,
-/// InMemory'dan farqli — `SqliteAppDbContextFactory` izohiga qarang). Haqiqiy 4 seed JSON'i,
-/// `type-catalog.json` va `career-map.json` — `Infrastructure/Persistence/SeedData/`dan csproj
-/// orqali nusxalangan (fayllar tahrirlanmagan).
+/// InMemory'dan farqli — `SqliteAppDbContextFactory` izohiga qarang). Haqiqiy 4 tizim metodikasi
+/// JSON'i, `type-catalog.json`, `career-map.json` VA namunaviy so'rovnoma
+/// (`surveys/intellect-survey.json`, `docs/18` §7, 5-chi `TestDefinition`) —
+/// `Infrastructure/Persistence/SeedData/`dan csproj orqali nusxalangan (fayllar tahrirlanmagan).
 /// </summary>
 public sealed class DbSeederTests
 {
     private static readonly DateTimeOffset Now = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
-    private const int ExpectedTestDefinitionCount = 4;
-    private const int ExpectedQuestionCount = 190; // 60 + 50 + 48 + 32 (docs/03, 9-bo'lim)
+    // 4 tizim metodikasi (MBTI16/BIG5/RIASEC/ACTIVITY) + 1 namunaviy so'rovnoma (INTELLECT-SURVEY).
+    private const int ExpectedTestDefinitionCount = 5;
+    private const int ExpectedQuestionCount = 215; // 190 (60+50+48+32, docs/03 9-bo'lim) + 25 (docs/18 §7)
     private const int ExpectedTypeCatalogCount = 16;
     private const int ExpectedCareerMapCount = 18;
 

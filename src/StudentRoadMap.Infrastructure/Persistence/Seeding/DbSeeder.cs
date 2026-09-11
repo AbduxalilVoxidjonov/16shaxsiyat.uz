@@ -97,6 +97,7 @@ public sealed class DbSeeder
         try
         {
             await SeedTestDefinitionsAsync(cancellationToken).ConfigureAwait(false);
+            await SeedSurveysAsync(cancellationToken).ConfigureAwait(false);
             await SeedSystemProgramAsync(cancellationToken).ConfigureAwait(false);
             await ReconcileProgramStatesAsync(cancellationToken).ConfigureAwait(false);
             await SeedPublicSpaceAsync(cancellationToken).ConfigureAwait(false);
@@ -198,6 +199,67 @@ public sealed class DbSeeder
         }
 
         _logger.LogInformation("Tizim metodikasi yangilandi: {Code}", dto.Code);
+    }
+
+    /// <summary>
+    /// Namunaviy (mijozga xos) tarmoqlanuvchi so'rovnomalarni seed qiladi (`docs/18` §7) —
+    /// `Infrastructure/Persistence/SeedData/surveys/*.json`. TIZIM METODIKALARIDAN
+    /// (`SeedTestDefinitionsAsync`/`UpsertExistingTestDefinition`) TUBDAN FARQLI idempotentlik:
+    /// bu anketa `Kind = Custom`/`IsSystem = false` — superadmin uni panelda tahrirlashi
+    /// (masalan, 2-B bo'limidagi o'quv markaz nomlarini haqiqiylariga almashtirishi) ATAYLAB
+    /// KUTILADI. Shu sabab "qayta sinxronlash" mantig'i BU YERGA OLIB KELINMAGAN: `Code`
+    /// bo'yicha anketa allaqachon mavjud bo'lsa BUTUNLAY o'tkazib yuboriladi — matn ham,
+    /// variant ham, shart ham QAYTA YOZILMAYDI, aks holda qayta seed superadminning tahririni
+    /// yo'q qilib yuborardi. Natija har doim `Status = Draft` (`TestDefinition.Create`ning
+    /// boshlang'ich holati) — 2-B bo'limidagi (`Q2B_1`) markaz nomlari haqiqiy emas
+    /// (`"... (nomini tahrirlang)"`), superadmin ularni to'ldirib, o'zi "Nashr qilish"
+    /// bosishi kerak.
+    /// </summary>
+    private async Task SeedSurveysAsync(CancellationToken cancellationToken)
+    {
+        var directory = Path.Combine(_seedDataRoot, "surveys");
+        if (!Directory.Exists(directory))
+        {
+            _logger.LogWarning("Namunaviy so'rovnomalar seed katalogi topilmadi: {Directory}", directory);
+            return;
+        }
+
+        var now = _dateTime.UtcNow;
+        var seededAny = false;
+
+        foreach (var file in Directory.EnumerateFiles(directory, "*.json").OrderBy(f => f, StringComparer.Ordinal))
+        {
+            var sourceName = Path.GetFileName(file);
+            var json = await File.ReadAllTextAsync(file, cancellationToken).ConfigureAwait(false);
+            var dto = SeedDataLoader.ParseSurvey(json, sourceName);
+
+            var exists = await _dbContext.TestDefinitions
+                .AnyAsync(t => t.Code == dto.Code, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (exists)
+            {
+                _logger.LogInformation(
+                    "Namunaviy so'rovnoma allaqachon mavjud: {Code} — o'tkazib yuborildi (superadmin tahriri qayta seeddan himoyalangan).", dto.Code);
+                continue;
+            }
+
+            var testDefinitionId = Guid.NewGuid();
+            var testDefinition = SeedDataLoader.ToDomainCustomDraftSurvey(
+                dto, testDefinitionId, _ => Guid.NewGuid(), _ => Guid.NewGuid(), now);
+
+            _dbContext.TestDefinitions.Add(testDefinition);
+            seededAny = true;
+
+            _logger.LogInformation(
+                "Namunaviy so'rovnoma qo'shildi: {Code} ({SectionCount} bo'lim, {QuestionCount} savol) — Draft holatida, hali nashr qilinmagan.",
+                dto.Code, dto.Sections.Count, dto.Questions.Count);
+        }
+
+        if (seededAny)
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
     }
 
     /// <summary>

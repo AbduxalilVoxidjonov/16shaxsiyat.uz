@@ -50,10 +50,11 @@ bajaradi va to'xtaydi; qadamlardan biri muvaffaqiyatsiz bo'lsa, keyingisi ishga 
 
 ### `seed` zanjirda YO'Q — `init` profili ostida
 
-`seed` (190 savol, 16 tip, kasb xaritasi, superadmin) `profiles: ["init"]` bilan
-belgilangan, ya'ni odatiy `docker compose up -d` uni **ishga tushirmaydi**. Katalog bir
-marta yozilgach har deploy'da qayta yugurishi shart emas edi (egasining 2026-09-05 qarori).
-Kerak bo'lganda — bo'sh baza, yangi savol banki yoki yangilangan tip katalogi:
+`seed` (190 savol — 4 tizim metodikasi, 16 tip, kasb xaritasi, 1 namunaviy so'rovnoma — 25
+savol, `docs/18` §7, superadmin) `profiles: ["init"]` bilan belgilangan, ya'ni odatiy
+`docker compose up -d` uni **ishga tushirmaydi**. Katalog bir marta yozilgach har deploy'da
+qayta yugurishi shart emas edi (egasining 2026-09-05 qarori). Kerak bo'lganda — bo'sh baza,
+yangi savol banki yoki yangilangan tip katalogi:
 
 ```bash
 docker compose --profile init run --rm seed
@@ -64,6 +65,13 @@ solishtiradi va yangilik bo'lmasa bir soniyada tugaydi — "qayta yugurish"ning 
 Uni ham profil ostiga olish xavfli: `Program.cs` ishga tushishda sxema eskirganini
 TEKSHIRMAYDI, shu sabab o'tkazib yuborilgan migratsiya xatoni jimgina, keyinroq
 "column does not exist" ko'rinishida chiqaradi.
+
+**Namunaviy so'rovnoma (`INTELLECT-SURVEY`, `docs/18` §7) — `Draft` holatida seed qilinadi,
+avtomatik nashr QILINMAYDI.** Seed'dan keyin superadmin Katalogda uni ochib, 2-B bo'limidagi
+o'quv markaz nomlarini haqiqiylariga almashtirishi, so'ng "Nashr qilish" bosishi kerak
+(2-B bo'lim nomlari seed faylida to'ldirilmagan namuna qiymatlar — `docs/18` §7 tafsilotlar
+bilan). `Code` bo'yicha anketa allaqachon mavjud bo'lsa qayta seed uni BUTUNLAY o'tkazib
+yuboradi — superadmin tahriri hech qachon ustidan yozilmaydi.
 
 ### Obraz bir marta quriladi
 

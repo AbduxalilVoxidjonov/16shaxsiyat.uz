@@ -369,9 +369,12 @@ Tafsilotlar:
   savoliga javob **"Ha, Intellect o'quv markazida o'qiyman"** bo'lsa ko'rsatilsin.»
 - **Oqim ko'rinishi** (`BranchingPreview`, faqat o'qish) — bo'limlar ro'yxati tartib bo'yicha,
   har biri savollar soni va ko'rsatish sharti (yoki "Har doim ko'rinadi") bilan.
-- Import (JSON) — `docs/examples/sorovnoma-intellect.json` namunasi (5 bo'lim, 25 savol)
-  xatosiz o'qiladi; nashr qilishdan oldingi 10 ta yangi tekshiruv kodi (`VISIBILITY_*`,
-  `QUESTION_TYPE_NOT_SCORABLE`, `SECTION_EMPTY` va h.k.) o'zbekcha matn bilan ko'rsatiladi.
+- Import (JSON) — sxema namunasi
+  `src/StudentRoadMap.Infrastructure/Persistence/SeedData/surveys/intellect-survey.json`
+  (5 bo'lim, 25 savol) xatosiz o'qiladi; nashr qilishdan oldingi 10 ta yangi tekshiruv kodi
+  (`VISIBILITY_*`, `QUESTION_TYPE_NOT_SCORABLE`, `SECTION_EMPTY` va h.k.) o'zbekcha matn bilan
+  ko'rsatiladi. Bu aniq anketa (`INTELLECT-SURVEY`) endi SEED qilinadi (`docs/18` §7) — admin
+  uni Katalogda tayyor `Draft` sifatida ko'radi, qayta import qilishning hojati yo'q.
 
 ### A-9 Audit log (`/admin/audit`)
 Filtr: harakat turi, obyekt, sana. Qator kengaytirilsa `before/after` JSON diff ko'rinadi.

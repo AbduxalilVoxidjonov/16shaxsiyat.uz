@@ -1,5 +1,5 @@
 {
-  "$comment": "NAMUNA — egasining 'Maktab o'quvchilari uchun so'rovnoma' hujjati to'liq, import qilishga tayyor. Admin panel: Katalog → Import (JSON). Bu SEED EMAS: mijozga xos kontent tizim metodikalari qatoriga qo'shilmaydi. Import qilgach o'quv markaz nomlarini (Q2B_1 variantlari) o'z hududingizdagi haqiqiy markazlarga almashtiring, so'ng nashr qiling va dasturga biriktiring.",
+  "$comment": "SEED: bu fayl `DbSeeder` tomonidan avtomatik, BIR MARTA qo'shiladi (idempotent — 'code' allaqachon bazada bo'lsa BUTUNLAY o'tkazib yuboriladi, superadmin tahriri qayta seeddan himoyalangan — docs/18 §7). Natija har doim 'Status = Draft': 2-B bo'limidagi (Q2B_1) o'quv markaz nomlari hali to'ldirilmagan namuna qiymatlar — superadmin Katalog panelida ularni o'z hududidagi haqiqiy markaz nomlariga almashtirishi, so'ngra 'Nashr qilish' tugmasini bosishi SHART. Manba: 'Maktablar uchun Elektron So'rovnoma - Savollar va Tarmoqlanish Strukturasi' hujjati (docs/18-tarmoqlanuvchi-sorovnoma.md §7).",
   "code": "INTELLECT-SURVEY",
   "nameUz": "Maktab o'quvchilari uchun so'rovnoma",
   "descriptionUz": "Qo'shimcha ta'lim bo'yicha qisqa so'rovnoma. Javoblaringiz maxfiy saqlanadi va faqat xizmat sifatini yaxshilash uchun ishlatiladi.",
@@ -12,14 +12,14 @@
     {
       "code": "S1",
       "titleUz": "Asosiy ma'lumotlar",
-      "descriptionUz": "Bu bo'limni barcha o'quvchilar to'ldiradi.",
+      "descriptionUz": "Quyidagi ma'lumotlarni to'ldiring — bu bo'lim barcha o'quvchilar uchun majburiy.",
       "displayOrder": 1,
       "visibility": null
     },
     {
       "code": "S2A",
       "titleUz": "Intellect o'quvchilari uchun",
-      "descriptionUz": "Bir necha savol — darslar sifatini yaxshilashimizga yordam beradi.",
+      "descriptionUz": "Bir nechta savolga javob bering — bu darslarimiz sifatini yanada oshirishga yordam beradi.",
       "displayOrder": 2,
       "visibility": {
         "match": "All",
@@ -180,7 +180,7 @@
       "direction": 1,
       "weight": 1.0,
       "isRequired": true,
-      "placeholder": "Fan nomini yozing",
+      "placeholder": "Masalan: Fizika",
       "maxLength": 120,
       "visibility": {
         "match": "All",
@@ -306,7 +306,7 @@
       "direction": 1,
       "weight": 1.0,
       "isRequired": true,
-      "placeholder": "Markaz nomi",
+      "placeholder": "Masalan: Yulduz o'quv markazi",
       "maxLength": 120,
       "visibility": {
         "match": "All",

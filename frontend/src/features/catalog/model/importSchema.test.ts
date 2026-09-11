@@ -10,14 +10,16 @@ import {
 } from './importSchema';
 
 /**
- * `docs/18` §7 — egasining tayyor namunasi, import qilishga tayyor JSON.
+ * `docs/18` §7 — egasining namunasi. Bu fayl endi SEED (`DbSeeder.SeedSurveysAsync`, yagona
+ * manba `Infrastructure/Persistence/SeedData/surveys/`), avvalgi `docs/examples/` nusxasi
+ * olib tashlangan — ikki joyda holat saqlash chalkashlikka olib keladi (`CLAUDE.md`).
  * `process.cwd()` — Vitest'ni ishga tushirgan katalog (`frontend/`, `package.json`dagi
  * `test` buyrug'i shu yerdan chaqiriladi); `import.meta.url` bu yerda ishlatilmaydi, chunki
  * Vitest'ning modul transformi uni doim `file://` sxemali qilib bermaydi.
  */
 const SOROVNOMA_INTELLECT_PATH = path.resolve(
   process.cwd(),
-  '../docs/examples/sorovnoma-intellect.json',
+  '../src/StudentRoadMap.Infrastructure/Persistence/SeedData/surveys/intellect-survey.json',
 );
 
 /** Fayl ichidagi bitta savol — `testImportFileSchema.questions` elementi. */
@@ -267,7 +269,7 @@ describe('Excel parse natijasi ↔ JSON import sxemasi', () => {
  * XATOSIZ o'qiy olishi SHART (P52 topshirig'i) — shu sabab bu test QULFLANGAN: fayl yoki
  * sxema o'zgarsa, shu yerda darhol qizarishi kerak.
  */
-describe("docs/examples/sorovnoma-intellect.json — tarmoqlanuvchi so'rovnoma namunasi", () => {
+describe("SeedData/surveys/intellect-survey.json — tarmoqlanuvchi so'rovnoma namunasi", () => {
   it('xatosiz o‘qiladi va importga tayyor', () => {
     const raw = readFileSync(SOROVNOMA_INTELLECT_PATH, 'utf-8');
     const result = validateTestImportFile(raw);

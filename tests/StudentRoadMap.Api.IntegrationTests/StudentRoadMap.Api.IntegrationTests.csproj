@@ -33,15 +33,10 @@
   </ItemGroup>
 
   <!--
-    P52 (`docs/18` §5/§7): "Import (JSON)" qabul mezoni — `docs/examples/sorovnoma-intellect.json`
-    o'zgartirilmaydigan kirish (o'zgarmas fayl, `docs/18` chegarasi) — chiqish katalogiga
-    nusxalanadi, shu bilan test uni HTTP orqali import qilib, nashr qilib sinaydi.
+    Namunaviy so'rovnoma endi SEED (`Infrastructure/Persistence/SeedData/surveys/intellect-survey.json`,
+    `docs/18` §7) — alohida `Content` yozuvi shart emas: `Infrastructure.csproj`dagi
+    `Persistence\SeedData\**\*.json` glob'i `ProjectReference` zanjiri orqali (Infrastructure →
+    Api → bu loyiha) chiqish katalogiga "SeedData/surveys/..." sifatida O'ZI ko'chadi.
   -->
-  <ItemGroup>
-    <Content Include="..\..\docs\examples\sorovnoma-intellect.json">
-      <Link>examples\sorovnoma-intellect.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
 
 </Project>

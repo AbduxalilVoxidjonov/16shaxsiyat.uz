@@ -1020,7 +1020,9 @@ qabul qiladi — `sectionCode` ko'rsatilgan bo'lim OLDIN import qilingan bo'lish
 
 **Import (JSON) va Excel chegarasi.** "Katalog → Import (JSON)" oqimi (`POST /tests` →
 `POST .../sections` → `POST .../questions/import`) `sections[]`/`sectionCode`/`visibility`/
-`options[]`ni to'liq qo'llab-quvvatlaydi — namuna: `docs/examples/sorovnoma-intellect.json`.
+`options[]`ni to'liq qo'llab-quvvatlaydi — sxema namunasi:
+`src/StudentRoadMap.Infrastructure/Persistence/SeedData/surveys/intellect-survey.json`
+(egasining haqiqiy so'rovnomasi, endi bu fayl SEED — `docs/18` §7).
 **Excel yo'li (`export.xlsx`/`import-template.xlsx`/`parse-excel`) KENGAYTIRILMAGAN** — jadval
 shakli tarmoqlanishni (shartli ko'rinish) ifodalay olmaydi. Bo'limi yoki `visibility`si bor
 anketani Excel'ga eksport qilish HOZIRCHA bu ma'lumotlarni TASHLAB YUBORADI (faqat tekis

@@ -66,9 +66,9 @@ internal static class TestDataFactory
     /// kodida `AssessmentProgram.AddTest`/`Publish` domen metodlari orqali ishlatiladi).
     /// </summary>
     /// <summary>
-    /// `public` (avval `private`) — P52 integratsiya testi (`docs/examples/sorovnoma-intellect.json`
-    /// HTTP orqali import qilinadi, ya'ni bu yordamchi fabrikalar ORQALI emas) uchun tashqaridan
-    /// chaqiriladi.
+    /// `public` (avval `private`) — P52 integratsiya testi (`AdminCatalogBranchingImportEndpointTests`,
+    /// namunaviy so'rovnoma `SeedDataLoader` orqali to'g'ridan-to'g'ri quriladi, ya'ni bu
+    /// yordamchi fabrikalar ORQALI emas) uchun tashqaridan chaqiriladi.
     /// </summary>
     public static async Task AttachTestToDefaultProgramAsync(AppDbContext db, DateTimeOffset now, Guid testDefinitionId, int displayOrder)
     {

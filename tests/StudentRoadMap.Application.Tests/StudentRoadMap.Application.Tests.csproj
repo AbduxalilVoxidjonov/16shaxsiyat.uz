@@ -31,4 +31,13 @@
     </Content>
   </ItemGroup>
 
+  <!-- `SeedDataLoaderSurveyRealFixtureTests` — namunaviy so'rovnoma (`docs/18` §7), yagona
+       manba `Infrastructure/Persistence/SeedData/surveys/` da (fayl tahrirlanmaydi/dublikat qilinmaydi). -->
+  <ItemGroup>
+    <Content Include="..\..\src\StudentRoadMap.Infrastructure\Persistence\SeedData\surveys\*.json">
+      <Link>SeedData\surveys\%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

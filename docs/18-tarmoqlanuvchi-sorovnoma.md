@@ -502,14 +502,39 @@ Import sxemasi (`model/importSchema.ts`) va nashr xatolari ro'yxati
 
 ---
 
-## 7. Tayyor namuna
+## 7. Namunaviy so'rovnoma — SEED (egasining talabi)
 
-`docs/examples/sorovnoma-intellect.json` — egasining so'rovnomasi to'liq, import qilishga
-tayyor JSON (kod `INTELLECT-SURVEY`, `scoringMode: "Survey"`, **5 bo'lim, 25 savol**,
-1.6-savol filtri, ikkita "Boshqa (kiriting)" tarmog'i va bitta `ContainsAny` sharti bilan). Superadmin uni
-**Katalog → Import (JSON)** orqali yuklab, nashr qilib, dasturga biriktiradi.
+`src/StudentRoadMap.Infrastructure/Persistence/SeedData/surveys/intellect-survey.json` —
+egasining "Maktablar uchun Elektron So'rovnoma" hujjatidagi so'rovnoma to'liq (kod
+`INTELLECT-SURVEY`, `scoringMode: "Survey"`, **5 bo'lim, 25 savol**, 1.6-savol filtri, ikkita
+"Boshqa (kiriting)" tarmog'i va bitta `ContainsAny` sharti bilan).
 
-Bu fayl **seed EMAS** — mijozga xos kontent tizim metodikalari qatoriga qo'shilmaydi.
+**Bu fayl endi SEED** — `DbSeeder.SeedSurveysAsync` uni har `--seed` ishga tushishida o'qiydi
+(`docs/13` §"seed" bo'limi). Manba **yagona joyda** saqlanadi: eski `docs/examples/` nusxasi
+olib tashlangan (ikki joyda holat saqlash chalkashlikka olib keladi — `CLAUDE.md` "Joriy
+holat" izohi).
+
+**Idempotentlik — tizim metodikalaridan TUBDAN farqli:** `Code` (`INTELLECT-SURVEY`) bo'yicha
+anketa bazada allaqachon bo'lsa, seed uni BUTUNLAY o'tkazib yuboradi — matn, variant, shart
+QAYTA YOZILMAYDI. Sabab: bu anketa `Kind = Custom`/`IsSystem = false` — superadmin uni panelda
+tahrirlashi (masalan, o'quv markaz nomlarini) ATAYLAB kutiladi, qayta seed uning ishini yo'q
+qilib yubormasligi kerak (4 ta tizim metodikasidagi "matn/tartib qayta sinxronlanadi" mantig'i
+bu yerga OLIB KELINMAGAN).
+
+**Natija har doim `Status = Draft`** — avtomatik nashr qilinmaydi. Sabab: 2-B bo'limidagi
+(`Q2B_1`) raqobatchi o'quv markazlari `"1-o'quv markaz (nomini tahrirlang)"` kabi
+TO'LDIRILMAGAN namuna qiymatlar bilan keladi — ularning haqiqiy nomini faqat egasi biladi.
+`Published` qilib seed qilinsa, o'quvchiga shu tahrirlanmagan matn ko'rinib qolardi.
+
+**Superadmin nima qilishi kerak (qadam-baqadam):**
+1. Katalog → `INTELLECT-SURVEY` (`Draft` sifatida allaqachon ko'rinadi, import shart emas).
+2. `Q2B_1` savolining variantlarini (2-B bo'lim, "Boshqa markazda o'qiyotganlar uchun") o'z
+   hududidagi haqiqiy o'quv markazlari nomlariga almashtiring.
+3. "Nashr qilish" tugmasini bosing va dasturga (`AssessmentProgram`) biriktiring.
+
+Superadmin xohlasa **Katalog → Import (JSON)** orqali BOSHQA (yangi) tarmoqlanuvchi
+so'rovnoma ham yuklashi mumkin — bu yo'l o'zgarishsiz qoladi, faqat `INTELLECT-SURVEY` uchun
+endi qo'lda import qilish shart emas.
 
 ---
 
