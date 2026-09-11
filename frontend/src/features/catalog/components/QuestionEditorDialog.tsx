@@ -220,14 +220,17 @@ export function QuestionEditorDialog({
       }
     >
       {/*
-        Ikki ustunli tartib (egasining talabi: oyna juda uzun bo'lib ketmasin). `sm:` dan
-        yuqorida qisqa maydonlar ikkitalik ustunda, mobilda (390px) bitta ustun bo'lib qoladi
-        (`SchoolFormDialog` naqshi). Uzun/murakkab bloklar (matni (o'zbekcha), variantlar va
-        ko'rsatish sharti muharrirlari, qulflangan tizim izohi) doim to'liq kenglikda —
-        `sm:col-span-2`. Bog'liq qisqa maydonlar (kod/tur/tartib, shkala/yo'nalish/og'irlik,
-        placeholder/shablon/uzunlik, min/max tanlov) o'z ichki 2 ustunli mini-grid'iga
-        joylangan — shunda ular qo'shni sharti bilan aralashib ketmaydi. Ruscha/inglizcha matni
-        `<details>` ichida yig'ilgan (mahsulot hozircha faqat o'zbekcha) — pastga qarang.
+        Ikki ustunli tashqi tartib (egasining talabi: oyna juda uzun bo'lib ketmasin). `sm:`
+        dan yuqorida qisqa maydonlar ikkitalik ustunda, mobilda (390px) bitta ustun bo'lib
+        qoladi (`SchoolFormDialog` naqshi). Uzun/murakkab bloklar (matni (o'zbekcha), variantlar
+        va ko'rsatish sharti muharrirlari, qulflangan tizim izohi) doim to'liq kenglikda —
+        `sm:col-span-2`. Uch maydonli mantiqiy guruhlar (kod/tur/tartib, shkala/yo'nalish/
+        og'irlik, placeholder/shablon/uzunlik) o'z ichki 3 ustunli mini-grid'iga joylangan —
+        oyna `max-w-4xl` bo'lgani uchun uchtasi bir qatorga sig'adi va bo'sh katak qolmaydi.
+        Ikki maydonli guruh (min/max tanlov) 2 ustunli qoladi. `sectionCode` hech qanday
+        guruhga kirmagani uchun `max-w-xs` bilan tor qilib alohida qatorga chiqarilgan.
+        Ruscha/inglizcha matni `<details>` ichida yig'ilgan (mahsulot hozircha faqat
+        o'zbekcha) — pastga qarang.
       */}
       <form
         id={FORM_ID}
@@ -241,7 +244,7 @@ export function QuestionEditorDialog({
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-3">
           {isEdit ? (
             <Input
               label={t('catalog.questionForm.codeLabel')}
@@ -337,7 +340,7 @@ export function QuestionEditorDialog({
               <Lock size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
               {t('catalog.questionForm.systemLockedHint')}
             </p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <Input
                 label={t('catalog.questionsTable.scale')}
                 value={question?.scale ?? ''}
@@ -368,7 +371,7 @@ export function QuestionEditorDialog({
         ) : (
           <>
             {!isSurveyOnlyType && (
-              <div className="grid grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-3">
                 <Input
                   label={t('catalog.questionsTable.scale')}
                   hint={t('catalog.questionForm.scaleHint')}
@@ -397,7 +400,7 @@ export function QuestionEditorDialog({
             )}
 
             {isTextType && (
-              <div className="grid grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-3">
                 <Input
                   label={t('catalog.questionForm.placeholderLabel')}
                   error={errors.placeholder?.message}
@@ -452,11 +455,19 @@ export function QuestionEditorDialog({
 
             {allowBranching ? (
               <>
-                <Select
-                  label={t('catalog.questionForm.sectionLabel')}
-                  options={sectionOptions}
-                  {...register('sectionCode')}
-                />
+                {/*
+                  Bu maydon hech qanday qo'shni qisqa maydon bilan bir mantiqiy guruhga
+                  kirmaydi (shart va turga bog'liq bo'lmagan yagona tanlov), shuning uchun
+                  uni to'liq qatorga chiqarib, `max-w-xs` bilan tor qilamiz — aks holda
+                  ikki ustunli tashqi grid'da yonida bo'sh katak qolar edi.
+                */}
+                <div className="max-w-xs sm:col-span-2">
+                  <Select
+                    label={t('catalog.questionForm.sectionLabel')}
+                    options={sectionOptions}
+                    {...register('sectionCode')}
+                  />
+                </div>
                 <div className="sm:col-span-2">
                   <VisibilityRuleEditor
                     value={visibilityValue}

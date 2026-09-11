@@ -274,9 +274,9 @@ describe('QuestionEditorDialog — turga qarab maydonlar', () => {
     const textUzWrapper = screen.getByLabelText("Matni (o'zbekcha)").closest('div')?.parentElement;
     expect(textUzWrapper).toHaveClass('sm:col-span-2');
 
-    // Kod/tur/tartib qisqa maydonlari — o'z ichki 2 ustunli mini-grid guruhida, forma
-    // darajasida esa to'liq kenglikni egallaydi (shu guruh ichida ikkitalik joylashadi).
+    // Kod/tur/tartib qisqa maydonlari — o'z ichki 3 ustunli mini-grid guruhida (uchtasi
+    // bir qatorga sig'ishi uchun), forma darajasida esa to'liq kenglikni egallaydi.
     const identityGroup = screen.getByLabelText('Savol kodi').closest('div')?.parentElement;
-    expect(identityGroup).toHaveClass('grid', 'sm:grid-cols-2', 'sm:col-span-2');
+    expect(identityGroup).toHaveClass('grid', 'sm:grid-cols-3', 'sm:col-span-2');
   });
 });
