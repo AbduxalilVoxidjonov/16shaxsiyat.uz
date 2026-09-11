@@ -1,3 +1,5 @@
+using StudentRoadMap.Application.Common.Models;
+
 namespace StudentRoadMap.Application.Admin.Programs;
 
 /// <summary>
@@ -59,6 +61,11 @@ public sealed record AdminProgramDetailDto(
     string Visibility,
     /// <summary>P52 (2026-09-11): `"Full"`/`"None"` — `AssessmentProgram.RegistrationMode`.</summary>
     string RegistrationMode,
+    /// <summary>
+    /// P52 kengaytmasi (2026-09-11, `docs/18` §9.5): dastur `null` (standart) saqlagan bo'lsa
+    /// ham bu yerda HAR DOIM YECHILGAN (resolved) qiymatlar keladi (`AssessmentProgram.ResolveRegistrationFields`).
+    /// </summary>
+    RegistrationFieldsDto RegistrationFields,
     string State,
     bool IsSystem,
     int DisplayOrder,

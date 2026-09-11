@@ -598,3 +598,119 @@ qiladi (`docs/06` §8, 2026-09-05 qarori: ikki oqim ataylab ajratilgan).
 - DDL: `assessment_programs.registration_mode`, `students.is_anonymous`,
   `students.birth_date`/`students.phone` → NULLABLE (`docs/05`, migratsiya
   `AddProgramRegistrationModeAndAnonymousStudents`).
+
+## 9.5 Har dasturda alohida sozlanadigan maydonlar (`RegistrationFields`, 2026-09-11)
+
+### 9.5.0 Muammo
+
+§9 registratsiyani BUTUNLAY yoqish/o'chirish (`RegistrationMode`) imkonini berdi, lekin
+"faqat" imkonini bermadi: masalan ota-ona telefoni yoki email so'ralmasin, lekin F.I.Sh./
+tug'ilgan sana/telefon qolsin — bunga ikkilik (`Full`/`None`) tugmasi yetarli emas edi.
+Egasiga ikki variant taklif qilindi (qo'shimcha savollar alohida so'rovnoma bloki sifatida
+QOLADI — o'zgarmadi): (1) barcha dasturlar uchun UMUMIY sozlama, (2) **har dasturda alohida**.
+Egasi ikkinchisini tanladi.
+
+### 9.5.1 Qaror
+
+Yangi enum **`RegistrationFieldRequirement`**: `Hidden = 1` (ko'rsatilmaydi, kelsa ham
+saqlanmaydi) · `Optional = 2` (ko'rsatiladi, bo'sh qoldirish mumkin) · `Required = 3`
+(ko'rsatiladi, bo'sh bo'lsa `400`).
+
+`AssessmentProgram` ga qiymat obyekti **`RegistrationFields`** (`Domain/Catalog/RegistrationFields.cs`,
+nullable — `null` bazada `NULL` (jsonb), "standart qiymatlar ishlatilsin" degani,
+`AssessmentProgram.ResolveRegistrationFields()`):
+
+| Maydon | Standart |
+|---|---|
+| `birthDate` | `Required` |
+| `gender` | `Optional` |
+| `grade` | `Required` |
+| `classLetter` | `Optional` |
+| `phone` | `Required` |
+| `parentPhone` | `Optional` |
+| `email` | `Optional` |
+
+**`fullName` sozlamada YO'Q** — `RegistrationMode = Full` bo'lsa har doim majburiy (ism
+kerak bo'lmasa `RegistrationMode = None` bor — ikkita mustaqil "ism shart emas" mexanizmi
+chalkashlik keltirib chiqarardi). Standart qiymatlar 2026-09-11 gacha bo'lgan qattiq kodlangan
+(`fullName`/`birthDate`/`grade`/`phone` majburiy) xatti-harakat bilan BAYT-BAYT mos.
+
+jsonb shakli (camelCase, enum — satr, `RegistrationFieldsJson`):
+
+```json
+{ "birthDate": "Required", "gender": "Optional", "grade": "Required",
+  "classLetter": "Optional", "phone": "Required", "parentPhone": "Optional", "email": "Optional" }
+```
+
+### 9.5.2 Invariantlar — `RegistrationMode` naqshi bilan
+
+Batareyali dastur (`PersonalityBattery.ContainedIn`): `birthDate` va `grade` **`Required`**
+bo'lishi SHART — ball normalari va AI tahlili shularga tayanadi. Buzilsa
+`DomainException("REGISTRATION_FIELD_REQUIRED_FOR_BATTERY")` → `400` (`docs/06` §6). Tekshiruv
+IKKI nazorat nuqtasida (`RegistrationMode` bilan bir xil naqsh): `AssessmentProgram.SetRegistrationFields()`
+(sozlama o'zgartirilganda) va `Publish()` (nashr qilinganda).
+
+**`gender` bu invariantga KIRMAYDI** — u erkin sozlanadi, batareyali dasturda ham
+(`Required` qilinsa ham muvaffaqiyatli).
+
+`RegistrationMode = None` bo'lsa `RegistrationFields` UMUMAN ishlatilmaydi (registratsiya
+ekrani ko'rsatilmaydi) — saqlansa ham zarari yo'q, `StartSessionCommandHandler` uni
+e'tiborga olmaydi (bu holatda batareya invarianti ham bo'sh: `RegistrationMode.None` allaqachon
+batareyasiz dasturni talab qiladi, `docs/18` §9.2).
+
+### 9.5.3 Sessiya boshlash — `POST /api/public/sessions`
+
+`StartSessionCommandHandler.ValidateRequiredIdentityFields` endi qattiq ro'yxat
+(`fullName`/`birthDate`/`grade`/`phone`) o'rniga DASTURNING `ResolveRegistrationFields()`
+natijasiga tayanadi:
+
+- `Required` maydon bo'sh → mavjud `errors` shaklida `400 VALIDATION_ERROR` (standart
+  sozlamadagi xabar matnlari o'zgarmagan).
+- `Hidden` maydon uchun kelgan qiymat **e'tiborsiz qoldiriladi** — mijoz baribir yuborsa ham
+  saqlanmaydi (`RegistrationMode.None`dagi "e'tiborsiz qoldirish" naqshi bilan bir xil, faqat
+  maydon darajasida).
+- `Optional` — hozirgidek: kelsa saqlanadi, kelmasa `null`/standart sentinel (`Student.NoGrade`
+  — `grade` uchun) bilan davom etadi.
+
+**Takrorlanishni aniqlash (BR-1) — nozik joy.** Mavjud tekshiruv `NormalizedName == ... &&
+BirthDate == ...` bo'yicha ishlaydi. `birthDate` `Required` BO'LMASA va o'quvchi uni
+kiritmasa, bu tekshiruv ishonchsiz bo'lib qoladi (bir xil ismli ikki o'quvchi bitta yozuvga
+qo'shilib ketishi mumkin — ma'lumot buzilishi). Shu sabab: **`birthDate` yo'q bo'lsa
+(`Optional`/`Hidden` va bo'sh) takrorlanish tekshiruvi UMUMAN bajarilmaydi** va har doim
+YANGI `Student` yaratiladi (`RegistrationMode.None` anonim oqimidagi qaror bilan bir xil
+naqsh — bu yerda esa o'quvchi anonim EMAS, F.I.Sh. bor). Qulflangan:
+`PublicRegistrationFieldsEndpointTests.StartSession_OptionalBirthDate_...`.
+
+**Domen tomoni:** `Student.Create` (`birthDate`/`phone` endi `DateOnly?`/`PhoneNumber?`) —
+2026-09-11dagi "anonim BO'LMAGAN o'quvchida ikkalasi DOIM to'ldirilgan" invarianti
+(`STUDENT_IDENTITY_REQUIRED`) OLIB TASHLANDI: endi ANY maydon (`birthDate`/`phone` ham)
+dasturga qarab `Optional`/`Hidden` bo'lishi mumkin, ya'ni anonim BO'LMAGAN o'quvchida ham
+ular `null` bo'lishi LEGITIM. Majburiylik endi FAQAT Application qatlamida
+(`ValidateRequiredIdentityFields`) tekshiriladi.
+
+### 9.5.4 API shartnomasi
+
+- `GET /api/public/schools/{slug}` → `programs[].registrationFields` — yuqoridagi jsonb
+  shakli, HAR DOIM yechilgan (resolved) qiymatlar bilan (`docs/07` §1.1).
+- Admin: `POST`/`PUT /api/admin/programs` `registrationFields` (ixtiyoriy, har ICHKI maydon
+  ham mustaqil ixtiyoriy) qabul qiladi; javobda (`AdminProgramDetailDto`) `registrationMode`
+  yonida qaytadi (`docs/07` §3.5).
+
+### 9.5.5 Migratsiya
+
+`assessment_programs.registration_fields` (jsonb, NULL). **Backfill YO'Q** — `NULL`
+"standart qiymatlar" deb talqin qilinadi (`ResolveRegistrationFields`), xuddi
+`questions.visibility_rule`/`question_sections.visibility_rule` naqshi kabi (§2.4). Mavjud
+dasturlar migratsiyadan keyin ham AYNAN standart qiymatlar bilan ishlaydi — hech narsa
+o'zgarmaydi. Bitta EF Core migratsiyasi `AddProgramRegistrationFields` — faqat qo'shish,
+destruktiv qadam yo'q.
+
+### 9.5.6 Testlar (DoD)
+
+`tests/StudentRoadMap.Domain.Tests/Catalog/RegistrationFieldsTests.cs` (qiymat obyekti,
+invariant, jsonb roundtrip), `AssessmentProgramTests.cs` (`SetRegistrationFields`/`Publish`
+ikki nazorat nuqtasi), `StudentTests.cs` (anonim bo'lmagan o'quvchida `birthDate`/`phone`
+`null` bo'lishi mumkinligi), `PublicRegistrationFieldsEndpointTests.cs` (`Hidden` e'tiborsiz
+qoldirilishi, `Optional birthDate` + BR-1 o'tkazib yuborilishi, `Required email`/`gender`
+`400`, `GetSchoolInfo` shakli, standart sozlama regressiyasi), `AdminProgramRegistrationFieldsEndpointTests.cs`
+(standart/qisman sozlama, jsonb roundtrip, ikki nazorat nuqtasi, `gender` erkin sozlanishi).

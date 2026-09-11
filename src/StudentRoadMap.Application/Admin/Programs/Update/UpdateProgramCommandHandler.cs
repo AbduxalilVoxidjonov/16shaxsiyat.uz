@@ -40,10 +40,12 @@ internal sealed class UpdateProgramCommandHandler : IRequestHandler<UpdateProgra
         {
             program.Id, program.NameUz, Visibility = program.Visibility.ToString(), program.DisplayOrder,
             RegistrationMode = program.RegistrationMode.ToString(),
+            RegistrationFields = RegistrationFieldsJson.Serialize(program.RegistrationFields),
         });
 
         var visibility = Enum.Parse<ProgramVisibility>(request.Visibility, ignoreCase: true);
         var registrationMode = Enum.Parse<RegistrationMode>(request.RegistrationMode, ignoreCase: true);
+        var registrationFields = RegistrationFieldsMapping.ToDomain(request.RegistrationFields);
 
         program.UpdateDetails(request.NameUz, request.DescriptionUz, request.DisplayOrder, now);
         if (program.Visibility != visibility)
@@ -51,16 +53,21 @@ internal sealed class UpdateProgramCommandHandler : IRequestHandler<UpdateProgra
             program.SetVisibility(visibility, now);
         }
 
-        if (program.RegistrationMode != registrationMode)
+        // P52 (`RegistrationMode`) / P52 kengaytmasi (`RegistrationFields`, `docs/18` §9.5):
+        // ikkalasi ham batareya bayrog'iga tayanadi — bitta so'rov bilan LAZY hisoblanadi va
+        // ikkalasi orasida ULASHILADI (ikkita mustaqil DB o'qish shart emas).
+        // `program.Tests` bu yerda ISHONCHSIZ — `program` Include'siz yuklangan
+        // (`PublishProgramCommandHandler`dagi bilan bir xil sabab), shu sabab tarkib ALOHIDA
+        // so'rov bilan o'qiladi.
+        bool? hasPersonalityBattery = null;
+
+        async Task<bool> ResolveHasPersonalityBatteryAsync()
         {
-            // P52: BIRINCHI nazorat nuqtasi (`AssessmentProgram.Publish` izohi) — biriktirilgan
-            // testlar yuklanib, ilmiy batareya bayrog'i domenga TAYYOR holda beriladi.
-            // Buzilsa `DomainException("REGISTRATION_REQUIRED_FOR_BATTERY")` OTILADI (ushlanmaydi —
-            // `AddProgramTestCommandHandler`dagi `AddTest` bilan bir xil naqsh, `ExceptionHandlingMiddleware`
-            // `400`ga aylantiradi, `ProblemCodes.HttpStatusByCode`).
-            // `program.Tests` bu yerda ISHONCHSIZ — `program` Include'siz yuklangan
-            // (`PublishProgramCommandHandler`dagi bilan bir xil sabab), shu sabab tarkib
-            // ALOHIDA so'rov bilan o'qiladi.
+            if (hasPersonalityBattery is not null)
+            {
+                return hasPersonalityBattery.Value;
+            }
+
             var currentProgramTests = await _executor.ToListAsync(
                 _context.ProgramTests.Where(pt => pt.ProgramId == program.Id),
                 cancellationToken).ConfigureAwait(false);
@@ -68,15 +75,32 @@ internal sealed class UpdateProgramCommandHandler : IRequestHandler<UpdateProgra
             var currentTestDefinitions = await _executor.ToListAsync(
                 _context.TestDefinitions.Where(t => currentTestDefinitionIds.Contains(t.Id)),
                 cancellationToken).ConfigureAwait(false);
-            var hasPersonalityBattery = PersonalityBattery.ContainedIn(currentTestDefinitions);
 
-            program.SetRegistrationMode(registrationMode, hasPersonalityBattery, now);
+            hasPersonalityBattery = PersonalityBattery.ContainedIn(currentTestDefinitions);
+            return hasPersonalityBattery.Value;
+        }
+
+        if (program.RegistrationMode != registrationMode)
+        {
+            // P52: BIRINCHI nazorat nuqtasi (`AssessmentProgram.Publish` izohi). Buzilsa
+            // `DomainException("REGISTRATION_REQUIRED_FOR_BATTERY")` OTILADI (ushlanmaydi —
+            // `AddProgramTestCommandHandler`dagi `AddTest` bilan bir xil naqsh,
+            // `ExceptionHandlingMiddleware` `400`ga aylantiradi, `ProblemCodes.HttpStatusByCode`).
+            program.SetRegistrationMode(registrationMode, await ResolveHasPersonalityBatteryAsync().ConfigureAwait(false), now);
+        }
+
+        if (program.RegistrationFields != registrationFields)
+        {
+            // P52 kengaytmasi: BIRINCHI nazorat nuqtasi (`AssessmentProgram.Publish` izohi).
+            // Buzilsa `DomainException("REGISTRATION_FIELD_REQUIRED_FOR_BATTERY")` OTILADI.
+            program.SetRegistrationFields(registrationFields, await ResolveHasPersonalityBatteryAsync().ConfigureAwait(false), now);
         }
 
         var after = AuditSnapshot.Serialize(new
         {
             program.Id, program.NameUz, Visibility = program.Visibility.ToString(), program.DisplayOrder,
             RegistrationMode = program.RegistrationMode.ToString(),
+            RegistrationFields = RegistrationFieldsJson.Serialize(program.RegistrationFields),
         });
 
         _context.Add(AuditLog.Create(

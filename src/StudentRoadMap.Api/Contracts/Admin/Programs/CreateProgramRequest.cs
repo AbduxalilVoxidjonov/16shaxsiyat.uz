@@ -1,4 +1,5 @@
 using StudentRoadMap.Application.Admin.Programs.Create;
+using StudentRoadMap.Application.Common.Models;
 
 namespace StudentRoadMap.Api.Contracts.Admin.Programs;
 
@@ -10,8 +11,10 @@ public sealed record CreateProgramRequest(
     int DisplayOrder,
     string Visibility,
     /// <summary>P52 (2026-09-11): `"Full"`/`"None"` — ixtiyoriy, standart `"Full"`.</summary>
-    string RegistrationMode = "Full")
+    string RegistrationMode = "Full",
+    /// <summary>P52 kengaytmasi (2026-09-11, `docs/18` §9.5): ixtiyoriy — `null` standart qiymatlarni bildiradi.</summary>
+    RegistrationFieldsInput? RegistrationFields = null)
 {
     public CreateProgramCommand ToCommand(Guid adminUserId, string? ipAddress, string? userAgent) =>
-        new(Code, NameUz, DescriptionUz, DisplayOrder, Visibility, adminUserId, RegistrationMode, ipAddress, userAgent);
+        new(Code, NameUz, DescriptionUz, DisplayOrder, Visibility, adminUserId, RegistrationMode, RegistrationFields, ipAddress, userAgent);
 }

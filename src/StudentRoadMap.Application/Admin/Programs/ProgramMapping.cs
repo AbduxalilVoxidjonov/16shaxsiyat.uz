@@ -1,4 +1,5 @@
 using StudentRoadMap.Application.Common.Interfaces;
+using StudentRoadMap.Application.Common.Models;
 using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Schools;
 
@@ -89,6 +90,7 @@ internal static class ProgramMapping
             program.Kind.ToString(),
             program.Visibility.ToString(),
             program.RegistrationMode.ToString(),
+            RegistrationFieldsMapping.ToDto(program.ResolveRegistrationFields()),
             program.State.ToString(),
             program.IsSystem,
             program.DisplayOrder,

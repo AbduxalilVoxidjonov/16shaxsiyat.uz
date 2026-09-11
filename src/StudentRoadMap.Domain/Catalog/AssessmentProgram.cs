@@ -32,6 +32,15 @@ public sealed class AssessmentProgram : AggregateRoot
     /// </summary>
     public RegistrationMode RegistrationMode { get; private set; }
 
+    /// <summary>
+    /// P52 kengaytmasi (`RegistrationFields.cs` izohiga qarang, `docs/18` §9.5): har bir
+    /// ro'yxatdan o'tish maydonining (F.I.Sh. bundan mustasno) holati. `null` — "standart
+    /// qiymatlar ishlatilsin" (<see cref="ResolveRegistrationFields"/>), bazada `NULL` (jsonb).
+    /// `RegistrationMode = None` bo'lganda bu maydon UMUMAN ishlatilmaydi (registratsiya
+    /// ekrani ko'rsatilmaydi) — saqlansa ham zarari yo'q, validatsiyada e'tiborga olinmaydi.
+    /// </summary>
+    public RegistrationFields? RegistrationFields { get; private set; }
+
     public ProgramStatus Status { get; private set; }
 
     public bool IsActive { get; private set; }
@@ -75,6 +84,7 @@ public sealed class AssessmentProgram : AggregateRoot
         ProgramKind kind,
         ProgramVisibility visibility,
         RegistrationMode registrationMode,
+        RegistrationFields? registrationFields,
         bool isSystem,
         Guid? createdByAdminUserId,
         DateTimeOffset now)
@@ -87,6 +97,7 @@ public sealed class AssessmentProgram : AggregateRoot
         Kind = kind;
         Visibility = visibility;
         RegistrationMode = registrationMode;
+        RegistrationFields = registrationFields;
         Status = ProgramStatus.Draft;
         IsActive = true;
         IsSystem = isSystem;
@@ -97,9 +108,13 @@ public sealed class AssessmentProgram : AggregateRoot
 
     /// <summary>
     /// Yangi (bo'sh, `Draft`) dastur — hali test biriktirilmagan, shu sabab
-    /// <paramref name="registrationMode"/> bu bosqichda hech qanday batareya invariantini
-    /// buza olmaydi (tekshiruv `SetRegistrationMode`/`Publish`da, test biriktirilgach ishlaydi).
+    /// <paramref name="registrationMode"/> va <paramref name="registrationFields"/> bu bosqichda
+    /// hech qanday batareya invariantini buza olmaydi (tekshiruv `SetRegistrationMode`/
+    /// `SetRegistrationFields`/`Publish`da, test biriktirilgach ishlaydi).
     /// </summary>
+    /// <param name="registrationFields">
+    /// P52 kengaytmasi: `null` — standart qiymatlar (<see cref="RegistrationFields.Default"/>).
+    /// </param>
     public static AssessmentProgram Create(
         Guid id,
         string code,
@@ -109,6 +124,7 @@ public sealed class AssessmentProgram : AggregateRoot
         ProgramKind kind = ProgramKind.Custom,
         ProgramVisibility visibility = ProgramVisibility.Assigned,
         RegistrationMode registrationMode = RegistrationMode.Full,
+        RegistrationFields? registrationFields = null,
         string? descriptionUz = null,
         Guid? createdByAdminUserId = null)
     {
@@ -123,7 +139,8 @@ public sealed class AssessmentProgram : AggregateRoot
         }
 
         return new AssessmentProgram(
-            id, code, nameUz, descriptionUz, displayOrder, kind, visibility, registrationMode, isSystem: false, createdByAdminUserId, now);
+            id, code, nameUz, descriptionUz, displayOrder, kind, visibility, registrationMode, registrationFields,
+            isSystem: false, createdByAdminUserId, now);
     }
 
     /// <summary>
@@ -150,10 +167,12 @@ public sealed class AssessmentProgram : AggregateRoot
 
         // Tizim dasturi HAR DOIM ilmiy batareyani o'z ichiga oladi — `RegistrationMode` bu
         // yerda parametr sifatida ochilmaydi, DOIM `Full` (invariant: batareya bor dastur
-        // registratsiyasiz bo'lolmaydi, `RegistrationMode.cs` izohi).
+        // registratsiyasiz bo'lolmaydi, `RegistrationMode.cs` izohi). `RegistrationFields` ham
+        // `null` (standart) — standart to'plamda `BirthDate`/`Grade` allaqachon `Required`,
+        // ya'ni batareya invariantini avtomatik qanoatlantiradi.
         var program = new AssessmentProgram(
             id, code, nameUz, descriptionUz, displayOrder, ProgramKind.System, ProgramVisibility.Public,
-            RegistrationMode.Full, isSystem: true, createdByAdminUserId: null, now);
+            RegistrationMode.Full, registrationFields: null, isSystem: true, createdByAdminUserId: null, now);
 
         foreach (var (testDefinitionId, testDisplayOrder) in tests)
         {
@@ -299,6 +318,7 @@ public sealed class AssessmentProgram : AggregateRoot
         }
 
         GuardRegistrationModeAllowsBattery(hasPersonalityBattery);
+        GuardRegistrationFieldsAllowBattery(ResolveRegistrationFields(), hasPersonalityBattery);
 
         Status = ProgramStatus.Published;
         IsActive = true;
@@ -321,6 +341,37 @@ public sealed class AssessmentProgram : AggregateRoot
 
         RegistrationMode = registrationMode;
         UpdatedAt = now;
+    }
+
+    /// <summary>
+    /// Bazadagi `null` (standart) holatini haqiqiy qiymatlarga yechadi — <see cref="RegistrationFields"/>
+    /// o'rnatilmagan bo'lsa <see cref="RegistrationFields.Default"/> qaytadi.
+    /// </summary>
+    public RegistrationFields ResolveRegistrationFields() => RegistrationFields ?? RegistrationFields.Default;
+
+    /// <summary>
+    /// Ro'yxatdan o'tish maydonlari sozlamasini o'zgartiradi — BIRINCHI nazorat nuqtasi
+    /// (ikkinchisi — <see cref="Publish"/>), `SetRegistrationMode` bilan bir xil naqsh.
+    /// <paramref name="registrationFields"/> `null` — "standart qiymatlarga qaytarish"
+    /// (<see cref="RegistrationFields.Default"/>).
+    /// </summary>
+    public void SetRegistrationFields(RegistrationFields? registrationFields, bool hasPersonalityBattery, DateTimeOffset now)
+    {
+        var effective = registrationFields ?? RegistrationFields.Default;
+        GuardRegistrationFieldsAllowBattery(effective, hasPersonalityBattery);
+
+        RegistrationFields = registrationFields;
+        UpdatedAt = now;
+    }
+
+    private static void GuardRegistrationFieldsAllowBattery(RegistrationFields fields, bool hasPersonalityBattery)
+    {
+        if (hasPersonalityBattery && !fields.SatisfiesPersonalityBatteryInvariant())
+        {
+            throw new DomainException(
+                "REGISTRATION_FIELD_REQUIRED_FOR_BATTERY",
+                "Shaxsiyat batareyasi bo'lgan dasturda tug'ilgan sana va sinf maydonlari majburiy bo'lishi shart.");
+        }
     }
 
     private void GuardRegistrationModeAllowsBattery(bool hasPersonalityBattery)

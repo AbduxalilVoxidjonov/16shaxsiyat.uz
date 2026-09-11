@@ -175,7 +175,8 @@ internal sealed class GetSchoolInfoQueryHandler : IRequestHandler<GetSchoolInfoQ
                 // `PersonalityBattery` domen qoidasida, bu yerda kod ro'yxati YO'Q.
                 HasPersonalityBattery: items.Any(i => PersonalityBattery.Includes(i.Kind, i.ScoringMode)),
                 Tests: programTests,
-                RegistrationMode: program.RegistrationMode.ToString()));
+                RegistrationMode: program.RegistrationMode.ToString(),
+                RegistrationFields: RegistrationFieldsMapping.ToDto(program.ResolveRegistrationFields())));
 
             foreach (var item in items)
             {

@@ -117,25 +117,47 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
         }
 
         // `RegistrationMode.Full` — pastdagi oqim BAYT-BAYT o'zgarmagan (regressiya bilan
-        // qulflangan, `PublicSessionContractRegressionTests`). Shaxs maydonlari validator
-        // darajasida endi optsional (`StartSessionCommandValidator`), shu sabab MAJBURIYLIK
-        // shu yerda, dastur allaqachon `Full` ekani aniqlangach, tekshiriladi.
-        var requiredFieldsError = ValidateRequiredIdentityFields(request);
+        // qulflangan, `PublicSessionContractRegressionTests`) FAQAT dastur `RegistrationFields`
+        // standart qiymatlarni saqlaganda (`birthDate`/`grade`/`phone` majburiy, qolgani
+        // ixtiyoriy — `docs/18` §9.5 jadvali). Shaxs maydonlari validator darajasida endi
+        // optsional (`StartSessionCommandValidator`), shu sabab MAJBURIYLIK shu yerda, dastur
+        // allaqachon `Full` ekani aniqlangach, DASTURNING o'zi belgilagan maydonlar bo'yicha
+        // tekshiriladi.
+        var fields = program.ResolveRegistrationFields();
+
+        var requiredFieldsError = ValidateRequiredIdentityFields(request, fields);
         if (requiredFieldsError is not null)
         {
             return Result.Failure<StartSessionResult>(requiredFieldsError);
         }
 
-        var phoneResult = PhoneNumber.Create(request.Phone!);
-        if (phoneResult.IsFailure)
+        // P52 kengaytmasi (`docs/18` §9.5): `Hidden` maydon uchun kelgan qiymat E'TIBORSIZ
+        // qoldiriladi — mijoz baribir yuborsa ham saqlanmaydi (`RegistrationMode.None`dagi
+        // "e'tiborsiz qoldirish" naqshi bilan bir xil, faqat maydon darajasida).
+        DateOnly? effectiveBirthDate = fields.BirthDate == RegistrationFieldRequirement.Hidden ? null : request.BirthDate;
+        Gender? effectiveGender = fields.Gender == RegistrationFieldRequirement.Hidden ? null : request.Gender;
+        int? effectiveGrade = fields.Grade == RegistrationFieldRequirement.Hidden ? null : request.Grade;
+        string? effectiveClassLetter = fields.ClassLetter == RegistrationFieldRequirement.Hidden ? null : request.ClassLetter;
+        string? effectivePhoneRaw = fields.Phone == RegistrationFieldRequirement.Hidden ? null : request.Phone;
+        string? effectiveParentPhoneRaw = fields.ParentPhone == RegistrationFieldRequirement.Hidden ? null : request.ParentPhone;
+        string? effectiveEmail = fields.Email == RegistrationFieldRequirement.Hidden ? null : request.Email;
+
+        PhoneNumber? phone = null;
+        if (!string.IsNullOrWhiteSpace(effectivePhoneRaw))
         {
-            return Result.Failure<StartSessionResult>(phoneResult.Error);
+            var phoneResult = PhoneNumber.Create(effectivePhoneRaw);
+            if (phoneResult.IsFailure)
+            {
+                return Result.Failure<StartSessionResult>(phoneResult.Error);
+            }
+
+            phone = phoneResult.Value;
         }
 
         PhoneNumber? parentPhone = null;
-        if (!string.IsNullOrWhiteSpace(request.ParentPhone))
+        if (!string.IsNullOrWhiteSpace(effectiveParentPhoneRaw))
         {
-            var parentPhoneResult = PhoneNumber.Create(request.ParentPhone);
+            var parentPhoneResult = PhoneNumber.Create(effectiveParentPhoneRaw);
             if (parentPhoneResult.IsFailure)
             {
                 return Result.Failure<StartSessionResult>(parentPhoneResult.Error);
@@ -146,12 +168,20 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
 
         var normalizedName = NameNormalizer.Normalize(request.FullName!);
 
-        var existingStudent = await _executor.FirstOrDefaultAsync(
-            _context.Students.Where(s =>
-                s.SchoolId == school.Id &&
-                s.NormalizedName == normalizedName &&
-                s.BirthDate == request.BirthDate),
-            cancellationToken).ConfigureAwait(false);
+        // BR-1 nozik joy (P52 kengaytmasi, `docs/18` §9.5): `birthDate` YO'Q bo'lsa (`Optional`/
+        // `Hidden` va o'quvchi kiritmagan) takrorlanish tekshiruvi (FISH+tug'ilgan sana bo'yicha)
+        // ISHONCHSIZ bo'lib qoladi — bir xil ismli ikki o'quvchi bitta yozuvga qo'shilib ketishi
+        // mumkin edi (ma'lumot buzilishi). Shu sabab bunday holatda tekshiruv UMUMAN
+        // BAJARILMAYDI va HAR DOIM yangi `Student` yaratiladi (`RegistrationMode.None`dagi
+        // anonim qaror bilan bir xil naqsh, faqat bu yerda o'quvchi anonim EMAS).
+        var existingStudent = effectiveBirthDate is null
+            ? null
+            : await _executor.FirstOrDefaultAsync(
+                _context.Students.Where(s =>
+                    s.SchoolId == school.Id &&
+                    s.NormalizedName == normalizedName &&
+                    s.BirthDate == effectiveBirthDate),
+                cancellationToken).ConfigureAwait(false);
 
         Student student;
         var isNewStudent = existingStudent is null;
@@ -206,15 +236,15 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
                 Guid.NewGuid(),
                 school.Id,
                 request.FullName!,
-                request.BirthDate!.Value,
-                request.Gender ?? Gender.Unspecified,
-                request.Grade!.Value,
-                phoneResult.Value,
+                effectiveBirthDate,
+                effectiveGender ?? Gender.Unspecified,
+                effectiveGrade ?? Student.NoGrade,
+                phone,
                 consentGivenAt: now,
                 now: now,
-                classLetter: request.ClassLetter,
+                classLetter: effectiveClassLetter,
                 parentPhone: parentPhone,
-                email: request.Email);
+                email: effectiveEmail);
         }
 
         // BR-1 kunlik ro'yxatdan o'tish limiti — FAQAT shu nuqtadan boshlab, ya'ni yangi
@@ -340,13 +370,16 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
     }
 
     /// <summary>
-    /// `RegistrationMode.Full` dasturda shaxs maydonlari MAJBURIY — bu tekshiruv avval
-    /// `StartSessionCommandValidator`da (`NotEmpty`) turardi, endi u DB'ga bog'liq bo'lgani
-    /// (dastur rejimi) sabab shu yerga ko'chdi (`Handle` izohi). Xabarlar eski validator
-    /// xabarlari bilan AYNAN bir xil — kalitlar (`fullName`/`birthDate`/`grade`/`phone`)
-    /// `docs/07` shartnomasi bilan mos.
+    /// `RegistrationMode.Full` dasturda `fullName` HAR DOIM majburiy (bu maydon
+    /// `RegistrationFields`da YO'Q, `RegistrationFields.cs` izohiga qarang). Qolgan
+    /// maydonlarning majburiyligi DASTURNING `RegistrationFields` sozlamasidan kelib chiqadi
+    /// (P52 kengaytmasi, `docs/18` §9.5) — bu tekshiruv DB'ga bog'liq bo'lgani (dastur
+    /// sozlamasi) sabab shu yerda, `StartSessionCommandValidator` emas (`Handle` izohi).
+    /// Standart sozlamada (`RegistrationFields.Default`) xabarlar VA xatti-harakat eski
+    /// (2026-09-11 gacha bo'lgan) validator bilan AYNAN bir xil — kalitlar
+    /// (`fullName`/`birthDate`/`grade`/`phone`) `docs/07` shartnomasi bilan mos.
     /// </summary>
-    private static Error? ValidateRequiredIdentityFields(StartSessionCommand request)
+    private static Error? ValidateRequiredIdentityFields(StartSessionCommand request, RegistrationFields fields)
     {
         var errors = new Dictionary<string, string[]>();
 
@@ -355,19 +388,39 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
             errors["fullName"] = ["F.I.Sh. kiritilishi shart."];
         }
 
-        if (request.BirthDate is null)
+        if (fields.BirthDate == RegistrationFieldRequirement.Required && request.BirthDate is null)
         {
             errors["birthDate"] = ["Tug'ilgan sana kiritilishi shart."];
         }
 
-        if (request.Grade is null)
+        if (fields.Gender == RegistrationFieldRequirement.Required && request.Gender is null)
+        {
+            errors["gender"] = ["Jins kiritilishi shart."];
+        }
+
+        if (fields.Grade == RegistrationFieldRequirement.Required && request.Grade is null)
         {
             errors["grade"] = ["Sinf kiritilishi shart."];
         }
 
-        if (string.IsNullOrWhiteSpace(request.Phone))
+        if (fields.ClassLetter == RegistrationFieldRequirement.Required && string.IsNullOrWhiteSpace(request.ClassLetter))
+        {
+            errors["classLetter"] = ["Sinf harfi kiritilishi shart."];
+        }
+
+        if (fields.Phone == RegistrationFieldRequirement.Required && string.IsNullOrWhiteSpace(request.Phone))
         {
             errors["phone"] = ["Telefon raqami kiritilishi shart."];
+        }
+
+        if (fields.ParentPhone == RegistrationFieldRequirement.Required && string.IsNullOrWhiteSpace(request.ParentPhone))
+        {
+            errors["parentPhone"] = ["Ota-ona telefon raqami kiritilishi shart."];
+        }
+
+        if (fields.Email == RegistrationFieldRequirement.Required && string.IsNullOrWhiteSpace(request.Email))
+        {
+            errors["email"] = ["Email kiritilishi shart."];
         }
 
         if (errors.Count == 0)

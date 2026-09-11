@@ -533,4 +533,94 @@ public sealed class AssessmentProgramTests
         ex.Code.Should().Be("REGISTRATION_REQUIRED_FOR_BATTERY");
         program.Status.Should().Be(ProgramStatus.Draft, "muvaffaqiyatsiz nashr holatni o'zgartirmasligi kerak");
     }
+
+    // --- P52 kengaytmasi (2026-09-11): `RegistrationFields` — har dasturda alohida sozlanadigan
+    // ro'yxatdan o'tish maydonlari (`docs/18` §9.5). Batareya invarianti IKKI joyda tekshiriladi:
+    // `SetRegistrationFields`da va `Publish`da — `RegistrationMode` bilan bir xil naqsh. ---
+
+    [Fact]
+    public void Create_DefaultRegistrationFields_ResolvesToDefaultTable()
+    {
+        var program = CreateCustomProgram();
+
+        program.RegistrationFields.Should().BeNull("saqlanmagan holat — jsonb ustunda NULL");
+        program.ResolveRegistrationFields().Should().Be(RegistrationFields.Default);
+    }
+
+    [Fact]
+    public void SetRegistrationFields_OptionalBirthDateWithoutBattery_Succeeds()
+    {
+        var program = CreateCustomProgram();
+        var custom = RegistrationFields.Default with { BirthDate = RegistrationFieldRequirement.Optional };
+
+        program.SetRegistrationFields(custom, hasPersonalityBattery: false, Now);
+
+        program.RegistrationFields.Should().Be(custom);
+    }
+
+    [Fact]
+    public void SetRegistrationFields_OptionalBirthDateWithBattery_ThrowsDomainException()
+    {
+        var program = CreateCustomProgram();
+        var custom = RegistrationFields.Default with { BirthDate = RegistrationFieldRequirement.Optional };
+
+        var act = () => program.SetRegistrationFields(custom, hasPersonalityBattery: true, Now);
+
+        var ex = act.Should().Throw<DomainException>().Which;
+        ex.Code.Should().Be("REGISTRATION_FIELD_REQUIRED_FOR_BATTERY");
+        program.RegistrationFields.Should().BeNull("muvaffaqiyatsiz urinish holatni o'zgartirmasligi kerak");
+    }
+
+    [Fact]
+    public void SetRegistrationFields_HiddenGradeWithBattery_ThrowsDomainException()
+    {
+        var program = CreateCustomProgram();
+        var custom = RegistrationFields.Default with { Grade = RegistrationFieldRequirement.Hidden };
+
+        var act = () => program.SetRegistrationFields(custom, hasPersonalityBattery: true, Now);
+
+        act.Should().Throw<DomainException>().Which.Code.Should().Be("REGISTRATION_FIELD_REQUIRED_FOR_BATTERY");
+    }
+
+    [Fact]
+    public void SetRegistrationFields_RequiredGenderWithBattery_Succeeds()
+    {
+        // DIQQAT (topshiriq talabi): `Gender` batareya invariantiga KIRMAYDI — uni majburiy
+        // qilish (hatto batareya bor dasturda ham) muvaffaqiyatli bo'lishi kerak.
+        var program = CreateCustomProgram();
+        var custom = RegistrationFields.Default with { Gender = RegistrationFieldRequirement.Required };
+
+        program.SetRegistrationFields(custom, hasPersonalityBattery: true, Now);
+
+        program.RegistrationFields.Should().Be(custom);
+    }
+
+    [Fact]
+    public void Publish_BatteryWithOptionalBirthDate_ThrowsDomainException()
+    {
+        var program = CreateCustomProgram();
+        program.AddTest(Guid.NewGuid(), 1, Now);
+        var custom = RegistrationFields.Default with { BirthDate = RegistrationFieldRequirement.Optional };
+        program.SetRegistrationFields(custom, hasPersonalityBattery: false, Now);
+
+        // Nashr paytida chaqiruvchi tarkibni QAYTA hisoblaydi — bu yerda batareya keyinroq
+        // qo'shilgan holatni taqlid qiladi (IKKINCHI nazorat nuqtasi, `SetRegistrationMode`
+        // bilan bir xil naqsh).
+        var act = () => program.Publish(Now, hasPersonalityBattery: true);
+
+        var ex = act.Should().Throw<DomainException>().Which;
+        ex.Code.Should().Be("REGISTRATION_FIELD_REQUIRED_FOR_BATTERY");
+        program.Status.Should().Be(ProgramStatus.Draft, "muvaffaqiyatsiz nashr holatni o'zgartirmasligi kerak");
+    }
+
+    [Fact]
+    public void Publish_BatteryWithDefaultRegistrationFields_Succeeds()
+    {
+        var program = CreateCustomProgram();
+        program.AddTest(Guid.NewGuid(), 1, Now);
+
+        program.Publish(Now, hasPersonalityBattery: true);
+
+        program.Status.Should().Be(ProgramStatus.Published);
+    }
 }

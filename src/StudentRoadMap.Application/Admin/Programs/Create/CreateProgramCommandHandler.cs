@@ -30,6 +30,7 @@ internal sealed class CreateProgramCommandHandler : IRequestHandler<CreateProgra
 
         var visibility = Enum.Parse<ProgramVisibility>(request.Visibility, ignoreCase: true);
         var registrationMode = Enum.Parse<RegistrationMode>(request.RegistrationMode, ignoreCase: true);
+        var registrationFields = RegistrationFieldsMapping.ToDomain(request.RegistrationFields);
 
         var program = AssessmentProgram.Create(
             Guid.NewGuid(),
@@ -40,6 +41,7 @@ internal sealed class CreateProgramCommandHandler : IRequestHandler<CreateProgra
             kind: ProgramKind.Custom,
             visibility: visibility,
             registrationMode: registrationMode,
+            registrationFields: registrationFields,
             descriptionUz: request.DescriptionUz,
             createdByAdminUserId: request.AdminUserId);
 

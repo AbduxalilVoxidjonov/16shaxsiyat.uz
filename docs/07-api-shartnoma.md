@@ -35,6 +35,8 @@ Maktab havolasi to'g'riligini tekshirish va boshlanish ekranini to'ldirish.
     { "code": "PERSONALITY_PROFILE", "nameUz": "Shaxsiyat profili", "descriptionUz": "…",
       "testCount": 4, "questionCount": 190, "estimatedMinutes": 31, "hasPersonalityBattery": true,
       "registrationMode": "Full",
+      "registrationFields": { "birthDate": "Required", "gender": "Optional", "grade": "Required",
+        "classLetter": "Optional", "phone": "Required", "parentPhone": "Optional", "email": "Optional" },
       "tests": [
         { "code": "MBTI16", "name": "16 tipli shaxsiyat modeli", "questionCount": 60, "estimatedMinutes": 9, "order": 1 },
         { "code": "BIG5", "name": "Shaxsiyatning 5 omili", "questionCount": 50, "estimatedMinutes": 8, "order": 2 },
@@ -44,6 +46,8 @@ Maktab havolasi to'g'riligini tekshirish va boshlanish ekranini to'ldirish.
     { "code": "CAREER_SURVEY", "nameUz": "Kasb so'rovnomasi", "descriptionUz": null,
       "testCount": 1, "questionCount": 20, "estimatedMinutes": 5, "hasPersonalityBattery": false,
       "registrationMode": "None",
+      "registrationFields": { "birthDate": "Required", "gender": "Optional", "grade": "Required",
+        "classLetter": "Optional", "phone": "Required", "parentPhone": "Optional", "email": "Optional" },
       "tests": [
         { "code": "CAREER_SURVEY_Q", "name": "Kasb so'rovnomasi savollari", "questionCount": 20, "estimatedMinutes": 5, "order": 1 }
       ] }
@@ -63,6 +67,17 @@ maydonlarisiz (faqat `slug`/`accessToken`/`consentAccepted`/ixtiyoriy `programCo
 server anonim `Student` yaratadi (1.2 pastga qarang). Qat'iy invariant: `hasPersonalityBattery: true`
 bo'lgan dasturda `registrationMode` DOIM `"Full"` — bu ikkala maydon hech qachon
 `{ true, "None" }` kombinatsiyasida bo'lmaydi (domen darajasida qulflangan).
+
+**`programs[].registrationFields`** (P52 kengaytmasi, 2026-09-11, `docs/18` §9.5) — `registrationMode
+= "Full"` bo'lganda registratsiya ekranidagi HAR BIR maydonning holati: `"Hidden"` (ko'rsatilmaydi,
+kelsa ham `POST /sessions` da e'tiborsiz qoldiriladi), `"Optional"` (ko'rsatiladi, bo'sh
+qoldirish mumkin) yoki `"Required"` (bo'sh bo'lsa `400`). `fullName` bu obyektda YO'Q — `Full`
+rejimida u har doim majburiy. Dastur bazada sozlamani saqlamagan (`NULL`) bo'lsa ham bu yerda
+HAR DOIM standart qiymatlar (yuqoridagi misoldagidek) bilan keladi. `registrationMode = "None"`
+dasturda ham shakl beriladi, lekin mijoz uni E'TIBORGA OLMAYDI (registratsiya ekrani umuman
+ko'rsatilmaydi). **Qat'iy invariant:** `hasPersonalityBattery: true` bo'lgan dasturda
+`birthDate`/`grade` DOIM `"Required"` (`REGISTRATION_FIELD_REQUIRED_FOR_BATTERY`, 400,
+`docs/06` §6) — `gender` bundan mustasno, erkin sozlanadi.
 
 **`tests[]` (yuqori daraja, P52 — 2026-09-11 jonli hodisadan keyin tuzatildi):** endi BUTUN
 katalogdan EMAS, FAQAT `programs[]` ichidagi MAVJUD dasturlar asosida hisoblanadi — bir nechta
@@ -149,6 +164,12 @@ Muvaffaqiyatsiz urinish audit'ga yoziladi (`SchoolCode.ResolveFailed`, IP xeshi,
 
 ### 1.2 `POST /api/public/sessions`
 Anketa + sessiya ochish.
+
+**P52 kengaytmasi (2026-09-11, `docs/18` §9.5):** `fullName` bundan mustasno, quyidagi
+so'rov maydonlarining har biri qaysi tanlangan dasturning `registrationFields` sozlamasiga
+qarab majburiy/ixtiyoriy/kerak emas bo'lishi mumkin — mijoz `GET /api/public/schools/{slug}`
+javobidagi `programs[].registrationFields` ga qarab formani chizadi. `"Hidden"` maydon uchun
+yuborilgan qiymat serverda E'TIBORSIZ qoldiriladi (saqlanmaydi).
 
 ```json
 {
@@ -681,6 +702,36 @@ masalan `None` dasturga keyinroq batareya testi biriktirilib nashr qilinsa).
 `Code`/`Kind`/`IsSystem` bilan bir xil qoida: yangi (`Create`) dasturda hali test yo'q, shu
 sabab `registrationMode` bu bosqichda invariantni buza olmaydi — tekshiruv faqat testlar
 biriktirilgach (`PUT`/`publish`) ishlaydi.
+
+#### Dastur `registrationFields` — admin CRUD (P52 kengaytmasi, 2026-09-11)
+
+`AdminProgramDetailDto` javobida (`registrationMode` bilan bir qatorda) endi `registrationFields`
+ham keladi — HAR DOIM yechilgan (resolved) qiymatlar bilan (dastur `NULL` saqlagan bo'lsa ham):
+
+```json
+{ "state": "Active", "registrationMode": "Full",
+  "registrationFields": { "birthDate": "Required", "gender": "Optional", "grade": "Required",
+    "classLetter": "Optional", "phone": "Required", "parentPhone": "Optional", "email": "Optional" } }
+```
+
+`POST /api/admin/programs` va `PUT /api/admin/programs/{id}` so'rov tanasida ixtiyoriy
+`registrationFields` obyekti — HAR ICHKI maydon ham mustaqil ixtiyoriy (berilmagan maydon
+standart qiymatga tushadi):
+
+```json
+{ "code": "CAREER_SURVEY", "nameUz": "Kasb so'rovnomasi", "displayOrder": 5,
+  "visibility": "Public", "registrationFields": { "phone": "Hidden", "email": "Required" } }
+```
+
+`PUT` — `registrationMode` bilan bir xil TO'LIQ ALMASHTIRISH naqshi: `registrationFields`
+obyektining o'zi umuman berilmasa, standart qiymatlarga qaytadi (mijoz doim joriy holatni
+qayta yuborishi kerak — ichki maydonlar esa alohida-alohida ixtiyoriy).
+
+**Qat'iy invariant** (`docs/04` §2.13, `docs/06` §6): dasturda ilmiy shaxsiyat batareyasi
+bo'lsa `birthDate`/`grade` `"Required"`dan boshqasiga o'rnatib bo'lmaydi — `PUT`da
+**`400 REGISTRATION_FIELD_REQUIRED_FOR_BATTERY`**. Tekshiruv IKKI nazorat nuqtasida:
+`PUT` va `POST /publish` — `registrationMode`dagi bilan AYNAN bir xil naqsh. `gender` bu
+invariantga KIRMAYDI, erkin sozlanadi (batareyali dasturda ham).
 
 #### Dastur `hasPersonalityBattery` — admin ham (P52, 2026-09-11)
 

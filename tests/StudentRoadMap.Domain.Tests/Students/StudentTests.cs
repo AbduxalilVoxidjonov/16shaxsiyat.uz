@@ -151,4 +151,28 @@ public sealed class StudentTests
         student.BirthDate.Should().NotBeNull();
         student.Phone.Should().NotBeNull();
     }
+
+    // --- P52 kengaytmasi (2026-09-11, `docs/18` §9.5): `RegistrationFields` — har maydon
+    // (`birthDate`/`phone` ham) dastur darajasida `Optional`/`Hidden` bo'lishi mumkin, shu
+    // sabab anonim BO'LMAGAN (F.I.Sh. bor) o'quvchida ham ular `null` bo'lishi LEGITIM. ---
+
+    [Fact]
+    public void Create_NonAnonymous_WithNullBirthDateAndPhone_Succeeds()
+    {
+        var student = Student.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            "Karimov Aziz",
+            birthDate: null,
+            Gender.Unspecified,
+            Student.NoGrade,
+            phone: null,
+            Now,
+            Now);
+
+        student.IsAnonymous.Should().BeFalse("F.I.Sh. bor — bu ANONIM emas, faqat ba'zi maydonlar yashirilgan/ixtiyoriy");
+        student.BirthDate.Should().BeNull();
+        student.Phone.Should().BeNull();
+        student.FullName.Should().Be("Karimov Aziz");
+    }
 }

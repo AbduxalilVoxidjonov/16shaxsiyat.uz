@@ -1,5 +1,6 @@
 using MediatR;
 using StudentRoadMap.Application.Admin.Programs;
+using StudentRoadMap.Application.Common.Models;
 using StudentRoadMap.Domain.Common;
 
 namespace StudentRoadMap.Application.Admin.Programs.Update;
@@ -22,5 +23,12 @@ public sealed record UpdateProgramCommand(
     /// (`AssessmentProgram.SetRegistrationMode`).
     /// </summary>
     string RegistrationMode = "Full",
+    /// <summary>
+    /// P52 kengaytmasi (2026-09-11, `docs/18` §9.5): `RegistrationMode` bilan bir xil TO'LIQ
+    /// ALMASHTIRISH naqshi — `null` (yubormaslik) standart qiymatlarga qaytaradi. Batareya bor
+    /// dasturda `birthDate`/`grade` boshqa qiymatga o'rnatilsa `400 REGISTRATION_FIELD_REQUIRED_FOR_BATTERY`
+    /// (`AssessmentProgram.SetRegistrationFields`).
+    /// </summary>
+    RegistrationFieldsInput? RegistrationFields = null,
     string? IpAddress = null,
     string? UserAgent = null) : IRequest<Result<AdminProgramDetailDto>>;

@@ -22,6 +22,17 @@ internal sealed class AssessmentProgramConfiguration : IEntityTypeConfiguration<
         // P52 (2026-09-11): mavjud dasturlar `Full` bo'lib qoladi (default `1`) — xatti-harakati
         // o'zgarmaydi (`docs/05` migratsiya siyosati).
         builder.Property(p => p.RegistrationMode).HasConversion<short>().IsRequired().HasDefaultValue(RegistrationMode.Full).HasSentinel(default(RegistrationMode));
+
+        // P52 kengaytmasi (`docs/18` §9.5): `NULL` — "standart qiymatlar" (`RegistrationFields.Default`,
+        // `AssessmentProgram.ResolveRegistrationFields`). Mavjud dasturlar backfill QILINMAYDI —
+        // `NULL` ular uchun ham to'g'ri natija beradi (`docs/05` migratsiya siyosati).
+        builder.Property(p => p.RegistrationFields)
+            .HasColumnName("registration_fields")
+            .HasColumnType("jsonb")
+            .HasConversion(
+                fields => RegistrationFieldsJson.Serialize(fields),
+                json => RegistrationFieldsJson.Deserialize(json));
+
         builder.Property(p => p.Status).HasConversion<short>().IsRequired().HasDefaultValue(ProgramStatus.Draft).HasSentinel(default(ProgramStatus));
         builder.Property(p => p.IsActive).IsRequired().HasDefaultValue(true);
         builder.Property(p => p.DisplayOrder).IsRequired();

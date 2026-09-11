@@ -1,3 +1,5 @@
+using StudentRoadMap.Application.Common.Models;
+
 namespace StudentRoadMap.Application.Public.GetSchoolInfo;
 
 /// <summary>
@@ -48,6 +50,12 @@ public sealed record PublicTestCatalogItemDto(
 /// `RegistrationMode` (P52, 2026-09-11) — `"Full"`/`"None"`. Frontend shunga qarab
 /// registratsiya ekranini ko'rsatadi (`Full`) yoki umuman o'tkazib yuboradi (`None`,
 /// `POST /sessions` shaxs maydonlarisiz chaqiriladi).
+///
+/// `RegistrationFields` (P52 kengaytmasi, 2026-09-11, `docs/18` §9.5) — `RegistrationMode = Full`
+/// bo'lganda registratsiya ekranidagi HAR BIR maydonning holati (`"Hidden"`/`"Optional"`/
+/// `"Required"`); `RegistrationMode = None` bo'lsa mijoz bu maydonni e'tiborsiz qoldiradi
+/// (ekran umuman ko'rsatilmaydi). Dastur bazada `null` (standart) saqlagan bo'lsa ham bu
+/// yerda HAR DOIM yechilgan (resolved) qiymatlar keladi.
 /// </summary>
 public sealed record PublicProgramSummaryDto(
     string Code,
@@ -58,4 +66,5 @@ public sealed record PublicProgramSummaryDto(
     int EstimatedMinutes,
     bool HasPersonalityBattery,
     IReadOnlyList<PublicTestCatalogItemDto> Tests,
-    string RegistrationMode);
+    string RegistrationMode,
+    RegistrationFieldsDto RegistrationFields);

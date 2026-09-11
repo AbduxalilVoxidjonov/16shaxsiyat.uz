@@ -50,7 +50,11 @@ public sealed class Student : AggregateRoot
 
     public string NormalizedName { get; private set; } = null!;
 
-    /// <summary>Anonim o'quvchida `null` (`IsAnonymous`, P52). Aks holda DOIM to'ldirilgan (konstruktor invarianti).</summary>
+    /// <summary>
+    /// Anonim o'quvchida DOIM `null` (`IsAnonymous`, P52). Anonim BO'LMAGAN o'quvchida ham
+    /// `null` bo'lishi mumkin — agar dastur `RegistrationFields.BirthDate`ni `Optional`/`Hidden`
+    /// qilgan bo'lsa (P52 kengaytmasi, `docs/18` §9.5).
+    /// </summary>
     public DateOnly? BirthDate { get; private set; }
 
     public Gender Gender { get; private set; }
@@ -59,7 +63,11 @@ public sealed class Student : AggregateRoot
 
     public string? ClassLetter { get; private set; }
 
-    /// <summary>Anonim o'quvchida `null` (`IsAnonymous`, P52). Aks holda DOIM to'ldirilgan (konstruktor invarianti).</summary>
+    /// <summary>
+    /// Anonim o'quvchida DOIM `null` (`IsAnonymous`, P52). Anonim BO'LMAGAN o'quvchida ham
+    /// `null` bo'lishi mumkin — `RegistrationFields.Phone` `Optional`/`Hidden` bo'lsa (P52
+    /// kengaytmasi, `docs/18` §9.5).
+    /// </summary>
     public PhoneNumber? Phone { get; private set; }
 
     public PhoneNumber? ParentPhone { get; private set; }
@@ -142,17 +150,13 @@ public sealed class Student : AggregateRoot
         DateTimeOffset now)
         : base(id)
     {
-        // Domen invarianti (P52, egasining qarori): anonim BO'LMAGAN o'quvchida tug'ilgan
-        // sana va telefon DOIM to'ldirilgan bo'lishi shart — aks holda mavjud oqim (scoring,
-        // BR-1, admin ro'yxati) jimgina buzilishi mumkin edi. Anonim o'quvchida esa ikkalasi
-        // ham DOIM `null` (`Student.CreateAnonymous`).
-        if (!isAnonymous && (birthDate is null || phone is null))
-        {
-            throw new DomainException(
-                "STUDENT_IDENTITY_REQUIRED",
-                "Anonim bo'lmagan o'quvchida tug'ilgan sana va telefon raqami to'ldirilishi shart.");
-        }
-
+        // P52 kengaytmasi (`RegistrationFields`, `docs/18` §9.5, egasining qarori): ilgari
+        // (2026-09-11) bu yerda "anonim BO'LMAGAN o'quvchida tug'ilgan sana va telefon DOIM
+        // to'ldirilgan" invarianti bor edi. Endi HAR MAYDON (`birthDate`/`phone` ham) dasturga
+        // qarab `Optional`/`Hidden` bo'lishi mumkin — ya'ni anonim BO'LMAGAN (FISH bor)
+        // o'quvchida ham ikkalasi `null` bo'lishi LEGITIM holat. Majburiylik endi Application
+        // qatlamida (`StartSessionCommandHandler.ValidateRequiredIdentityFields`,
+        // `AssessmentProgram.RegistrationFields`) tekshiriladi — domen bu yerda cheklamaydi.
         SchoolId = schoolId;
         PublicUserId = publicUserId;
         IsAnonymous = isAnonymous;
@@ -174,14 +178,19 @@ public sealed class Student : AggregateRoot
         UpdatedAt = now;
     }
 
+    /// <summary>
+    /// <paramref name="birthDate"/>/<paramref name="phone"/> P52 kengaytmasi (`docs/18` §9.5)
+    /// sabab NULLABLE — dastur bu maydonlarni `Optional`/`Hidden` qilgan bo'lishi mumkin.
+    /// Majburiylik Application qatlamida tekshiriladi, bu yerda emas.
+    /// </summary>
     public static Student Create(
         Guid id,
         Guid schoolId,
         string fullName,
-        DateOnly birthDate,
+        DateOnly? birthDate,
         Gender gender,
         int grade,
-        PhoneNumber phone,
+        PhoneNumber? phone,
         DateTimeOffset consentGivenAt,
         DateTimeOffset now,
         string? classLetter = null,

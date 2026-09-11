@@ -108,18 +108,23 @@ Sessiya **`Completed`** bo'lganda (ya'ni `CompleteSession` da, scoring tugagach)
 - Yosh `Student.MinAge`..`Student.MaxAge` = **6..99** (ilgari validator 6–20 talab qilardi —
   kattalar ro'yxatdan o'ta olmasdi). Domen `CalculateAge`/`IsAgeAllowed` yordamchilarini beradi.
 - `ConsentGivenAt` bo'lmasa student yaratilmaydi.
-- **P52 (2026-09-11, egasining qarori):** `IsAnonymous == false` bo'lsa `BirthDate` va `Phone`
-  IKKALASI HAM to'ldirilgan bo'lishi SHART — aks holda konstruktor
-  `DomainException("STUDENT_IDENTITY_REQUIRED")` beradi. Bu invariant mavjud (maktab/ommaviy
-  makon) oqimni JIMGINA buzilishdan himoya qiladi: `Student.Create` (nomlangan, to'liq profil)
-  va `Student.CreateAnonymous` (anonim, ikkalasi ham `null`) — ikkita alohida fabrika, oraliq
-  holat yo'q.
+- **P52 (2026-09-11) → P52 kengaytmasi (2026-09-11, `docs/18` §9.5) bilan YECHILDI:** ilgari
+  `IsAnonymous == false` bo'lsa `BirthDate` va `Phone` IKKALASI HAM to'ldirilgan bo'lishi SHART
+  edi (`DomainException("STUDENT_IDENTITY_REQUIRED")`). `RegistrationFields` kiritilgach bu
+  invariant OLIB TASHLANDI: `birthDate`/`phone` HAR MAYDON kabi dasturga qarab
+  `Optional`/`Hidden` bo'lishi mumkin, ya'ni anonim BO'LMAGAN (`FullName` bor) o'quvchida ham
+  ular `null` bo'lishi LEGITIM. `Student.Create` parametrlari shu sabab `DateOnly?`/`PhoneNumber?`
+  (avval `DateOnly`/`PhoneNumber`) — majburiylik endi Application qatlamida
+  (`StartSessionCommandHandler.ValidateRequiredIdentityFields`, dastur `RegistrationFields`
+  sozlamasiga qarab) tekshiriladi, domen bu yerda cheklamaydi.
 
 **Metodlar:** `UpdateSnapshot()`, `MarkDeleted()`, `LinkToPublicUser()` (**P47** — eski yozuvni
 Telegram akkauntga ulash; boshqa akkauntga bog'langan yozuv qayta bog'lanmaydi:
 `DomainException("STUDENT_ALREADY_LINKED")`), `RecordConsent()`.
 
-**Fabrikalar:** `Create()` — to'liq profil (`IsAnonymous = false`, `BirthDate`/`Phone` majburiy);
+**Fabrikalar:** `Create()` — to'liq profil (`IsAnonymous = false`; `BirthDate`/`Phone` odatda
+to'ldirilgan, lekin `RegistrationFields` `Optional`/`Hidden` qilgan bo'lsa `null` ham bo'lishi
+mumkin, `docs/18` §9.5);
 `CreateAnonymous()` (**P52**) — `RegistrationMode.None` dasturi uchun, shaxs maydonlarisiz
 (`Grade = NoGrade`, `Gender = Unspecified`, `BirthDate`/`Phone = null`), faqat maktab oqimida
 (`StartSessionCommandHandler`) chaqiriladi. BR-1 (90 kunlik takror topshirish) va sessiyani
@@ -404,6 +409,7 @@ sessiyaga faqat shu dasturning testlari qo'shiladi (`Assessment.ProgramId`).
 | `Kind` | `ProgramKind` | `System = 1` · `Custom = 2` |
 | `Visibility` | `ProgramVisibility` | `Public = 1` (barcha maktabda) · `Assigned = 2` (faqat biriktirilganda) |
 | `RegistrationMode` | `RegistrationMode` | **P52** — `Full = 1` (standart: o'quvchi ro'yxatdan o'tish anketasini to'ldiradi) · `None = 2` (registratsiya ekrani ko'rsatilmaydi, `Student` ANONIM yaratiladi — faqat batareyasiz dasturda ruxsat, pastga qarang) |
+| `RegistrationFields` | `RegistrationFields?` | **P52 kengaytmasi** (`docs/18` §9.5) — `RegistrationMode = Full` dasturda har bir maydonning (`birthDate`/`gender`/`grade`/`classLetter`/`phone`/`parentPhone`/`email`) holati (`Hidden`/`Optional`/`Required`). `null` — standart qiymatlar (`RegistrationFields.Default`, `ResolveRegistrationFields()`). `fullName` bu yerda YO'Q — u har doim majburiy |
 | `Status` | `ProgramStatus` | `Draft = 1` · `Published = 2` · `Archived = 3` — **saqlash maydoni** |
 | `IsActive` | `bool` | **saqlash maydoni** |
 | `IsSystem` | `bool` | Seed'dan kelgan tizim dasturi; tarkibi qulflangan (`SYSTEM_PROGRAM_LOCKED`) |
@@ -463,6 +469,11 @@ Draft ──Publish()──▶ Active ──Deactivate()──▶ Paused ──A
   sifatida qabul qiladi, chunki domen agregatining o'zi `TestDefinition`larga to'g'ridan-to'g'ri
   murojaat qila olmaydi (faqat `ProgramTest.TestDefinitionId` saqlaydi) — chaqiruvchi
   (`UpdateProgramCommandHandler`/`PublishProgramCommandHandler`) tarkibni yuklab hisoblaydi.
+- **P52 kengaytmasi (2026-09-11, `docs/18` §9.5):** shu batareyali dasturda `RegistrationFields.BirthDate`/
+  `Grade` ham DOIM `Required` bo'lishi SHART (`RegistrationFields.SatisfiesPersonalityBatteryInvariant()`).
+  Buzilsa `DomainException("REGISTRATION_FIELD_REQUIRED_FOR_BATTERY")`. Tekshiruv XUDDI SHU
+  IKKI nazorat nuqtasida: `SetRegistrationFields()` va `Publish()`. `Gender` bu invariantga
+  KIRMAYDI — erkin sozlanadi (batareyali dasturda ham).
 
 **Eski ma'lumot:** `Archived + IsActive` juftligi bazada qolgan bo'lsa, `State` uni baribir
 `Archived` deb ko'rsatadi (`Status` ustuvor), ustunning o'zi esa seed bosqichida idempotent

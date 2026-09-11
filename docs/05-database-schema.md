@@ -583,6 +583,7 @@ alter table admin_users add column pending_totp_created_at timestamptz null;
 | `SchoolKind` | 1 School (maktab havolasi oqimi), 2 PublicSpace (ommaviy makon) — `schools.kind` |
 | `PublicUserDeletionReason` | 1 NoLongerNeeded, 2 NotUseful, 3 PrivacyConcern, 4 CreatedByMistake, 5 Other — `public_users.deletion_reason` (2026-09-08) |
 | `RegistrationMode` | 1 Full, 2 None — `assessment_programs.registration_mode` (P52, 2026-09-11) |
+| `RegistrationFieldRequirement` | 1 Hidden, 2 Optional, 3 Required — `assessment_programs.registration_fields` jsonb ichida SATR sifatida (P52 kengaytmasi, 2026-09-11) |
 
 ---
 
@@ -699,6 +700,29 @@ alter table students alter column phone      drop not null;
 > Postgres unique indeksda `NULL` qiymatlar bir-biriga TENG deb hisoblanmaydi, shu sabab
 > bir nechta anonim o'quvchi (`birth_date IS NULL`, turli `normalized_name`) hech qachon
 > to'qnashmaydi.
+
+### 2026-09-11 da qo'shilgan — har dasturda alohida ro'yxatdan o'tish maydonlari (migratsiya `AddProgramRegistrationFields`)
+
+Egasining qarori (`docs/18` §9.5): `RegistrationMode.Full` dasturda HAR BIR ro'yxatdan o'tish
+maydoni (`birthDate`/`gender`/`grade`/`classLetter`/`phone`/`parentPhone`/`email`) alohida
+`Hidden`/`Optional`/`Required` qilib sozlanadi. Faqat qo'shish — destruktiv qadam yo'q, bir
+bosqichda bajarildi.
+
+```sql
+alter table assessment_programs
+    add column registration_fields jsonb null;  -- NULL = standart qiymatlar (RegistrationFields.Default)
+```
+
+**`NULL` vs backfill qarori:** backfill QILINMADI — `NULL` "standart qiymatlar ishlatilsin"
+deb talqin qilinadi (`AssessmentProgram.ResolveRegistrationFields()`), xuddi
+`questions.visibility_rule`/`question_sections.visibility_rule` (P52, yuqorida) qanday
+`NULL = shartsiz` deb talqin qilinsa shunga o'xshab. Standart qiymatlar 2026-09-11 gacha
+bo'lgan qattiq kodlangan xatti-harakat bilan BAYT-BAYT mos (`birthDate`/`grade`/`phone`
+majburiy, qolgani ixtiyoriy) — shu sabab mavjud dasturlarda `NULL` bilan ham, aniq yozilgan
+standart qiymatlar bilan ham natija AYNAN bir xil; backfill qo'shimcha yozuv operatsiyasidan
+boshqa foyda bermas edi.
+
+**jsonb shakli** (camelCase, enum — satr): `docs/18` §9.5.1.
 
 ---
 

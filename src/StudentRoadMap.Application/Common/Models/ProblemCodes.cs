@@ -216,6 +216,14 @@ public static class ProblemCodes
     public const string RegistrationRequiredForBattery = "REGISTRATION_REQUIRED_FOR_BATTERY";
 
     /// <summary>
+    /// P52 kengaytmasi (2026-09-11, `docs/18` §9.5): `AssessmentProgram.SetRegistrationFields`/
+    /// `Publish` — shaxsiyat batareyasi bor dasturda `RegistrationFields.BirthDate`/`Grade`
+    /// `Required`dan boshqasiga o'rnatilishga (yoki shu holatda nashr qilinishga) urinildi.
+    /// `Gender` ATAYLAB bu invariantga kirmaydi (400).
+    /// </summary>
+    public const string RegistrationFieldRequiredForBattery = "REGISTRATION_FIELD_REQUIRED_FOR_BATTERY";
+
+    /// <summary>
     /// `ShortText`/`Phone` savolining `inputPattern`i (admin tomonidan) kompilyatsiya qilinmadi
     /// (`docs/18` §5) — `CachedInputPatternMatcher.IsValidPattern` bilan bir xil qoida
     /// (`RegexOptions.NonBacktracking`, 100 ms timeout, keyin backtracking bilan qayta urinish).
@@ -300,6 +308,7 @@ public static class ProblemCodes
         [BranchingNotAllowedInScored] = StatusCodes.Status400BadRequest,
         [InputPatternInvalid] = StatusCodes.Status400BadRequest,
         [RegistrationRequiredForBattery] = StatusCodes.Status400BadRequest,
+        [RegistrationFieldRequiredForBattery] = StatusCodes.Status400BadRequest,
         [QuestionInUse] = StatusCodes.Status409Conflict,
         [QuestionReferencedByVisibility] = StatusCodes.Status409Conflict,
         [ReferencedRecordExists] = StatusCodes.Status409Conflict,
