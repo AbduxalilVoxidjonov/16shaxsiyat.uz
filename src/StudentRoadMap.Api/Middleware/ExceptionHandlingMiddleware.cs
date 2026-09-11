@@ -5,6 +5,7 @@ using StudentRoadMap.Application.Common.Models;
 using StudentRoadMap.Domain.Common;
 using ApplicationValidationException = StudentRoadMap.Application.Common.Exceptions.ValidationException;
 using ConcurrencyConflictException = StudentRoadMap.Application.Common.Exceptions.ConcurrencyConflictException;
+using ForeignKeyViolationException = StudentRoadMap.Application.Common.Exceptions.ForeignKeyViolationException;
 using UniqueConstraintViolationException = StudentRoadMap.Application.Common.Exceptions.UniqueConstraintViolationException;
 
 namespace StudentRoadMap.Api.Middleware;
@@ -86,6 +87,15 @@ public sealed class ExceptionHandlingMiddleware : IExceptionHandler
                 ProblemCodes.HttpStatusByCode.GetValueOrDefault(unique.Code, ProblemCodes.DefaultDomainErrorStatus),
                 unique.Code,
                 unique.Message,
+                null),
+            // P52 (2026-09-11 QA topilmasi): tashqi kalit (FK) cheklovi buzilishi —
+            // `UniqueConstraintViolationException` bilan bir xil naqsh, jimgina `500` emas.
+            // Xabar `AppDbContext.SaveChangesAsync`dan keladi va DOIM o'zgarmas umumiy matn
+            // (DB jadval/cheklov nomi hech qachon chiqmaydi, P31).
+            ForeignKeyViolationException foreignKey => (
+                ProblemCodes.HttpStatusByCode.GetValueOrDefault(foreignKey.Code, ProblemCodes.DefaultDomainErrorStatus),
+                foreignKey.Code,
+                foreignKey.Message,
                 null),
             DomainException domain => (
                 ProblemCodes.HttpStatusByCode.GetValueOrDefault(domain.Code, ProblemCodes.DefaultDomainErrorStatus),

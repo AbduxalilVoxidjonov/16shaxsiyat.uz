@@ -48,8 +48,12 @@ internal sealed class ListTestQuestionsQueryHandler : IRequestHandler<ListTestQu
 
         var optionsByQuestion = options.GroupBy(o => o.QuestionId).ToDictionary(g => g.Key, g => (IReadOnlyList<AnswerOption>)g.ToList());
 
+        // P52 (2026-09-11 QA topilmasi): `HasAnswers` — frontend o'chirish tugmasini
+        // OLDINDAN o'chirib qo'yishi uchun (`QUESTION_IN_USE`). Bitta batch so'rov (N+1 emas).
+        var questionIdsWithAnswers = await CatalogMapping.LoadQuestionIdsWithAnswersAsync(_context, _executor, questionIds, cancellationToken).ConfigureAwait(false);
+
         var items = questions
-            .Select(q => CatalogMapping.ToQuestionDto(q, scaleNames, optionsByQuestion.GetValueOrDefault(q.Id, [])))
+            .Select(q => CatalogMapping.ToQuestionDto(q, scaleNames, optionsByQuestion.GetValueOrDefault(q.Id, []), questionIdsWithAnswers.Contains(q.Id)))
             .ToList();
 
         return Result.Success<IReadOnlyList<CatalogQuestionItemDto>>(items);

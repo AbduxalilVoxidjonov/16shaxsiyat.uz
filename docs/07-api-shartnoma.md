@@ -1114,6 +1114,14 @@ bo'lsa `400 BRANCHING_NOT_ALLOWED_IN_SCORED` (B-2). To'liq shartnoma — `docs/1
 | POST | `/api/admin/catalog/tests/{id}/questions/reorder` | ✅ (`[{id, displayOrder}]`) |
 | POST | `/api/admin/catalog/tests/{id}/questions/import` | `Custom` — to'liq; tizim — faqat matn yangilash |
 
+**`DELETE .../questions/{id}` — qo'shimcha xatolar** (P52, 2026-09-11 QA topilmasi: ilgari
+FK buzilishi jimgina `500 INTERNAL_ERROR` bo'lib chiqardi):
+
+| Holat | Javob |
+|-------|-------|
+| Savolga allaqachon javob berilgan (`Answers` jadvalida yozuv bor) | `409 QUESTION_IN_USE` — xabar harakatga yo'naltiruvchi: "Faol emas" holatiga o'tkazish tavsiya etiladi |
+| Boshqa savol/bo'limning ko'rsatish sharti (`docs/18` B-5) shu savol kodiga tayanadi | `409 QUESTION_REFERENCED_BY_VISIBILITY` — xabarda havola qiluvchi savol/bo'lim kodi |
+
 `POST .../questions` va `PUT .../questions/{id}` (`docs/18` §5) qo'shimcha maydonlarni qabul
 qiladi: `sectionCode` (yoki `null` — bo'limsiz), `placeholder`, `inputPattern`, `maxLength`,
 `minSelections`/`maxSelections` (`MultiChoice`), `visibility`, `options[]`
@@ -1259,8 +1267,15 @@ QOIDASI bu yerda TAKRORLANMAYDI — u `CatalogPublishValidator` va uning fronten
 { "id": "…", "code": "RS-Q03", "order": 3, "textUz": "Rasm chizishni yoqtiraman.",
   "textRu": null, "textEn": null, "type": "Likert5",
   "scale": "ART", "scaleNameUz": "Artistik", "scaleDescriptionUz": null,
-  "direction": 1, "weight": 1.0, "isRequired": true, "isActive": true, "isSystem": true }
+  "direction": 1, "weight": 1.0, "isRequired": true, "isActive": true, "isSystem": true,
+  "hasAnswers": false }
 ```
+
+> **`hasAnswers`** (P52, 2026-09-11 QA topilmasi) — savolga allaqachon javob berilganmi
+> (`QUESTION_IN_USE` sababi). Frontend o'chirish tugmasini shu maydonga qarab OLDINDAN
+> o'chirib qo'yadi. Ro'yxat javobida (shu yerda va `POST .../questions/reorder`) BATCH so'rov
+> bilan hisoblanadi — savollar soniga bog'liq bo'lmagan doimiy so'rovlar soni (N+1 emas,
+> ADR-11); `POST .../questions` javobida yangi savol uchun har doim `false`.
 
 `scaleNameUz` — shkalaning o'zbekcha nomi. Backend uni quyidagi tartibda aniqlaydi:
 

@@ -65,7 +65,15 @@ internal sealed class ReorderTestQuestionsCommandHandler : IRequestHandler<Reord
 
         // `LoadTrackedAsync` shkalalarni ham yuklaydi — resolver agregatning o'zidan quriladi.
         var scaleNames = CatalogScaleNameResolver.ForTest(test);
-        var items = test.Questions.OrderBy(q => q.DisplayOrder).Select(q => CatalogMapping.ToQuestionDto(q, scaleNames)).ToList();
+
+        // P52: `HasAnswers` bu yerda ham (natija ro'yxat) batch so'rov bilan (N+1 emas).
+        var questionIdsWithAnswers = await CatalogMapping.LoadQuestionIdsWithAnswersAsync(
+            _context, _executor, test.Questions.Select(q => q.Id).ToList(), cancellationToken).ConfigureAwait(false);
+
+        var items = test.Questions
+            .OrderBy(q => q.DisplayOrder)
+            .Select(q => CatalogMapping.ToQuestionDto(q, scaleNames, hasAnswers: questionIdsWithAnswers.Contains(q.Id)))
+            .ToList();
 
         return Result.Success<IReadOnlyList<CatalogQuestionItemDto>>(items);
     }

@@ -185,7 +185,15 @@ public sealed class TestDefinition : AggregateRoot
         UpdatedAt = now;
     }
 
-    /// <summary>Savolni olib tashlaydi. Tizim metodikasida taqiqlangan (BR-8).</summary>
+    /// <summary>
+    /// Savolni olib tashlaydi. Tizim metodikasida taqiqlangan (BR-8). Javob borligi bu yerda
+    /// TEKSHIRILMAYDI (`Answer` — `Assessments` agregati, `Domain.Catalog`ga tegishli emas,
+    /// EF ham kerak) — buni `DeleteTestQuestionCommandHandler` oldindan bajaradi (`QUESTION_IN_USE`).
+    /// Shu savol kodiga boshqa savol/bo'limning ko'rsatish sharti (`VisibilityRule`) tayansa
+    /// `QUESTION_REFERENCED_BY_VISIBILITY` (`docs/18` B-5) — bu tekshiruv TO'LIQ agregat
+    /// ichida (xotirada), shu sabab domenda joylashgan (`SECTION_IN_USE`/`SCALE_IN_USE` bilan
+    /// bir xil naqsh).
+    /// </summary>
     public void RemoveQuestion(Guid questionId, DateTimeOffset now)
     {
         if (IsSystem)
@@ -193,15 +201,37 @@ public sealed class TestDefinition : AggregateRoot
             throw new DomainException("SYSTEM_TEST_LOCKED", "Tizim metodikasidan savol o'chirib bo'lmaydi.");
         }
 
-        var removed = _questions.RemoveAll(q => q.Id == questionId) > 0;
-        if (!removed)
+        var question = _questions.FirstOrDefault(q => q.Id == questionId);
+        if (question is null)
         {
             return;
         }
 
+        var referencingQuestion = _questions.FirstOrDefault(q =>
+            q.Id != questionId && ReferencesQuestionCode(q.VisibilityRule, question.Code));
+        if (referencingQuestion is not null)
+        {
+            throw new DomainException(
+                "QUESTION_REFERENCED_BY_VISIBILITY",
+                $"'{question.Code}' savolini o'chirib bo'lmaydi: unga '{referencingQuestion.Code}' savolining ko'rsatish sharti tayanadi. Avval o'sha shartni o'zgartiring.");
+        }
+
+        var referencingSection = _sections.FirstOrDefault(s => ReferencesQuestionCode(s.VisibilityRule, question.Code));
+        if (referencingSection is not null)
+        {
+            throw new DomainException(
+                "QUESTION_REFERENCED_BY_VISIBILITY",
+                $"'{question.Code}' savolini o'chirib bo'lmaydi: unga '{referencingSection.Code}' bo'limining ko'rsatish sharti tayanadi. Avval o'sha shartni o'zgartiring.");
+        }
+
+        _questions.Remove(question);
         BumpVersionIfPublished();
         UpdatedAt = now;
     }
+
+    /// <summary>`RemoveQuestion`/`RemoveSection` uchun umumiy yordamchi — `rule` shartlaridan biri `code`ga havola qiladimi.</summary>
+    private static bool ReferencesQuestionCode(VisibilityRule? rule, string code) =>
+        rule is not null && rule.Conditions.Any(c => c.QuestionCode == code);
 
     /// <summary>Yangi bo'lim qo'shadi. Tizim metodikasida taqiqlangan (B-3/BR-8, `docs/18` §2.2).</summary>
     public void AddSection(QuestionSection section, DateTimeOffset now)

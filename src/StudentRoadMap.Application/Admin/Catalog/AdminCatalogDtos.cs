@@ -83,6 +83,12 @@ public sealed record CatalogTestDetailDto(
 /// (ADMIN javobida) OCHIQ — `CLAUDE.md` 9-qoidasi faqat `scale`/`scaleDirection`ni man qiladi,
 /// shartning o'zi emas; bu superadmin uchun "qaysi savolga bog'liq" ma'lumoti.
 /// </para>
+/// <para>
+/// P52 (2026-09-11 QA topilmasi): <see cref="HasAnswers"/> — savolga allaqachon javob
+/// berilganmi (`QUESTION_IN_USE` sababi). Frontend o'chirish tugmasini OLDINDAN o'chirib
+/// qo'yishi uchun — savollar ro'yxatida (`ListTestQuestionsQueryHandler`) BATCH so'rov bilan
+/// hisoblanadi (N+1 emas, ADR-11); yangi yaratilgan savolda har doim `false`.
+/// </para>
 /// </summary>
 public sealed record CatalogQuestionItemDto(
     Guid Id,
@@ -107,7 +113,8 @@ public sealed record CatalogQuestionItemDto(
     int? MinSelections = null,
     int? MaxSelections = null,
     VisibilityRule? Visibility = null,
-    IReadOnlyList<CatalogOptionDto>? Options = null);
+    IReadOnlyList<CatalogOptionDto>? Options = null,
+    bool HasAnswers = false);
 
 /// <summary>`SingleChoice`/`ForcedChoice`/`MultiChoice` savol variantlari — admin katalogi (`docs/18` §5).</summary>
 public sealed record CatalogOptionDto(Guid Id, string TextUz, int Value, int DisplayOrder);

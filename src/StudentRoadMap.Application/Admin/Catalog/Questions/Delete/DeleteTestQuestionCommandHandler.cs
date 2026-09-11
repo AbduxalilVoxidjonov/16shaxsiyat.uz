@@ -39,9 +39,29 @@ internal sealed class DeleteTestQuestionCommandHandler : IRequestHandler<DeleteT
             return Result.Failure(new Error(ProblemCodes.NotFound, "Savol topilmadi."));
         }
 
+        // QA topilmasi (2026-09-11): egasi javobi bor savolni o'chirmoqchi bo'lgan va
+        // `fk_answers_questions_question_id` (`23503`) jimgina `500 INTERNAL_ERROR` bo'lib
+        // chiqqan. O'chirishdan OLDIN `EXISTS` (`AnyAsync` → SQL `EXISTS`, `COUNT` EMAS) bilan
+        // tekshiriladi — aniq va harakatga yo'naltiruvchi `409 QUESTION_IN_USE`.
+        var hasAnswers = await _executor.AnyAsync(
+            _context.AsNoTracking(_context.Answers).Where(a => a.QuestionId == request.QuestionId),
+            cancellationToken).ConfigureAwait(false);
+
+        if (hasAnswers)
+        {
+            return Result.Failure(new Error(
+                ProblemCodes.QuestionInUse,
+                "Bu savolga allaqachon javob berilgan, shuning uchun uni o'chirib bo'lmaydi. " +
+                "Uni yangi sessiyalarda ko'rsatmaslik uchun \"Faol emas\" holatiga o'tkazing — " +
+                "eski javoblar va hisobotlar saqlanib qoladi."));
+        }
+
         var test = await CatalogMapping.LoadTrackedAsync(_context, _executor, question.TestDefinitionId, cancellationToken).ConfigureAwait(false)
             ?? throw new InvalidOperationException("Savolning anketasi topilmadi (ma'lumot izchilligi buzilgan).");
 
+        // `TestDefinition.RemoveQuestion` (Domain) `SYSTEM_TEST_LOCKED` (BR-8) va
+        // `QUESTION_REFERENCED_BY_VISIBILITY` (`docs/18` B-5) — ikkalasi ham DomainException,
+        // global middleware ushlaydi (`SCALE_IN_USE`/`SECTION_IN_USE` bilan bir xil naqsh).
         test.RemoveQuestion(request.QuestionId, now);
 
         _context.Add(AuditLog.Create(

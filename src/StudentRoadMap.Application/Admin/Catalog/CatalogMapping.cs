@@ -70,7 +70,8 @@ internal static class CatalogMapping
     /// batch so'rov bilan olib kelinadi (`GetCatalogTestPreviewQueryHandler` naqshi).
     /// `null` — chaqiruvchi variantlarni yuklamagan (masalan tizim savoli, variantsiz tur).
     /// </summary>
-    public static CatalogQuestionItemDto ToQuestionDto(Question question, CatalogScaleNameResolver scaleNames, IReadOnlyList<AnswerOption>? options = null)
+    /// <summary><paramref name="hasAnswers"/> — `CatalogQuestionItemDto.HasAnswers` izohiga qarang (P52). Yangi yaratilgan savolda chaqiruvchi bermaydi (standart `false` — to'g'ri, javob hali yo'q).</summary>
+    public static CatalogQuestionItemDto ToQuestionDto(Question question, CatalogScaleNameResolver scaleNames, IReadOnlyList<AnswerOption>? options = null, bool hasAnswers = false)
     {
         ArgumentNullException.ThrowIfNull(question);
         ArgumentNullException.ThrowIfNull(scaleNames);
@@ -103,7 +104,8 @@ internal static class CatalogMapping
             question.MinSelections,
             question.MaxSelections,
             question.VisibilityRule,
-            optionDtos);
+            optionDtos,
+            hasAnswers);
     }
 
     /// <summary>`docs/18` §2.2/§5 — bo'lim DTO'siga xaritalash.</summary>
@@ -191,6 +193,33 @@ internal static class CatalogMapping
             cancellationToken).ConfigureAwait(false);
 
         return rows.GroupBy(id => id).ToDictionary(g => g.Key, g => g.Count());
+    }
+
+    /// <summary>
+    /// Berilgan savol ID'lari orasidan JAVOBI BOR bo'lganlarini bitta batch so'rov bilan
+    /// aniqlaydi (`CatalogQuestionItemDto.HasAnswers`, P52 — ro'yxat endpointida N+1 bo'lmasin,
+    /// ADR-11). `Answers.QuestionId`ni ID bo'yicha filtr qilib `Distinct`langan xotira
+    /// to'plamiga aylantiradi — `SELECT DISTINCT question_id FROM answers WHERE question_id IN (...)`.
+    /// </summary>
+    public static async Task<IReadOnlySet<Guid>> LoadQuestionIdsWithAnswersAsync(
+        IAppDbContext context,
+        IAsyncQueryExecutor executor,
+        IReadOnlyCollection<Guid> questionIds,
+        CancellationToken cancellationToken)
+    {
+        if (questionIds.Count == 0)
+        {
+            return new HashSet<Guid>();
+        }
+
+        var rows = await executor.ToListAsync(
+            context.AsNoTracking(context.Answers)
+                .Where(a => questionIds.Contains(a.QuestionId))
+                .Select(a => a.QuestionId)
+                .Distinct(),
+            cancellationToken).ConfigureAwait(false);
+
+        return rows.ToHashSet();
     }
 
     /// <summary>Testlar to'plami uchun shkalalar sonini bitta batch so'rov bilan hisoblaydi.</summary>

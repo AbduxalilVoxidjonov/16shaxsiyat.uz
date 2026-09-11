@@ -116,6 +116,56 @@ public sealed class QuestionSectionTests
         ex.Code.Should().Be("SYSTEM_TEST_LOCKED");
     }
 
+    // --- `RemoveQuestion` — `docs/18` B-5: boshqa savol/bo'limning ko'rsatish sharti (`VisibilityRule`)
+    // shu savolning kodiga tayansa `QUESTION_REFERENCED_BY_VISIBILITY` (P52, 2026-09-11 QA topilmasi:
+    // jimgina `500 INTERNAL_ERROR` — `fk_answers_questions_question_id` — o'rniga OLDINDAN aniq xato). ---
+
+    [Fact]
+    public void RemoveQuestion_ReferencedByAnotherQuestionVisibility_ThrowsDomainException()
+    {
+        var testDefinition = CreateSurveyTestDefinition();
+        var gate = CreateQuestion(testDefinition.Id, "Q1");
+        testDefinition.AddQuestion(gate, Now);
+        var rule = new VisibilityRule(VisibilityMatch.All, [new VisibilityCondition("Q1", VisibilityOperator.Answered, [])]);
+        var dependent = Question.Create(Guid.NewGuid(), testDefinition.Id, "Q2", 2, "Bog'liq savol", QuestionType.ShortText, "SURVEY", 1, 1.0m, visibilityRule: rule);
+        testDefinition.AddQuestion(dependent, Now);
+
+        var act = () => testDefinition.RemoveQuestion(gate.Id, Now);
+
+        var ex = act.Should().Throw<DomainException>().Which;
+        ex.Code.Should().Be("QUESTION_REFERENCED_BY_VISIBILITY");
+        ex.Message.Should().Contain("Q1").And.Contain("Q2");
+    }
+
+    [Fact]
+    public void RemoveQuestion_ReferencedBySectionVisibility_ThrowsDomainException()
+    {
+        var testDefinition = CreateSurveyTestDefinition();
+        var gate = CreateQuestion(testDefinition.Id, "Q1");
+        testDefinition.AddQuestion(gate, Now);
+        var rule = new VisibilityRule(VisibilityMatch.All, [new VisibilityCondition("Q1", VisibilityOperator.Answered, [])]);
+        var section = QuestionSection.Create(Guid.NewGuid(), testDefinition.Id, "S1", "Bo'lim", 1, visibilityRule: rule);
+        testDefinition.AddSection(section, Now);
+
+        var act = () => testDefinition.RemoveQuestion(gate.Id, Now);
+
+        var ex = act.Should().Throw<DomainException>().Which;
+        ex.Code.Should().Be("QUESTION_REFERENCED_BY_VISIBILITY");
+        ex.Message.Should().Contain("Q1").And.Contain("S1");
+    }
+
+    [Fact]
+    public void RemoveQuestion_WithoutVisibilityReferences_Succeeds()
+    {
+        var testDefinition = CreateSurveyTestDefinition();
+        var question = CreateQuestion(testDefinition.Id, "Q1");
+        testDefinition.AddQuestion(question, Now);
+
+        testDefinition.RemoveQuestion(question.Id, Now);
+
+        testDefinition.QuestionCount.Should().Be(0);
+    }
+
     [Fact]
     public void MoveQuestionToSection_AssignsSectionId()
     {

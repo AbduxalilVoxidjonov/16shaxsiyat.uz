@@ -256,6 +256,9 @@ Barcha xatolar `application/problem+json`:
 | `QUESTION_TYPE_NOT_SCORABLE` | 400 | Matn/ko'p tanlov savol turi `Scored` anketada (B-1, P52) |
 | `BRANCHING_NOT_ALLOWED_IN_SCORED` | 400 | Ko'rsatish sharti (`visibility`) `Scored` anketada (B-2, P52) |
 | `REGISTRATION_REQUIRED_FOR_BATTERY` | 400 | Shaxsiyat batareyasi bor dasturga `RegistrationMode.None` qo'yib/nashr qilib bo'lmaydi (P52, 2026-09-11) |
+| `QUESTION_IN_USE` | 409 | `DELETE .../questions/{id}`: savolga allaqachon javob berilgan — o'rniga "Faol emas" qilib qo'yish tavsiya etiladi (P52, 2026-09-11 QA topilmasi) |
+| `QUESTION_REFERENCED_BY_VISIBILITY` | 409 | `DELETE .../questions/{id}`: boshqa savol/bo'limning ko'rsatish sharti (`docs/18` B-5) shu savol kodiga tayanadi — xabarda havola qiluvchi kod ko'rsatiladi (P52, 2026-09-11) |
+| `REFERENCED_RECORD_EXISTS` | 409 | DB tashqi kalit (FK) cheklovi buzilishi — yuqoridagi ikkita aniq tekshiruvni CHETLAB o'tgan zaxira holat (poyga, boshqa endpointlar); xabar DOIM umumiy, DB tafsiloti chiqmaydi (P31, P52, 2026-09-11) |
 
 > **`429` javobi.** `Retry-After` sarlavhasi (butun sekund) MAJBURIY, va bir xil qiymat
 > `ProblemDetails` tanasida `retryAfterSeconds` maydoni sifatida takrorlanadi — sarlavhani

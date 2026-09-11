@@ -222,6 +222,34 @@ public static class ProblemCodes
     /// </summary>
     public const string InputPatternInvalid = "INPUT_PATTERN_INVALID";
 
+    // --- P52 (2026-09-11 QA topilmasi) — savol o'chirish `500` o'rniga tushunarli `409`
+    // (`docs/06` 6-bo'lim jadvaliga qo'shildi). ---
+
+    /// <summary>
+    /// `DELETE /api/admin/catalog/questions/{id}` — savolga allaqachon javob berilgan
+    /// (`Answers` jadvalida `QuestionId` bo'yicha yozuv bor, `EXISTS` bilan oldindan
+    /// tekshiriladi). O'chirish o'rniga "Faol emas" qilib qo'yish tavsiya etiladi — eski
+    /// javoblar va hisobotlar saqlanib qoladi.
+    /// </summary>
+    public const string QuestionInUse = "QUESTION_IN_USE";
+
+    /// <summary>
+    /// `DELETE /api/admin/catalog/questions/{id}` — boshqa savol yoki bo'limning ko'rsatish
+    /// sharti (`VisibilityRule`) shu savolning kodiga (`docs/18` B-5) tayanadi. Xabarda
+    /// havola qiluvchi savol/bo'lim kodi aniq ko'rsatiladi — `TestDefinition.RemoveQuestion`
+    /// (Domain) tekshiradi, aggregat tracked (`CatalogMapping.LoadTrackedAsync`) yuklanganda.
+    /// </summary>
+    public const string QuestionReferencedByVisibility = "QUESTION_REFERENCED_BY_VISIBILITY";
+
+    /// <summary>
+    /// Umumiy zaxira kod — DB darajasidagi tashqi kalit (FK, `23503`) cheklovi buzilganda
+    /// (`ForeignKeyViolationException`, `AppDbContext.SaveChangesAsync`). Aniq ma'noli tekshiruv
+    /// (masalan `QuestionInUse`) YO'Q bo'lgan CHETLAB o'tilgan holatlar (poyga, boshqa
+    /// endpointlar) uchun — foydalanuvchi hech qachon jimgina `500` ko'rmasligi kerak. Xabar
+    /// DOIM o'zgarmas umumiy matn (P31 qoidasi: DB tafsiloti hech qachon chiqmaydi).
+    /// </summary>
+    public const string ReferencedRecordExists = "REFERENCED_RECORD_EXISTS";
+
     /// <summary>`Error.Code` → HTTP status. Ro'yxatda yo'q kod uchun standart qiymat `409` (domen holat mashinasi konflikti).</summary>
     public static readonly IReadOnlyDictionary<string, int> HttpStatusByCode = new Dictionary<string, int>(StringComparer.Ordinal)
     {
@@ -272,6 +300,9 @@ public static class ProblemCodes
         [BranchingNotAllowedInScored] = StatusCodes.Status400BadRequest,
         [InputPatternInvalid] = StatusCodes.Status400BadRequest,
         [RegistrationRequiredForBattery] = StatusCodes.Status400BadRequest,
+        [QuestionInUse] = StatusCodes.Status409Conflict,
+        [QuestionReferencedByVisibility] = StatusCodes.Status409Conflict,
+        [ReferencedRecordExists] = StatusCodes.Status409Conflict,
     };
 
     /// <summary>Default (`docs/06` jadvaliga kirmagan domen kodlari uchun) — holat mashinasi konflikti.</summary>

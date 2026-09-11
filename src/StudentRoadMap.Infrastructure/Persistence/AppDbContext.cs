@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql;
 using StudentRoadMap.Application.Common.Events;
 using StudentRoadMap.Application.Common.Exceptions;
 using StudentRoadMap.Application.Common.Interfaces;
@@ -361,6 +362,20 @@ public sealed class AppDbContext : DbContext, IAppDbContext
         }
         catch (DbUpdateException ex)
         {
+            // P52 (2026-09-11 QA topilmasi): tashqi kalit (FK, `23503`) buzilishi — masalan
+            // javobi bor savolni o'chirishga urinish. ANIQ tekshiruvlar (`QUESTION_IN_USE`,
+            // `QUESTION_REFERENCED_BY_VISIBILITY`) buni handler darajasida OLDINDAN ushlaydi;
+            // bu — ularni CHETLAB o'tgan holatlar (poyga, boshqa endpointlar) uchun ZAXIRA,
+            // pastdagi unique cheklovdan OLDIN tekshiriladi (aks holda hech qachon
+            // ishlatilmasdi — u shartsiz HAR bir `DbUpdateException`ni qamraydi).
+            if (IsForeignKeyViolation(ex.InnerException))
+            {
+                throw new ForeignKeyViolationException(
+                    ProblemCodes.ReferencedRecordExists,
+                    "Bu amalni bajarib bo'lmadi: bu yozuvga boshqa ma'lumotlar bog'liq.",
+                    ex);
+            }
+
             // `P14` (`prompts/14`) MAXSUS DIQQAT #3: DB darajasidagi unique cheklov (masalan
             // `ux_schools_slug`) ChIN bir vaqtdagi poyga holatida buzilishi mumkin —
             // `Application` qatlami EF Core paketiga bog'lanmasligi uchun portativ istisnoga
@@ -377,6 +392,21 @@ public sealed class AppDbContext : DbContext, IAppDbContext
 
         return result;
     }
+
+    /// <summary>
+    /// `DbUpdateException.InnerException` tashqi kalit (FK) cheklovi buzilganini bildiradimi.
+    /// Postgres'da (`Npgsql.PostgresException`, `SqlState == "23503"`) aniq kod bilan; SQLite'da
+    /// (FAQAT sinov muhiti) `Infrastructure.csproj` `Microsoft.Data.Sqlite` paketiga ATAYLAB
+    /// BOG'LANMAYDI (`OnModelCreating`dagi `Database.ProviderName` satr solishtirish bilan bir
+    /// xil sabab) — shu sabab konkret turga emas, SQLite'ning o'zgarmas xato XABARIGA qarab
+    /// aniqlanadi (`Microsoft.Data.Sqlite` bu xabarni har doim aynan shu matn bilan beradi).
+    /// </summary>
+    private static bool IsForeignKeyViolation(Exception? innerException) => innerException switch
+    {
+        PostgresException postgres => postgres.SqlState == "23503",
+        not null => innerException.Message.Contains("FOREIGN KEY constraint failed", StringComparison.OrdinalIgnoreCase),
+        null => false,
+    };
 
     private void UpdateAuditFields(DateTimeOffset now)
     {

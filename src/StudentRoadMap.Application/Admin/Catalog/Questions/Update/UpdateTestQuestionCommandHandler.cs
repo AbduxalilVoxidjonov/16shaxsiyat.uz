@@ -164,6 +164,11 @@ internal sealed class UpdateTestQuestionCommandHandler : IRequestHandler<UpdateT
             ? CatalogScaleNameResolver.None
             : await CatalogMapping.LoadScaleNamesAsync(_context, _executor, testDefinition, cancellationToken).ConfigureAwait(false);
 
-        return Result.Success(CatalogMapping.ToQuestionDto(question, scaleNames));
+        // P52: bitta yozuv uchun to'g'ridan-to'g'ri `EXISTS` — batch shart emas (faqat bitta savol).
+        var hasAnswers = await _executor.AnyAsync(
+            _context.AsNoTracking(_context.Answers).Where(a => a.QuestionId == question.Id),
+            cancellationToken).ConfigureAwait(false);
+
+        return Result.Success(CatalogMapping.ToQuestionDto(question, scaleNames, hasAnswers: hasAnswers));
     }
 }
