@@ -3,8 +3,14 @@ namespace StudentRoadMap.Application.Public.GetSchoolInfo;
 /// <summary>
 /// `docs/07-api-shartnoma.md` 1.1-bo'lim javob shakli. `Programs` — `prompts/34` C8-band
 /// bilan qo'shildi: maktab uchun mavjud dasturlar (`Visibility = Public` yoki biriktirilgan).
-/// `Tests` ORQAGA MOSLIK uchun saqlanadi (barcha nashr qilingan/faol testlar, dasturdan
-/// qat'i nazar) — mavjud mijoz/test kodi buzilmasligi uchun.
+///
+/// **`Tests` (P52, 2026-09-11 jonli hodisadan keyin tuzatildi):** endi BUTUN katalogdan EMAS,
+/// FAQAT `Programs` ichidagi MAVJUD dasturlar asosida hisoblanadi — `ProgramTestCatalog` bir xil
+/// manbasi bilan (`AssessmentTestAttacher`/sessiya bilan bir xil ro'yxat). Bir nechta dastur
+/// bo'lsa — birlashma (union), bitta test bir nechta dasturda bo'lsa ham TAKRORLANMAYDI. Ilgari
+/// bu maydon "orqaga moslik uchun, dasturdan qat'i nazar butun katalog" edi — bu XATO edi:
+/// dastur arxivlansa ham uning testlari bu yerda ko'rinishda davom etardi (jonli hodisa,
+/// `docs/07` 1.1-bo'lim izohiga qarang).
 /// </summary>
 public sealed record GetSchoolInfoResult(
     Guid SchoolId,
@@ -34,6 +40,9 @@ public sealed record PublicTestCatalogItemDto(
 /// `Domain.Catalog.PersonalityBattery` (metodika KODI bo'yicha qidiruv EMAS). Sessiya
 /// darajasidagi ayni shu bayroq `GetSessionStateResult.hasPersonalityBattery` da qaytadi —
 /// ikkalasi BIR XIL domen qoidasidan hisoblanadi.
+///
+/// `Tests` (P52) — aynan shu dasturning test bloklari, `ProgramTest.DisplayOrder` bo'yicha
+/// (`ProgramTestCatalog` — sessiya biriktirgan testlar bilan bir xil manba/mezon).
 /// </summary>
 public sealed record PublicProgramSummaryDto(
     string Code,
@@ -42,4 +51,5 @@ public sealed record PublicProgramSummaryDto(
     int TestCount,
     int QuestionCount,
     int EstimatedMinutes,
-    bool HasPersonalityBattery);
+    bool HasPersonalityBattery,
+    IReadOnlyList<PublicTestCatalogItemDto> Tests);

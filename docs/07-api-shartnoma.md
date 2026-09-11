@@ -33,14 +33,34 @@ Maktab havolasi to'g'riligini tekshirish va boshlanish ekranini to'ldirish.
   "consentText": "…",
   "programs": [
     { "code": "PERSONALITY_PROFILE", "nameUz": "Shaxsiyat profili", "descriptionUz": "…",
-      "testCount": 4, "questionCount": 190, "estimatedMinutes": 31, "hasPersonalityBattery": true },
+      "testCount": 4, "questionCount": 190, "estimatedMinutes": 31, "hasPersonalityBattery": true,
+      "tests": [
+        { "code": "MBTI16", "name": "16 tipli shaxsiyat modeli", "questionCount": 60, "estimatedMinutes": 9, "order": 1 },
+        { "code": "BIG5", "name": "Shaxsiyatning 5 omili", "questionCount": 50, "estimatedMinutes": 8, "order": 2 },
+        { "code": "RIASEC", "name": "Kasb qiziqishlari", "questionCount": 48, "estimatedMinutes": 7, "order": 3 },
+        { "code": "ACTIVITY", "name": "Aktivlik va motivatsiya", "questionCount": 32, "estimatedMinutes": 5, "order": 4 }
+      ] },
     { "code": "CAREER_SURVEY", "nameUz": "Kasb so'rovnomasi", "descriptionUz": null,
-      "testCount": 1, "questionCount": 20, "estimatedMinutes": 5, "hasPersonalityBattery": false }
+      "testCount": 1, "questionCount": 20, "estimatedMinutes": 5, "hasPersonalityBattery": false,
+      "tests": [
+        { "code": "CAREER_SURVEY_Q", "name": "Kasb so'rovnomasi savollari", "questionCount": 20, "estimatedMinutes": 5, "order": 1 }
+      ] }
   ]
 }
 ```
 `programs[]` — maktab uchun mavjud dasturlar (`Visibility = Public` yoki biriktirilgan;
 bir nechta bo'lsa o'quvchi tanlaydi, `code` → `POST /sessions` `programCode`).
+`programs[].tests` — AYNAN shu dasturning test bloklari (`ProgramTest.DisplayOrder` bo'yicha),
+sessiya boshlanganda (`POST /sessions`) biriktiriladigan ro'yxat bilan BIR XIL manbadan keladi.
+
+**`tests[]` (yuqori daraja, P52 — 2026-09-11 jonli hodisadan keyin tuzatildi):** endi BUTUN
+katalogdan EMAS, FAQAT `programs[]` ichidagi MAVJUD dasturlar asosida hisoblanadi — bir nechta
+dastur bo'lsa BIRLASHMA (union), bitta test bir nechta dasturda bo'lsa ham TAKRORLANMAYDI.
+`totalEstimatedMinutes` ham shu (birlashtirilgan) ro'yxatdan hisoblanadi. Ilgari (2026-09-11
+gacha) bu maydon "orqaga moslik uchun, dasturdan qat'i nazar butun nashr qilingan/faol
+katalog" edi — bu XATO edi: dastur arxivlansa ham uning testlari bu yerda ko'rinishda davom
+etardi (mijoz `programs.length === 1` bo'lganda aynan `tests[]`ga tayanadi, `programs[].tests`
+EMAS — jonli hodisa shundan kelib chiqqan).
 
 > **2026-09-03 dan boshlab `programs[]` `200` javobda HECH QACHON bo'sh emas** — bo'sh bo'lsa
 > javob `409 NO_PROGRAM_AVAILABLE` (pastga qarang). Ilgari bu holat `200` + `"programs": []`

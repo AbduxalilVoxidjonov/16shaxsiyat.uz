@@ -1,6 +1,5 @@
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Domain.Assessments;
-using StudentRoadMap.Domain.Catalog;
 
 namespace StudentRoadMap.Application.Public.Common;
 
@@ -10,9 +9,10 @@ namespace StudentRoadMap.Application.Public.Common;
 ///
 /// Mantiq ilgari faqat `StartSessionCommandHandler` ichida edi; P47da AYNAN shu qadam ikkinchi
 /// oqimga (`StartPublicSessionCommandHandler`) ham kerak bo'lgani uchun BIR JOYGA ko'chirildi.
-/// Ko'chirish paytida hech qanday qoida o'zgartirilmadi — tartib `ProgramTest.DisplayOrder`
-/// bo'yicha (`TestDefinition.DisplayOrder` EMAS, `prompts/34` C10-band), faqat
-/// `Published &amp;&amp; IsActive` anketalar, faol savoli yo'q anketa tushirib qoldiriladi.
+/// Dastur uchun MAVJUD testlarni tanlash mezonining o'zi (P52, jonli hodisadan keyin)
+/// `ProgramTestCatalog`ga chiqarildi — `GetSchoolInfoQueryHandler` (kirish ekrani) ham AYNAN
+/// shu manbadan foydalanadi, tartib `ProgramTest.DisplayOrder` bo'yicha
+/// (`TestDefinition.DisplayOrder` EMAS, `prompts/34` C10-band).
 /// </summary>
 internal static class AssessmentTestAttacher
 {
@@ -23,46 +23,23 @@ internal static class AssessmentTestAttacher
         Guid programId,
         CancellationToken cancellationToken)
     {
-        var programTests = await executor.ToListAsync(
-            context.ProgramTests.Where(pt => pt.ProgramId == programId).OrderBy(pt => pt.DisplayOrder),
-            cancellationToken).ConfigureAwait(false);
+        var items = await ProgramTestCatalog.GetTestsAsync(context, executor, programId, cancellationToken).ConfigureAwait(false);
 
-        var programTestDefinitionIds = programTests.Select(pt => pt.TestDefinitionId).ToList();
-        var testDefinitionsById = (await executor.ToListAsync(
-                context.TestDefinitions
-                    .Where(t => programTestDefinitionIds.Contains(t.Id) && t.Status == TestDefinitionStatus.Published && t.IsActive),
-                cancellationToken).ConfigureAwait(false))
-            .ToDictionary(t => t.Id);
+        var tests = new List<PublicTestSummaryDto>(items.Count);
 
-        var tests = new List<PublicTestSummaryDto>(programTests.Count);
-
-        foreach (var programTest in programTests)
+        foreach (var item in items)
         {
-            if (!testDefinitionsById.TryGetValue(programTest.TestDefinitionId, out var testDefinition))
-            {
-                continue;
-            }
-
-            var activeQuestionCount = await executor.CountAsync(
-                context.Questions.Where(q => q.TestDefinitionId == testDefinition.Id && q.IsActive),
-                cancellationToken).ConfigureAwait(false);
-
-            if (activeQuestionCount == 0)
-            {
-                continue;
-            }
-
-            var assessmentTest = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, testDefinition.Id, programTest.DisplayOrder, activeQuestionCount);
+            var assessmentTest = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, item.TestDefinitionId, item.Order, item.ActiveQuestionCount);
             assessment.AddTest(assessmentTest);
 
             tests.Add(new PublicTestSummaryDto(
-                testDefinition.Code,
-                testDefinition.NameUz,
+                item.Code,
+                item.NameUz,
                 TestStatus.NotStarted.ToString(),
                 0,
-                activeQuestionCount,
-                programTest.DisplayOrder,
-                testDefinition.EstimatedMinutes));
+                item.ActiveQuestionCount,
+                item.Order,
+                item.EstimatedMinutes));
         }
 
         return tests;

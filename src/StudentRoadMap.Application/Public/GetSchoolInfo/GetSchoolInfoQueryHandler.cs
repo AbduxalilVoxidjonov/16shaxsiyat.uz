@@ -101,28 +101,7 @@ internal sealed class GetSchoolInfoQueryHandler : IRequestHandler<GetSchoolInfoQ
                 ex, "Havola ochilishi hisoblagichini oshirib bo'lmadi (schoolId={SchoolId}) — landing sahifasi baribir qaytariladi.", school.Id);
         }
 
-        var testDefinitions = await _executor.ToListAsync(
-            _context.AsNoTracking(_context.TestDefinitions)
-                .Where(t => t.Status == TestDefinitionStatus.Published && t.IsActive)
-                .OrderBy(t => t.DisplayOrder),
-            cancellationToken).ConfigureAwait(false);
-
-        var tests = new List<PublicTestCatalogItemDto>(testDefinitions.Count);
-        foreach (var testDefinition in testDefinitions)
-        {
-            var questionCount = await _executor.CountAsync(
-                _context.AsNoTracking(_context.Questions).Where(q => q.TestDefinitionId == testDefinition.Id && q.IsActive),
-                cancellationToken).ConfigureAwait(false);
-
-            tests.Add(new PublicTestCatalogItemDto(
-                testDefinition.Code,
-                testDefinition.NameUz,
-                questionCount,
-                testDefinition.EstimatedMinutes,
-                testDefinition.DisplayOrder));
-        }
-
-        var programs = await BuildProgramsAsync(school.Id, cancellationToken).ConfigureAwait(false);
+        var (programs, tests) = await BuildProgramsAsync(school.Id, cancellationToken).ConfigureAwait(false);
 
         // `docs/07` 1.1 (2026-09-03, jonli hodisadan keyin): havola VA token to'g'ri, maktab
         // faol — lekin bironta mavjud dastur yo'q. Ilgari bu holat `200` + bo'sh `programs[]`
@@ -159,44 +138,55 @@ internal sealed class GetSchoolInfoQueryHandler : IRequestHandler<GetSchoolInfoQ
         return Result.Success(result);
     }
 
-    /// <summary>`prompts/34` C8-band — maktab uchun mavjud dasturlar (`ProgramAvailability`), har biri uchun test/savol soni va taxminiy vaqt.</summary>
-    private async Task<IReadOnlyList<PublicProgramSummaryDto>> BuildProgramsAsync(Guid schoolId, CancellationToken cancellationToken)
+    /// <summary>
+    /// `prompts/34` C8-band — maktab uchun mavjud dasturlar (`ProgramAvailability`), har biri
+    /// uchun test/savol soni va taxminiy vaqt. Har dastur uchun test ro'yxati `ProgramTestCatalog`
+    /// dan olinadi — bu AYNAN sessiya (`AssessmentTestAttacher`) biriktiradigan ro'yxat bilan bir
+    /// xil manba (P52, jonli hodisadan keyin: ikkalasi ajralib ketmasligi shart).
+    ///
+    /// Yuqori darajadagi (dasturga bog'liq bo'lmagan) `Tests` — shu yerda MAVJUD dasturlar
+    /// bo'yicha BIRLASHMA sifatida ham yig'iladi (`testsByDefinitionId`, `TestDefinitionId`
+    /// bo'yicha takrorlanmaydi — bitta test bir nechta dasturda bo'lishi mumkin).
+    /// </summary>
+    private async Task<(IReadOnlyList<PublicProgramSummaryDto> Programs, IReadOnlyList<PublicTestCatalogItemDto> Tests)> BuildProgramsAsync(
+        Guid schoolId, CancellationToken cancellationToken)
     {
         var availablePrograms = await ProgramAvailability.GetAvailableProgramsAsync(_context, _executor, schoolId, cancellationToken).ConfigureAwait(false);
 
         var programs = new List<PublicProgramSummaryDto>(availablePrograms.Count);
+        var testsByDefinitionId = new Dictionary<Guid, PublicTestCatalogItemDto>();
+
         foreach (var program in availablePrograms)
         {
-            var programTestDefinitionIds = await _executor.ToListAsync(
-                _context.AsNoTracking(_context.ProgramTests).Where(pt => pt.ProgramId == program.Id).Select(pt => pt.TestDefinitionId),
-                cancellationToken).ConfigureAwait(false);
+            var items = await ProgramTestCatalog.GetTestsAsync(_context, _executor, program.Id, cancellationToken).ConfigureAwait(false);
 
-            var programTestDefinitions = await _executor.ToListAsync(
-                _context.AsNoTracking(_context.TestDefinitions)
-                    .Where(t => programTestDefinitionIds.Contains(t.Id) && t.Status == TestDefinitionStatus.Published && t.IsActive),
-                cancellationToken).ConfigureAwait(false);
-
-            var questionCount = 0;
-            foreach (var testDefinition in programTestDefinitions)
-            {
-                questionCount += await _executor.CountAsync(
-                    _context.AsNoTracking(_context.Questions).Where(q => q.TestDefinitionId == testDefinition.Id && q.IsActive),
-                    cancellationToken).ConfigureAwait(false);
-            }
+            var programTests = items
+                .Select(i => new PublicTestCatalogItemDto(i.Code, i.NameUz, i.ActiveQuestionCount, i.EstimatedMinutes, i.Order))
+                .ToList();
 
             programs.Add(new PublicProgramSummaryDto(
                 program.Code,
                 program.NameUz,
                 program.DescriptionUz,
-                TestCount: programTestDefinitions.Count,
-                QuestionCount: questionCount,
-                EstimatedMinutes: programTestDefinitions.Sum(t => t.EstimatedMinutes),
+                TestCount: items.Count,
+                QuestionCount: items.Sum(i => i.ActiveQuestionCount),
+                EstimatedMinutes: items.Sum(i => i.EstimatedMinutes),
                 // `docs/06` 8-bo'lim: dasturda ilmiy batareya BO'LMASLIGI mumkin — mezon
                 // `PersonalityBattery` domen qoidasida, bu yerda kod ro'yxati YO'Q.
-                HasPersonalityBattery: PersonalityBattery.ContainedIn(programTestDefinitions)));
+                HasPersonalityBattery: items.Any(i => PersonalityBattery.Includes(i.Kind, i.ScoringMode)),
+                Tests: programTests));
+
+            foreach (var item in items)
+            {
+                // Bitta test bir nechta mavjud dasturda bo'lishi mumkin — birinchi uchragan
+                // dastur tartibida qoldiriladi, takrorlanmaydi (`TestDefinitionId` kaliti).
+                testsByDefinitionId.TryAdd(item.TestDefinitionId, new PublicTestCatalogItemDto(item.Code, item.NameUz, item.ActiveQuestionCount, item.EstimatedMinutes, item.Order));
+            }
         }
 
-        return programs;
+        var tests = testsByDefinitionId.Values.OrderBy(t => t.Order).ToList();
+
+        return (programs, tests);
     }
 
     /// <summary>
