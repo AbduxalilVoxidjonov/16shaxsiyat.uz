@@ -1199,6 +1199,8 @@
       "moveDownAria": "{{code}} savolini pastga ko'chirish",
       "deleteQuestion": "Savolni o'chirish",
       "deleteQuestionAria": "{{code}} savolini o'chirish",
+      "deleteQuestionDisabledAria": "{{code}} savolini o'chirib bo'lmaydi: bu savolga javob berilgan. \"Faol emas\" qilib qo'ying.",
+      "toggleQuestionActiveAria": "{{code}} savolini faollikni almashtirish",
       "addScale": "Shkala qo'shish",
       "editScaleAria": "{{code}} shkalasini tahrirlash",
       "deleteScale": "Shkalani o'chirish",
@@ -1276,7 +1278,8 @@
       "directionReverse": "Teskari",
       "weight": "Og'irlik",
       "state": "Holati",
-      "actions": "Amallar"
+      "actions": "Amallar",
+      "hasAnswersHint": "Bu savolga javob berilgan — o'chirib bo'lmaydi. \"Faol emas\" qilib qo'ying."
     },
     "questionType": {
       "Likert5": "Likert (5 ball)",
@@ -1340,6 +1343,10 @@
       "title": "Savolni o'chirish",
       "warning": "Savol butunlay o'chiriladi. Agar shu savolga berilgan javoblar bo'lsa, eski hisobotlar unga tayanmay qoladi.",
       "successTitle": "Savol o'chirildi"
+    },
+    "questionToggleActive": {
+      "activatedTitle": "Savol faollashtirildi",
+      "deactivatedTitle": "Savol \"Faol emas\" qilindi"
     },
     "scaleForm": {
       "createTitle": "Yangi shkala qo'shish",
@@ -1432,7 +1439,10 @@
       "sectionCodeDuplicate": "Bu kod bilan bo'lim allaqachon mavjud.",
       "questionTypeNotScorable": "Bu savol turi (matn/ko'p tanlov) faqat so'rovnoma (\"Survey\") rejimidagi anketalarda ishlaydi.",
       "branchingNotAllowedInScored": "Ko'rsatish sharti faqat so'rovnoma (\"Survey\") rejimidagi anketalarda ishlaydi.",
-      "questionNotVisible": "Bu savol joriy javoblar bo'yicha yashirilgan — unga javob yuborib bo'lmaydi."
+      "questionNotVisible": "Bu savol joriy javoblar bo'yicha yashirilgan — unga javob yuborib bo'lmaydi.",
+      "questionInUse": "Bu savolga allaqachon javob berilgan — shu sababli uni o'chirib bo'lmaydi. Buning o'rniga savolni \"Faol emas\" holatiga o'tkazing.",
+      "questionReferencedByVisibility": "Bu savolni o'chirib bo'lmaydi: {{detail}}. Avval o'sha ko'rsatish shartini o'zgartiring yoki olib tashlang, keyin qayta urining.",
+      "referencedRecordExists": "Bu yozuvga boshqa ma'lumotlar bog'liq — shu sababli uni o'chirib bo'lmaydi."
     },
     "bands": {
       "heading": "Talqin oraliqlari",

@@ -150,6 +150,13 @@ export interface AdminSectionPayload {
  * docs/18 §2.3, §5 — `CatalogQuestionItemDto`ga (sxemada hali yo'q) qo'shiladigan
  * tarmoqlanuvchi so'rovnoma maydonlari. `features/catalog/model/types.ts` da
  * `CatalogQuestionItem` shu bilan kesishtiriladi.
+ *
+ * `hasAnswers` — MUVAQQAT (egasi topgan jonli xato, 2026-09-11): backend savolni
+ * o'chirishga urinilganda javob mavjud bo'lsa `500` o'rniga `409 QUESTION_IN_USE` qaytaradigan
+ * qilib tuzatilmoqda (parallel backend vazifasi), shu bilan birga ro'yxat DTO'siga
+ * `hasAnswers: boolean` qo'shiladi — frontend shu bayroqqa qarab o'chirish tugmasini OLDINDAN
+ * bloklaydi (foydalanuvchi bosib, keyin serverdan tushunarsiz xato olmasin). `generate:api`
+ * ishga tushgach bu maydon ham boshqalar kabi sxemaga o'tadi.
  */
 export interface AdminQuestionBranchingFields {
   sectionId: string | null;
@@ -160,6 +167,7 @@ export interface AdminQuestionBranchingFields {
   minSelections: number | null;
   maxSelections: number | null;
   options: AdminQuestionOption[] | null;
+  hasAnswers: boolean;
 }
 
 /**

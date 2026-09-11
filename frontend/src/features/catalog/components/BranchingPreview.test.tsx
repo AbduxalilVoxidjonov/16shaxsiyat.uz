@@ -42,6 +42,7 @@ function question(overrides: Partial<CatalogQuestionItem> = {}): CatalogQuestion
       { textUz: "Ha, Intellect o'quv markazida o'qiyman", value: 1, displayOrder: 1 },
       { textUz: 'Yoq', value: 2, displayOrder: 2 },
     ],
+    hasAnswers: false,
     ...overrides,
   };
 }

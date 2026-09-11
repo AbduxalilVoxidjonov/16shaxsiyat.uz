@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Lock, Pencil, Plus, Power, Trash2 } from 'lucide-react';
 import { Badge } from '@/shared/ui/Badge';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
@@ -15,8 +15,10 @@ import { useCatalogQuestionsQuery } from '../api/useCatalogTestDetailQuery';
 import {
   useDeleteCatalogQuestion,
   useReorderCatalogQuestions,
+  useUpdateCatalogQuestion,
 } from '../api/useCatalogQuestionMutations';
 import { useCatalogErrorMessage } from '../lib/useCatalogErrorMessage';
+import { buildQuestionUpdatePayload, toQuestionFormValues } from '../model/questionPayload';
 import type { CatalogQuestionItem, CatalogTestDetail, QuestionType } from '../model/types';
 import { QUESTION_TYPE_VALUES } from '../model/types';
 import { QuestionEditorDialog } from './QuestionEditorDialog';
@@ -51,11 +53,18 @@ export function QuestionsSection({ test }: QuestionsSectionProps) {
   const sectionsQuery = useCatalogSectionsQuery(test.id);
   const reorderQuestions = useReorderCatalogQuestions(test.id);
   const deleteQuestion = useDeleteCatalogQuestion(test.id);
+  const updateQuestion = useUpdateCatalogQuestion(test.id);
+  // `docs/18` B-2: bo'lim/shart FAQAT `Survey` anketalarda — `buildQuestionUpdatePayload`
+  // ga aynan shu bayroq bilan bir xil qiymat berilishi kerak (`QuestionEditorDialog`dagi
+  // naqsh), aks holda `sectionCode`/`visibility` noto'g'ri (qo'shilmasligi kerak bo'lgan
+  // joyda qo'shilib) yuboriladi.
+  const allowBranching = test.scoringMode === 'Survey';
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<CatalogQuestionItem | null>(null);
   const [pendingDelete, setPendingDelete] = useState<CatalogQuestionItem | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const questions = [...(questionsQuery.data ?? [])].sort((a, b) => a.order - b.order);
   const lastQuestion = questions[questions.length - 1];
@@ -94,6 +103,49 @@ export function QuestionsSection({ test }: QuestionsSectionProps) {
       setPendingDelete(null);
     } catch (caught) {
       setDeleteError(toErrorMessage(caught));
+    }
+  }
+
+  /**
+   * Javob berilgan savolni O'CHIRIB bo'lmaydi (`hasAnswers`, `409 QUESTION_IN_USE`) — muqobil
+   * yo'l sifatida savol qatorida to'g'ridan-to'g'ri "Faol emas" almashtirgichi bor, tahrirlash
+   * oynasini ochish shart emas. `buildQuestionUpdatePayload` `Custom` testda `scale`/
+   * `direction`/`weight`ni ham talab qiladi, shu sabab joriy qiymatlar `toQuestionFormValues`
+   * bilan to'liq formaga aylantirilib, faqat `isActive` almashtiriladi.
+   *
+   * **MUHIM:** `toQuestionFormValues` `sectionCode`ni har doim `''` qaytaradi (izohiga qarang —
+   * u `QuestionEditorDialog`da `question.sectionId` + `sections` ro'yxatidan HISOBLANADI).
+   * Shu yerda ham AYNAN o'sha hisoblash takrorlanadi — aks holda `allowBranching` bo'lganda
+   * bo'limli savolni faollikni almashtirish uni bo'limdan CHIQARIB YUBORAR edi (`sectionCode:
+   * null` yuborilib).
+   */
+  async function handleToggleActive(question: CatalogQuestionItem) {
+    setTogglingId(question.id);
+    try {
+      const sections = sectionsQuery.data ?? [];
+      const sectionCode = question.sectionId
+        ? (sections.find((section) => section.id === question.sectionId)?.code ?? '')
+        : '';
+      await updateQuestion.mutateAsync({
+        questionId: question.id,
+        payload: buildQuestionUpdatePayload(
+          question,
+          { ...toQuestionFormValues(question), sectionCode, isActive: !question.isActive },
+          { isSystem: test.isSystem, allowBranching },
+        ),
+      });
+      toast.show({
+        variant: 'success',
+        title: t(
+          question.isActive
+            ? 'catalog.questionToggleActive.deactivatedTitle'
+            : 'catalog.questionToggleActive.activatedTitle',
+        ),
+      });
+    } catch (caught) {
+      toast.show({ variant: 'danger', title: toErrorMessage(caught) });
+    } finally {
+      setTogglingId(null);
     }
   }
 
@@ -174,9 +226,25 @@ export function QuestionsSection({ test }: QuestionsSectionProps) {
                 </TableCell>
                 <TableCell className="text-neutral-500">{question.weight}</TableCell>
                 <TableCell>
-                  <Badge variant={question.isActive ? 'success' : 'neutral'}>
-                    {question.isActive ? t('catalog.badge.active') : t('catalog.badge.inactive')}
-                  </Badge>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Badge variant={question.isActive ? 'success' : 'neutral'}>
+                      {question.isActive ? t('catalog.badge.active') : t('catalog.badge.inactive')}
+                    </Badge>
+                    {/* Tezkor almashtirgich — javob berilgan savolni o'chirib bo'lmaganda
+                        (`hasAnswers`) foydalanuvchi tahrirlash oynasini ochmasdan shu yerdan
+                        "Faol emas" qilib qo'ya oladi (topshiriq §3, muqobil yo'l). */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label={t('catalog.actions.toggleQuestionActiveAria', {
+                        code: question.code,
+                      })}
+                      isLoading={togglingId === question.id && updateQuestion.isPending}
+                      onClick={() => void handleToggleActive(question)}
+                    >
+                      <Power size={14} aria-hidden="true" />
+                    </Button>
+                  </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1">
@@ -211,18 +279,38 @@ export function QuestionsSection({ test }: QuestionsSectionProps) {
                       <ArrowDown size={14} aria-hidden="true" />
                     </Button>
                     {!test.isSystem && (
+                      // `hasAnswers` bo'lsa tugma OLDINDAN bloklanadi (`409 QUESTION_IN_USE`ni
+                      // bosgandan keyin ko'rish o'rniga) — sabab ham vizual (qulf belgisi), ham
+                      // `title` (hover), ham `aria-label` (skrinrider) orqali beriladi, faqat
+                      // `title`ga tayanilmaydi.
                       <Button
                         variant="ghost"
                         size="sm"
-                        aria-label={t('catalog.actions.deleteQuestionAria', {
-                          code: question.code,
-                        })}
+                        disabled={question.hasAnswers}
+                        title={
+                          question.hasAnswers
+                            ? t('catalog.questionsTable.hasAnswersHint')
+                            : undefined
+                        }
+                        aria-label={
+                          question.hasAnswers
+                            ? t('catalog.actions.deleteQuestionDisabledAria', {
+                                code: question.code,
+                              })
+                            : t('catalog.actions.deleteQuestionAria', {
+                                code: question.code,
+                              })
+                        }
                         onClick={() => {
                           setDeleteError(null);
                           setPendingDelete(question);
                         }}
                       >
-                        <Trash2 size={14} className="text-danger-600" aria-hidden="true" />
+                        {question.hasAnswers ? (
+                          <Lock size={14} className="text-neutral-400" aria-hidden="true" />
+                        ) : (
+                          <Trash2 size={14} className="text-danger-600" aria-hidden="true" />
+                        )}
                       </Button>
                     )}
                   </div>

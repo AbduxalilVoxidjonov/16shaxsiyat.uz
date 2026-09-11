@@ -44,6 +44,7 @@ function question(overrides: Partial<CatalogQuestionItem> = {}): CatalogQuestion
     minSelections: null,
     maxSelections: null,
     options: null,
+    hasAnswers: false,
     ...overrides,
   };
 }

@@ -70,6 +70,7 @@ function questionRow(overrides: Partial<CatalogQuestionItem> = {}): CatalogQuest
     minSelections: null,
     maxSelections: null,
     options: null,
+    hasAnswers: false,
     ...overrides,
   };
 }
