@@ -238,4 +238,23 @@ describe('QuestionEditorDialog — turga qarab maydonlar', () => {
     expect(await screen.findByText(/takrorlanmasin/)).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it("forma keng ekranda ikki ustunli grid, 390px'da esa bitta ustun bo'lib qoladi", () => {
+    mockFetch();
+    const { container } = renderDialog();
+
+    // Forma o'zi 2 ustunli grid (`sm:` dan yuqorida) — mobilda (`sm:` gacha) bitta ustun,
+    // chunki `grid-cols-1` ustuvor va `sm:grid-cols-2` faqat kengroq ekranda ishga tushadi.
+    const form = container.querySelector(`#${CSS.escape('catalog-question-form')}`);
+    expect(form).toHaveClass('grid', 'grid-cols-1', 'sm:grid-cols-2');
+
+    // Uzun maydon (savol matni) — to'liq kenglikda, ikki ustunga siqilmaydi.
+    const textUzWrapper = screen.getByLabelText("Matni (o'zbekcha)").closest('div')?.parentElement;
+    expect(textUzWrapper).toHaveClass('sm:col-span-2');
+
+    // Kod/tur/tartib qisqa maydonlari — o'z ichki 2 ustunli mini-grid guruhida, forma
+    // darajasida esa to'liq kenglikni egallaydi (shu guruh ichida ikkitalik joylashadi).
+    const identityGroup = screen.getByLabelText('Savol kodi').closest('div')?.parentElement;
+    expect(identityGroup).toHaveClass('grid', 'sm:grid-cols-2', 'sm:col-span-2');
+  });
 });

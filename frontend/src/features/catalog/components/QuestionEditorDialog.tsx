@@ -205,7 +205,9 @@ export function QuestionEditorDialog({
       onClose={onClose}
       title={isEdit ? t('catalog.questionForm.editTitle') : t('catalog.questionForm.createTitle')}
       description={isEdit ? question.code : t('catalog.questionForm.createDescription')}
-      className="max-w-lg"
+      // Ikki ustunli forma uchun standart `max-w-md` tor — `Dialog`ning o'zi o'zgarmaydi,
+      // faqat prop (`SchoolFormDialog` naqshi).
+      className="max-w-3xl"
       footer={
         <>
           <Button variant="outline" onClick={onClose} disabled={isMutating}>
@@ -217,111 +219,134 @@ export function QuestionEditorDialog({
         </>
       }
     >
+      {/*
+        Ikki ustunli tartib (egasining talabi: oyna juda uzun bo'lib ketmasin). `sm:` dan
+        yuqorida qisqa maydonlar ikkitalik ustunda, mobilda (390px) bitta ustun bo'lib qoladi
+        (`SchoolFormDialog` naqshi). Uzun/murakkab bloklar (matnlar, variantlar va ko'rsatish
+        sharti muharrirlari, qulflangan tizim izohi) doim to'liq kenglikda —
+        `sm:col-span-2`. Bog'liq qisqa maydonlar (kod/tur/tartib, shkala/yo'nalish/og'irlik,
+        placeholder/shablon/uzunlik, min/max tanlov) o'z ichki 2 ustunli mini-grid'iga
+        joylangan — shunda ular qo'shni sharti bilan aralashib ketmaydi.
+      */}
       <form
         id={FORM_ID}
         onSubmit={(event) => void onSubmit(event)}
         noValidate
-        className="flex flex-col gap-4"
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2"
       >
-        {isPublished && <PublishedEditWarning />}
-
-        {isEdit ? (
-          <Input
-            label={t('catalog.questionForm.codeLabel')}
-            hint={t('catalog.questionForm.codeLockedHint')}
-            value={question.code}
-            readOnly
-            disabled
-          />
-        ) : (
-          <Input
-            label={t('catalog.questionForm.codeLabel')}
-            hint={t('catalog.questionForm.codeHint')}
-            error={errors.code?.message}
-            {...register('code')}
-          />
+        {isPublished && (
+          <div className="sm:col-span-2">
+            <PublishedEditWarning />
+          </div>
         )}
 
-        <Textarea
-          label={t('catalog.questionForm.textUzLabel')}
-          error={errors.textUz?.message}
-          {...register('textUz')}
-        />
-        <Textarea
-          label={t('catalog.questionForm.textRuLabel')}
-          hint={t('catalog.questionForm.optionalHint')}
-          error={errors.textRu?.message}
-          {...register('textRu')}
-        />
-        <Textarea
-          label={t('catalog.questionForm.textEnLabel')}
-          hint={t('catalog.questionForm.optionalHint')}
-          error={errors.textEn?.message}
-          {...register('textEn')}
-        />
+        <div className="grid grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-2">
+          {isEdit ? (
+            <Input
+              label={t('catalog.questionForm.codeLabel')}
+              hint={t('catalog.questionForm.codeLockedHint')}
+              value={question.code}
+              readOnly
+              disabled
+            />
+          ) : (
+            <Input
+              label={t('catalog.questionForm.codeLabel')}
+              hint={t('catalog.questionForm.codeHint')}
+              error={errors.code?.message}
+              {...register('code')}
+            />
+          )}
 
-        {isEdit ? (
+          {isEdit ? (
+            <Input
+              label={t('catalog.questionForm.typeLabel')}
+              hint={t('catalog.questionForm.typeLockedHint')}
+              value={t(`catalog.questionType.${question.type}`, { defaultValue: question.type })}
+              readOnly
+              disabled
+            />
+          ) : (
+            <Select
+              label={t('catalog.questionForm.typeLabel')}
+              options={typeOptions}
+              error={errors.type?.message}
+              {...register('type')}
+            />
+          )}
+
           <Input
-            label={t('catalog.questionForm.typeLabel')}
-            hint={t('catalog.questionForm.typeLockedHint')}
-            value={t(`catalog.questionType.${question.type}`, { defaultValue: question.type })}
-            readOnly
-            disabled
+            type="number"
+            label={t('catalog.questionForm.orderLabel')}
+            error={errors.order?.message}
+            {...register('order', { valueAsNumber: true })}
           />
-        ) : (
-          <Select
-            label={t('catalog.questionForm.typeLabel')}
-            options={typeOptions}
-            error={errors.type?.message}
-            {...register('type')}
-          />
-        )}
+        </div>
 
-        <Input
-          type="number"
-          label={t('catalog.questionForm.orderLabel')}
-          error={errors.order?.message}
-          {...register('order', { valueAsNumber: true })}
-        />
+        <div className="sm:col-span-2">
+          <Textarea
+            label={t('catalog.questionForm.textUzLabel')}
+            error={errors.textUz?.message}
+            {...register('textUz')}
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <Textarea
+            label={t('catalog.questionForm.textRuLabel')}
+            hint={t('catalog.questionForm.optionalHint')}
+            error={errors.textRu?.message}
+            {...register('textRu')}
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <Textarea
+            label={t('catalog.questionForm.textEnLabel')}
+            hint={t('catalog.questionForm.optionalHint')}
+            error={errors.textEn?.message}
+            {...register('textEn')}
+          />
+        </div>
 
         {isSystem ? (
           // Tizim savolida bu uch maydon FAQAT ko'rsatiladi — forma qiymatlaridan emas,
           // to'g'ridan-to'g'ri savol qatoridan o'qiladi va so'rov tanasiga tushmaydi.
-          <div className="flex flex-col gap-3 rounded-lg bg-neutral-50 p-3">
+          <div className="flex flex-col gap-3 rounded-lg bg-neutral-50 p-3 sm:col-span-2">
             <p id={lockedHintId} className="flex items-start gap-2 text-sm text-neutral-600">
               <Lock size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
               {t('catalog.questionForm.systemLockedHint')}
             </p>
-            <Input
-              label={t('catalog.questionsTable.scale')}
-              value={question?.scale ?? ''}
-              aria-describedby={lockedHintId}
-              readOnly
-              disabled
-            />
-            <Input
-              label={t('catalog.questionsTable.direction')}
-              value={
-                question?.direction === -1
-                  ? t('catalog.questionsTable.directionReverse')
-                  : t('catalog.questionsTable.directionForward')
-              }
-              aria-describedby={lockedHintId}
-              readOnly
-              disabled
-            />
-            <Input
-              label={t('catalog.questionsTable.weight')}
-              value={String(question?.weight ?? '')}
-              aria-describedby={lockedHintId}
-              readOnly
-              disabled
-            />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Input
+                label={t('catalog.questionsTable.scale')}
+                value={question?.scale ?? ''}
+                aria-describedby={lockedHintId}
+                readOnly
+                disabled
+              />
+              <Input
+                label={t('catalog.questionsTable.direction')}
+                value={
+                  question?.direction === -1
+                    ? t('catalog.questionsTable.directionReverse')
+                    : t('catalog.questionsTable.directionForward')
+                }
+                aria-describedby={lockedHintId}
+                readOnly
+                disabled
+              />
+              <Input
+                label={t('catalog.questionsTable.weight')}
+                value={String(question?.weight ?? '')}
+                aria-describedby={lockedHintId}
+                readOnly
+                disabled
+              />
+            </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-4">
+          <>
             {!isSurveyOnlyType && (
-              <>
+              <div className="grid grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-2">
                 <Input
                   label={t('catalog.questionsTable.scale')}
                   hint={t('catalog.questionForm.scaleHint')}
@@ -346,11 +371,11 @@ export function QuestionEditorDialog({
                   error={errors.weight?.message}
                   {...register('weight', { valueAsNumber: true })}
                 />
-              </>
+              </div>
             )}
 
             {isTextType && (
-              <>
+              <div className="grid grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-2">
                 <Input
                   label={t('catalog.questionForm.placeholderLabel')}
                   error={errors.placeholder?.message}
@@ -370,11 +395,11 @@ export function QuestionEditorDialog({
                   error={errors.maxLength?.message}
                   {...register('maxLength', { valueAsNumber: true })}
                 />
-              </>
+              </div>
             )}
 
             {type === 'MultiChoice' && (
-              <>
+              <div className="grid grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-2">
                 <Input
                   type="number"
                   label={t('catalog.questionForm.minSelectionsLabel')}
@@ -387,18 +412,20 @@ export function QuestionEditorDialog({
                   error={errors.maxSelections?.message}
                   {...register('maxSelections', { valueAsNumber: true })}
                 />
-              </>
+              </div>
             )}
 
             {isChoiceType && (
-              <OptionsEditor
-                options={optionsValue}
-                onChange={(next) => {
-                  setValue('options', next, { shouldValidate: true, shouldDirty: true });
-                }}
-                disabled={isMutating}
-                error={optionsError}
-              />
+              <div className="sm:col-span-2">
+                <OptionsEditor
+                  options={optionsValue}
+                  onChange={(next) => {
+                    setValue('options', next, { shouldValidate: true, shouldDirty: true });
+                  }}
+                  disabled={isMutating}
+                  error={optionsError}
+                />
+              </div>
             )}
 
             {allowBranching ? (
@@ -408,31 +435,37 @@ export function QuestionEditorDialog({
                   options={sectionOptions}
                   {...register('sectionCode')}
                 />
-                <VisibilityRuleEditor
-                  value={visibilityValue}
-                  onChange={(rule) => {
-                    setValue('visibility', rule, { shouldValidate: true, shouldDirty: true });
-                  }}
-                  availableQuestions={visibilityAvailableQuestions}
-                  disabled={isMutating}
-                />
+                <div className="sm:col-span-2">
+                  <VisibilityRuleEditor
+                    value={visibilityValue}
+                    onChange={(rule) => {
+                      setValue('visibility', rule, { shouldValidate: true, shouldDirty: true });
+                    }}
+                    availableQuestions={visibilityAvailableQuestions}
+                    disabled={isMutating}
+                  />
+                </div>
               </>
             ) : (
-              <p className="text-sm text-neutral-500">{t('catalog.questionForm.surveyOnlyNotice')}</p>
+              <p className="text-sm text-neutral-500 sm:col-span-2">
+                {t('catalog.questionForm.surveyOnlyNotice')}
+              </p>
             )}
-          </div>
+          </>
         )}
 
-        <Checkbox
-          label={t('catalog.questionForm.isActiveLabel')}
-          error={errors.isActive?.message}
-          {...register('isActive')}
-        />
-        <Checkbox
-          label={t('catalog.questionForm.isRequiredLabel')}
-          error={errors.isRequired?.message}
-          {...register('isRequired')}
-        />
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 sm:col-span-2">
+          <Checkbox
+            label={t('catalog.questionForm.isActiveLabel')}
+            error={errors.isActive?.message}
+            {...register('isActive')}
+          />
+          <Checkbox
+            label={t('catalog.questionForm.isRequiredLabel')}
+            error={errors.isRequired?.message}
+            {...register('isRequired')}
+          />
+        </div>
       </form>
     </Dialog>
   );
