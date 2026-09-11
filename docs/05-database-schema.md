@@ -720,7 +720,10 @@ deb talqin qilinadi (`AssessmentProgram.ResolveRegistrationFields()`), xuddi
 bo'lgan qattiq kodlangan xatti-harakat bilan BAYT-BAYT mos (`birthDate`/`grade`/`phone`
 majburiy, qolgani ixtiyoriy) — shu sabab mavjud dasturlarda `NULL` bilan ham, aniq yozilgan
 standart qiymatlar bilan ham natija AYNAN bir xil; backfill qo'shimcha yozuv operatsiyasidan
-boshqa foyda bermas edi.
+boshqa foyda bermas edi. **Bundan `gender` mustasno:** shu kuni ichida aniqlangan
+frontend/backend nomuvofiqligi tufayli (`docs/18` §9.5.1) `gender` standarti `Optional`dan
+`Required`ga tuzatildi — bu sxema o'zgarishi EMAS (ustun hamon `jsonb NULL`), faqat
+`RegistrationFields.Default` konstantasi o'zgardi, migratsiya qayta yozilmadi.
 
 **jsonb shakli** (camelCase, enum — satr): `docs/18` §9.5.1.
 

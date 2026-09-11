@@ -393,9 +393,13 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
             errors["birthDate"] = ["Tug'ilgan sana kiritilishi shart."];
         }
 
-        if (fields.Gender == RegistrationFieldRequirement.Required && request.Gender is null)
+        // `Gender.Unspecified` ni ham "kiritilmagan" deb hisoblaymiz — `null` mijoz maydonni
+        // umuman yubormaganda, `Unspecified` esa forma "tanlanmagan" holatini aniq qiymat
+        // sifatida yuborsa ham yuz beradi; ikkalasi ham `Required` uchun bo'sh hisoblanadi.
+        if (fields.Gender == RegistrationFieldRequirement.Required &&
+            (request.Gender is null || request.Gender == Gender.Unspecified))
         {
-            errors["gender"] = ["Jins kiritilishi shart."];
+            errors["gender"] = ["Jinsni tanlang."];
         }
 
         if (fields.Grade == RegistrationFieldRequirement.Required && request.Grade is null)

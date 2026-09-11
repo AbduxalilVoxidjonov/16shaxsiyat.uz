@@ -35,7 +35,7 @@ Maktab havolasi to'g'riligini tekshirish va boshlanish ekranini to'ldirish.
     { "code": "PERSONALITY_PROFILE", "nameUz": "Shaxsiyat profili", "descriptionUz": "…",
       "testCount": 4, "questionCount": 190, "estimatedMinutes": 31, "hasPersonalityBattery": true,
       "registrationMode": "Full",
-      "registrationFields": { "birthDate": "Required", "gender": "Optional", "grade": "Required",
+      "registrationFields": { "birthDate": "Required", "gender": "Required", "grade": "Required",
         "classLetter": "Optional", "phone": "Required", "parentPhone": "Optional", "email": "Optional" },
       "tests": [
         { "code": "MBTI16", "name": "16 tipli shaxsiyat modeli", "questionCount": 60, "estimatedMinutes": 9, "order": 1 },
@@ -46,7 +46,7 @@ Maktab havolasi to'g'riligini tekshirish va boshlanish ekranini to'ldirish.
     { "code": "CAREER_SURVEY", "nameUz": "Kasb so'rovnomasi", "descriptionUz": null,
       "testCount": 1, "questionCount": 20, "estimatedMinutes": 5, "hasPersonalityBattery": false,
       "registrationMode": "None",
-      "registrationFields": { "birthDate": "Required", "gender": "Optional", "grade": "Required",
+      "registrationFields": { "birthDate": "Required", "gender": "Required", "grade": "Required",
         "classLetter": "Optional", "phone": "Required", "parentPhone": "Optional", "email": "Optional" },
       "tests": [
         { "code": "CAREER_SURVEY_Q", "name": "Kasb so'rovnomasi savollari", "questionCount": 20, "estimatedMinutes": 5, "order": 1 }
@@ -710,7 +710,7 @@ ham keladi — HAR DOIM yechilgan (resolved) qiymatlar bilan (dastur `NULL` saql
 
 ```json
 { "state": "Active", "registrationMode": "Full",
-  "registrationFields": { "birthDate": "Required", "gender": "Optional", "grade": "Required",
+  "registrationFields": { "birthDate": "Required", "gender": "Required", "grade": "Required",
     "classLetter": "Optional", "phone": "Required", "parentPhone": "Optional", "email": "Optional" } }
 ```
 

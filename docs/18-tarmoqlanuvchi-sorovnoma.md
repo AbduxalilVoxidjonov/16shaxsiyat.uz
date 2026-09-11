@@ -623,7 +623,7 @@ nullable — `null` bazada `NULL` (jsonb), "standart qiymatlar ishlatilsin" dega
 | Maydon | Standart |
 |---|---|
 | `birthDate` | `Required` |
-| `gender` | `Optional` |
+| `gender` | `Required` |
 | `grade` | `Required` |
 | `classLetter` | `Optional` |
 | `phone` | `Required` |
@@ -633,12 +633,21 @@ nullable — `null` bazada `NULL` (jsonb), "standart qiymatlar ishlatilsin" dega
 **`fullName` sozlamada YO'Q** — `RegistrationMode = Full` bo'lsa har doim majburiy (ism
 kerak bo'lmasa `RegistrationMode = None` bor — ikkita mustaqil "ism shart emas" mexanizmi
 chalkashlik keltirib chiqarardi). Standart qiymatlar 2026-09-11 gacha bo'lgan qattiq kodlangan
-(`fullName`/`birthDate`/`grade`/`phone` majburiy) xatti-harakat bilan BAYT-BAYT mos.
+(`fullName`/`birthDate`/`grade`/`phone` majburiy) xatti-harakat bilan BAYT-BAYT mos —
+**`gender` bundan mustasno**: shu kuni ikkilanish topildi va tuzatildi (pastga qarang).
+
+**2026-09-11 tuzatish — `gender` standarti `Optional`dan `Required`ga ko'chirildi.** P52
+kengaytmasi kiritilganda ikki agent bir-biridan mustaqil ishlagan: ommaviy ro'yxat formasi
+(`registrationSchema.ts`) jinsni ALLAQACHON majburiy qilardi ("Jinsni tanlang." xabari bilan),
+`StartSessionCommandHandler.ValidateRequiredIdentityFields` esa uni umuman tekshirmasdi — bu
+nomuvofiqlik P52dan OLDIN ham bor edi, RegistrationFields shunchaki uni ochiq ko'rsatdi. Qaror:
+foydalanuvchi bugun ko'rayotgan xatti-harakat (forma jinsni so'raydi, bo'sh qoldirishga ruxsat
+bermaydi) haqiqiy standart hisoblanadi — backend shunga moslashtirildi, frontendga TEGILMADI.
 
 jsonb shakli (camelCase, enum — satr, `RegistrationFieldsJson`):
 
 ```json
-{ "birthDate": "Required", "gender": "Optional", "grade": "Required",
+{ "birthDate": "Required", "gender": "Required", "grade": "Required",
   "classLetter": "Optional", "phone": "Required", "parentPhone": "Optional", "email": "Optional" }
 ```
 
@@ -712,5 +721,8 @@ invariant, jsonb roundtrip), `AssessmentProgramTests.cs` (`SetRegistrationFields
 ikki nazorat nuqtasi), `StudentTests.cs` (anonim bo'lmagan o'quvchida `birthDate`/`phone`
 `null` bo'lishi mumkinligi), `PublicRegistrationFieldsEndpointTests.cs` (`Hidden` e'tiborsiz
 qoldirilishi, `Optional birthDate` + BR-1 o'tkazib yuborilishi, `Required email`/`gender`
-`400`, `GetSchoolInfo` shakli, standart sozlama regressiyasi), `AdminProgramRegistrationFieldsEndpointTests.cs`
-(standart/qisman sozlama, jsonb roundtrip, ikki nazorat nuqtasi, `gender` erkin sozlanishi).
+`400`, `Optional`/`Hidden gender` muvaffaqiyatli oqim, `GetSchoolInfo` shakli, standart
+sozlama regressiyasi — 2026-09-11 tuzatishdan keyin `gender` ham `fullName`/`phone` bilan
+bir qatorda majburiy), `AdminProgramRegistrationFieldsEndpointTests.cs` (standart/qisman
+sozlama, jsonb roundtrip, ikki nazorat nuqtasi, batareyali dasturda `gender` erkin
+sozlanishi — `Hidden`/`Required` ikkalasi ham muvaffaqiyatli).

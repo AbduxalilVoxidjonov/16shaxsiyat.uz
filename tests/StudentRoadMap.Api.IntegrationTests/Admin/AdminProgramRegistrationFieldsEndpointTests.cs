@@ -62,7 +62,7 @@ public sealed class AdminProgramRegistrationFieldsEndpointTests : IClassFixture<
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         var body = await response.Content.ReadFromJsonAsync<AdminProgramDetailDto>(TestJson.Options);
         body!.RegistrationFields.BirthDate.Should().Be("Required");
-        body.RegistrationFields.Gender.Should().Be("Optional");
+        body.RegistrationFields.Gender.Should().Be("Required");
         body.RegistrationFields.Grade.Should().Be("Required");
         body.RegistrationFields.ClassLetter.Should().Be("Optional");
         body.RegistrationFields.Phone.Should().Be("Required");
@@ -93,7 +93,7 @@ public sealed class AdminProgramRegistrationFieldsEndpointTests : IClassFixture<
         body!.RegistrationFields.Phone.Should().Be("Hidden");
         body.RegistrationFields.Email.Should().Be("Required");
         body.RegistrationFields.BirthDate.Should().Be("Required", "berilmagan maydonlar standart qiymatga tushishi kerak");
-        body.RegistrationFields.Gender.Should().Be("Optional");
+        body.RegistrationFields.Gender.Should().Be("Required", "berilmagan maydonlar standart qiymatga tushishi kerak");
     }
 
     [Fact]

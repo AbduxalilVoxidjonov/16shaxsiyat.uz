@@ -9,6 +9,7 @@ using StudentRoadMap.Application.Public.GetSchoolInfo;
 using StudentRoadMap.Application.Public.StartSession;
 using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Schools;
+using StudentRoadMap.Domain.Students;
 using StudentRoadMap.Infrastructure.Persistence;
 
 namespace StudentRoadMap.Api.IntegrationTests.Public;
@@ -70,6 +71,7 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
             accessToken,
             fullName = "Yusupov Jasur",
             birthDate = "2010-05-05",
+            gender = "Male",
             grade = 8,
             phone = "+998901234567",
             consentAccepted = true,
@@ -102,6 +104,7 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
             slug = school.Slug.Value,
             accessToken,
             fullName = "Karimova Nodira",
+            gender = "Female",
             grade = 7,
             phone = "+998901234568",
             consentAccepted = true,
@@ -186,6 +189,75 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
         problem.GetProperty("errors").TryGetProperty("gender", out _).Should().BeTrue();
     }
 
+    /// <summary>`gender: Optional` sozlansa jinssiz sessiya muvaffaqiyatli ochiladi (P52 tuzatishi, 2026-09-11).</summary>
+    [Fact]
+    public async Task StartSession_OptionalGender_JinssizMuvaffaqiyatliBoLadi()
+    {
+        var fields = RegistrationFields.Default with { Gender = RegistrationFieldRequirement.Optional };
+        var (school, accessToken, programCode) = await SeedCustomFieldsProgramAsync("og1", fields);
+        using var client = _factory.CreateClient();
+
+        var body = new
+        {
+            slug = school.Slug.Value,
+            accessToken,
+            fullName = "Nazarova Malika",
+            birthDate = "2012-04-04",
+            grade = 5,
+            phone = "+998901234571",
+            consentAccepted = true,
+            languageCode = "uz",
+            programCode,
+        };
+
+        var response = await client.PostAsJsonAsync("/api/public/sessions", body, TestJson.Options);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created, "`gender` `Optional` bo'lsa bo'sh qoldirish mumkin");
+        var result = (await response.Content.ReadFromJsonAsync<StartSessionResult>(TestJson.Options))!;
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var assessment = await db.Assessments.AsNoTracking().SingleAsync(a => a.Id == result.AssessmentId);
+        var student = await db.Students.AsNoTracking().SingleAsync(s => s.Id == assessment.StudentId);
+
+        student.Gender.Should().Be(Gender.Unspecified);
+    }
+
+    /// <summary>`gender: Hidden` bo'lsa kelgan qiymat e'tiborsiz qoldiriladi — `Unspecified` saqlanadi.</summary>
+    [Fact]
+    public async Task StartSession_HiddenGender_KelganQiymatSaqlanmaydi()
+    {
+        var fields = RegistrationFields.Default with { Gender = RegistrationFieldRequirement.Hidden };
+        var (school, accessToken, programCode) = await SeedCustomFieldsProgramAsync("hg1", fields);
+        using var client = _factory.CreateClient();
+
+        var body = new
+        {
+            slug = school.Slug.Value,
+            accessToken,
+            fullName = "Egamberdiyev Otabek",
+            birthDate = "2012-05-05",
+            gender = "Male",
+            grade = 5,
+            phone = "+998901234572",
+            consentAccepted = true,
+            languageCode = "uz",
+            programCode,
+        };
+
+        var response = await client.PostAsJsonAsync("/api/public/sessions", body, TestJson.Options);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created, "`gender` `Hidden` bo'lsa ham majburiy emas — sessiya ochiladi");
+        var result = (await response.Content.ReadFromJsonAsync<StartSessionResult>(TestJson.Options))!;
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var assessment = await db.Assessments.AsNoTracking().SingleAsync(a => a.Id == result.AssessmentId);
+        var student = await db.Students.AsNoTracking().SingleAsync(s => s.Id == assessment.StudentId);
+
+        student.Gender.Should().Be(Gender.Unspecified, "`Hidden` maydon uchun kelgan qiymat e'tiborsiz qoldirilishi — saqlanmasligi kerak");
+    }
+
     /// <summary>`GET /api/public/schools/{slug}` — `programs[].registrationFields` shakli (`docs/07` §1.1).</summary>
     [Fact]
     public async Task GetSchoolInfo_ProgramsRoyxatida_RegistrationFieldsQaytaradi()
@@ -203,7 +275,7 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
 
         var program = info!.Programs.Should().ContainSingle(p => p.Code == programCode).Which;
         program.RegistrationFields.BirthDate.Should().Be("Required");
-        program.RegistrationFields.Gender.Should().Be("Optional");
+        program.RegistrationFields.Gender.Should().Be("Required");
         program.RegistrationFields.Grade.Should().Be("Required");
         program.RegistrationFields.ClassLetter.Should().Be("Optional");
         program.RegistrationFields.Phone.Should().Be("Hidden");
@@ -213,12 +285,13 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
 
     /// <summary>
     /// Regressiya qulfi: standart sozlama (`RegistrationFields` dasturda `null`, ya'ni sozlanmagan)
-    /// bilan xatti-harakat 2026-09-11 gacha bo'lgan (P52 kengaytmasidan OLDINGI) validator bilan
-    /// AYNAN bir xil — `fullName`/`phone` yo'q bo'lsa `400`, boshqa maydonlar (`gender`/
-    /// `classLetter`/`parentPhone`/`email`) haqida xato YO'Q.
+    /// bilan xatti-harakat — `fullName`/`phone`/`gender` yo'q bo'lsa `400`, boshqa maydonlar
+    /// (`classLetter`/`parentPhone`/`email`) haqida xato YO'Q. `gender` 2026-09-11 kuni standart
+    /// bo'yicha `Required`ga o'zgardi (`RegistrationFields.cs` izohiga qarang — ommaviy forma
+    /// jinsni ALLAQACHON majburiy qilardi, backend endi shu xatti-harakatga moslashtirildi).
     /// </summary>
     [Fact]
-    public async Task StartSession_StandartSozlama_FishVaTelefonsiz400VaBoshqaXatoYoq()
+    public async Task StartSession_StandartSozlama_FishTelefonVaJinssiz400VaBoshqaXatoYoq()
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -247,7 +320,7 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
         var errors = problem.GetProperty("errors");
         errors.TryGetProperty("fullName", out _).Should().BeTrue();
         errors.TryGetProperty("phone", out _).Should().BeTrue();
-        errors.TryGetProperty("gender", out _).Should().BeFalse();
+        errors.TryGetProperty("gender", out _).Should().BeTrue();
         errors.TryGetProperty("classLetter", out _).Should().BeFalse();
         errors.TryGetProperty("parentPhone", out _).Should().BeFalse();
         errors.TryGetProperty("email", out _).Should().BeFalse();

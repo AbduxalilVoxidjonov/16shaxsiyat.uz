@@ -13,7 +13,7 @@ public sealed class RegistrationFieldsTests
     public void Default_MatchesDocumentedTable()
     {
         RegistrationFields.Default.BirthDate.Should().Be(RegistrationFieldRequirement.Required);
-        RegistrationFields.Default.Gender.Should().Be(RegistrationFieldRequirement.Optional);
+        RegistrationFields.Default.Gender.Should().Be(RegistrationFieldRequirement.Required);
         RegistrationFields.Default.Grade.Should().Be(RegistrationFieldRequirement.Required);
         RegistrationFields.Default.ClassLetter.Should().Be(RegistrationFieldRequirement.Optional);
         RegistrationFields.Default.Phone.Should().Be(RegistrationFieldRequirement.Required);

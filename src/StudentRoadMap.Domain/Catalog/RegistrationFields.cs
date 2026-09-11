@@ -13,10 +13,20 @@ namespace StudentRoadMap.Domain.Catalog;
 /// </para>
 ///
 /// <para>
-/// <b>Standart qiymatlar</b> (<see cref="Default"/>) — mavjud (2026-09-11 gacha) xatti-harakat
-/// bilan AYNAN mos: `birthDate`/`grade`/`phone` majburiy, qolgani ixtiyoriy. Dastur
+/// <b>Standart qiymatlar</b> (<see cref="Default"/>) — `birthDate`/`grade`/`phone`/`gender`
+/// majburiy, qolgani ixtiyoriy (`gender` 2026-09-11 kuni `Optional`dan `Required`ga
+/// ko'chirildi — ommaviy ro'yxat formasi (`registrationSchema.ts`) jinsni ALLAQACHON
+/// majburiy qilardi, backend esa buni tekshirmasdi; ikki tomonni bitta xatti-harakatga
+/// keltirish uchun backend frontendga moslashtirildi, aksincha emas). Dastur
 /// `RegistrationFields = null` (bazada `NULL`) bo'lsa shu qiymatlar ishlatiladi
 /// (<see cref="AssessmentProgram.ResolveRegistrationFields"/>).
+/// </para>
+///
+/// <para>
+/// <b>Diqqat — ikki tomonlama shartnoma:</b> standart qiymatlar
+/// `frontend/src/shared/api/registrationModeTypes.ts` dagi `DEFAULT_REGISTRATION_FIELDS`
+/// bilan BIR XIL bo'lishi SHART — biri o'zgarsa ikkinchisi ham shu zahoti yangilanishi kerak
+/// (aks holda forma va server bir-biriga zid talab qo'yadi).
 /// </para>
 /// </summary>
 public sealed record RegistrationFields(
@@ -29,11 +39,12 @@ public sealed record RegistrationFields(
     RegistrationFieldRequirement Email)
 {
     /// <summary>
-    /// Mavjud xatti-harakat bilan bayt-bayt mos standart to'plam — `docs/18` §9.5 jadvali.
+    /// `docs/18` §9.5 jadvali — `frontend`dagi `DEFAULT_REGISTRATION_FIELDS` bilan AYNAN mos
+    /// bo'lishi shart (yuqoridagi izohga qarang).
     /// </summary>
     public static readonly RegistrationFields Default = new(
         BirthDate: RegistrationFieldRequirement.Required,
-        Gender: RegistrationFieldRequirement.Optional,
+        Gender: RegistrationFieldRequirement.Required,
         Grade: RegistrationFieldRequirement.Required,
         ClassLetter: RegistrationFieldRequirement.Optional,
         Phone: RegistrationFieldRequirement.Required,
