@@ -2,6 +2,7 @@ using MediatR;
 using StudentRoadMap.Application.Admin.Students;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
+using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Common;
 
 namespace StudentRoadMap.Application.Admin.Assessments.GetById;
@@ -85,6 +86,7 @@ internal sealed class GetAssessmentByIdQueryHandler : IRequestHandler<GetAssessm
                 d.Code,
                 d.NameUz,
                 d.ScoringMode,
+                d.Kind,
                 t.Status,
                 t.TotalCount,
                 t.AnsweredCount,
@@ -101,6 +103,14 @@ internal sealed class GetAssessmentByIdQueryHandler : IRequestHandler<GetAssessm
                 t.TotalCount,
                 t.AnsweredCount))
             .ToList();
+
+        // `hasPersonalityBattery` — `PersonalityBattery` DOMEN qoidasidan (`Kind == Standard &&
+        // ScoringMode == Scored`), metodika KODI ro'yxatidan EMAS. Mijoz shu bayroqqa qarab AI
+        // tahlili chaqiruvini ko'rsatadi: so'rovnoma-only sessiyada AI tahlili tayyorlanmaydi
+        // (`CompleteSessionCommandHandler` `Survey` bloklarini tahlildan chiqarib tashlaydi),
+        // shu sabab "Tahlilni ishga tushirish" tugmasi u yerda chalg'ituvchi bo'lardi.
+        // Bir xil hisob o'quvchi profilida ham bor (`AdminLatestAssessmentDto`).
+        var hasPersonalityBattery = testRows.Any(t => PersonalityBattery.Includes(t.Kind, t.ScoringMode));
 
         var testResults = await _executor.ToListAsync(
             _context.AsNoTracking(_context.TestResults).Where(r => r.AssessmentId == header.Id),
@@ -129,7 +139,8 @@ internal sealed class GetAssessmentByIdQueryHandler : IRequestHandler<GetAssessm
             header.StudentFullName is null ? null : new AdminAssessmentStudentRefDto(header.StudentId, header.StudentFullName),
             header.SchoolName is null ? null : new AdminAssessmentSchoolRefDto(header.SchoolId, header.SchoolName),
             header.ProgramNameUz is null ? null : new AdminAssessmentProgramRefDto(header.ProgramId, header.ProgramNameUz),
-            tests);
+            tests,
+            hasPersonalityBattery);
 
         return Result.Success(dto);
     }

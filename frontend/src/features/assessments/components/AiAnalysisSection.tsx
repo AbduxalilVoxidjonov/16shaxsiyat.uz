@@ -31,6 +31,14 @@ export interface AiAnalysisSectionProps {
   pollTimedOut: boolean;
   /** `null` — noma'lum; `false` — birorta faol provayder sozlanmagan. */
   hasConfiguredProvider: boolean | null;
+  /**
+   * Shu sessiyada ilmiy shaxsiyat batareyasi bormi (`GET /api/admin/assessments/{id}`
+   * → `hasPersonalityBattery`). `false` bo'lsa tahlil chaqiruvi KO'RSATILMAYDI: so'rovnoma
+   * javoblari AI tahliliga umuman kirmaydi (`CompleteSessionCommandHandler` `Survey`
+   * bloklarini chiqarib tashlaydi), ya'ni tugma `409` ga olib borardi. O'quvchi profilidagi
+   * `AiReportSection` bilan bir xil qoida.
+   */
+  hasPersonalityBattery?: boolean;
 }
 
 /**
@@ -55,11 +63,13 @@ export function AiAnalysisSection({
   rerunQueued,
   pollTimedOut,
   hasConfiguredProvider,
+  hasPersonalityBattery = true,
 }: AiAnalysisSectionProps) {
   const { t } = useTranslation();
   const [historyOpen, setHistoryOpen] = useState(false);
 
   const view = resolveAiAnalysisViewState({
+    hasPersonalityBattery,
     // `aiAnalysis.status` `Pending`/`Running` bo'lsa sessiya holati hali `Analyzing` ga
     // yozilmagan bo'lishi mumkin — foydalanuvchi uchun bu bir xil holat.
     status:
@@ -135,7 +145,9 @@ export function AiAnalysisSection({
       {view.blockedReason !== null && (
         // Tugmani ko'rsatib turib `409` ga urib yuborish yomon UX — sabab OLDINDAN.
         <p className="mb-3 text-sm text-neutral-500">
-          {t('assessmentDetail.ai.rerunDisabledHint')}
+          {view.blockedReason === 'noPersonalityBattery'
+            ? t('studentProfile.ai.noPersonalityBattery')
+            : t('assessmentDetail.ai.rerunDisabledHint')}
         </p>
       )}
 

@@ -394,6 +394,29 @@ describe('AssessmentDetailPage', () => {
     expect(screen.getByText('Yakunlanmagan')).toBeInTheDocument();
   });
 
+  it("so'rovnoma-only sessiyada AI tahlili chaqiruvi ko'rsatilmaydi, sababi aytiladi", async () => {
+    // Egasining topilmasi (2026-09-12): so'rovnoma javoblari AI tahliliga UMUMAN kirmaydi
+    // (`CompleteSessionCommandHandler` `Survey` bloklarini chiqarib tashlaydi), ya'ni tugmani
+    // ko'rsatish foydalanuvchini `409` ga olib borardi. Bayroq backenddan keladi
+    // (`hasPersonalityBattery`), mijoz metodika kodini O'ZI taxmin qilmaydi.
+    renderPage([
+      {
+        ...EMPTY_DETAIL,
+        status: 'Completed',
+        hasPersonalityBattery: false,
+        tests: [testItem({ testCode: 'INTELLECT-SURVEY', scoringMode: 'Survey' })],
+      },
+    ]);
+
+    expect(
+      await screen.findByText(/AI tahlili faqat shaxsiyat testlari uchun tayyorlanadi/),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /AI tahlil qilish/ })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Tahlilni qayta ishga tushirish/ }),
+    ).not.toBeInTheDocument();
+  });
+
   it('404 kelsa "topilmadi" holati ko\'rsatiladi', async () => {
     renderPage([{ status: 404, code: 'NOT_FOUND' }]);
 

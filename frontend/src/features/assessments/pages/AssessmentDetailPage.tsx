@@ -180,6 +180,7 @@ export default function AssessmentDetailPage() {
         rerunQueued={rerunQueued}
         pollTimedOut={pollTimedOut}
         hasConfiguredProvider={hasConfiguredProvider}
+        hasPersonalityBattery={detail.hasPersonalityBattery}
       />
 
       {/* Savolma-savol javoblar — egasining talabi (2026-09-12): tarixdagi HAR BIR

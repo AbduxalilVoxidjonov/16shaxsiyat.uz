@@ -195,6 +195,14 @@ export type AssessmentDetailDto = Omit<
   school?: AssessmentSchoolRefDto | null;
   program?: AssessmentProgramRefDto | null;
   tests?: AssessmentTestItemDto[] | null;
+  /**
+   * MUVAQQAT (2026-09-12): backend `AdminAssessmentDetailDto` ga `hasPersonalityBattery`
+   * qo'shildi, lekin `schema.d.ts` hali yangilanmagan (`generate:api` API ko'tarilgan holda
+   * ishga tushirilishi kerak). O'shanda bu satr O'CHIRILADI va maydon `Omit` orqali
+   * sxemadan keladi. Shakli: `bool` (ixtiyoriy — eski javoblarda yo'q, `undefined` bo'lsa
+   * `AiAnalysisSection` standart `true` bilan ishlaydi, ya'ni xatti-harakat o'zgarmaydi).
+   */
+  hasPersonalityBattery?: boolean;
 };
 
 /**

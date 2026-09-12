@@ -222,6 +222,11 @@ public sealed class AdminAssessmentsGetByIdEndpointTests : IClassFixture<PublicA
         testItem.GetProperty("status").GetString().Should().Be("Completed");
         testItem.GetProperty("questionCount").GetInt32().Should().Be(1);
         testItem.GetProperty("answeredCount").GetInt32().Should().Be(1);
+
+        // `hasPersonalityBattery` (2026-09-12): mijoz shu bayroqqa qarab AI tahlili
+        // chaqiruvini ko'rsatadi. Mezon — `PersonalityBattery` DOMEN qoidasi
+        // (`Kind == Standard && ScoringMode == Scored`), metodika KODI ro'yxati emas.
+        root.GetProperty("hasPersonalityBattery").GetBoolean().Should().BeTrue();
     }
 
     /// <summary>
@@ -292,5 +297,11 @@ public sealed class AdminAssessmentsGetByIdEndpointTests : IClassFixture<PublicA
         tests[1].GetProperty("scoringMode").GetString().Should().Be("Survey", "so'rovnoma BALLANMAYDI — UI uni `0` ball deb ko'rsatmasligi uchun");
         tests[1].GetProperty("status").GetString().Should().Be("NotStarted");
         tests[1].GetProperty("answeredCount").GetInt32().Should().Be(0);
+
+        // Bu sessiyada `Custom` + `Scored` anketa va so'rovnoma bor, ILMIY metodika (`Standard`)
+        // YO'Q — shu sabab bayroq `false`. Mezon "ballanadigan test bormi" EMAS, aynan
+        // `PersonalityBattery` domen qoidasi (`Kind == Standard && ScoringMode == Scored`):
+        // superadminning o'z ballanadigan anketasi AI shaxsiyat tahliliga asos bo'lmaydi.
+        root.GetProperty("hasPersonalityBattery").GetBoolean().Should().BeFalse();
     }
 }

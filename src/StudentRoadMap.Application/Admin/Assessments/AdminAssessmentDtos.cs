@@ -70,7 +70,14 @@ public sealed record AdminAssessmentDetailDto(
     AdminAssessmentStudentRefDto? Student,
     AdminAssessmentSchoolRefDto? School,
     AdminAssessmentProgramRefDto? Program,
-    IReadOnlyList<AdminAssessmentTestItemDto> Tests);
+    IReadOnlyList<AdminAssessmentTestItemDto> Tests,
+    /// <summary>
+    /// Shu sessiyada ilmiy shaxsiyat batareyasi (`Kind == Standard && ScoringMode == Scored`)
+    /// bormi — mezon `Domain.Catalog.PersonalityBattery` da, kod ro'yxatida EMAS. `false` bo'lsa
+    /// mijoz AI tahlili chaqiruvini ko'rsatmaydi: so'rovnoma javoblari tahlilga umuman kirmaydi.
+    /// O'quvchi profilidagi `AdminLatestAssessmentDto.HasPersonalityBattery` bilan bir xil hisob.
+    /// </summary>
+    bool HasPersonalityBattery);
 
 /// <summary>Sessiya egasi — `{id, fullName}` (`docs/07` 3.3).</summary>
 public sealed record AdminAssessmentStudentRefDto(Guid Id, string FullName);
