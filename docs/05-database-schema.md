@@ -159,6 +159,7 @@ CREATE TABLE students (
     consent_given_at            timestamptz  NOT NULL,
     consent_version             varchar(30),                        -- P47: qabul qilingan rozilik matni versiyasi
     parental_consent            boolean      NOT NULL DEFAULT false,-- P47: ota-ona/vasiy roziligi
+    profile_extra               jsonb,                              -- P52 2-to'lqin: GLOBAL forma "o'z maydonlari" javoblari, kod -> qiymat (`docs/18` §9.6.2)
     -- snapshot
     last_personality_type       varchar(4),
     last_maturity_index         numeric(5,2),
@@ -781,6 +782,38 @@ bo'lmasligi ("hali hech kim `PUT` qilmagan") ham to'g'ri holat — bu holda
 FAQAT `ShortText`/`LongText`/`Phone`/`SingleChoice`/`MultiChoice`. Standart qiymat (sozlama
 umuman yaratilmagan bo'lganda) yuqoridagi `coreFields` bilan AYNAN mos — 2026-09-11 gacha
 bo'lgan `RegistrationFields.Default` bilan bayt-bayt bir xil (`gender` ham `Required`).
+
+### 2026-09-12 da qo'shilgan — sessiya oqimlariga ulash + o'z maydonlari javoblari (P52 2-to'lqin, migratsiya `AddStudentProfileExtra`)
+
+Egasining qarori (`docs/18` §9.6.2): 1-to'lqinda ochiq qolgan savol — "custom maydonlarning
+javoblari qayerda saqlanadi" — hal qilindi: **`students.profile_extra jsonb` (NULL bo'lishi
+mumkin)**, alohida jadval EMAS. Sabab: bu ma'lumot o'quvchi profiliga tegishli, har doim
+BUTUNLIGICHA o'qiladi va bo'yicha qidirilmaydi — loyihada `jsonb` allaqachon shu maqsadda
+ishlatiladi (`visibility_rule`, `selected_values`, `ai_analyses.response_json`). Faqat qo'shish —
+destruktiv qadam yo'q, bir bosqichda bajarildi.
+
+```sql
+alter table students
+    add column profile_extra jsonb null;
+```
+
+**jsonb shakli** — kod → qiymat (`docs/18` §9.6.2):
+
+```json
+{ "PARENT_JOB": "O'qituvchi", "TRANSPORT": [1, 3] }
+```
+
+Matn turlarida (`ShortText`/`LongText`/`Phone`) satr, `SingleChoice`da BUTUN SON, `MultiChoice`da
+butun sonlar massivi. Butun son — `RegistrationCustomFieldOption.Order` (variantning tartib
+raqami, `Value` matni EMAS): `Value` erkin/lokalizatsiyasiz matn bo'lishi mumkin, `Order` esa
+barqaror butun son — admin variant matnini o'zgartirsa ham mijoz yuborgan javob buzilmaydi.
+
+Shu migratsiya bilan bir vaqtda `StartSessionCommandHandler`/`GetSchoolInfoQueryHandler`
+(maktab oqimi) va `StartPublicSessionCommandHandler`/`UpdateStudentProfileCommandHandler`
+(Telegram/kabinet oqimi) `AssessmentProgram.RegistrationFields` (§9.5, eskirgan) o'qishni
+TO'XTATDI — yagona manba endi `registration_form_settings` (`RegistrationFormResolver`).
+Telegram oqimida "bir marta so'raladi" naqshi (`existing is null` bo'lgandagina majburiy)
+o'z maydonlariga ham qo'llanadi.
 
 ---
 

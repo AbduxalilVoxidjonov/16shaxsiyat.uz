@@ -1,3 +1,4 @@
+using System.Text.Json;
 using MediatR;
 using StudentRoadMap.Domain.Common;
 using StudentRoadMap.Domain.Students;
@@ -40,4 +41,11 @@ public sealed record StartSessionCommand(
     /// </summary>
     string? ProgramCode = null,
     string? IpAddress = null,
-    string? UserAgent = null) : IRequest<Result<StartSessionResult>>;
+    string? UserAgent = null,
+    /// <summary>
+    /// P52 2-to'lqin (2026-09-12, `docs/18` §9.6.2): GLOBAL ro'yxatdan o'tish formasidagi
+    /// superadmin qo'shgan "o'z maydonlari" javoblari — `{ "KOD": qiymat }`
+    /// (`RegistrationCustomFieldAnswers`ga qarang). `null` — mijoz hech qanday o'z maydoniga
+    /// javob bermagan.
+    /// </summary>
+    IReadOnlyDictionary<string, JsonElement>? CustomFields = null) : IRequest<Result<StartSessionResult>>;

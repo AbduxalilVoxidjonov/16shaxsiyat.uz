@@ -117,18 +117,38 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
         }
 
         // `RegistrationMode.Full` — pastdagi oqim BAYT-BAYT o'zgarmagan (regressiya bilan
-        // qulflangan, `PublicSessionContractRegressionTests`) FAQAT dastur `RegistrationFields`
-        // standart qiymatlarni saqlaganda (`birthDate`/`grade`/`phone` majburiy, qolgani
-        // ixtiyoriy — `docs/18` §9.5 jadvali). Shaxs maydonlari validator darajasida endi
-        // optsional (`StartSessionCommandValidator`), shu sabab MAJBURIYLIK shu yerda, dastur
-        // allaqachon `Full` ekani aniqlangach, DASTURNING o'zi belgilagan maydonlar bo'yicha
-        // tekshiriladi.
-        var fields = program.ResolveRegistrationFields();
+        // qulflangan, `PublicSessionContractRegressionTests`) standart GLOBAL sozlama bilan
+        // (`birthDate`/`grade`/`phone`/`gender` majburiy, qolgani ixtiyoriy). P52 2-to'lqin
+        // (2026-09-12, `docs/18` §9.6.2): manba endi `AssessmentProgram.RegistrationFields`
+        // (§9.5, eskirgan — BOSHQA O'QILMAYDI) EMAS, GLOBAL `RegistrationFormSettings`, dastur
+        // ustunligi qo'llangan holda (`RegistrationFormResolver`: batareya bor dasturda
+        // `birthDate`/`grade` doim `Required`). Shaxs maydonlari validator darajasida
+        // optsional (`StartSessionCommandValidator`), shu sabab MAJBURIYLIK shu yerda.
+        var effectiveDefinition = await RegistrationFormResolver
+            .GetEffectiveDefinitionForProgramAsync(_context, _executor, program.Id, cancellationToken)
+            .ConfigureAwait(false);
+
+        var fields = RegistrationFieldsMapping.FromCoreFields(effectiveDefinition.CoreFields);
 
         var requiredFieldsError = ValidateRequiredIdentityFields(request, fields);
         if (requiredFieldsError is not null)
         {
             return Result.Failure<StartSessionResult>(requiredFieldsError);
+        }
+
+        // P52 2-to'lqin: "o'z maydonlari" javoblari — maktab oqimida HAR SAFAR tekshiriladi
+        // (boshqa asosiy maydonlar kabi, mavjud o'quvchi topilgan holatda ham — `Handle` pastki
+        // qismidagi izohga qarang: topilgan o'quvchida BOSHQA maydonlar ham xuddi shunday
+        // e'tiborsiz qoldiriladi, faqat qidiruv uchun ishlatiladi).
+        var (customFieldErrors, validatedCustomFields) = RegistrationCustomFieldAnswers.Validate(
+            effectiveDefinition.CustomFields, request.CustomFields, requireMandatory: true);
+
+        if (customFieldErrors.Count > 0)
+        {
+            return Result.Failure<StartSessionResult>(new Error(
+                ProblemCodes.ValidationError,
+                "Kiritilgan ma'lumotlar noto'g'ri.",
+                new Dictionary<string, object> { ["errors"] = customFieldErrors }));
         }
 
         // P52 kengaytmasi (`docs/18` §9.5): `Hidden` maydon uchun kelgan qiymat E'TIBORSIZ
@@ -269,7 +289,8 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
                 now: now,
                 classLetter: effectiveClassLetter,
                 parentPhone: parentPhone,
-                email: effectiveEmail);
+                email: effectiveEmail,
+                profileExtra: RegistrationCustomFieldAnswers.Serialize(validatedCustomFields));
         }
 
         // BR-1 kunlik ro'yxatdan o'tish limiti — FAQAT shu nuqtadan boshlab, ya'ni yangi

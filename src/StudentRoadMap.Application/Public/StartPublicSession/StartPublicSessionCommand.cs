@@ -1,3 +1,4 @@
+using System.Text.Json;
 using MediatR;
 using StudentRoadMap.Application.Public.StartSession;
 using StudentRoadMap.Application.PublicUsers.Common;
@@ -64,4 +65,6 @@ public sealed record StartPublicSessionCommand(
     string? LanguageCode = null,
     string? ProgramCode = null,
     string? IpAddress = null,
-    string? UserAgent = null) : IRequest<Result<StartSessionResult>>, IPublicProfileInput;
+    string? UserAgent = null,
+    /// <summary>`IPublicProfileInput.CustomFields` izohiga qarang — FAQAT profil yaratilayotganda so'raladi.</summary>
+    IReadOnlyDictionary<string, JsonElement>? CustomFields = null) : IRequest<Result<StartSessionResult>>, IPublicProfileInput;

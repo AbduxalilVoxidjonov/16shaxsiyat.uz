@@ -108,7 +108,18 @@ internal sealed class StartPublicSessionCommandHandler : IRequestHandler<StartPu
 
         var today = DateOnly.FromDateTime(now.UtcDateTime);
 
-        var profileErrors = PublicStudentProfile.RequireFields(request, existingStudent, today);
+        // P52 2-to'lqin (2026-09-12, `docs/18` §9.6.2): GLOBAL sozlama — dastur ustunligi
+        // BU YERDA QO'LLANMAYDI (`RegistrationFormResolver` sinf izohiga qarang: profil
+        // dastur tanlanishidan OLDIN so'raladi, "bir marta so'raladi" naqshi saqlanadi).
+        var globalDefinition = await RegistrationFormResolver.GetGlobalDefinitionAsync(_context, _executor, cancellationToken).ConfigureAwait(false);
+
+        var profileErrors = PublicStudentProfile.RequireFields(request, existingStudent, today, globalDefinition.CoreFields);
+        var (customFieldErrors, validatedCustomFields) = PublicStudentProfile.ValidateCustomFields(globalDefinition.CustomFields, request, existingStudent);
+        foreach (var (key, value) in customFieldErrors)
+        {
+            profileErrors[key] = value;
+        }
+
         if (profileErrors.Count > 0)
         {
             return Result.Failure<StartSessionResult>(PublicStudentProfile.ValidationFailure(profileErrors));
@@ -133,7 +144,7 @@ internal sealed class StartPublicSessionCommandHandler : IRequestHandler<StartPu
             // Tahrir va rozilik sessiya holatidan OLDIN qo'llanadi: foydalanuvchi "O'zgartirish"
             // bosgan bo'lsa, tugallanmagan sessiya davom etayotganida ham yangi F.I.Sh./telefon
             // saqlanishi kerak (davom ettirish shoxida `SaveChangesAsync` shu sabab bor).
-            var applyResult = PublicStudentProfile.ApplyChanges(request, existingStudent, now);
+            var applyResult = PublicStudentProfile.ApplyChanges(request, existingStudent, now, validatedCustomFields);
             if (applyResult.IsFailure)
             {
                 return Result.Failure<StartSessionResult>(applyResult.Error);
@@ -183,7 +194,7 @@ internal sealed class StartPublicSessionCommandHandler : IRequestHandler<StartPu
         else
         {
             // `RequireFields` yangi profil uchun to'liq to'plamni tekshirib bo'ldi.
-            var createResult = PublicStudentProfile.CreateStudent(request, space.Id, request.PublicUserId, now);
+            var createResult = PublicStudentProfile.CreateStudent(request, space.Id, request.PublicUserId, now, validatedCustomFields);
             if (createResult.IsFailure)
             {
                 return Result.Failure<StartSessionResult>(createResult.Error);

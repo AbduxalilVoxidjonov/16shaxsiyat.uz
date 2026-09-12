@@ -787,23 +787,47 @@ har doim `Required`) + superadmin qo'shgan `customFields[]` (`ShortText`/`LongTe
 `REGISTRATION_FORM_FIELD_CODE_DUPLICATE`, `REGISTRATION_FORM_CHOICE_OPTIONS_INSUFFICIENT`,
 `REGISTRATION_FORM_OPTION_VALUE_DUPLICATE`, `INPUT_PATTERN_INVALID`.
 
-### 9.6.2 Qamrov — 1-to'lqin (joriy) va keyingi to'lqinlar
+### 9.6.2 Qamrov — 1-to'lqin (2026-09-11/12) va 2-to'lqin (2026-09-12, joriy)
 
-Bu vazifa (P52-tarmoqlanuvchi-sorovnoma davomi, 2026-09-11/12) **1-to'lqin**: domen + saqlash
-+ admin `GET`/`PUT` API + hujjat. Ataylab QILINMAGAN (keyingi to'lqinlarga qoldirilgan):
+**1-to'lqin**: domen + saqlash + admin `GET`/`PUT` API + hujjat.
 
-- **Sessiya oqimlariga ulash** — `StartSessionCommandHandler`/`StartPublicSessionCommandHandler`
-  hali `AssessmentProgram.RegistrationFields`ga (§9.5, eskirgan) tayanadi. Haqiqiy ro'yxatdan
-  o'tish formasi ekranida bu GLOBAL sozlama ishlatilishi uchun ular `RegistrationFormSettings`ga
-  o'tkazilishi kerak — bu qadam bajarilmaguncha yangi sozlama faqat admin panelda ko'rinadi,
-  o'quvchi formasiga TA'SIR QILMAYDI.
-- **`GetSchoolInfoQueryHandler`** (`GET /api/public/schools/{slug}`) — hamon eski
-  `registrationFields` (dastur darajasida) qaytaradi.
+**2-to'lqin (joriy, P52-tarmoqlanuvchi-sorovnoma davomi) — bajarildi:**
+
+- **Sessiya oqimlariga ulandi.** `StartSessionCommandHandler` (maktab, `POST
+  /api/public/sessions`) va `StartPublicSessionCommandHandler`/`UpdateStudentProfileCommandHandler`
+  (Telegram/kabinet, `POST /api/me/sessions`, `PUT /api/me/profile`) endi
+  `RegistrationFormSettings`dan (`RegistrationFormResolver`) o'qiydi.
+  `AssessmentProgram.RegistrationFields` (§9.5) BOSHQA O'QILMAYDI — ustun/xossa hozircha qoladi
+  (destruktiv o'zgarish ikki bosqichda), lekin sessiya oqimiga endi TA'SIR QILMAYDI.
+- **Dastur darajasidagi ustunlik** (hisoblanadi, saqlanmaydi) — MAKTAB oqimida: ilmiy shaxsiyat
+  batareyasi bor dasturda `birthDate`/`grade` GLOBAL sozlamadan qat'i nazar `Required`ga
+  ko'tariladi (`RegistrationFormResolver.ApplyProgramOverride`). **Telegram oqimida bu ustunlik
+  QO'LLANMAYDI** — atayin: u yerda profil so'ralishi dastur tanlanishidan OLDIN sodir bo'ladi
+  ("bir marta so'raladi" naqshi saqlanishi uchun tartib o'zgartirilmadi); PM'ga qaytariladi
+  (agar kerak bo'lsa, keyingi to'lqinda tartib qayta ko'riladi).
+- **`GetSchoolInfoQueryHandler`** (`GET /api/public/schools/{slug}`) — `programs[].registrationFields`
+  endi GLOBAL sozlamadan (dastur ustunligi bilan) hisoblanadi; yonida TO'LIQ `registrationForm`
+  (customFields bilan) qo'shildi. `GET /api/me/profile`/`PUT /api/me/profile` javobiga ham
+  `registrationForm` qo'shildi (dastur ustunligisiz — dastur hali tanlanmagan).
+- **Custom maydonlarning javoblari qayerda saqlanadi — HAL QILINDI:** `students.profile_extra
+  jsonb` (NULL bo'lishi mumkin), alohida jadval EMAS (`docs/04` §2.2, `docs/05`
+  `AddStudentProfileExtra` migratsiyasi). Shakl — kod → qiymat, matn turlarida satr,
+  `SingleChoice`da `RegistrationCustomFieldOption.Order` (butun son), `MultiChoice`da shunday
+  sonlar massivi. Telegram oqimida "bir marta so'raladi" naqshi o'z maydonlariga ham qo'llanadi
+  (`existing is null` bo'lgandagina majburiy); `PUT /api/me/profile` orqali keyinroq tahrirlanadi
+  (mavjud `ProfileExtra` bilan BIRLASHTIRILADI, faqat kelgan kodlar ustidan yoziladi).
+- **Ma'lum cheklov (PM'ga qaytariladi):** Telegram oqimida `birthDate`/`phone` GLOBAL sozlamaga
+  qaramasdan HAMON doim majburiy (faqat `gender` sozlamaga ergashadi) — sabab: shu subtizim
+  (`MyStudentProfileMapper.ToDto`, `Student.UpdateProfile`) "profil bor bo'lsa `BirthDate`/`Phone`
+  har doim to'ldirilgan" invariantiga ko'p joyda tayanadi (`student.BirthDate!.Value` va h.k.).
+  Ularni to'liq `Optional`/`Hidden` qilish shu invariantni nullable-xavfsiz qilishni talab
+  qiladi — bu to'lqin doirasidan tashqarida qoldirildi.
+
+Ataylab QILINMAGAN (keyingi to'lqinlarga qoldirilgan):
+
 - **Frontend** — superadmin "Sozlamalar" UI'si va ommaviy ro'yxatdan o'tish formasining
-  dinamik (custom maydonlarni render qiluvchi) versiyasi keyingi to'lqinda.
-- **Custom maydonlarning javoblari qayerda saqlanadi** (yangi jadval kerakmi, yoki
-  `students`ga qo'shimcha `jsonb` ustunmi) — bu savol HALI HAL QILINMAGAN, sessiya oqimiga
-  ulash to'lqinida PM'ga qaytariladi.
+  dinamik (custom maydonlarni render qiluvchi) versiyasi. Eski `programs[].registrationFields`
+  (7 ta core maydon, `fullName`siz) shakli hozircha saqlanadi — frontend shu bilan ishlaydi.
 
 ### 9.6.3 Testlar (DoD)
 
@@ -812,3 +836,11 @@ jadvalga moslik, har bir validatsiya qoidasi uchun kamida bitta test, jsonb roun
 `tests/StudentRoadMap.Api.IntegrationTests/Admin/AdminRegistrationFormSettingsEndpointTests.cs`
 (`GET` standart qaytarishi, `PUT` to'liq almashtirishi + audit, `fullName` qulfi, takroriy
 kod, tanlov soni, `inputPattern`, autentifikatsiyasiz `401`).
+
+**2-to'lqin:** `Public/PublicRegistrationFieldsEndpointTests.cs` (GLOBAL sozlama orqali
+Hidden/Optional/Required, standart bilan bayt-bayt regressiya),
+`Public/PublicRegistrationFormBatteryOverrideTests.cs` (dastur ustunligi),
+`Public/PublicRegistrationCustomFieldsEndpointTests.cs` (maktab oqimida `customFields`: Hidden
+e'tiborsiz, Required bo'sh → 400, tur bo'yicha validatsiya, `ProfileExtra`ga yozilishi),
+`PublicUsers/StartPublicSessionCustomFieldsEndpointTests.cs` (Telegram oqimida `customFields`,
+ENG MUHIMI: ikkinchi sessiyada hech qanday maydon — o'z maydoni ham — qayta so'ralmasligi).

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using StudentRoadMap.Application.PublicUsers.UpdateStudentProfile;
 using StudentRoadMap.Domain.Students;
 
@@ -22,7 +23,9 @@ public sealed record UpdateStudentProfileRequest(
     /// <summary>18 yoshgacha `true` bo'lishi SHART; `null` — mavjud qiymat qoladi.</summary>
     bool? ParentalConsent = null,
     int? Grade = null,
-    string? Email = null)
+    string? Email = null,
+    /// <summary>`IPublicProfileInput.CustomFields` izohiga qarang — tahrirda ham qo'llanadi.</summary>
+    IReadOnlyDictionary<string, JsonElement>? CustomFields = null)
 {
     public UpdateStudentProfileCommand ToCommand(Guid publicUserId) =>
         new(
@@ -34,5 +37,6 @@ public sealed record UpdateStudentProfileRequest(
             ConsentAccepted ?? false,
             ParentalConsent,
             Grade,
-            Email);
+            Email,
+            CustomFields);
 }

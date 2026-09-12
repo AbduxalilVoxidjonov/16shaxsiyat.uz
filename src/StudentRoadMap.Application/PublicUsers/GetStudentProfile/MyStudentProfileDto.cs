@@ -1,3 +1,4 @@
+using StudentRoadMap.Application.Admin.Settings.RegistrationForm;
 using StudentRoadMap.Domain.Students;
 
 namespace StudentRoadMap.Application.PublicUsers.GetStudentProfile;
@@ -28,4 +29,11 @@ public sealed record MyStudentProfileDto(
     bool ParentalConsent,
     /// <summary>Yosh 18 dan kichikmi (`Student.CalculateAge`) — profil bo'lmasa `false`.</summary>
     bool IsMinor,
-    string? SuggestedFullName);
+    string? SuggestedFullName,
+    /// <summary>
+    /// GLOBAL ro'yxatdan o'tish formasi ta'rifi (P52 2-to'lqin, 2026-09-12, `docs/18` §9.6.2) —
+    /// superadmin qo'shgan "o'z maydonlari" bilan birga, mijoz forma chizishi uchun. Dastur
+    /// ustunligi (batareya) BU YERDA QO'LLANMAYDI — profil dastur tanlanishidan OLDIN
+    /// so'raladi (`RegistrationFormResolver` sinf izohiga qarang).
+    /// </summary>
+    RegistrationFormDefinitionDto RegistrationForm);

@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using StudentRoadMap.Application.Admin.Settings.RegistrationForm;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
 using StudentRoadMap.Application.Public.Common;
@@ -153,6 +154,11 @@ internal sealed class GetSchoolInfoQueryHandler : IRequestHandler<GetSchoolInfoQ
     {
         var availablePrograms = await ProgramAvailability.GetAvailableProgramsAsync(_context, _executor, schoolId, cancellationToken).ConfigureAwait(false);
 
+        // P52 2-to'lqin (2026-09-12, `docs/18` §9.6.2): GLOBAL sozlama bir marta o'qiladi,
+        // har dastur uchun faqat ustunlik (batareya bo'lsa `birthDate`/`grade` → `Required`)
+        // qo'llanadi — `AssessmentProgram.RegistrationFields` (§9.5, eskirgan) ENDI O'QILMAYDI.
+        var globalDefinition = await RegistrationFormResolver.GetGlobalDefinitionAsync(_context, _executor, cancellationToken).ConfigureAwait(false);
+
         var programs = new List<PublicProgramSummaryDto>(availablePrograms.Count);
         var testsByDefinitionId = new Dictionary<Guid, PublicTestCatalogItemDto>();
 
@@ -164,6 +170,11 @@ internal sealed class GetSchoolInfoQueryHandler : IRequestHandler<GetSchoolInfoQ
                 .Select(i => new PublicTestCatalogItemDto(i.Code, i.NameUz, i.ActiveQuestionCount, i.EstimatedMinutes, i.Order))
                 .ToList();
 
+            // `docs/06` 8-bo'lim: dasturda ilmiy batareya BO'LMASLIGI mumkin — mezon
+            // `PersonalityBattery` domen qoidasida, bu yerda kod ro'yxati YO'Q.
+            var hasPersonalityBattery = items.Any(i => PersonalityBattery.Includes(i.Kind, i.ScoringMode));
+            var effectiveDefinition = RegistrationFormResolver.ApplyProgramOverride(globalDefinition, hasPersonalityBattery);
+
             programs.Add(new PublicProgramSummaryDto(
                 program.Code,
                 program.NameUz,
@@ -171,12 +182,11 @@ internal sealed class GetSchoolInfoQueryHandler : IRequestHandler<GetSchoolInfoQ
                 TestCount: items.Count,
                 QuestionCount: items.Sum(i => i.ActiveQuestionCount),
                 EstimatedMinutes: items.Sum(i => i.EstimatedMinutes),
-                // `docs/06` 8-bo'lim: dasturda ilmiy batareya BO'LMASLIGI mumkin — mezon
-                // `PersonalityBattery` domen qoidasida, bu yerda kod ro'yxati YO'Q.
-                HasPersonalityBattery: items.Any(i => PersonalityBattery.Includes(i.Kind, i.ScoringMode)),
+                HasPersonalityBattery: hasPersonalityBattery,
                 Tests: programTests,
                 RegistrationMode: program.RegistrationMode.ToString(),
-                RegistrationFields: RegistrationFieldsMapping.ToDto(program.ResolveRegistrationFields())));
+                RegistrationFields: RegistrationFieldsMapping.ToDto(RegistrationFieldsMapping.FromCoreFields(effectiveDefinition.CoreFields)),
+                RegistrationForm: RegistrationFormSettingsMapping.ToDto(effectiveDefinition)));
 
             foreach (var item in items)
             {

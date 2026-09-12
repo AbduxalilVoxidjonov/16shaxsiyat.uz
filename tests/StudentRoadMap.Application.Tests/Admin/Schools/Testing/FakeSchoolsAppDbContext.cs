@@ -128,7 +128,10 @@ internal sealed class FakeSchoolsAppDbContext : IAppDbContext
 
     public IQueryable<SchoolLinkView> SchoolLinkViews => throw new NotSupportedException();
 
-    public IQueryable<Domain.Settings.RegistrationFormSettings> RegistrationFormSettings => throw new NotSupportedException();
+    // `GetSchoolInfoQueryHandler` (P52 2-to'lqin) BARCHA chaqiruvda GLOBAL sozlamani o'qiydi —
+    // boshqa `throw new NotSupportedException()` maydonlaridan farqli, bo'sh ro'yxat qaytaradi
+    // ("sozlama hali saqlanmagan" — `RegistrationFormDefinition.Default` ishlatiladi).
+    public IQueryable<Domain.Settings.RegistrationFormSettings> RegistrationFormSettings => Enumerable.Empty<Domain.Settings.RegistrationFormSettings>().AsQueryable();
 }
 
 /// <summary>LINQ-to-Objects ustida bevosita bajaradi — EF Core/DB yo'q.</summary>

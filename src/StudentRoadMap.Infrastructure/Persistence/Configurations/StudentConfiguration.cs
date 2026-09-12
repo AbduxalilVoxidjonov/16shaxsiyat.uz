@@ -50,6 +50,13 @@ internal sealed class StudentConfiguration : IEntityTypeConfiguration<Student>
             .HasMaxLength(20);
 
         builder.Property(s => s.Email).HasMaxLength(150);
+
+        // P52 2-to'lqin (2026-09-12, `docs/18` §9.6.2): GLOBAL ro'yxatdan o'tish formasidagi
+        // "o'z maydonlari" javoblari — xom jsonb matni, Domain buni talqin qilmaydi
+        // (`AiAnalysisConfiguration`dagi `ResponseJson` bilan bir xil naqsh: konversiyasiz
+        // `string?` + `jsonb` ustun turi).
+        builder.Property(s => s.ProfileExtra).HasColumnName("profile_extra").HasColumnType("jsonb");
+
         builder.Property(s => s.ConsentGivenAt).IsRequired();
         builder.Property(s => s.ConsentVersion).HasMaxLength(30);
         builder.Property(s => s.ParentalConsent).IsRequired().HasDefaultValue(false);

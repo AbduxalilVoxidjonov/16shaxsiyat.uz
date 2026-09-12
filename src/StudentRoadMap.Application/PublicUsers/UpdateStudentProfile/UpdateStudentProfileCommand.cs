@@ -1,3 +1,4 @@
+using System.Text.Json;
 using MediatR;
 using StudentRoadMap.Application.PublicUsers.Common;
 using StudentRoadMap.Application.PublicUsers.GetStudentProfile;
@@ -31,4 +32,6 @@ public sealed record UpdateStudentProfileCommand(
     bool ConsentAccepted = false,
     bool? ParentalConsent = null,
     int? Grade = null,
-    string? Email = null) : IRequest<Result<MyStudentProfileDto>>, IPublicProfileInput;
+    string? Email = null,
+    /// <summary>`IPublicProfileInput.CustomFields` izohiga qarang — tahrirda ham qo'llanadi (`existing is not null` bo'lsa ham).</summary>
+    IReadOnlyDictionary<string, JsonElement>? CustomFields = null) : IRequest<Result<MyStudentProfileDto>>, IPublicProfileInput;

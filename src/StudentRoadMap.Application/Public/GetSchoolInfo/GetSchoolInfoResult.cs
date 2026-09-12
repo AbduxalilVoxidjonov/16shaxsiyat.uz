@@ -1,3 +1,4 @@
+using StudentRoadMap.Application.Admin.Settings.RegistrationForm;
 using StudentRoadMap.Application.Common.Models;
 
 namespace StudentRoadMap.Application.Public.GetSchoolInfo;
@@ -54,8 +55,15 @@ public sealed record PublicTestCatalogItemDto(
 /// `RegistrationFields` (P52 kengaytmasi, 2026-09-11, `docs/18` §9.5) — `RegistrationMode = Full`
 /// bo'lganda registratsiya ekranidagi HAR BIR maydonning holati (`"Hidden"`/`"Optional"`/
 /// `"Required"`); `RegistrationMode = None` bo'lsa mijoz bu maydonni e'tiborsiz qoldiradi
-/// (ekran umuman ko'rsatilmaydi). Dastur bazada `null` (standart) saqlagan bo'lsa ham bu
-/// yerda HAR DOIM yechilgan (resolved) qiymatlar keladi.
+/// (ekran umuman ko'rsatilmaydi). **P52 2-to'lqin (2026-09-12):** endi qiymati GLOBAL
+/// `RegistrationFormSettings`dan (dastur ustunligi qo'llangan holda) hisoblanadi —
+/// `AssessmentProgram.RegistrationFields` (§9.5, eskirgan) ENDI O'QILMAYDI, lekin shakl
+/// (frontend moslashguncha) o'zgarmaydi.
+///
+/// `RegistrationForm` (P52 2-to'lqin, `docs/18` §9.6.2) — TO'LIQ GLOBAL forma ta'rifi (superadmin
+/// qo'shgan "o'z maydonlari" bilan birga), dastur ustunligi QO'LLANGAN holda. `RegistrationFields`
+/// bu obyektning `coreFields`ga mos qisqartirilgan (eski shakldagi) proyeksiyasi — ikkalasi BIR
+/// XIL manbadan hisoblanadi, hech qachon bir-biriga zid bo'lmaydi.
 /// </summary>
 public sealed record PublicProgramSummaryDto(
     string Code,
@@ -67,4 +75,5 @@ public sealed record PublicProgramSummaryDto(
     bool HasPersonalityBattery,
     IReadOnlyList<PublicTestCatalogItemDto> Tests,
     string RegistrationMode,
-    RegistrationFieldsDto RegistrationFields);
+    RegistrationFieldsDto RegistrationFields,
+    RegistrationFormDefinitionDto RegistrationForm);

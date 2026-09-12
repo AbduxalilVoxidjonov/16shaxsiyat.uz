@@ -1,6 +1,7 @@
 using MediatR;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
+using StudentRoadMap.Application.Public.Common;
 using StudentRoadMap.Domain.Common;
 
 namespace StudentRoadMap.Application.PublicUsers.GetStudentProfile;
@@ -44,8 +45,9 @@ internal sealed class GetMyStudentProfileQueryHandler : IRequestHandler<GetMyStu
             cancellationToken).ConfigureAwait(false);
 
         var today = DateOnly.FromDateTime(_dateTime.UtcNow.UtcDateTime);
+        var registrationForm = await RegistrationFormResolver.GetGlobalDefinitionAsync(_context, _executor, cancellationToken).ConfigureAwait(false);
 
         // Xaritalash `PUT /api/me/profile` bilan umumiy (`MyStudentProfileMapper`).
-        return Result.Success(MyStudentProfileMapper.ToDto(user, student, today));
+        return Result.Success(MyStudentProfileMapper.ToDto(user, student, today, registrationForm));
     }
 }

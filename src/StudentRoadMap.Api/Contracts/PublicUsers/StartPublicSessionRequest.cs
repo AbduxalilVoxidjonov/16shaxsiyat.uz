@@ -1,3 +1,4 @@
+using System.Text.Json;
 using StudentRoadMap.Application.Public.StartPublicSession;
 using StudentRoadMap.Domain.Students;
 
@@ -34,7 +35,9 @@ public sealed record StartPublicSessionRequest(
     string? Email = null,
     string? LanguageCode = null,
     /// <summary>Ommaviy makonda bitta dastur bo'lsa ixtiyoriy (maktab oqimidagi bilan bir xil qoida).</summary>
-    string? ProgramCode = null)
+    string? ProgramCode = null,
+    /// <summary>`IPublicProfileInput.CustomFields` izohiga qarang — FAQAT profil yaratilayotganda so'raladi.</summary>
+    IReadOnlyDictionary<string, JsonElement>? CustomFields = null)
 {
     public StartPublicSessionCommand ToCommand(Guid publicUserId, string? ipAddress, string? userAgent) =>
         new(
@@ -50,5 +53,6 @@ public sealed record StartPublicSessionRequest(
             LanguageCode,
             ProgramCode,
             ipAddress,
-            userAgent);
+            userAgent,
+            CustomFields);
 }

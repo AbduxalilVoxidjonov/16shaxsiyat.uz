@@ -1,4 +1,5 @@
 using StudentRoadMap.Domain.Catalog;
+using StudentRoadMap.Domain.Settings;
 
 namespace StudentRoadMap.Application.Common.Models;
 
@@ -58,6 +59,22 @@ public static class RegistrationFieldsMapping
 
     private static RegistrationFieldRequirement ParseOrDefault(string? value, RegistrationFieldRequirement fallback) =>
         string.IsNullOrWhiteSpace(value) ? fallback : Enum.Parse<RegistrationFieldRequirement>(value, ignoreCase: true);
+
+    /// <summary>
+    /// GLOBAL ro'yxatdan o'tish formasi (`RegistrationCoreFields`, `RegistrationFormSettings`)
+    /// dan ESKI 7-maydonli shaklga (`fullName`siz) o'tkazish — P52 2-to'lqin (2026-09-12).
+    /// `programs[].registrationFields` (`docs/07` §1.1) hozircha shu shaklda qoladi (frontend
+    /// hali eski shaklga tayanadi), lekin qiymati endi GLOBAL sozlamadan (dastur ustunligi
+    /// qo'llangan holda) hisoblanadi — `AssessmentProgram.RegistrationFields` (eskirgan) O'QILMAYDI.
+    /// </summary>
+    public static RegistrationFields FromCoreFields(RegistrationCoreFields coreFields) => new(
+        coreFields.BirthDate.Requirement,
+        coreFields.Gender.Requirement,
+        coreFields.Grade.Requirement,
+        coreFields.ClassLetter.Requirement,
+        coreFields.Phone.Requirement,
+        coreFields.ParentPhone.Requirement,
+        coreFields.Email.Requirement);
 }
 
 /// <summary>

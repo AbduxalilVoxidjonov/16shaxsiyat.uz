@@ -1,5 +1,7 @@
+using StudentRoadMap.Application.Admin.Settings.RegistrationForm;
 using StudentRoadMap.Application.Public.StartPublicSession;
 using StudentRoadMap.Domain.PublicUsers;
+using StudentRoadMap.Domain.Settings;
 using StudentRoadMap.Domain.Students;
 
 namespace StudentRoadMap.Application.PublicUsers.GetStudentProfile;
@@ -12,9 +14,10 @@ namespace StudentRoadMap.Application.PublicUsers.GetStudentProfile;
 /// </summary>
 internal static class MyStudentProfileMapper
 {
-    public static MyStudentProfileDto ToDto(PublicUser user, Student? student, DateOnly today)
+    public static MyStudentProfileDto ToDto(PublicUser user, Student? student, DateOnly today, RegistrationFormDefinition registrationForm)
     {
         var suggestedFullName = SuggestFullName(user);
+        var registrationFormDto = RegistrationFormSettingsMapping.ToDto(registrationForm);
 
         if (student is null)
         {
@@ -30,7 +33,8 @@ internal static class MyStudentProfileMapper
                 ConsentCurrent: false,
                 ParentalConsent: false,
                 IsMinor: false,
-                SuggestedFullName: suggestedFullName);
+                SuggestedFullName: suggestedFullName,
+                RegistrationForm: registrationFormDto);
         }
 
         // Ommaviy foydalanuvchi oqimi anonim (`RegistrationMode.None`) yaratmaydi — bu yerga
@@ -50,7 +54,8 @@ internal static class MyStudentProfileMapper
             ConsentCurrent: student.ConsentVersion == PublicConsent.CurrentVersion,
             ParentalConsent: student.ParentalConsent,
             IsMinor: isMinor,
-            SuggestedFullName: suggestedFullName);
+            SuggestedFullName: suggestedFullName,
+            RegistrationForm: registrationFormDto);
     }
 
     /// <summary>

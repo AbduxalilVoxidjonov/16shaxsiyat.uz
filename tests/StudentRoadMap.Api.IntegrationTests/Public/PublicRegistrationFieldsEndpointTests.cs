@@ -9,15 +9,18 @@ using StudentRoadMap.Application.Public.GetSchoolInfo;
 using StudentRoadMap.Application.Public.StartSession;
 using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Schools;
+using StudentRoadMap.Domain.Settings;
 using StudentRoadMap.Domain.Students;
 using StudentRoadMap.Infrastructure.Persistence;
 
 namespace StudentRoadMap.Api.IntegrationTests.Public;
 
 /// <summary>
-/// P52 kengaytmasi (`docs/18-tarmoqlanuvchi-sorovnoma.md` §9.5, egasining qarori):
-/// `AssessmentProgram.RegistrationFields` — har bir ro'yxatdan o'tish maydonining holati
-/// (`Hidden`/`Optional`/`Required`) HAR DASTURDA alohida sozlanadi. Alohida `IClassFixture` —
+/// P52 2-to'lqin (2026-09-12, `docs/18` §9.6.2, egasining qarori): ro'yxatdan o'tish
+/// maydonlarining holati (`Hidden`/`Optional`/`Required`) endi HAR DASTURDA alohida EMAS —
+/// GLOBAL `RegistrationFormSettings` orqali boshqariladi (`AssessmentProgram.RegistrationFields`,
+/// §9.5, ENDI O'QILMAYDI). Bu fayl ilgari (§9.5) dastur darajasidagi sozlamani sinardi — endi
+/// AYNAN SHU xatti-harakatni GLOBAL sozlama orqali sinaydi. Alohida `IClassFixture` —
 /// `PublicStartSession` rate limiter kvotasi (10/soat/IP) boshqa test klasslari bilan
 /// bo'linmasligi uchun.
 /// </summary>
@@ -30,9 +33,53 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
         _factory = factory;
     }
 
-    /// <summary>Bitta maktab, bitta `Full` rejimli, moslashtirilgan `RegistrationFields` bilan dastur (batareyasiz).</summary>
-    private async Task<(School School, string AccessToken, string ProgramCode)> SeedCustomFieldsProgramAsync(
-        string seed, RegistrationFields fields)
+    /// <summary>`RegistrationFormDefinition.Default`ning bitta yoki bir nechta `coreFields` maydonini almashtiradi — qolgani standart.</summary>
+    private static RegistrationFormDefinition DefaultDefinitionWith(
+        RegistrationFieldRequirement? birthDate = null,
+        RegistrationFieldRequirement? gender = null,
+        RegistrationFieldRequirement? grade = null,
+        RegistrationFieldRequirement? classLetter = null,
+        RegistrationFieldRequirement? phone = null,
+        RegistrationFieldRequirement? parentPhone = null,
+        RegistrationFieldRequirement? email = null)
+    {
+        var core = RegistrationFormDefinition.Default.CoreFields;
+        var newCore = core with
+        {
+            BirthDate = core.BirthDate with { Requirement = birthDate ?? core.BirthDate.Requirement },
+            Gender = core.Gender with { Requirement = gender ?? core.Gender.Requirement },
+            Grade = core.Grade with { Requirement = grade ?? core.Grade.Requirement },
+            ClassLetter = core.ClassLetter with { Requirement = classLetter ?? core.ClassLetter.Requirement },
+            Phone = core.Phone with { Requirement = phone ?? core.Phone.Requirement },
+            ParentPhone = core.ParentPhone with { Requirement = parentPhone ?? core.ParentPhone.Requirement },
+            Email = core.Email with { Requirement = email ?? core.Email.Requirement },
+        };
+
+        return RegistrationFormDefinition.Create(newCore, []);
+    }
+
+    /// <summary>
+    /// Upsert — singleton qator (`RegistrationFormSettings.SingletonId`). `IClassFixture` bir
+    /// baza/klass umriga tegishli (metod bo'yicha EMAS), shu sabab bir nechta test metodi bir
+    /// xil qatorni yozadi — `Add` ikkinchi chaqiruvda `UNIQUE` xatosiga olib kelardi.
+    /// </summary>
+    private static async Task SeedGlobalRegistrationFormAsync(AppDbContext db, DateTimeOffset now, RegistrationFormDefinition definition)
+    {
+        var existing = await db.RegistrationFormSettings.FirstOrDefaultAsync(s => s.Id == RegistrationFormSettings.SingletonId);
+        if (existing is null)
+        {
+            db.RegistrationFormSettings.Add(RegistrationFormSettings.Create(definition, now, updatedByAdminUserId: null));
+        }
+        else
+        {
+            existing.UpdateDefinition(definition, now, updatedByAdminUserId: null);
+        }
+
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>Bitta maktab, bitta `Full` rejimli dastur (batareyasiz — GLOBAL sozlama ustunlik olmaydi).</summary>
+    private async Task<(School School, string AccessToken, string ProgramCode)> SeedProgramAsync(string seed)
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -47,7 +94,7 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
 
         var program = AssessmentProgram.Create(
             Guid.NewGuid(), $"RF-PROG-{seed}", "Moslashtirilgan ro'yxatdan o'tish (sinov)", now,
-            visibility: ProgramVisibility.Assigned, registrationFields: fields);
+            visibility: ProgramVisibility.Assigned);
         program.AddTest(test.Id, 1, isPersonalityBatteryTest: false, now);
         program.Publish(now, hasPersonalityBattery: false);
 
@@ -61,8 +108,14 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
     [Fact]
     public async Task StartSession_HiddenPhone_KelganQiymatSaqlanmaydi()
     {
-        var fields = RegistrationFields.Default with { Phone = RegistrationFieldRequirement.Hidden };
-        var (school, accessToken, programCode) = await SeedCustomFieldsProgramAsync("hp1", fields);
+        var (school, accessToken, programCode) = await SeedProgramAsync("hp1");
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await SeedGlobalRegistrationFormAsync(db, DateTimeOffset.UtcNow, DefaultDefinitionWith(phone: RegistrationFieldRequirement.Hidden));
+        }
+
         using var client = _factory.CreateClient();
 
         var body = new
@@ -84,10 +137,10 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
         response.StatusCode.Should().Be(HttpStatusCode.Created, "phone `Hidden` bo'lsa ham majburiy emas — sessiya ochiladi");
         var result = (await response.Content.ReadFromJsonAsync<StartSessionResult>(TestJson.Options))!;
 
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var assessment = await db.Assessments.AsNoTracking().SingleAsync(a => a.Id == result.AssessmentId);
-        var student = await db.Students.AsNoTracking().SingleAsync(s => s.Id == assessment.StudentId);
+        using var scope2 = _factory.Services.CreateScope();
+        var db2 = scope2.ServiceProvider.GetRequiredService<AppDbContext>();
+        var assessment = await db2.Assessments.AsNoTracking().SingleAsync(a => a.Id == result.AssessmentId);
+        var student = await db2.Students.AsNoTracking().SingleAsync(s => s.Id == assessment.StudentId);
 
         student.Phone.Should().BeNull("`Hidden` maydon uchun kelgan qiymat e'tiborsiz qoldirilishi — saqlanmasligi kerak");
     }
@@ -101,8 +154,14 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
         // ishlatiladi, ya'ni o'quvchi qaytib kelganda yarim qolgan testi yo'qolardi.
         // Endi kalit sifatida F.I.Sh. + TELEFON ishlatiladi (bir xil ism va bir xil telefon —
         // amalda bitta odam).
-        var fields = RegistrationFields.Default with { BirthDate = RegistrationFieldRequirement.Optional };
-        var (school, accessToken, programCode) = await SeedCustomFieldsProgramAsync("ob1", fields);
+        var (school, accessToken, programCode) = await SeedProgramAsync("ob1");
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await SeedGlobalRegistrationFormAsync(db, DateTimeOffset.UtcNow, DefaultDefinitionWith(birthDate: RegistrationFieldRequirement.Optional));
+        }
+
         using var client = _factory.CreateClient();
 
         object Body() => new
@@ -132,14 +191,14 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
         secondBody.Resumed.Should().BeTrue("yarim qolgan sessiya tiklanishi kerak, noldan boshlanmasligi");
         secondBody.AssessmentId.Should().Be(firstBody.AssessmentId);
 
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var assessment = await db.Assessments.AsNoTracking().SingleAsync(a => a.Id == firstBody.AssessmentId);
-        var student = await db.Students.AsNoTracking().SingleAsync(s => s.Id == assessment.StudentId);
+        using var scope2 = _factory.Services.CreateScope();
+        var db2 = scope2.ServiceProvider.GetRequiredService<AppDbContext>();
+        var assessment = await db2.Assessments.AsNoTracking().SingleAsync(a => a.Id == firstBody.AssessmentId);
+        var student = await db2.Students.AsNoTracking().SingleAsync(s => s.Id == assessment.StudentId);
 
         student.IsAnonymous.Should().BeFalse("F.I.Sh. bor — bu anonim oqim EMAS, faqat `birthDate` ixtiyoriy");
         student.BirthDate.Should().BeNull();
-        (await db.Students.AsNoTracking().CountAsync(s => s.SchoolId == school.Id)).Should().Be(1, "ikkinchi so'rov yangi o'quvchi yaratmasligi kerak");
+        (await db2.Students.AsNoTracking().CountAsync(s => s.SchoolId == school.Id)).Should().Be(1, "ikkinchi so'rov yangi o'quvchi yaratmasligi kerak");
     }
 
     [Fact]
@@ -149,12 +208,17 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
         // kiritilmagan, telefon esa `Hidden`). Faqat ism bo'yicha izlash bir xil ismli ikki
         // o'quvchini bitta yozuvga qo'shib yuborardi — ma'lumot buzilishi takroriy yozuvdan
         // yomonroq, shu sabab qidiruv ataylab bajarilmaydi.
-        var fields = RegistrationFields.Default with
+        var (school, accessToken, programCode) = await SeedProgramAsync("ob2");
+
+        using (var scope = _factory.Services.CreateScope())
         {
-            BirthDate = RegistrationFieldRequirement.Optional,
-            Phone = RegistrationFieldRequirement.Hidden,
-        };
-        var (school, accessToken, programCode) = await SeedCustomFieldsProgramAsync("ob2", fields);
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await SeedGlobalRegistrationFormAsync(
+                db,
+                DateTimeOffset.UtcNow,
+                DefaultDefinitionWith(birthDate: RegistrationFieldRequirement.Optional, phone: RegistrationFieldRequirement.Hidden));
+        }
+
         using var client = _factory.CreateClient();
 
         object Body() => new
@@ -178,10 +242,10 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
         var firstBody = (await first.Content.ReadFromJsonAsync<StartSessionResult>(TestJson.Options))!;
         var secondBody = (await second.Content.ReadFromJsonAsync<StartSessionResult>(TestJson.Options))!;
 
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var firstAssessment = await db.Assessments.AsNoTracking().SingleAsync(a => a.Id == firstBody.AssessmentId);
-        var secondAssessment = await db.Assessments.AsNoTracking().SingleAsync(a => a.Id == secondBody.AssessmentId);
+        using var scope2 = _factory.Services.CreateScope();
+        var db2 = scope2.ServiceProvider.GetRequiredService<AppDbContext>();
+        var firstAssessment = await db2.Assessments.AsNoTracking().SingleAsync(a => a.Id == firstBody.AssessmentId);
+        var secondAssessment = await db2.Assessments.AsNoTracking().SingleAsync(a => a.Id == secondBody.AssessmentId);
 
         firstAssessment.StudentId.Should().NotBe(secondAssessment.StudentId, "ishonchli kalit yo'q — har doim yangi o'quvchi");
     }
@@ -189,8 +253,14 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
     [Fact]
     public async Task StartSession_RequiredEmail_BoshBoSa400()
     {
-        var fields = RegistrationFields.Default with { Email = RegistrationFieldRequirement.Required };
-        var (school, accessToken, programCode) = await SeedCustomFieldsProgramAsync("re1", fields);
+        var (school, accessToken, programCode) = await SeedProgramAsync("re1");
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await SeedGlobalRegistrationFormAsync(db, DateTimeOffset.UtcNow, DefaultDefinitionWith(email: RegistrationFieldRequirement.Required));
+        }
+
         using var client = _factory.CreateClient();
 
         var body = new
@@ -214,11 +284,18 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
         problem.GetProperty("errors").TryGetProperty("email", out _).Should().BeTrue();
     }
 
+    /// <summary>`parentPhone` standart bo'yicha ixtiyoriy — GLOBAL sozlamada `Required` qilinsa bo'sh qoldirib bo'lmaydi.</summary>
     [Fact]
-    public async Task StartSession_RequiredGender_BoshBoSa400()
+    public async Task StartSession_RequiredParentPhone_BoshBoSa400()
     {
-        var fields = RegistrationFields.Default with { Gender = RegistrationFieldRequirement.Required };
-        var (school, accessToken, programCode) = await SeedCustomFieldsProgramAsync("rg1", fields);
+        var (school, accessToken, programCode) = await SeedProgramAsync("rpp1");
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await SeedGlobalRegistrationFormAsync(db, DateTimeOffset.UtcNow, DefaultDefinitionWith(parentPhone: RegistrationFieldRequirement.Required));
+        }
+
         using var client = _factory.CreateClient();
 
         var body = new
@@ -227,6 +304,7 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
             accessToken,
             fullName = "Toshpulatov Bekzod",
             birthDate = "2012-03-03",
+            gender = "Male",
             grade = 5,
             phone = "+998901234570",
             consentAccepted = true,
@@ -239,15 +317,21 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
         problem.GetProperty("code").GetString().Should().Be("VALIDATION_ERROR");
-        problem.GetProperty("errors").TryGetProperty("gender", out _).Should().BeTrue();
+        problem.GetProperty("errors").TryGetProperty("parentPhone", out _).Should().BeTrue();
     }
 
     /// <summary>`gender: Optional` sozlansa jinssiz sessiya muvaffaqiyatli ochiladi (P52 tuzatishi, 2026-09-11).</summary>
     [Fact]
     public async Task StartSession_OptionalGender_JinssizMuvaffaqiyatliBoLadi()
     {
-        var fields = RegistrationFields.Default with { Gender = RegistrationFieldRequirement.Optional };
-        var (school, accessToken, programCode) = await SeedCustomFieldsProgramAsync("og1", fields);
+        var (school, accessToken, programCode) = await SeedProgramAsync("og1");
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await SeedGlobalRegistrationFormAsync(db, DateTimeOffset.UtcNow, DefaultDefinitionWith(gender: RegistrationFieldRequirement.Optional));
+        }
+
         using var client = _factory.CreateClient();
 
         var body = new
@@ -268,10 +352,10 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
         response.StatusCode.Should().Be(HttpStatusCode.Created, "`gender` `Optional` bo'lsa bo'sh qoldirish mumkin");
         var result = (await response.Content.ReadFromJsonAsync<StartSessionResult>(TestJson.Options))!;
 
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var assessment = await db.Assessments.AsNoTracking().SingleAsync(a => a.Id == result.AssessmentId);
-        var student = await db.Students.AsNoTracking().SingleAsync(s => s.Id == assessment.StudentId);
+        using var scope2 = _factory.Services.CreateScope();
+        var db2 = scope2.ServiceProvider.GetRequiredService<AppDbContext>();
+        var assessment = await db2.Assessments.AsNoTracking().SingleAsync(a => a.Id == result.AssessmentId);
+        var student = await db2.Students.AsNoTracking().SingleAsync(s => s.Id == assessment.StudentId);
 
         student.Gender.Should().Be(Gender.Unspecified);
     }
@@ -280,8 +364,14 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
     [Fact]
     public async Task StartSession_HiddenGender_KelganQiymatSaqlanmaydi()
     {
-        var fields = RegistrationFields.Default with { Gender = RegistrationFieldRequirement.Hidden };
-        var (school, accessToken, programCode) = await SeedCustomFieldsProgramAsync("hg1", fields);
+        var (school, accessToken, programCode) = await SeedProgramAsync("hg1");
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await SeedGlobalRegistrationFormAsync(db, DateTimeOffset.UtcNow, DefaultDefinitionWith(gender: RegistrationFieldRequirement.Hidden));
+        }
+
         using var client = _factory.CreateClient();
 
         var body = new
@@ -303,24 +393,29 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
         response.StatusCode.Should().Be(HttpStatusCode.Created, "`gender` `Hidden` bo'lsa ham majburiy emas — sessiya ochiladi");
         var result = (await response.Content.ReadFromJsonAsync<StartSessionResult>(TestJson.Options))!;
 
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var assessment = await db.Assessments.AsNoTracking().SingleAsync(a => a.Id == result.AssessmentId);
-        var student = await db.Students.AsNoTracking().SingleAsync(s => s.Id == assessment.StudentId);
+        using var scope2 = _factory.Services.CreateScope();
+        var db2 = scope2.ServiceProvider.GetRequiredService<AppDbContext>();
+        var assessment = await db2.Assessments.AsNoTracking().SingleAsync(a => a.Id == result.AssessmentId);
+        var student = await db2.Students.AsNoTracking().SingleAsync(s => s.Id == assessment.StudentId);
 
         student.Gender.Should().Be(Gender.Unspecified, "`Hidden` maydon uchun kelgan qiymat e'tiborsiz qoldirilishi — saqlanmasligi kerak");
     }
 
-    /// <summary>`GET /api/public/schools/{slug}` — `programs[].registrationFields` shakli (`docs/07` §1.1).</summary>
+    /// <summary>`GET /api/public/schools/{slug}` — `programs[].registrationFields` shakli (`docs/07` §1.1), endi GLOBAL sozlamadan.</summary>
     [Fact]
     public async Task GetSchoolInfo_ProgramsRoyxatida_RegistrationFieldsQaytaradi()
     {
-        var fields = RegistrationFields.Default with
+        var (school, accessToken, programCode) = await SeedProgramAsync("gsi1");
+
+        using (var scope = _factory.Services.CreateScope())
         {
-            Phone = RegistrationFieldRequirement.Hidden,
-            Email = RegistrationFieldRequirement.Required,
-        };
-        var (school, accessToken, programCode) = await SeedCustomFieldsProgramAsync("gsi1", fields);
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await SeedGlobalRegistrationFormAsync(
+                db,
+                DateTimeOffset.UtcNow,
+                DefaultDefinitionWith(phone: RegistrationFieldRequirement.Hidden, email: RegistrationFieldRequirement.Required));
+        }
+
         using var client = _factory.CreateClient();
 
         var info = await client.GetFromJsonAsync<GetSchoolInfoResult>(
@@ -334,14 +429,19 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
         program.RegistrationFields.Phone.Should().Be("Hidden");
         program.RegistrationFields.ParentPhone.Should().Be("Optional");
         program.RegistrationFields.Email.Should().Be("Required");
+
+        // `registrationForm` — TO'LIQ GLOBAL ta'rif (`docs/18` §9.6.2), BIR XIL manbadan.
+        program.RegistrationForm.CoreFields.Phone.Requirement.Should().Be("Hidden");
+        program.RegistrationForm.CoreFields.Email.Requirement.Should().Be("Required");
+        program.RegistrationForm.CustomFields.Should().BeEmpty();
     }
 
     /// <summary>
-    /// Regressiya qulfi: standart sozlama (`RegistrationFields` dasturda `null`, ya'ni sozlanmagan)
-    /// bilan xatti-harakat — `fullName`/`phone`/`gender` yo'q bo'lsa `400`, boshqa maydonlar
-    /// (`classLetter`/`parentPhone`/`email`) haqida xato YO'Q. `gender` 2026-09-11 kuni standart
-    /// bo'yicha `Required`ga o'zgardi (`RegistrationFields.cs` izohiga qarang — ommaviy forma
-    /// jinsni ALLAQACHON majburiy qilardi, backend endi shu xatti-harakatga moslashtirildi).
+    /// Regressiya qulfi: standart sozlama bilan xatti-harakat — `fullName`/`phone`/`gender`
+    /// yo'q bo'lsa `400`, boshqa maydonlar (`classLetter`/`parentPhone`/`email`) haqida xato
+    /// YO'Q. Sozlama ANIQ `Default`ga o'rnatiladi (`IClassFixture` bitta bazani BUTUN klass
+    /// bo'yicha baham ko'radi — boshqa test metodlari qatorni allaqachon o'zgartirgan bo'lishi
+    /// mumkin, "qator yo'q = standart" holatiga tayanish tartibga bog'liq bo'lib qolardi).
     /// </summary>
     [Fact]
     public async Task StartSession_StandartSozlama_FishTelefonVaJinssiz400VaBoshqaXatoYoq()
@@ -349,6 +449,7 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var now = DateTimeOffset.UtcNow;
+        await SeedGlobalRegistrationFormAsync(db, now, RegistrationFormDefinition.Default);
         var accessToken = TestDataFactory.NewAccessToken("rfdefault1");
         var school = await TestDataFactory.CreateSchoolAsync(db, now, "maktab-rfdefault1", accessToken);
         await TestDataFactory.CreatePublishedTestAsync(db, now, "RFDEFAULT1", 1, questionCount: 1);

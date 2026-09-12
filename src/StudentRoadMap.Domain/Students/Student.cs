@@ -75,6 +75,19 @@ public sealed class Student : AggregateRoot
     public string? Email { get; private set; }
 
     /// <summary>
+    /// GLOBAL ro'yxatdan o'tish formasidagi superadmin qo'shgan "o'z maydonlari"
+    /// (`RegistrationFormSettings.Definition.CustomFields`) javoblari — P52 2-to'lqin
+    /// (2026-09-12, egasining qarori, `docs/18` §9.6.2). Xom `jsonb` matni sifatida saqlanadi
+    /// (kod → qiymat, masalan `{"PARENT_JOB":"O'qituvchi","TRANSPORT":[1,3]}`) — Domain bu
+    /// tuzilmani TALQIN QILMAYDI (`Question.VisibilityRule`dan farqli, bu yerda hech qanday
+    /// biznes qoidasi tuzilmaga bog'liq emas: ma'lumot har doim BUTUNLIGICHA o'qiladi va hech
+    /// qachon qidirilmaydi — shu sabab alohida qiymat obyekti yoki jadval emas, oddiy matn).
+    /// `null` — mijoz hech qanday o'z maydoniga javob bermagan (yoki sozlamada umuman
+    /// `customFields` yo'q).
+    /// </summary>
+    public string? ProfileExtra { get; private set; }
+
+    /// <summary>
     /// Rozilik berilgan vaqt. Topshiriqdagi `ConsentAcceptedAt` uchun YANGI ustun qo'shilmadi —
     /// bu maydon aynan o'sha ma'noni bildiradi (`docs/08` 5-bo'lim: "rozilik vaqti
     /// `consent_given_at` da qayd etiladi") va ikkita bir xil ma'noli ustun chalkashlik
@@ -147,6 +160,7 @@ public sealed class Student : AggregateRoot
         string? consentVersion,
         bool parentalConsent,
         bool isAnonymous,
+        string? profileExtra,
         DateTimeOffset now)
         : base(id)
     {
@@ -172,6 +186,7 @@ public sealed class Student : AggregateRoot
         ConsentGivenAt = consentGivenAt;
         ConsentVersion = consentVersion;
         ParentalConsent = parentalConsent;
+        ProfileExtra = profileExtra;
         CompletedAssessmentCount = 0;
         NeedsAttention = false;
         CreatedAt = now;
@@ -198,7 +213,8 @@ public sealed class Student : AggregateRoot
         string? email = null,
         Guid? publicUserId = null,
         string? consentVersion = null,
-        bool parentalConsent = false)
+        bool parentalConsent = false,
+        string? profileExtra = null)
     {
         if (string.IsNullOrWhiteSpace(fullName))
         {
@@ -232,6 +248,7 @@ public sealed class Student : AggregateRoot
             consentVersion,
             parentalConsent,
             isAnonymous: false,
+            profileExtra,
             now);
     }
 
@@ -271,6 +288,7 @@ public sealed class Student : AggregateRoot
             consentVersion: null,
             parentalConsent: false,
             isAnonymous: true,
+            profileExtra: null,
             now);
     }
 
@@ -352,6 +370,18 @@ public sealed class Student : AggregateRoot
         Grade = grade;
         Phone = phone;
         Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim();
+        UpdatedAt = now;
+    }
+
+    /// <summary>
+    /// `ProfileExtra`ni (GLOBAL ro'yxatdan o'tish formasidagi "o'z maydonlari" javoblari)
+    /// TO'LIQ almashtiradi — birlashtirish (mavjud + yangi kod) Application qatlamida
+    /// (`RegistrationCustomFieldAnswers.Merge`) hisoblanadi, domen bu yerda faqat tayyor
+    /// natijani yozadi (`docs/18` §9.6.2).
+    /// </summary>
+    public void SetProfileExtra(string? profileExtra, DateTimeOffset now)
+    {
+        ProfileExtra = profileExtra;
         UpdatedAt = now;
     }
 

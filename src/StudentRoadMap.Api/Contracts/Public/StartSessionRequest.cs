@@ -1,3 +1,4 @@
+using System.Text.Json;
 using StudentRoadMap.Application.Public.StartSession;
 using StudentRoadMap.Domain.Students;
 
@@ -29,7 +30,12 @@ public sealed record StartSessionRequest(
     bool ConsentAccepted,
     string? LanguageCode,
     /// <summary>`docs/06` 8-bo'lim (2026-09-02 qaror) — maktabda bitta dastur bo'lsa ixtiyoriy.</summary>
-    string? ProgramCode = null)
+    string? ProgramCode = null,
+    /// <summary>
+    /// P52 2-to'lqin (2026-09-12) — GLOBAL ro'yxatdan o'tish formasidagi "o'z maydonlari"
+    /// javoblari, `{ "KOD": qiymat }` (`docs/18` §9.6.2).
+    /// </summary>
+    IReadOnlyDictionary<string, JsonElement>? CustomFields = null)
 {
     /// <summary>`IpAddress`/`UserAgent`ni server tomonida qo'shib, `Application` qatlami buyrug'iga aylantiradi.</summary>
     public StartSessionCommand ToCommand(string? ipAddress, string? userAgent) =>
@@ -49,5 +55,6 @@ public sealed record StartSessionRequest(
             LanguageCode,
             ProgramCode,
             ipAddress,
-            userAgent);
+            userAgent,
+            CustomFields);
 }

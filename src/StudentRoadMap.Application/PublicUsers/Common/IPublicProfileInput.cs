@@ -1,3 +1,4 @@
+using System.Text.Json;
 using StudentRoadMap.Domain.Students;
 
 namespace StudentRoadMap.Application.PublicUsers.Common;
@@ -34,4 +35,14 @@ public interface IPublicProfileInput
 
     /// <summary>`null` — o'zgarmasin/yo'q; bo'sh satr — tozalash.</summary>
     string? Email { get; }
+
+    /// <summary>
+    /// P52 2-to'lqin (2026-09-12, `docs/18` §9.6.2): GLOBAL ro'yxatdan o'tish formasidagi
+    /// superadmin qo'shgan "o'z maydonlari" javoblari — `{ "KOD": qiymat }`
+    /// (`RegistrationCustomFieldAnswers`ga qarang). Majburiylik FAQAT yangi profil
+    /// yaratilganda (`existing is null`) tekshiriladi — boshqa maydonlar bilan bir xil "bir
+    /// marta so'raladi" naqshi (`PublicStudentProfile.RequireFields` izohi). `null` — mijoz
+    /// hech qanday o'z maydoniga javob bermagan/yubormagan.
+    /// </summary>
+    IReadOnlyDictionary<string, JsonElement>? CustomFields { get; }
 }

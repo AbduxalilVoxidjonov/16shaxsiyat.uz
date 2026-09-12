@@ -37,6 +37,23 @@ Maktab havolasi to'g'riligini tekshirish va boshlanish ekranini to'ldirish.
       "registrationMode": "Full",
       "registrationFields": { "birthDate": "Required", "gender": "Required", "grade": "Required",
         "classLetter": "Optional", "phone": "Required", "parentPhone": "Optional", "email": "Optional" },
+      "registrationForm": {
+        "coreFields": {
+          "fullName": { "requirement": "Required", "labelUz": "F.I.Sh.", "placeholderUz": null, "order": 1 },
+          "birthDate": { "requirement": "Required", "labelUz": "Tug'ilgan sana", "placeholderUz": null, "order": 2 },
+          "gender": { "requirement": "Required", "labelUz": "Jins", "placeholderUz": null, "order": 3 },
+          "grade": { "requirement": "Required", "labelUz": "Sinf", "placeholderUz": null, "order": 4 },
+          "classLetter": { "requirement": "Optional", "labelUz": "Sinf harfi", "placeholderUz": null, "order": 5 },
+          "phone": { "requirement": "Required", "labelUz": "Telefon raqami", "placeholderUz": null, "order": 6 },
+          "parentPhone": { "requirement": "Optional", "labelUz": "Ota-ona telefoni", "placeholderUz": null, "order": 7 },
+          "email": { "requirement": "Optional", "labelUz": "Email", "placeholderUz": null, "order": 8 }
+        },
+        "customFields": [
+          { "code": "PARENT_JOB", "type": "ShortText", "labelUz": "Ota-onangiz kasbi",
+            "placeholderUz": "Masalan: o'qituvchi", "requirement": "Optional", "maxLength": 200,
+            "inputPattern": null, "options": null, "order": 9 }
+        ]
+      },
       "tests": [
         { "code": "MBTI16", "name": "16 tipli shaxsiyat modeli", "questionCount": 60, "estimatedMinutes": 9, "order": 1 },
         { "code": "BIG5", "name": "Shaxsiyatning 5 omili", "questionCount": 50, "estimatedMinutes": 8, "order": 2 },
@@ -78,6 +95,22 @@ dasturda ham shakl beriladi, lekin mijoz uni E'TIBORGA OLMAYDI (registratsiya ek
 ko'rsatilmaydi). **Qat'iy invariant:** `hasPersonalityBattery: true` bo'lgan dasturda
 `birthDate`/`grade` DOIM `"Required"` (`REGISTRATION_FIELD_REQUIRED_FOR_BATTERY`, 400,
 `docs/06` §6) — `gender` bundan mustasno, erkin sozlanadi.
+
+**⚠️ P52 2-to'lqin (2026-09-12, `docs/18` §9.6.2):** `registrationFields` qiymati ENDI
+`AssessmentProgram.RegistrationFields` (§9.5, eskirgan, o'lik ustun)dan EMAS, GLOBAL
+`RegistrationFormSettings` sozlamasidan (dastur ustunligi — yuqoridagi batareya invarianti —
+QO'LLANGAN holda) hisoblanadi. Shakl (mijoz uchun) o'zgarmadi — frontend hozircha shu maydonga
+tayanadi, `registrationForm` migratsiyasi keyingi to'lqinda.
+
+**`programs[].registrationForm`** (P52 2-to'lqin, 2026-09-12, `docs/18` §9.6.2) — TO'LIQ GLOBAL
+ro'yxatdan o'tish formasi ta'rifi, superadmin qo'shgan `customFields[]` bilan birga (`GET`/`PUT
+/api/admin/settings/registration-form` — §3.8 bilan BIR XIL shakl), dastur ustunligi (batareya
+invarianti) QO'LLANGAN holda. `registrationFields` — shu obyektning `coreFields`ga mos
+qisqartirilgan (eski, `fullName`siz) proyeksiyasi; ikkalasi BIR XIL manbadan hisoblanadi, hech
+qachon bir-biriga zid bo'lmaydi. `customFields[].code` → qiymat juftliklari `POST /sessions`
+tanasidagi `customFields` obyektiga mos keladi (pastga qarang). `scale`/`scaleDirection` bu
+yerda YO'Q (`CLAUDE.md` 8-qoida — bu forma ta'rifi, savol emas, lekin qoidaning ruhi bir xil:
+faqat mijozga kerakli maydonlar chiqadi).
 
 **`tests[]` (yuqori daraja, P52 — 2026-09-11 jonli hodisadan keyin tuzatildi):** endi BUTUN
 katalogdan EMAS, FAQAT `programs[]` ichidagi MAVJUD dasturlar asosida hisoblanadi — bir nechta
@@ -165,11 +198,11 @@ Muvaffaqiyatsiz urinish audit'ga yoziladi (`SchoolCode.ResolveFailed`, IP xeshi,
 ### 1.2 `POST /api/public/sessions`
 Anketa + sessiya ochish.
 
-**P52 kengaytmasi (2026-09-11, `docs/18` §9.5):** `fullName` bundan mustasno, quyidagi
-so'rov maydonlarining har biri qaysi tanlangan dasturning `registrationFields` sozlamasiga
-qarab majburiy/ixtiyoriy/kerak emas bo'lishi mumkin — mijoz `GET /api/public/schools/{slug}`
-javobidagi `programs[].registrationFields` ga qarab formani chizadi. `"Hidden"` maydon uchun
-yuborilgan qiymat serverda E'TIBORSIZ qoldiriladi (saqlanmaydi).
+**P52 kengaytmasi (2026-09-11, `docs/18` §9.5; 2-to'lqin 2026-09-12, §9.6.2):** `fullName`
+bundan mustasno, quyidagi so'rov maydonlarining har biri qaysi tanlangan dasturning
+`registrationFields` sozlamasiga qarab majburiy/ixtiyoriy/kerak emas bo'lishi mumkin — mijoz
+`GET /api/public/schools/{slug}` javobidagi `programs[].registrationFields` ga qarab formani
+chizadi. `"Hidden"` maydon uchun yuborilgan qiymat serverda E'TIBORSIZ qoldiriladi (saqlanmaydi).
 
 ```json
 {
@@ -185,9 +218,19 @@ yuborilgan qiymat serverda E'TIBORSIZ qoldiriladi (saqlanmaydi).
   "parentPhone": "+998911112233",
   "email": null,
   "consentAccepted": true,
-  "languageCode": "uz"
+  "languageCode": "uz",
+  "customFields": { "PARENT_JOB": "O'qituvchi" }
 }
 ```
+
+**`customFields`** (P52 2-to'lqin, 2026-09-12, `docs/18` §9.6.2) — ixtiyoriy, `{ "KOD": qiymat }`
+(kod → qiymat; kod — `programs[].registrationForm.customFields[].code`). Matn turlarida
+(`ShortText`/`LongText`/`Phone`) satr, `SingleChoice`da butun son, `MultiChoice`da butun sonlar
+massivi (son — variantning `order`i, `value`si EMAS). Qoidalar: `Hidden` maydon uchun kelgan
+qiymat E'TIBORSIZ qoldiriladi; `Required` maydon uchun qiymat kelmasa `400 VALIDATION_ERROR`
+(`errors{KOD:[…]}`, MAKTAB oqimida HAR SAFAR tekshiriladi — boshqa asosiy maydonlar kabi,
+mavjud o'quvchi topilgan taqdirda ham); tur bo'yicha noto'g'ri shakl/qiymat ham
+`400 VALIDATION_ERROR` beradi. Tasdiqlangan javoblar `Student.ProfileExtra`ga yoziladi.
 
 **201**
 ```json
@@ -1621,10 +1664,11 @@ Egasining talabi: "Sozlamalar" sahifasidan ro'yxatdan o'tish formasini GLOBAL bo
   `REGISTRATION_FORM_CHOICE_OPTIONS_INSUFFICIENT` (400), `REGISTRATION_FORM_OPTION_VALUE_DUPLICATE`
   (409), `INPUT_PATTERN_INVALID` (400).
 
-> **1-to'lqin qamrovi (joriy holat).** Bu endpoint domen + saqlash + admin API'ni beradi —
-> ommaviy ro'yxatdan o'tish oqimi (`POST /api/public/sessions`, §1.2) HALI shu sozlamani
-> o'qimaydi, o'zining eski `AssessmentProgram.RegistrationFields` mantig'iga tayanadi
-> (`docs/18` §9.5, `docs/04` §2.13/§2.14). Ulash keyingi to'lqinda (`PROGRESS.md`).
+> **2-to'lqin (2026-09-12) — ULANDI.** `POST /api/public/sessions` (§1.2) va `POST`/`PUT
+> /api/me/sessions`/`profile` (§5.1b/§5.4) endi AYNAN shu sozlamadan o'qiydi
+> (`RegistrationFormResolver`) — eski `AssessmentProgram.RegistrationFields` (`docs/18` §9.5)
+> BOSHQA O'QILMAYDI. Superadmin qo'shgan `customFields[]` javoblari `Student.ProfileExtra`ga
+> yoziladi (`docs/04` §2.2, `docs/05` `AddStudentProfileExtra` migratsiyasi).
 
 ---
 
@@ -1706,7 +1750,15 @@ Frontend `/kabinet/test` ni ochishda avval shuni o'qiydi va anketani **qayta so'
   "consentCurrent": true,
   "parentalConsent": false,
   "isMinor": false,
-  "suggestedFullName": "Valiyev Ali"
+  "suggestedFullName": "Valiyev Ali",
+  "registrationForm": {
+    "coreFields": { "fullName": { "requirement": "Required", "labelUz": "F.I.Sh.", "placeholderUz": null, "order": 1 }, "…": "…" },
+    "customFields": [
+      { "code": "PARENT_JOB", "type": "ShortText", "labelUz": "Ota-onangiz kasbi",
+        "placeholderUz": "Masalan: o'qituvchi", "requirement": "Optional", "maxLength": 200,
+        "inputPattern": null, "options": null, "order": 9 }
+    ]
+  }
 }
 ```
 
@@ -1717,6 +1769,7 @@ Frontend `/kabinet/test` ni ochishda avval shuni o'qiydi va anketani **qayta so'
 | `consentCurrent` | `consentVersion` joriy roziliknoma versiyasiga tengmi; `false` — anketa rozilikni qayta so'raydi |
 | `isMinor` | yosh < 18 (`Student.CalculateAge`) — `parentalConsent` shu holatda talab qilinadi |
 | `suggestedFullName` | Telegram `LastName + FirstName` (ikkalasi bo'lsa; bo'lmasa bori; hech biri yo'q — `null`). Bu **taklif**: yangi anketada F.I.Sh. maydoni shu bilan oldindan to'ldiriladi, foydalanuvchi tahrirlaydi (Telegram ismi ko'pincha rasmiy F.I.Sh. emas). AI'ga tushmaydi. |
+| `registrationForm` | **P52 2-to'lqin (2026-09-12, `docs/18` §9.6.2)** — GLOBAL ro'yxatdan o'tish formasi ta'rifi (`§3.8` bilan BIR XIL shakl), dastur ustunligi QO'LLANMAYDI (bu yerda dastur hali tanlanmagan). Mijoz shundan `customFields` formasini chizadi. Oldin to'ldirilgan `ProfileExtra` QIYMATLARI bu javobda YO'Q (faqat forma TA'RIFI) — keyingi to'lqinda kerak bo'lsa qo'shiladi. |
 
 Hech qanday identifikator (`Student.Id`, `TelegramId`) qaytarilmaydi — egalik JWT bilan.
 
@@ -1739,7 +1792,8 @@ So'rov tanasi — §5.4 dagi anketa maydonlari, **`languageCode`/`programCode` Y
   "consentAccepted": true,
   "parentalConsent": null,
   "grade": 0,
-  "email": ""
+  "email": "",
+  "customFields": { "PARENT_JOB": "Dizayner" }
 }
 ```
 
@@ -1747,10 +1801,15 @@ Majburiylik va tahrir semantikasi §5.4 jadvali bilan **bir xil**:
 
 | Holat | Talab qilinadi | Natija |
 |-------|----------------|--------|
-| Profil YO'Q | `fullName`, `birthDate`, `gender`, `phone`, `consentAccepted: true`; 18 yoshgacha `parentalConsent: true` | ommaviy makonda yangi `Student` (`public_user_id` bilan), **sessiya yo'q** |
-| Profil BOR, rozilik joriy | hech narsa — `{}` ham `200` | kelgan maydon tahrir, `null` o'zgarmaydi; `grade: 0` — sinf yo'q, `email: ""` — tozalash |
+| Profil YO'Q | `fullName`, `birthDate`, `gender`, `phone`, `consentAccepted: true`; 18 yoshgacha `parentalConsent: true`; `Required` `customFields` | ommaviy makonda yangi `Student` (`public_user_id` bilan), **sessiya yo'q** |
+| Profil BOR, rozilik joriy | hech narsa — `{}` ham `200` | kelgan maydon tahrir, `null` o'zgarmaydi; `grade: 0` — sinf yo'q, `email: ""` — tozalash; kelgan `customFields` KODLARI mavjud `ProfileExtra`ga USTIDAN yoziladi (kelmagan kod o'zgarmaydi) |
 | Profil BOR, rozilik eskirgan | `consentAccepted: true` | rozilik joriy versiya bilan qayta yoziladi |
 | Profil BOR, voyaga yetmagan, bazada `parentalConsent: false` | `parentalConsent: true` | — |
+
+**`customFields`** (P52 2-to'lqin, 2026-09-12, `docs/18` §9.6.2) — ixtiyoriy, §1.2 bilan BIR XIL
+shakl/qoidalar, LEKIN majburiylik FAQAT profil YO'Q holatida tekshiriladi (`RequireFields`
+bilan bir xil "bir marta so'raladi" naqshi) — profil BOR bo'lsa `Required` maydon ham qayta
+so'RALMAYDI, faqat kelgan kod tahrirlanadi.
 
 `200 OK` — yangilangan anketa, §5.1a bilan **aynan bir xil** shakl (`hasProfile: true`).
 Frontend javobni `GET /api/me/profile` keshiga to'g'ridan-to'g'ri yozadi.
@@ -1835,8 +1894,8 @@ holatiga bog'liq va server `Student` topilganidan KEYIN hal qiladi (validator fa
 
 | Holat | Talab qilinadi | Ixtiyoriy |
 |-------|----------------|-----------|
-| Profil YO'Q (birinchi sessiya) | `fullName`, `birthDate`, `gender`, `phone`, `consentAccepted: true`; 18 yoshgacha `parentalConsent: true` | `grade` (`null` = maktabda o'qimaydi), `email`, `programCode` |
-| Profil BOR, rozilik joriy | **hech narsa** — `{}` yoki `{ "programCode": "…" }` yetarli | kelgan shaxsiy maydon TAHRIR sifatida qo'llanadi, kelmagani (`null`) o'zgarmaydi |
+| Profil YO'Q (birinchi sessiya) | `fullName`, `birthDate`, `gender`, `phone`, `consentAccepted: true`; 18 yoshgacha `parentalConsent: true`; `Required` `customFields` | `grade` (`null` = maktabda o'qimaydi), `email`, `programCode` |
+| Profil BOR, rozilik joriy | **hech narsa** — `{}` yoki `{ "programCode": "…" }` yetarli | kelgan shaxsiy maydon TAHRIR sifatida qo'llanadi, kelmagani (`null`) o'zgarmaydi; `customFields` ham ixtiyoriy tahrir (pastga qarang) |
 | Profil BOR, rozilik eskirgan (`consentCurrent: false`) | `consentAccepted: true` | qolgani yuqoridagidek |
 | Profil BOR, voyaga yetmagan, bazada `parentalConsent: false` | `parentalConsent: true` | — |
 
@@ -1845,6 +1904,12 @@ Tahrir semantikasi (`null` = "o'zgarmasin" bo'lgani uchun bo'sh qiymat ANIQ yubo
 `consentAccepted: true` kelsa rozilik joriy versiya va hozirgi vaqt bilan qayta yoziladi;
 kelmasa `consentGivenAt` (rozilik isboti sanasi) tegilmaydi. Tahrir tugallanmagan sessiya
 davom ettirilganda (`200`) ham saqlanadi.
+
+**`customFields`** (P52 2-to'lqin, 2026-09-12, `docs/18` §9.6.2) — §1.2 bilan BIR XIL shakl.
+**MUHIM (egasining alohida ta'kidlagan talabi):** profil BOR bo'lsa `Required` o'z maydoni ham
+QAYTA SO'RALMAYDI — majburiylik FAQAT profil YO'Q holatida (birinchi sessiya) tekshiriladi,
+boshqa shaxsiy maydonlar bilan bir xil "bir marta so'raladi" naqshi. Kelgan kodlar mavjud
+`ProfileExtra`ga USTIDAN yoziladi, kelmagan kod o'zgarmaydi.
 
 To'liq so'rov (profil yo'q holati):
 
@@ -1859,7 +1924,8 @@ To'liq so'rov (profil yo'q holati):
   "grade": null,
   "email": null,
   "languageCode": "uz",
-  "programCode": null
+  "programCode": null,
+  "customFields": { "PARENT_JOB": "O'qituvchi" }
 }
 ```
 

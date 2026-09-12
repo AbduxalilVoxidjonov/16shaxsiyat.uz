@@ -1,6 +1,7 @@
 using MediatR;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
+using StudentRoadMap.Application.Public.Common;
 using StudentRoadMap.Application.PublicUsers.Common;
 using StudentRoadMap.Application.PublicUsers.GetStudentProfile;
 using StudentRoadMap.Domain.Common;
@@ -57,7 +58,18 @@ internal sealed class UpdateStudentProfileCommandHandler : IRequestHandler<Updat
             .FindStudentAsync(_context, _executor, space.Id, request.PublicUserId, cancellationToken)
             .ConfigureAwait(false);
 
-        var errors = PublicStudentProfile.RequireFields(request, existing, today);
+        // P52 2-to'lqin (2026-09-12, `docs/18` §9.6.2) — `StartPublicSessionCommandHandler`
+        // bilan bir xil manba/naqsh: dastur ustunligi bu yerda QO'LLANMAYDI (profil dastur
+        // tanlashdan mustaqil saqlanadi).
+        var globalDefinition = await RegistrationFormResolver.GetGlobalDefinitionAsync(_context, _executor, cancellationToken).ConfigureAwait(false);
+
+        var errors = PublicStudentProfile.RequireFields(request, existing, today, globalDefinition.CoreFields);
+        var (customFieldErrors, validatedCustomFields) = PublicStudentProfile.ValidateCustomFields(globalDefinition.CustomFields, request, existing);
+        foreach (var (key, value) in customFieldErrors)
+        {
+            errors[key] = value;
+        }
+
         if (errors.Count > 0)
         {
             return Result.Failure<MyStudentProfileDto>(PublicStudentProfile.ValidationFailure(errors));
@@ -67,7 +79,7 @@ internal sealed class UpdateStudentProfileCommandHandler : IRequestHandler<Updat
 
         if (existing is not null)
         {
-            var applyResult = PublicStudentProfile.ApplyChanges(request, existing, now);
+            var applyResult = PublicStudentProfile.ApplyChanges(request, existing, now, validatedCustomFields);
             if (applyResult.IsFailure)
             {
                 return Result.Failure<MyStudentProfileDto>(applyResult.Error);
@@ -77,7 +89,7 @@ internal sealed class UpdateStudentProfileCommandHandler : IRequestHandler<Updat
         }
         else
         {
-            var createResult = PublicStudentProfile.CreateStudent(request, space.Id, request.PublicUserId, now);
+            var createResult = PublicStudentProfile.CreateStudent(request, space.Id, request.PublicUserId, now, validatedCustomFields);
             if (createResult.IsFailure)
             {
                 return Result.Failure<MyStudentProfileDto>(createResult.Error);
@@ -89,6 +101,6 @@ internal sealed class UpdateStudentProfileCommandHandler : IRequestHandler<Updat
 
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        return Result.Success(MyStudentProfileMapper.ToDto(user, student, today));
+        return Result.Success(MyStudentProfileMapper.ToDto(user, student, today, globalDefinition));
     }
 }
