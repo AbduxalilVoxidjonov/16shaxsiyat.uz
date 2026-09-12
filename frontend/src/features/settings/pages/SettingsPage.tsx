@@ -11,6 +11,7 @@ import { useChangePassword } from '../api/useChangePassword';
 import { useAccountStatusQuery } from '../api/useAccountStatus';
 import { useConfirmTotp, useDisableTotp, useEnableTotp } from '../api/useTotp';
 import { SETTINGS_QUERY_KEYS } from '../api/settingsKeys';
+import { RegistrationFormCard } from '../components/RegistrationFormCard';
 import {
   SETTINGS_ERROR_CODES,
   TOTP_CODE_LENGTH,
@@ -516,6 +517,7 @@ export default function SettingsPage() {
       <h1 className="font-display text-xl font-bold text-ink">{t('pages.settings.title')}</h1>
       <ChangePasswordCard />
       <TwoFactorCard />
+      <RegistrationFormCard />
     </div>
   );
 }

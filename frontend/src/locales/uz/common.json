@@ -136,6 +136,90 @@
       "acknowledgeLabel": "Zaxira kodlarni xavfsiz joyda saqlab oldim",
       "acknowledgeCta": "Saqlab oldim",
       "acknowledgeRequired": "Oynani yopishdan oldin zaxira kodlarni saqlaganingizni tasdiqlang — ular boshqa ko'rsatilmaydi."
+    },
+    "registrationForm": {
+      "heading": "Ro'yxatdan o'tish formasi",
+      "description": "O'quvchi ro'yxatdan o'tish formasidagi maydonlarni boshqaring: matnini tahrirlang, majburiy/ixtiyoriy/yashirin qiling, o'z maydonlaringizni qo'shing.",
+      "loadError": "Ro'yxatdan o'tish formasi sozlamasini yuklab bo'lmadi.",
+      "saveCta": "Formani saqlash",
+      "discardCta": "O'zgarishlarni bekor qilish",
+      "unsavedNotice": "Saqlanmagan o'zgarishlar bor.",
+      "saveSuccess": "Ro'yxatdan o'tish formasi saqlandi.",
+      "requirement": {
+        "label": "Holat",
+        "hidden": "Yashirin",
+        "optional": "Ixtiyoriy",
+        "required": "Majburiy"
+      },
+      "errors": {
+        "fullNameLocked": "F.I.Sh. maydoni har doim majburiy — buni o'zgartirib bo'lmaydi.",
+        "fieldCodeInvalid": "Bir yoki bir nechta maydon kodi noto'g'ri formatda.",
+        "fieldCodeDuplicate": "Maydon kodi takrorlangan yoki asosiy maydon nomi bilan to'qnashmoqda.",
+        "choiceOptionsInsufficient": "Tanlov turidagi maydonda kamida 2 ta variant bo'lishi kerak.",
+        "optionValueDuplicate": "Bitta maydon ichida tanlov qiymati takrorlangan.",
+        "inputPatternInvalid": "Andoza (pattern) formati noto'g'ri.",
+        "validation": "Formada xatolik bor — maydonlarni tekshiring.",
+        "generic": "Saqlashda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
+      },
+      "coreFields": {
+        "heading": "Asosiy maydonlar",
+        "labelFieldLabel": "Yorlig'i",
+        "placeholderFieldLabel": "Placeholder (ixtiyoriy)",
+        "fullNameLockedHint": "Ism har doim majburiy. Umuman so'ralmasligi kerak bo'lsa, dastur sozlamasida \"Ro'yxatdan o'tish: So'ralmaydi\" ni tanlang.",
+        "moveUpAria": "{{label}}ni yuqoriga ko'chirish",
+        "moveDownAria": "{{label}}ni pastga ko'chirish"
+      },
+      "customFields": {
+        "heading": "O'z maydonlar",
+        "addCta": "Maydon qo'shish",
+        "emptyHint": "Hali o'z maydon yo'q — \"Maydon qo'shish\" tugmasi bilan qo'shing.",
+        "editAria": "{{label}} maydonini tahrirlash",
+        "removeAria": "{{label}} maydonini o'chirish",
+        "moveUpAria": "{{label}}ni yuqoriga ko'chirish",
+        "moveDownAria": "{{label}}ni pastga ko'chirish",
+        "codeLabel": "Kod",
+        "typeLabel": "Turi",
+        "type": {
+          "ShortText": "Qisqa matn",
+          "LongText": "Uzun matn",
+          "Phone": "Telefon raqami",
+          "SingleChoice": "Bitta tanlov",
+          "MultiChoice": "Ko'p tanlov"
+        },
+        "maxLengthLabel": "Belgilar chegarasi (ixtiyoriy)",
+        "inputPatternLabel": "Andoza — pattern (ixtiyoriy)",
+        "inputPatternHint": "Muntazam ifoda (regex) — masalan telefon formatini cheklash uchun.",
+        "removeConfirmTitle": "Maydonni o'chirish",
+        "removeConfirmDescription": "\"{{label}}\" maydoni o'chiriladi. O'zgarish faqat \"Saqlash\" bosilgach kuchga kiradi.",
+        "options": {
+          "heading": "Tanlov variantlari",
+          "addCta": "Variant qo'shish",
+          "emptyHint": "Hali variant yo'q — kamida 2 ta variant qo'shing.",
+          "textLabel": "Matn",
+          "valueLabel": "Qiymat",
+          "textAria": "Variant {{index}} matni",
+          "valueAria": "Variant {{index}} qiymati",
+          "moveUpAria": "Variant {{index}}ni yuqoriga ko'chirish",
+          "moveDownAria": "Variant {{index}}ni pastga ko'chirish",
+          "removeAria": "Variant {{index}}ni o'chirish",
+          "duplicateValues": "Takroriy qiymat(lar): {{values}}",
+          "insufficientCount": "Kamida 2 ta tanlov varianti kerak."
+        }
+      },
+      "dialog": {
+        "addTitle": "O'z maydon qo'shish",
+        "editTitle": "O'z maydonni tahrirlash",
+        "codeHint": "Faqat lotin harf, raqam, '-' va '_' belgilari (1-20 ta). Boshqa maydon kodi bilan bir xil bo'lmasin.",
+        "codeDuplicate": "Bu kod band — boshqa nom tanlang.",
+        "saveCta": "Saqlash"
+      },
+      "preview": {
+        "heading": "Jonli oldindan ko'rish",
+        "hint": "Bu — o'quvchi ko'radigan forma qanday ko'rinishini ko'rsatadi. Hech qayerga yuborilmaydi.",
+        "hiddenBadge": "Yashirin",
+        "requiredMark": "*",
+        "optionsHeading": "Variantlar"
+      }
     }
   },
   "pages": {

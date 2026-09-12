@@ -6,7 +6,11 @@ import { ToastProvider } from '@/shared/ui/Toast';
 import { setAdminAccessToken } from '@/shared/api/adminClient';
 import { TOTP_BACKUP_CODE_COUNT } from '../model/types';
 import SettingsPage from './SettingsPage';
-import { emptyResponse, jsonResponse, problemResponse, type Schemas } from '@/test/apiMock';
+import { emptyResponse, jsonResponse, problemResponse, typedResponse, type Schemas } from '@/test/apiMock';
+import {
+  REGISTRATION_FORM_DEFAULT_DEFINITION,
+  type RegistrationFormDefinition,
+} from '@/shared/api/registrationFormSettingsTypes';
 
 const BACKUP_CODES = [
   '10000001',
@@ -79,6 +83,20 @@ const DISABLE_TOTP_BODY = {
 } satisfies Schemas['DisableTotpRequest'];
 
 /**
+ * `RegistrationFormCard` (`docs/10` §5.5) `SettingsPage` bilan BIRGA render bo'lgani uchun
+ * `GET /api/admin/settings/registration-form`ni sahifa ochilganda avtomatik chaqiradi.
+ * Bu fayldagi barcha fetch mocklar shu so'rovga ham javob berishi kerak — aks holda karta
+ * abadiy "yuklanmoqda" holatida qoladi va boshqa testlar bilan aloqasi yo'q. Standart
+ * ta'rif qaytariladi (bu testlar 2FA/parol oqimini tekshiradi, forma mazmunini emas).
+ */
+function registrationFormFallback(url: string): Response | null {
+  if (url.endsWith('/api/admin/settings/registration-form')) {
+    return typedResponse<RegistrationFormDefinition>(REGISTRATION_FORM_DEFAULT_DEFINITION);
+  }
+  return null;
+}
+
+/**
  * Ikki bosqichli oqim uchun mock. `confirm` javobi testdan beriladi — muvaffaqiyat
  * (`ConfirmTotpResult`) yoki `ProblemDetails` (noto'g'ri kod, muddati o'tgan o'rnatish).
  * Tasdiqlangandan keyin `GET /api/auth/me` `totpEnabled: true` qaytaradi — haqiqiy serverdagi
@@ -88,6 +106,8 @@ function totpFlowFetchMock(confirmResponse: Response = jsonResponse<'ConfirmTotp
   let confirmed = false;
   return vi.fn().mockImplementation((input: RequestInfo | URL) => {
     const url = String(input);
+    const registrationForm = registrationFormFallback(url);
+    if (registrationForm) return Promise.resolve(registrationForm);
     if (url.endsWith('/api/auth/totp/enable')) {
       return Promise.resolve(jsonResponse<'EnableTotpResult'>(TOTP_ENABLE_RESULT));
     }
@@ -130,7 +150,10 @@ describe('SettingsPage', () => {
   it("2FA holatini yuklab, o'chirilgan holatda 'Yoqish' tugmasini ko'rsatadi", async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(jsonResponse<'AdminUserDto'>(ME_TOTP_OFF)),
+      vi.fn().mockImplementation((input: RequestInfo | URL) => {
+        const registrationForm = registrationFormFallback(String(input));
+        return Promise.resolve(registrationForm ?? jsonResponse<'AdminUserDto'>(ME_TOTP_OFF));
+      }),
     );
 
     renderSettings();
@@ -142,6 +165,8 @@ describe('SettingsPage', () => {
   it("parolni muvaffaqiyatli o'zgartirganda muvaffaqiyat bildirishnomasi chiqadi va forma tozalanadi", async () => {
     const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
+      const registrationForm = registrationFormFallback(url);
+      if (registrationForm) return Promise.resolve(registrationForm);
       if (url.endsWith('/api/auth/change-password')) {
         return Promise.resolve(emptyResponse(204));
       }
@@ -165,7 +190,10 @@ describe('SettingsPage', () => {
   it("parol mos kelmasa yuborishdan oldin lokal xato ko'rsatiladi", async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(jsonResponse<'AdminUserDto'>(ME_TOTP_OFF)),
+      vi.fn().mockImplementation((input: RequestInfo | URL) => {
+        const registrationForm = registrationFormFallback(String(input));
+        return Promise.resolve(registrationForm ?? jsonResponse<'AdminUserDto'>(ME_TOTP_OFF));
+      }),
     );
     const user = userEvent.setup();
 
@@ -333,6 +361,8 @@ describe('SettingsPage', () => {
     const disableBodies: Schemas['DisableTotpRequest'][] = [];
     const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
+      const registrationForm = registrationFormFallback(url);
+      if (registrationForm) return Promise.resolve(registrationForm);
       if (url.endsWith('/api/auth/totp/disable')) {
         disableBodies.push(JSON.parse(String(init?.body)) as Schemas['DisableTotpRequest']);
         return Promise.resolve(emptyResponse(204));
@@ -367,6 +397,8 @@ describe('SettingsPage', () => {
   it("noto'g'ri joriy parolda backend xatosi maydonga bog'lanadi", async () => {
     const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
       const url = String(input);
+      const registrationForm = registrationFormFallback(url);
+      if (registrationForm) return Promise.resolve(registrationForm);
       if (url.endsWith('/api/auth/change-password')) {
         return Promise.resolve(problemResponse('CURRENT_PASSWORD_INVALID', 400));
       }
