@@ -1,5 +1,6 @@
 import type { components } from '@/shared/api/schema';
 import type { Gender } from '@/shared/api/types';
+import type { LatestAssessmentBatteryFields } from '@/shared/api/assessmentBatteryTypes';
 import type { AiAttentionFlag } from '@/widgets/AiReportView';
 import type { ActivityLevel, AssessmentStatus, ReliabilityFlag } from './enums';
 
@@ -193,6 +194,14 @@ export type AiAnalysisHistoryItemDto = Omit<
 /**
  * `docs/07` 3.2 `latestAssessment` — backend `AdminLatestAssessmentDto`.
  * `results`/`aiAnalysis`/`aiHistory` yuqoridagi toraytirilgan tiplarga bog'lanadi.
+ *
+ * `tests`/`hasPersonalityBattery` — P52 jonli xato tuzatish (2026-09-12): `schema.d.ts`da
+ * hali yo'q, `shared/api/assessmentBatteryTypes.ts`dan MUVAQQAT qo'shiladi (o'sha fayldagi
+ * izohga qarang). Ular orqali "bu metodika sessiyada bormi" (`StudentSummaryCards`/
+ * `StudentDiagramsSection`) va "bu sessiyada AI tahlilga tayanadigan metodika bormi"
+ * (`AiReportSection`) ANIQ ajratiladi — natija `undefined` bo'lishining ikki BUTUNLAY boshqa
+ * sababi (hali hisoblanmagan / dasturda umuman yo'q) endi bir xil "Hali natija yo'q" bilan
+ * chalkashtirilmaydi.
  */
 export type LatestAssessmentDto = Omit<
   components['schemas']['AdminLatestAssessmentDto'],
@@ -201,7 +210,7 @@ export type LatestAssessmentDto = Omit<
   results: TestResultsDto;
   aiAnalysis?: AiAnalysisDto | null;
   aiHistory: AiAnalysisHistoryItemDto[];
-};
+} & LatestAssessmentBatteryFields;
 
 /**
  * `GET /api/admin/students/{id}` to'liq javobi — backend `AdminStudentProfileDto`.

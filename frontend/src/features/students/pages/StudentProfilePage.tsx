@@ -23,6 +23,7 @@ import { AssessmentHistoryTable } from '../components/AssessmentHistoryTable';
 import { AnswersSection } from '@/widgets/AnswersSection';
 import { RerunAnalysisDialog } from '../components/RerunAnalysisDialog';
 import type { AiProvider } from '../model/profileTypes';
+import { buildPresentTestCodes } from '../model/testBattery';
 
 /** Sarlavha va yig'ma kartalar yuklanayotganda ko'rsatiladigan skelet — 3s ichida bosqichma-bosqich (CLAUDE.md cheklovi). */
 function ProfileSkeleton() {
@@ -97,6 +98,12 @@ export default function StudentProfilePage() {
   const { student, assessments, latestAssessment } = profileQuery.data;
   const latestSummary = assessments.find((assessment) => assessment.isLatest) ?? null;
   const results = latestAssessment?.results;
+
+  // P52 jonli xato tuzatish (2026-09-12): "Hali natija yo'q" faqat metodika SESSIYADA BOR-yu
+  // hisoblanmagan holatda o'rinli — metodika dasturda umuman yo'q bo'lsa (masalan faqat
+  // so'rovnoma topshirilgan) karta/diagramma umuman chizilmaydi (`model/testBattery.ts`).
+  const presentTests = buildPresentTestCodes(latestAssessment?.tests);
+  const hasAnyPersonalityTest = presentTests.size > 0;
 
   async function handleDownloadPdf() {
     if (!latestAssessment) return;
@@ -173,25 +180,35 @@ export default function StudentProfilePage() {
       {/* sr-only bo'lim sarlavhalari — h1 dan keyin to'g'ridan-to'g'ri Card'larning ichki
           h3'iga (`StudentDiagramsSection`) o'tib ketmasligi uchun (`axe` `heading-order`
           qoidasi: darajalar bittadan ko'p sakramaydi). Vizual dizaynda alohida sarlavha
-          ko'rsatilmaydi (docs/11 A-5 maketida yo'q) — faqat ekran o'quvchisi uchun tuzilma. */}
-      <h2 className="sr-only">{t('studentProfile.summarySectionHeading')}</h2>
-      <StudentSummaryCards
-        mbti16={results?.MBTI16}
-        bigFive={results?.BIG5}
-        riasec={results?.RIASEC}
-        activityIndex={results?.ACTIVITY?.activityIndex}
-        activityLevelText={
-          results?.ACTIVITY ? t(`students.enums.activityLevel.${results.ACTIVITY.activityLevel}`) : null
-        }
-      />
+          ko'rsatilmaydi (docs/11 A-5 maketida yo'q) — faqat ekran o'quvchisi uchun tuzilma.
+          Bironta ham metodika sessiyada yo'q bo'lsa (faqat so'rovnoma) BUTUN bo'lim —
+          sarlavha ham — chizilmaydi (P52 jonli xato tuzatish, 2026-09-12). */}
+      {hasAnyPersonalityTest && (
+        <>
+          <h2 className="sr-only">{t('studentProfile.summarySectionHeading')}</h2>
+          <StudentSummaryCards
+            mbti16={results?.MBTI16}
+            bigFive={results?.BIG5}
+            riasec={results?.RIASEC}
+            activityIndex={results?.ACTIVITY?.activityIndex}
+            activityLevelText={
+              results?.ACTIVITY
+                ? t(`students.enums.activityLevel.${results.ACTIVITY.activityLevel}`)
+                : null
+            }
+            presentTests={presentTests}
+          />
 
-      <h2 className="sr-only">{t('studentProfile.diagramsSectionHeading')}</h2>
-      <StudentDiagramsSection
-        mbti16={results?.MBTI16}
-        bigFive={results?.BIG5}
-        riasec={results?.RIASEC}
-        activity={results?.ACTIVITY}
-      />
+          <h2 className="sr-only">{t('studentProfile.diagramsSectionHeading')}</h2>
+          <StudentDiagramsSection
+            mbti16={results?.MBTI16}
+            bigFive={results?.BIG5}
+            riasec={results?.RIASEC}
+            activity={results?.ACTIVITY}
+            presentTests={presentTests}
+          />
+        </>
+      )}
 
       <AiReportSection
         assessmentStatus={latestSummary?.status ?? null}
@@ -199,6 +216,7 @@ export default function StudentProfilePage() {
         aiHistory={latestAssessment?.aiHistory}
         reliabilityFlag={latestSummary?.reliabilityFlag ?? null}
         hasAssessment={Boolean(latestAssessment)}
+        hasPersonalityBattery={latestAssessment?.hasPersonalityBattery ?? true}
         onRunAnalysis={handleRunAnalysis}
         isStartingAnalysis={rerunMutation.isPending && !rerunOpen}
         pollTimedOut={pollTimedOut}

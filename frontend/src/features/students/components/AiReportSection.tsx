@@ -18,6 +18,13 @@ export interface AiReportSectionProps {
   /** O'quvchida umuman sessiya bormi. */
   hasAssessment: boolean;
   /**
+   * Sessiyada AI tahlilga tayanadigan ballanadigan shaxsiyat metodikasi bormi
+   * (`latestAssessment.hasPersonalityBattery`, P52 jonli xato tuzatish, 2026-09-12).
+   * `false` — faqat so'rovnoma topshirilgan: "Tahlilni ishga tushirish" chaqiruvi
+   * ko'rsatilmaydi, o'rniga tushuntirish matni chiqadi.
+   */
+  hasPersonalityBattery: boolean;
+  /**
    * Tahlilni ishga tushirish. `requiresConfirmation` — mavjud hisobot ustiga yozilyaptimi:
    * `true` bo'lsa sahifa avval `RerunAnalysisDialog` ni ochadi, `false` bo'lsa darhol
    * so'rov yuboradi (birinchi tahlilda yo'qotiladigan narsa yo'q).
@@ -59,6 +66,7 @@ export function AiReportSection({
   aiHistory,
   reliabilityFlag,
   hasAssessment,
+  hasPersonalityBattery,
   onRunAnalysis,
   isStartingAnalysis,
   pollTimedOut,
@@ -73,6 +81,7 @@ export function AiReportSection({
     status: assessmentStatus,
     analysis: aiAnalysis,
     hasAssessment,
+    hasPersonalityBattery,
   });
 
   const actionLabel =
@@ -206,12 +215,14 @@ export function AiReportSection({
           <p className="text-sm text-neutral-500">
             {view.blockedReason === 'noAssessment'
               ? t('studentProfile.ai.noAssessment')
-              : t('studentProfile.ai.blockedNotCompleted', {
-                  status:
-                    assessmentStatus === null
-                      ? ''
-                      : t(`students.enums.status.${assessmentStatus}`),
-                })}
+              : view.blockedReason === 'noPersonalityBattery'
+                ? t('studentProfile.ai.noPersonalityBattery')
+                : t('studentProfile.ai.blockedNotCompleted', {
+                    status:
+                      assessmentStatus === null
+                        ? ''
+                        : t(`students.enums.status.${assessmentStatus}`),
+                  })}
           </p>
         )}
 

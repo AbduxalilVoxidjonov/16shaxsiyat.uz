@@ -5,12 +5,19 @@ import { PersonalityRadar } from '@/widgets/PersonalityRadar';
 import { RiasecChart } from '@/widgets/RiasecChart';
 import { ActivityBars } from '@/widgets/ActivityBars';
 import type { ActivityResult, BigFiveResult, Mbti16Result, RiasecResult } from '../model/profileTypes';
+import type { CoreTestCode } from '../model/testBattery';
 
 export interface StudentDiagramsSectionProps {
   mbti16: Mbti16Result | null | undefined;
   bigFive: BigFiveResult | null | undefined;
   riasec: RiasecResult | null | undefined;
   activity: ActivityResult | null | undefined;
+  /**
+   * Sessiyada QAYSI metodika bor — `StudentSummaryCards`dagi bilan bir xil moslama
+   * (`model/testBattery.ts`). P52 jonli xato tuzatish (2026-09-12): metodika sessiyada
+   * UMUMAN bo'lmasa diagramma chizilmaydi.
+   */
+  presentTests: ReadonlySet<CoreTestCode>;
 }
 
 const AXIS_ORDER: AxisCode[] = ['EI', 'SN', 'TF', 'JP'];
@@ -26,69 +33,84 @@ export function StudentDiagramsSection({
   bigFive,
   riasec,
   activity,
+  presentTests,
 }: StudentDiagramsSectionProps) {
   const { t } = useTranslation();
 
+  // Sessiyada bironta ham metodika bo'lmasa bo'limning o'zi chizilmaydi — sarlavha ham
+  // (`StudentProfilePage`da boshqariladi).
+  if (presentTests.size === 0) {
+    return null;
+  }
+
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <Card title={t('studentProfile.diagrams.axesHeading')}>
-        {mbti16 ? (
-          <div className="flex flex-col gap-4">
-            {AXIS_ORDER.map((axis) => (
-              <AxisBar
-                key={axis}
-                axisCode={axis}
-                pct={mbti16.axes[axis].pct}
-                letter={mbti16.axes[axis].letter}
-                borderline={mbti16.axes[axis].borderline}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-neutral-500">{t('studentProfile.diagrams.noData')}</p>
-        )}
-      </Card>
+      {presentTests.has('MBTI16') && (
+        <Card title={t('studentProfile.diagrams.axesHeading')}>
+          {mbti16 ? (
+            <div className="flex flex-col gap-4">
+              {AXIS_ORDER.map((axis) => (
+                <AxisBar
+                  key={axis}
+                  axisCode={axis}
+                  pct={mbti16.axes[axis].pct}
+                  letter={mbti16.axes[axis].letter}
+                  borderline={mbti16.axes[axis].borderline}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-neutral-500">{t('studentProfile.diagrams.noData')}</p>
+          )}
+        </Card>
+      )}
 
-      <Card title={t('studentProfile.diagrams.radarHeading')}>
-        {bigFive ? (
-          <PersonalityRadar
-            openness={bigFive.factors.O}
-            conscientiousness={bigFive.factors.C}
-            extraversion={bigFive.factors.E}
-            agreeableness={bigFive.factors.A}
-            stabilityPct={bigFive.stabilityPct}
-          />
-        ) : (
-          <p className="text-sm text-neutral-500">{t('studentProfile.diagrams.noData')}</p>
-        )}
-      </Card>
+      {presentTests.has('BIG5') && (
+        <Card title={t('studentProfile.diagrams.radarHeading')}>
+          {bigFive ? (
+            <PersonalityRadar
+              openness={bigFive.factors.O}
+              conscientiousness={bigFive.factors.C}
+              extraversion={bigFive.factors.E}
+              agreeableness={bigFive.factors.A}
+              stabilityPct={bigFive.stabilityPct}
+            />
+          ) : (
+            <p className="text-sm text-neutral-500">{t('studentProfile.diagrams.noData')}</p>
+          )}
+        </Card>
+      )}
 
-      <Card title={t('studentProfile.diagrams.riasecHeading')}>
-        {riasec ? (
-          <RiasecChart
-            types={riasec.types}
-            resultCode={riasec.resultCode}
-            differentiation={riasec.differentiation}
-          />
-        ) : (
-          <p className="text-sm text-neutral-500">{t('studentProfile.diagrams.noData')}</p>
-        )}
-      </Card>
+      {presentTests.has('RIASEC') && (
+        <Card title={t('studentProfile.diagrams.riasecHeading')}>
+          {riasec ? (
+            <RiasecChart
+              types={riasec.types}
+              resultCode={riasec.resultCode}
+              differentiation={riasec.differentiation}
+            />
+          ) : (
+            <p className="text-sm text-neutral-500">{t('studentProfile.diagrams.noData')}</p>
+          )}
+        </Card>
+      )}
 
-      <Card title={t('studentProfile.diagrams.activityHeading')}>
-        {/* `!= null` — sxemada `activityIndex?: number | null`, ya'ni maydon javobda umuman
-            bo'lmasligi ham mumkin; ilgari `!== null` turgani uchun bunday holatda diagramma
-            `undefined` ball bilan chizilardi. */}
-        {activity && activity.activityIndex != null ? (
-          <ActivityBars
-            scales={activity.scales}
-            activityIndex={activity.activityIndex}
-            activityLevelText={t(`students.enums.activityLevel.${activity.activityLevel}`)}
-          />
-        ) : (
-          <p className="text-sm text-neutral-500">{t('studentProfile.diagrams.noData')}</p>
-        )}
-      </Card>
+      {presentTests.has('ACTIVITY') && (
+        <Card title={t('studentProfile.diagrams.activityHeading')}>
+          {/* `!= null` — sxemada `activityIndex?: number | null`, ya'ni maydon javobda umuman
+              bo'lmasligi ham mumkin; ilgari `!== null` turgani uchun bunday holatda diagramma
+              `undefined` ball bilan chizilardi. */}
+          {activity && activity.activityIndex != null ? (
+            <ActivityBars
+              scales={activity.scales}
+              activityIndex={activity.activityIndex}
+              activityLevelText={t(`students.enums.activityLevel.${activity.activityLevel}`)}
+            />
+          ) : (
+            <p className="text-sm text-neutral-500">{t('studentProfile.diagrams.noData')}</p>
+          )}
+        </Card>
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import axe from 'axe-core';
 import { ToastProvider } from '@/shared/ui/Toast';
 import { jsonResponse, problemResponse, typedResponse } from '@/test/apiMock';
+import type { AssessmentBatteryTestBlock } from '@/shared/api/assessmentBatteryTypes';
 import StudentProfilePage from './StudentProfilePage';
 import type {
   ActivityResult,
@@ -164,10 +165,24 @@ function buildProfileResponse(
             },
             aiAnalysis: AI_ANALYSIS,
             aiHistory: [],
+            tests: FULL_BATTERY_TESTS,
+            hasPersonalityBattery: true,
           }
         : overrides.latestAssessment,
   };
 }
+
+/**
+ * `latestAssessment.tests[]` — P52 jonli xato tuzatish (2026-09-12, egasi topgan
+ * kamchilik): to'liq shaxsiyat batareyasi. Boshqa fixture'lar (`SURVEY_ONLY_TESTS` va h.k.)
+ * shu faylning tegishli testlarida e'lon qilinadi.
+ */
+const FULL_BATTERY_TESTS: AssessmentBatteryTestBlock[] = [
+  { code: 'MBTI16', nameUz: 'Shaxsiyat tipi', status: 'Completed', scoringMode: 'Scored' },
+  { code: 'BIG5', nameUz: 'Katta beshlik', status: 'Completed', scoringMode: 'Scored' },
+  { code: 'RIASEC', nameUz: 'Kasb qiziqishlari', status: 'Completed', scoringMode: 'Scored' },
+  { code: 'ACTIVITY', nameUz: 'Aktivlik', status: 'Completed', scoringMode: 'Scored' },
+];
 
 /** Xato javobi — `ProblemDetails` (`docs/06` 6-bo'lim). */
 interface ProblemEnvelope {
@@ -262,6 +277,111 @@ describe('StudentProfilePage', () => {
     await expectNoAxeViolations(fetchMock.container);
   });
 
+  /**
+   * P52 jonli xato tuzatish (2026-09-12): egasi topgan kamchilik — o'quvchi FAQAT
+   * so'rovnoma topshirganda (dasturida shaxsiyat testlari umuman yo'q) profilda baribir
+   * to'rtala karta va to'rtala diagramma "Hali natija yo'q"/"Bu testning natijasi hali
+   * mavjud emas" bilan chizilardi. Endi `latestAssessment.tests[]` metodika sessiyada
+   * BOR-yo'qligini bildiradi — yo'q bo'lsa karta/diagramma UMUMAN chizilmaydi.
+   */
+  describe('faqat sessiyada mavjud metodikalar ko\'rsatiladi', () => {
+    const SURVEY_ONLY_TESTS: AssessmentBatteryTestBlock[] = [
+      { code: 'INTELLECT-SURVEY', nameUz: 'Qiziqishlar so\'rovnomasi', status: 'Completed', scoringMode: 'Survey' },
+    ];
+
+    it("so'rovnoma-only sessiyada TO'RTTA karta ham, diagrammalar bo'limi ham chizilmaydi", async () => {
+      renderPage([
+        buildProfileResponse({
+          latestAssessment: {
+            id: 'assessment-1',
+            results: {},
+            aiAnalysis: null,
+            aiHistory: [],
+            tests: SURVEY_ONLY_TESTS,
+            hasPersonalityBattery: false,
+          },
+        }),
+      ]);
+
+      expect(await screen.findByText('Aliyev Sardor Bekzodovich')).toBeInTheDocument();
+
+      // To'rtta karta ham yo'q.
+      expect(screen.queryByText('Shaxsiyat tipi')).not.toBeInTheDocument();
+      expect(screen.queryByText('Yetuklik indeksi')).not.toBeInTheDocument();
+      expect(screen.queryByText('Aktivlik indeksi')).not.toBeInTheDocument();
+      expect(screen.queryByText('Kasb qiziqishlari')).not.toBeInTheDocument();
+      // "Hali natija yo'q" umuman ko'rinmaydi — metodikaning o'zi yo'q, kutish holati emas.
+      expect(screen.queryByText("Hali natija yo'q")).not.toBeInTheDocument();
+
+      // Diagrammalar bo'limi ham — sarlavhalar (hattoki sr-only) ham yo'q.
+      expect(screen.queryByText('16 tip o\'qlari')).not.toBeInTheDocument();
+      expect(screen.queryByText("Bu testning natijasi hali mavjud emas.")).not.toBeInTheDocument();
+      expect(screen.queryByText('Yig\'ma ko\'rsatkichlar')).not.toBeInTheDocument();
+      expect(screen.queryByText('Diagrammalar')).not.toBeInTheDocument();
+
+      // AI bo'limi qoladi, lekin chaqiruv o'rniga tushuntirish.
+      expect(screen.getByText('AI tahlil')).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          'Bu sessiyada ilmiy metodika yo\'q, AI tahlili faqat shaxsiyat testlari uchun tayyorlanadi.',
+        ),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /AI tahlil qilish/ })).not.toBeInTheDocument();
+    });
+
+    it('aralash sessiyada FAQAT mavjud metodikalar chiqadi (masalan faqat MBTI16)', async () => {
+      renderPage([
+        buildProfileResponse({
+          latestAssessment: {
+            id: 'assessment-1',
+            results: { MBTI16: MBTI16_RESULT },
+            aiAnalysis: null,
+            aiHistory: [],
+            tests: [
+              { code: 'MBTI16', nameUz: 'Shaxsiyat tipi', status: 'Completed', scoringMode: 'Scored' },
+              ...SURVEY_ONLY_TESTS,
+            ],
+            hasPersonalityBattery: true,
+          },
+        }),
+      ]);
+
+      expect(await screen.findByText('Aliyev Sardor Bekzodovich')).toBeInTheDocument();
+      expect(screen.getByText('INTJ')).toBeInTheDocument();
+      expect(screen.queryByText('Yetuklik indeksi')).not.toBeInTheDocument();
+      expect(screen.queryByText('Aktivlik indeksi')).not.toBeInTheDocument();
+      expect(screen.queryByText('Kasb qiziqishlari')).not.toBeInTheDocument();
+      expect(screen.getByText('16 tip o\'qlari')).toBeInTheDocument();
+      expect(screen.queryByText('Shaxsiyatning 5 omili')).not.toBeInTheDocument();
+    });
+
+    it("metodika BOR, lekin natija hali hisoblanmagan bo'lsa \"Hali natija yo'q\" qoladi (kutish holati o'chib ketmaydi)", async () => {
+      renderPage([
+        buildProfileResponse({
+          assessments: [
+            { ...ASSESSMENT_SUMMARY, status: 'Completed', reliabilityFlag: null, reliabilityScore: null },
+          ],
+          latestAssessment: {
+            id: 'assessment-1',
+            results: {},
+            aiAnalysis: null,
+            aiHistory: [],
+            tests: [{ code: 'MBTI16', nameUz: 'Shaxsiyat tipi', status: 'Completed', scoringMode: 'Scored' }],
+            hasPersonalityBattery: true,
+          },
+        }),
+      ]);
+
+      expect(await screen.findByText('Aliyev Sardor Bekzodovich')).toBeInTheDocument();
+      // Karta chizilgan (metodika mavjud), lekin natija hali yo'q — "—" va izoh sifatida
+      // "Hali natija yo'q".
+      expect(screen.getByText('Shaxsiyat tipi')).toBeInTheDocument();
+      expect(screen.getByText("Hali natija yo'q")).toBeInTheDocument();
+      // Boshqa uchta karta esa umuman yo'q (metodika sessiyada yo'q).
+      expect(screen.queryByText('Yetuklik indeksi')).not.toBeInTheDocument();
+    });
+  });
+
   it("bo'sh/null AI ma'lumotida sahifa yiqilmaydi", async () => {
     renderPage([
       buildProfileResponse({
@@ -270,6 +390,8 @@ describe('StudentProfilePage', () => {
           results: {},
           aiAnalysis: null,
           aiHistory: [],
+          tests: FULL_BATTERY_TESTS,
+          hasPersonalityBattery: true,
         },
       }),
     ]);
@@ -287,6 +409,8 @@ describe('StudentProfilePage', () => {
           results: {},
           aiAnalysis: { ...AI_ANALYSIS, isFallbackReport: true, model: 'template' },
           aiHistory: [],
+          tests: FULL_BATTERY_TESTS,
+          hasPersonalityBattery: true,
         },
       }),
     ]);
@@ -318,6 +442,8 @@ describe('StudentProfilePage', () => {
             ],
           },
           aiHistory: [],
+          tests: FULL_BATTERY_TESTS,
+          hasPersonalityBattery: true,
         },
       }),
     ]);
@@ -378,6 +504,8 @@ describe('StudentProfilePage', () => {
     results: {},
     aiAnalysis: null,
     aiHistory: [],
+    tests: FULL_BATTERY_TESTS,
+    hasPersonalityBattery: true,
   } satisfies LatestAssessmentDto;
 
   it("yakunlangan, hali tahlil qilinmagan sessiyada \"AI tahlil qilish\" tugmasi chiqadi va bosilganda so'rov ketadi", async () => {
@@ -495,7 +623,14 @@ describe('StudentProfilePage', () => {
   it("Analyzing holatida refetchInterval yoqiladi va Analyzed'ga o'tgach o'chadi", async () => {
     const analyzingResponse = buildProfileResponse({
       assessments: [{ ...ASSESSMENT_SUMMARY, status: 'Analyzing', reliabilityFlag: null, reliabilityScore: null }],
-      latestAssessment: { id: 'assessment-1', results: {}, aiAnalysis: null, aiHistory: [] },
+      latestAssessment: {
+        id: 'assessment-1',
+        results: {},
+        aiAnalysis: null,
+        aiHistory: [],
+        tests: FULL_BATTERY_TESTS,
+        hasPersonalityBattery: true,
+      },
     });
     const analyzedResponse = buildProfileResponse();
 

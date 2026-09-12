@@ -88,7 +88,14 @@ export type AiAnalysisBlockedReason =
   /** `Draft`/`InProgress`/`Abandoned` — backend `409` qaytaradi, tugma ko'rsatilmaydi. */
   | 'sessionNotCompleted'
   /** O'quvchida umuman sessiya yo'q. */
-  | 'noAssessment';
+  | 'noAssessment'
+  /**
+   * Sessiyada AI tahlilga tayanadigan ballanadigan shaxsiyat metodikasi yo'q (faqat
+   * so'rovnoma) — `CompleteSessionCommandHandler` `Survey` bloklarini tahlildan chiqarib
+   * tashlaydi (`docs/06` §8), shu sabab bu yerda tugma ma'nosiz (P52 jonli xato tuzatish,
+   * 2026-09-12).
+   */
+  | 'noPersonalityBattery';
 
 export interface AiAnalysisViewState {
   /** Fon navbatida tahlil ketmoqda — sahifa natijani kutadi (polling). */
@@ -119,6 +126,13 @@ export interface AiAnalysisViewStateInput {
   analysis: AiAnalysisLike | null | undefined;
   /** `false` — o'quvchida sessiya umuman yo'q. Berilmasa `true`. */
   hasAssessment?: boolean;
+  /**
+   * Sessiyada AI tahlilga tayanadigan ballanadigan shaxsiyat metodikasi bormi (P52 jonli
+   * xato tuzatish, 2026-09-12 — `latestAssessment.hasPersonalityBattery`). Berilmasa (yoki
+   * `true`) — oldingi xatti-harakat o'zgarmaydi (orqaga qarab moslik: bu maydonni hali
+   * uzatmagan chaqiruvchilar, masalan `features/assessments`, ta'sirlanmaydi).
+   */
+  hasPersonalityBattery?: boolean;
 }
 
 /** Yuqoridagi uch qoidani bitta sof funksiyaga jamlaydi — ikkala ekran shundan foydalanadi. */
@@ -126,6 +140,7 @@ export function resolveAiAnalysisViewState({
   status,
   analysis,
   hasAssessment = true,
+  hasPersonalityBattery = true,
 }: AiAnalysisViewStateInput): AiAnalysisViewState {
   const showReport = hasAiReport(analysis);
 
@@ -172,6 +187,23 @@ export function resolveAiAnalysisViewState({
   }
 
   if (status === null || AI_RUNNABLE_STATUSES.includes(status)) {
+    // Sessiyada ballanadigan shaxsiyat metodikasi yo'q (faqat so'rovnoma) — "Tahlilni ishga
+    // tushirish" chaqiruvi ma'nosiz, chunki `CompleteSessionCommandHandler` `Survey`
+    // bloklarini tahlildan chiqarib tashlaydi. Mavjud hisobot bo'lsa (kamdan-kam, masalan
+    // dastur tarkibi keyinchalik o'zgargan bo'lsa) baribir KO'RSATILADI — faqat CHAQIRUV
+    // yashiriladi (P52 jonli xato tuzatish, 2026-09-12).
+    if (!hasPersonalityBattery) {
+      return {
+        isAnalyzing: false,
+        showSkeleton: false,
+        showReport,
+        showAnalyzingBanner: false,
+        showFailure: false,
+        action: null,
+        blockedReason: 'noPersonalityBattery',
+        requiresConfirmation: false,
+      };
+    }
     return {
       isAnalyzing: false,
       showSkeleton: false,

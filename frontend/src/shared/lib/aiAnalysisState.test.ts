@@ -106,4 +106,54 @@ describe('resolveAiAnalysisViewState', () => {
     expect(view.blockedReason).toBe('noAssessment');
     expect(view.showSkeleton).toBe(false);
   });
+
+  /**
+   * P52 jonli xato tuzatish (2026-09-12): faqat so'rovnoma topshirilgan sessiyada AI tahlil
+   * chaqiruvi ma'nosiz (`CompleteSessionCommandHandler` `Survey` bloklarini tahlildan
+   * chiqarib tashlaydi, `docs/06` §8).
+   */
+  describe('hasPersonalityBattery', () => {
+    it("false bo'lsa, hisobot hali yo'q holatda tugma YO'Q — sabab 'noPersonalityBattery'", () => {
+      const view = resolveAiAnalysisViewState({
+        status: 'Completed',
+        analysis: null,
+        hasPersonalityBattery: false,
+      });
+
+      expect(view.action).toBeNull();
+      expect(view.blockedReason).toBe('noPersonalityBattery');
+      expect(view.showSkeleton).toBe(false);
+      expect(view.showFailure).toBe(false);
+    });
+
+    it("false bo'lsa ham, hisobot MAVJUD bo'lsa ko'rsatiladi — faqat chaqiruv yashirinadi", () => {
+      const view = resolveAiAnalysisViewState({
+        status: 'Analyzed',
+        analysis: REPORT,
+        hasPersonalityBattery: false,
+      });
+
+      expect(view.showReport).toBe(true);
+      expect(view.action).toBeNull();
+      expect(view.blockedReason).toBe('noPersonalityBattery');
+    });
+
+    it("berilmasa (eski chaqiruvchilar) — oldingi xatti-harakat o'zgarmaydi", () => {
+      const view = resolveAiAnalysisViewState({ status: 'Completed', analysis: null });
+
+      expect(view.action).toBe('run');
+      expect(view.blockedReason).toBeNull();
+    });
+
+    it("sessiya umuman yo'qligi ustuvor — 'noAssessment' 'noPersonalityBattery'dan oldin qaytadi", () => {
+      const view = resolveAiAnalysisViewState({
+        status: null,
+        analysis: null,
+        hasAssessment: false,
+        hasPersonalityBattery: false,
+      });
+
+      expect(view.blockedReason).toBe('noAssessment');
+    });
+  });
 });

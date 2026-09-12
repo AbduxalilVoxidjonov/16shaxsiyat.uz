@@ -827,6 +827,7 @@
       "pollTimeout": "Tahlil kutilganidan uzoq davom etmoqda. Avtomatik yangilanish to'xtatildi — sahifani yangilang yoki keyinroq qayta kiring.",
       "blockedNotCompleted": "Sessiya yakunlanmagani uchun tahlil qilib bo'lmaydi (holat: {{status}}). AI tahlil faqat yakunlangan sessiyada ishga tushadi.",
       "noAssessment": "Bu o'quvchida hali sessiya yo'q — tahlil qilinadigan natija ham yo'q.",
+    "noPersonalityBattery": "Bu sessiyada ilmiy metodika yo'q, AI tahlili faqat shaxsiyat testlari uchun tayyorlanadi.",
       "providerMissingWarning": "Birorta AI provayder sozlanmagan — tahlil o'rniga avtomatik shablon hisobot chiqadi. Avval \"AI sozlamalari\" bo'limida kalit kiriting.",
       "fallbackBadge": "Avtomatik shablon hisobot",
       "fallbackNotice": "Bu matnni AI yozmagan: barcha AI provayderlari javob bermagani uchun tizim avtomatik shablon hisobot tayyorladi. Uni shaxsiy tahlil sifatida o'qimang — AI sozlamalarini tekshirib, tahlilni qayta ishga tushiring.",

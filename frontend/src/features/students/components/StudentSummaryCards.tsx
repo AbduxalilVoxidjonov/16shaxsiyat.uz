@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/shared/ui/Card';
 import type { BigFiveResult, Mbti16Result, RiasecResult } from '../model/profileTypes';
+import type { CoreTestCode } from '../model/testBattery';
 
 export interface StudentSummaryCardsProps {
   mbti16: Mbti16Result | null | undefined;
@@ -8,6 +9,13 @@ export interface StudentSummaryCardsProps {
   riasec: RiasecResult | null | undefined;
   activityIndex: number | null | undefined;
   activityLevelText: string | null | undefined;
+  /**
+   * Sessiyada QAYSI metodika bor — `model/testBattery.ts`dagi `buildPresentTestCodes()`.
+   * P52 jonli xato tuzatish (2026-09-12): metodika sessiyada UMUMAN bo'lmasa karta chizilmaydi
+   * (natija hali hisoblanmagan holatdan farqli — o'sha holatda karta "Hali natija yo'q" bilan
+   * qoladi, chunki kod shu to'plamda bor).
+   */
+  presentTests: ReadonlySet<CoreTestCode>;
 }
 
 /**
@@ -60,9 +68,16 @@ export function StudentSummaryCards({
   riasec,
   activityIndex,
   activityLevelText,
+  presentTests,
 }: StudentSummaryCardsProps) {
   const { t } = useTranslation();
   const dominantTypeCode = riasec ? SHORT_LETTER_TO_TYPE_CODE[riasec.resultCode[0] ?? ''] : undefined;
+
+  // Sessiyada bironta ham metodika bo'lmasa (masalan faqat so'rovnoma topshirilgan) bo'limning
+  // o'zi chizilmaydi — sarlavha ham (`StudentProfilePage`da boshqariladi).
+  if (presentTests.size === 0) {
+    return null;
+  }
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -70,36 +85,44 @@ export function StudentSummaryCards({
           darajali (`ART`/`Artistik` bilan bir xil naqsh) — yolg'iz `INTJ` tushunarsiz.
           `typeName` bo'sh bo'lsa (`TypeCatalog`da yozuv yo'q) faqat kod ko'rsatiladi:
           soxta nom O'YLAB TOPILMAYDI, `docs/03` ning o'zi ham shunday qilishni talab qiladi. */}
-      <SummaryCard
-        label={t('studentProfile.cards.personalityType')}
-        value={mbti16?.typeName || mbti16?.resultCode || '—'}
-        hint={
-          mbti16?.resultCode
-            ? mbti16.typeName
-              ? mbti16.resultCode
-              : null
-            : t('studentProfile.cards.noData')
-        }
-      />
-      <SummaryCard
-        label={t('studentProfile.cards.maturityIndex')}
-        value={bigFive?.maturityIndex != null ? bigFive.maturityIndex.toFixed(1) : '—'}
-        hint={bigFive?.maturityLevel ?? t('studentProfile.cards.noData')}
-      />
-      <SummaryCard
-        label={t('studentProfile.cards.activityIndex')}
-        value={activityIndex !== null && activityIndex !== undefined ? activityIndex.toFixed(1) : '—'}
-        hint={activityLevelText ?? t('studentProfile.cards.noData')}
-      />
-      <SummaryCard
-        label={t('studentProfile.cards.hollandCode')}
-        value={riasec?.resultCode ?? '—'}
-        hint={
-          dominantTypeCode
-            ? t(`widgets.riasecChart.type.${dominantTypeCode}`)
-            : t('studentProfile.cards.noData')
-        }
-      />
+      {presentTests.has('MBTI16') && (
+        <SummaryCard
+          label={t('studentProfile.cards.personalityType')}
+          value={mbti16?.typeName || mbti16?.resultCode || '—'}
+          hint={
+            mbti16?.resultCode
+              ? mbti16.typeName
+                ? mbti16.resultCode
+                : null
+              : t('studentProfile.cards.noData')
+          }
+        />
+      )}
+      {presentTests.has('BIG5') && (
+        <SummaryCard
+          label={t('studentProfile.cards.maturityIndex')}
+          value={bigFive?.maturityIndex != null ? bigFive.maturityIndex.toFixed(1) : '—'}
+          hint={bigFive?.maturityLevel ?? t('studentProfile.cards.noData')}
+        />
+      )}
+      {presentTests.has('ACTIVITY') && (
+        <SummaryCard
+          label={t('studentProfile.cards.activityIndex')}
+          value={activityIndex !== null && activityIndex !== undefined ? activityIndex.toFixed(1) : '—'}
+          hint={activityLevelText ?? t('studentProfile.cards.noData')}
+        />
+      )}
+      {presentTests.has('RIASEC') && (
+        <SummaryCard
+          label={t('studentProfile.cards.hollandCode')}
+          value={riasec?.resultCode ?? '—'}
+          hint={
+            dominantTypeCode
+              ? t(`widgets.riasecChart.type.${dominantTypeCode}`)
+              : t('studentProfile.cards.noData')
+          }
+        />
+      )}
     </div>
   );
 }
