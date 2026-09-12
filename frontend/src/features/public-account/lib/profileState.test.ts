@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Schemas } from '@/test/apiMock';
+import { REGISTRATION_FORM_DEFAULT_DEFINITION } from '@/shared/api/registrationFormSettingsTypes';
+import type { MyStudentProfile } from '../model/types';
 import {
   buildProfilePayload,
   buildReadyPayload,
@@ -28,7 +29,8 @@ const NO_PROFILE = {
   parentalConsent: false,
   isMinor: false,
   suggestedFullName: 'Valiyev Ali',
-} satisfies Schemas['MyStudentProfileDto'];
+  registrationForm: REGISTRATION_FORM_DEFAULT_DEFINITION,
+} satisfies MyStudentProfile;
 
 const FULL_PROFILE = {
   hasProfile: true,
@@ -43,7 +45,8 @@ const FULL_PROFILE = {
   parentalConsent: false,
   isMinor: false,
   suggestedFullName: 'Valiyev Ali',
-} satisfies Schemas['MyStudentProfileDto'];
+  registrationForm: REGISTRATION_FORM_DEFAULT_DEFINITION,
+} satisfies MyStudentProfile;
 
 const ADULT_VALUES: PublicRegistrationFormValues = {
   fullName: 'Karimov Sardor Alisherovich',
@@ -54,6 +57,7 @@ const ADULT_VALUES: PublicRegistrationFormValues = {
   email: '',
   consentAccepted: true,
   parentalConsent: false,
+  customFields: {},
 };
 
 describe('resolveProfileState (A/B/C/D holatlari)', () => {

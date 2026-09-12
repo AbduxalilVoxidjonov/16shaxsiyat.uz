@@ -11,6 +11,7 @@
  * ishlatiladi (pastga qarang).
  */
 import type { components } from './schema';
+import type { RegistrationCustomFieldAnswers } from './registrationFormSettingsTypes';
 
 /** Backend `application/problem+json` (RFC 9457) javobi — docs/06-arxitektura.md, 6-bo'lim. */
 export interface ProblemDetails {
@@ -173,8 +174,15 @@ export type MyAssessmentsResponse = components['schemas']['ListMyAssessmentsResu
 /** Kabinetdagi bitta test sessiyasi — `docs/07` §5.2. Ball/indeks/bayroq maydonlari YO'Q. */
 export type MyAssessment = components['schemas']['MyAssessmentDto'];
 
-/** `POST /api/me/sessions` so'rov tanasi — `docs/07` §5.4 (maktabsiz, `slug`/`accessToken`siz). */
-export type StartPublicSessionRequestBody = components['schemas']['StartPublicSessionRequest'];
+/**
+ * `POST /api/me/sessions` so'rov tanasi — `docs/07` §5.4 (maktabsiz, `slug`/`accessToken`siz).
+ * `customFields` — P52 2-to'lqin (2026-09-12, `docs/18` §9.6.2) — `schema.d.ts` hali eskirgan
+ * (`shared/api/registrationFormSettingsTypes.ts`dagi izohga qarang), shu sabab qo'shimcha
+ * qo'lda kengaytirilgan (naqsh `registrationModeTypes.ts`dagi bilan bir xil).
+ */
+export type StartPublicSessionRequestBody = components['schemas']['StartPublicSessionRequest'] & {
+  customFields?: RegistrationCustomFieldAnswers;
+};
 
 /**
  * `POST /api/public/schools/resolve-code` so'rov tanasi — `docs/07` §1.1a. `code` — foydalanuvchi

@@ -11,6 +11,7 @@ import {
   ErrorState,
   Input,
   PhoneField,
+  RegistrationCustomFieldInput,
   Select,
   Skeleton,
 } from '@/shared/ui';
@@ -21,7 +22,8 @@ import { cn } from '@/shared/lib/cn';
 import { toE164UzPhone } from '@/shared/lib/formatPhone';
 import type { Gender } from '@/shared/api/types';
 import type { StartSessionRegistrationRequestBody } from '@/shared/api/registrationModeTypes';
-import { resolveRegistrationFields } from '@/shared/api/registrationModeTypes';
+import { REGISTRATION_FORM_DEFAULT_DEFINITION } from '@/shared/api/registrationFormSettingsTypes';
+import { orderedRegistrationFields, serializeCustomFieldsPayload } from '@/shared/lib/registrationFormFields';
 import { useSchoolInfo } from '../api/useSchoolInfo';
 import { useStartSession } from '../api/useStartSession';
 import { useSessionStore } from '../store/sessionStore';
@@ -47,14 +49,15 @@ const GRADE_OPTIONS = Array.from({ length: 11 }, (_, index) => ({
  * `parentPhone`, `email`, `grade`, `consentAccepted`; maydon nomlash ataylab shunga moslab
  * tanlangan — `registrationSchema.ts`dagi izohga qarang). Shu sabab endi alohida
  * PascalCase→RHF xarita (map) shart emas — faqat qaysi kalitlar bizning forma maydonlarimizga
- * tegishli ekanini bilish uchun kichik ro'yxat (`REGISTRATION_DEFAULT_VALUES` kalitlari) bilan
- * tekshiriladi. Yagona istisno — `birthDate`: bizda 3 ta alohida select (`day`/`month`/`year`)
- * bor, backend esa yagona `BirthDate`ni tekshiradi (yosh oralig'i) — shu xato `birthDate.year`ga
- * bog'lanadi (aynan shu yerda `registrationSchema.ts`ning o'z yosh xatosi ham chiqadi).
+ * tegishli ekanini bilish uchun kichik ro'yxat (`REGISTRATION_DEFAULT_VALUES` kalitlari, `customFields`
+ * DAN TASHQARI — u pastda alohida ishlanadi) bilan tekshiriladi. Yagona istisno — `birthDate`:
+ * bizda 3 ta alohida select (`day`/`month`/`year`) bor, backend esa yagona `BirthDate`ni
+ * tekshiradi (yosh oralig'i) — shu xato `birthDate.year`ga bog'lanadi (aynan shu yerda
+ * `registrationSchema.ts`ning o'z yosh xatosi ham chiqadi).
  */
-const REGISTRATION_FIELD_KEYS = Object.keys(REGISTRATION_DEFAULT_VALUES) as Array<
+const REGISTRATION_FIELD_KEYS = (Object.keys(REGISTRATION_DEFAULT_VALUES) as Array<
   keyof RegistrationFormValues
->;
+>).filter((key) => key !== 'customFields');
 
 function isRegistrationFieldKey(key: string): key is keyof RegistrationFormValues {
   return (REGISTRATION_FIELD_KEYS as string[]).includes(key);
@@ -108,18 +111,18 @@ export default function RegistrationPage() {
   const activeProgram =
     programs.length === 1 ? programs[0] : programs.find((program) => program.code === selectedProgramCode);
 
-  // P52 (`docs/18` §9) — dasturning har bir shaxs maydoni uchun "Yashirin"/"Ixtiyoriy"/
-  // "Majburiy" sozlamasi. Javobda kelmasa (eski fixture/hali yangilanmagan backend) standart
-  // qiymatlar bilan to'ldiriladi — 20 ta mavjud test shu sabab o'zgarmasdan yashil qoladi.
-  const registrationFields = resolveRegistrationFields(activeProgram?.registrationFields);
-  // Diqqat: bog'liqlik ATAYLAB `registrationFields` EMAS — `resolveRegistrationFields()` har
-  // renderda YANGI obyekt qaytaradi (spread), shu obyekt memo bog'liqligida tursa memo hech
-  // qachon ishlamay qoladi (kod ko'rigi topilmasi, P52) va `zodResolver` har harf terilganda
-  // qayta quriladi. Xom `activeProgram?.registrationFields` esa so'rov ma'lumoti o'zgarmaguncha
-  // barqaror obyekt (`useSchoolInfo` — TanStack Query keshi) — shu sabab memo haqiqiy ishlaydi.
+  // P52 2-to'lqin (2026-09-12, `docs/18` §9.6.2) — TO'LIQ GLOBAL ro'yxatdan o'tish formasi
+  // ta'rifi (dastur ustunligi allaqachon QO'LLANGAN). Javobda kelmasa (eski fixture/hali
+  // yangilanmagan backend) standart ta'rif ishlatiladi — mavjud testlar shu sabab o'zgarmasdan
+  // yashil qoladi. `REGISTRATION_FORM_DEFAULT_DEFINITION` MODUL DARAJASIDAGI barqaror
+  // obyekt — `activeProgram?.registrationForm` ham so'rov ma'lumoti o'zgarmaguncha barqaror
+  // (`useSchoolInfo` — TanStack Query keshi), shu sabab memo bog'liqligi to'g'ridan-to'g'ri
+  // ishlatilishi mumkin (yangi obyekt hosil qiluvchi funksiya YO'Q, `zodResolver` har harf
+  // terilganda qayta qurilib qolmaydi — P52 kod ko'rigi topilmasi bilan bir xil xavf).
+  const registrationForm = activeProgram?.registrationForm ?? REGISTRATION_FORM_DEFAULT_DEFINITION;
   const schema = useMemo(
-    () => buildRegistrationSchema(requiresAccessCode, resolveRegistrationFields(activeProgram?.registrationFields)),
-    [requiresAccessCode, activeProgram?.registrationFields],
+    () => buildRegistrationSchema(requiresAccessCode, registrationForm),
+    [requiresAccessCode, registrationForm],
   );
 
   const {
@@ -161,6 +164,12 @@ export default function RegistrationPage() {
         } else if (message && isRegistrationFieldKey(key)) {
           setError(key, { type: 'server', message });
           mappedAny = true;
+        } else if (message && registrationForm.customFields.some((field) => field.code === key)) {
+          // Superadmin qo'shgan o'z maydoni — `docs/07` §1.2 `errors{KOD:[…]}` bevosita
+          // maydon kodi bilan keladi (backend camelCase konvertatsiyasi bu yerga tegmaydi,
+          // kod harflar+raqamlar allaqachon o'zgarmas).
+          setError(`customFields.${key}`, { type: 'server', message });
+          mappedAny = true;
         }
       }
       if (!mappedAny) {
@@ -200,10 +209,11 @@ export default function RegistrationPage() {
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
 
-    // Har bir shaxs maydoni `registrationFields`ga qarab yuboriladi/tashlab ketiladi (`Hidden`
-    // — umuman yuborilmaydi, `docs/18` §9). Bo'sh qoldirilgan `Optional` maydon ham
-    // yuborilmaydi (backend `undefined`ni "berilmagan" deb o'qiydi) — faqat haqiqiy qiymat
+    // Har bir shaxs maydoni `registrationForm.coreFields`ga qarab yuboriladi/tashlab ketiladi
+    // (`Hidden` — umuman yuborilmaydi, `docs/18` §9.6.2). Bo'sh qoldirilgan `Optional` maydon
+    // ham yuborilmaydi (backend `undefined`ni "berilmagan" deb o'qiydi) — faqat haqiqiy qiymat
     // borida jo'natiladi.
+    const coreFields = registrationForm.coreFields;
     const hasBirthDate = Boolean(
       values.birthDate.day && values.birthDate.month && values.birthDate.year,
     );
@@ -213,31 +223,32 @@ export default function RegistrationPage() {
       accessCode: requiresAccessCode ? values.accessCode : undefined,
       fullName: values.fullName,
       birthDate:
-        registrationFields.birthDate !== 'Hidden' && hasBirthDate
+        coreFields.birthDate.requirement !== 'Hidden' && hasBirthDate
           ? birthDateToIso(values.birthDate)
           : undefined,
       gender:
-        registrationFields.gender !== 'Hidden' && values.gender
+        coreFields.gender.requirement !== 'Hidden' && values.gender
           ? (values.gender as Gender)
           : undefined,
       grade:
-        registrationFields.grade !== 'Hidden' && values.grade ? Number(values.grade) : undefined,
+        coreFields.grade.requirement !== 'Hidden' && values.grade ? Number(values.grade) : undefined,
       classLetter:
-        registrationFields.classLetter !== 'Hidden' && values.classLetter
+        coreFields.classLetter.requirement !== 'Hidden' && values.classLetter
           ? values.classLetter.toUpperCase()
           : undefined,
       phone:
-        registrationFields.phone !== 'Hidden' && values.phone
+        coreFields.phone.requirement !== 'Hidden' && values.phone
           ? (toE164UzPhone(values.phone) ?? undefined)
           : undefined,
       parentPhone:
-        registrationFields.parentPhone !== 'Hidden' && values.parentPhone
+        coreFields.parentPhone.requirement !== 'Hidden' && values.parentPhone
           ? (toE164UzPhone(values.parentPhone) ?? undefined)
           : undefined,
-      email: registrationFields.email !== 'Hidden' && values.email ? values.email : undefined,
+      email: coreFields.email.requirement !== 'Hidden' && values.email ? values.email : undefined,
       consentAccepted: values.consentAccepted,
       languageCode: 'uz',
       programCode: requiresProgramSelection ? (selectedProgramCode ?? undefined) : undefined,
+      customFields: serializeCustomFieldsPayload(registrationForm.customFields, values.customFields),
     };
 
     try {
@@ -333,154 +344,180 @@ export default function RegistrationPage() {
         noValidate
         className="card flex flex-col gap-5 p-5 sm:p-7"
       >
-        <Input
-          label={t('register.fields.fullName')}
-          autoComplete="name"
-          error={errors.fullName?.message}
-          {...register('fullName')}
-        />
-
-        {registrationFields.birthDate !== 'Hidden' && (
-          <Controller
-            control={control}
-            name="birthDate"
-            render={({ field }) => (
-              <BirthDateSelect
-                value={field.value}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                minAge={MIN_AGE}
-                maxAge={MAX_AGE}
-                errors={{
-                  day: errors.birthDate?.day?.message,
-                  month: errors.birthDate?.month?.message,
-                  year: errors.birthDate?.year?.message,
-                }}
-              />
-            )}
-          />
-        )}
-
-        {registrationFields.gender !== 'Hidden' && (
-          <fieldset className="flex flex-col gap-1.5">
-            <legend className="mb-1.5 text-sm font-medium text-ink-soft">
-              {t('register.fields.gender')}
-            </legend>
-            <div className="flex gap-3">
-              {(['Male', 'Female'] as const).map((option) => (
-                <label
-                  key={option}
-                  className={cn(
-                    'flex h-11 flex-1 cursor-pointer items-center justify-center rounded-xl border text-sm font-semibold transition-colors',
-                    // Radio input `sr-only` (vizual jihatdan yashirilgan) — fokus halqasi shu sabab
-                    // o'rab turgan yorliqda ko'rsatiladi (`has-[:focus-visible]`), aks holda
-                    // klaviatura bilan navigatsiya qilganda fokus ko'rinmay qolardi (`docs/11`, 4-bo'lim).
-                    'has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-firuza-500',
-                    genderValue === option
-                      ? 'border-firuza-500 bg-firuza-50 text-firuza-800'
-                      : 'border-line bg-paper-card text-ink-soft hover:border-firuza-300',
-                  )}
-                >
-                  <input type="radio" value={option} className="sr-only" {...register('gender')} />
-                  {t(`register.genderOptions.${option === 'Male' ? 'male' : 'female'}`)}
-                </label>
-              ))}
-            </div>
-            {errors.gender && (
-              <p role="alert" className="text-sm text-terakota-700">
-                {errors.gender.message}
-              </p>
-            )}
-          </fieldset>
-        )}
-
         {/*
-          `minmax(0,…)` MAJBURIY: sof `1fr` ning eng kichik o'lchami `auto`, ya'ni
-          "Sinf harfi" inputining brauzer standarti bo'yicha juda keng min-content
-          o'lchami. 390px da shu tufayli nisbat teskarisiga aylanib ketardi — "Sinf"
-          ustuni siqilib, "Tanlang" matni "Tanl…" bo'lib kesilardi. Ikkala maydon ham
-          ko'ringanda shu 2 ustunli grid ishlatiladi (standart holat, regressiya qulfi);
-          faqat bittasi ko'rinsa — to'liq kenglikda, bittasi ham ko'rinmasa — umuman yo'q.
+          P52 2-to'lqin (2026-09-12, `docs/18` §9.6.2) — maydonlar (asosiy + superadmin qo'shgan
+          o'z maydonlari) endi GLOBAL `registrationForm.order` bo'yicha, qattiq yozilgan tartib
+          EMAS. Superadmin tartibni "Sozlamalar"da o'zgartirishi mumkin bo'lgani uchun eski
+          "sinf + sinf harfi yonma-yon" 2-ustunli grid ATAYLAB olib tashlandi — endi yonma-yonlik
+          kafolatlanmaydi, har bir maydon o'z qatorida (bitta ustun, 390px'da xavfsiz).
         */}
-        {registrationFields.grade !== 'Hidden' && registrationFields.classLetter !== 'Hidden' && (
-          <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-3">
-            <Select
-              label={t('register.fields.grade')}
-              placeholder={t('register.fields.gradePlaceholder')}
-              options={GRADE_OPTIONS}
-              error={errors.grade?.message}
-              {...register('grade')}
-            />
-            <Input
-              label={t('register.fields.classLetter')}
-              maxLength={2}
-              error={errors.classLetter?.message}
-              {...register('classLetter')}
-            />
-          </div>
-        )}
-        {registrationFields.grade !== 'Hidden' && registrationFields.classLetter === 'Hidden' && (
-          <Select
-            label={t('register.fields.grade')}
-            placeholder={t('register.fields.gradePlaceholder')}
-            options={GRADE_OPTIONS}
-            error={errors.grade?.message}
-            {...register('grade')}
-          />
-        )}
-        {registrationFields.grade === 'Hidden' && registrationFields.classLetter !== 'Hidden' && (
-          <Input
-            label={t('register.fields.classLetter')}
-            maxLength={2}
-            error={errors.classLetter?.message}
-            {...register('classLetter')}
-          />
-        )}
-
-        {registrationFields.phone !== 'Hidden' && (
-          <Controller
-            control={control}
-            name="phone"
-            render={({ field }) => (
-              <PhoneField
-                label={t('register.fields.phone')}
-                autoComplete="tel-national"
-                value={field.value}
-                onValueChange={field.onChange}
-                onBlur={field.onBlur}
-                error={errors.phone?.message}
+        {orderedRegistrationFields(registrationForm).map((item) => {
+          if (item.kind === 'custom') {
+            if (item.field.requirement === 'Hidden') return null;
+            const code = item.field.code;
+            return (
+              <RegistrationCustomFieldInput
+                key={`custom-${code}`}
+                field={item.field}
+                control={control}
+                name={`customFields.${code}`}
+                error={errors.customFields?.[code]?.message}
               />
-            )}
-          />
-        )}
+            );
+          }
 
-        {registrationFields.parentPhone !== 'Hidden' && (
-          <Controller
-            control={control}
-            name="parentPhone"
-            render={({ field }) => (
-              <PhoneField
-                label={t('register.fields.parentPhone')}
-                value={field.value}
-                onValueChange={field.onChange}
-                onBlur={field.onBlur}
-                error={errors.parentPhone?.message}
-                hint={errors.parentPhone ? undefined : t('register.fields.parentPhoneHint')}
-              />
-            )}
-          />
-        )}
+          const coreField = registrationForm.coreFields[item.key];
+          if (item.key !== 'fullName' && coreField.requirement === 'Hidden') return null;
 
-        {registrationFields.email !== 'Hidden' && (
-          <Input
-            label={t('register.fields.email')}
-            type="email"
-            autoComplete="email"
-            hint={errors.email ? undefined : t('register.fields.emailHint')}
-            error={errors.email?.message}
-            {...register('email')}
-          />
-        )}
+          switch (item.key) {
+            case 'fullName':
+              return (
+                <Input
+                  key="fullName"
+                  label={coreField.labelUz || t('register.fields.fullName')}
+                  placeholder={coreField.placeholderUz ?? undefined}
+                  autoComplete="name"
+                  error={errors.fullName?.message}
+                  {...register('fullName')}
+                />
+              );
+            case 'birthDate':
+              return (
+                <Controller
+                  key="birthDate"
+                  control={control}
+                  name="birthDate"
+                  render={({ field }) => (
+                    <BirthDateSelect
+                      label={coreField.labelUz || t('register.fields.birthDate')}
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      minAge={MIN_AGE}
+                      maxAge={MAX_AGE}
+                      errors={{
+                        day: errors.birthDate?.day?.message,
+                        month: errors.birthDate?.month?.message,
+                        year: errors.birthDate?.year?.message,
+                      }}
+                    />
+                  )}
+                />
+              );
+            case 'gender':
+              return (
+                <fieldset key="gender" className="flex flex-col gap-1.5">
+                  <legend className="mb-1.5 text-sm font-medium text-ink-soft">
+                    {coreField.labelUz || t('register.fields.gender')}
+                  </legend>
+                  <div className="flex gap-3">
+                    {(['Male', 'Female'] as const).map((option) => (
+                      <label
+                        key={option}
+                        className={cn(
+                          'flex h-11 flex-1 cursor-pointer items-center justify-center rounded-xl border text-sm font-semibold transition-colors',
+                          // Radio input `sr-only` (vizual jihatdan yashirilgan) — fokus halqasi shu
+                          // sabab o'rab turgan yorliqda ko'rsatiladi (`has-[:focus-visible]`), aks
+                          // holda klaviatura bilan navigatsiya qilganda fokus ko'rinmay qolardi
+                          // (`docs/11`, 4-bo'lim).
+                          'has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-firuza-500',
+                          genderValue === option
+                            ? 'border-firuza-500 bg-firuza-50 text-firuza-800'
+                            : 'border-line bg-paper-card text-ink-soft hover:border-firuza-300',
+                        )}
+                      >
+                        <input
+                          type="radio"
+                          value={option}
+                          className="sr-only"
+                          {...register('gender')}
+                        />
+                        {t(`register.genderOptions.${option === 'Male' ? 'male' : 'female'}`)}
+                      </label>
+                    ))}
+                  </div>
+                  {errors.gender && (
+                    <p role="alert" className="text-sm text-terakota-700">
+                      {errors.gender.message}
+                    </p>
+                  )}
+                </fieldset>
+              );
+            case 'grade':
+              return (
+                <Select
+                  key="grade"
+                  label={coreField.labelUz || t('register.fields.grade')}
+                  placeholder={coreField.placeholderUz || t('register.fields.gradePlaceholder')}
+                  options={GRADE_OPTIONS}
+                  error={errors.grade?.message}
+                  {...register('grade')}
+                />
+              );
+            case 'classLetter':
+              return (
+                <Input
+                  key="classLetter"
+                  label={coreField.labelUz || t('register.fields.classLetter')}
+                  placeholder={coreField.placeholderUz ?? undefined}
+                  maxLength={2}
+                  error={errors.classLetter?.message}
+                  {...register('classLetter')}
+                />
+              );
+            case 'phone':
+              return (
+                <Controller
+                  key="phone"
+                  control={control}
+                  name="phone"
+                  render={({ field }) => (
+                    <PhoneField
+                      label={coreField.labelUz || t('register.fields.phone')}
+                      autoComplete="tel-national"
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      error={errors.phone?.message}
+                    />
+                  )}
+                />
+              );
+            case 'parentPhone':
+              return (
+                <Controller
+                  key="parentPhone"
+                  control={control}
+                  name="parentPhone"
+                  render={({ field }) => (
+                    <PhoneField
+                      label={coreField.labelUz || t('register.fields.parentPhone')}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      error={errors.parentPhone?.message}
+                      hint={errors.parentPhone ? undefined : t('register.fields.parentPhoneHint')}
+                    />
+                  )}
+                />
+              );
+            case 'email':
+              return (
+                <Input
+                  key="email"
+                  label={coreField.labelUz || t('register.fields.email')}
+                  placeholder={coreField.placeholderUz ?? undefined}
+                  type="email"
+                  autoComplete="email"
+                  hint={errors.email ? undefined : t('register.fields.emailHint')}
+                  error={errors.email?.message}
+                  {...register('email')}
+                />
+              );
+            default:
+              return null;
+          }
+        })}
 
         <Controller
           control={control}

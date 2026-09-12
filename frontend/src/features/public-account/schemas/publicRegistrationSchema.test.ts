@@ -19,6 +19,7 @@ function values(overrides: Partial<PublicRegistrationFormValues> = {}) {
     email: '',
     consentAccepted: true,
     parentalConsent: false,
+    customFields: {},
     ...overrides,
   };
 }
@@ -134,6 +135,69 @@ describe('publicRegistrationSchema', () => {
       expect(firstIssuePath(schema.safeParse(values({ consentAccepted: false })))).toContain(
         'consentAccepted',
       );
+    });
+  });
+
+  // ── `genderRequirement`/`customFields` (P52 2-to'lqin, 2026-09-12, `docs/18` §9.6.2) ──────
+  describe('genderRequirement — GLOBAL sozlamaga ergashadi', () => {
+    it("standart (berilmasa) — 'Required' bilan bir xil, bo'sh jinsni rad etadi", () => {
+      const schema = createPublicRegistrationSchema({ requireConsent: true });
+      expect(schema.safeParse(values({ gender: '' })).success).toBe(false);
+    });
+
+    it("'Hidden' bo'lsa bo'sh jinsni qabul qiladi", () => {
+      const schema = createPublicRegistrationSchema({ requireConsent: true, genderRequirement: 'Hidden' });
+      expect(schema.safeParse(values({ gender: '' })).success).toBe(true);
+    });
+
+    it("'Optional' bo'lsa bo'sh jinsni qabul qiladi, lekin noto'g'ri qiymatni rad etadi", () => {
+      const schema = createPublicRegistrationSchema({ requireConsent: true, genderRequirement: 'Optional' });
+      expect(schema.safeParse(values({ gender: '' })).success).toBe(true);
+      expect(schema.safeParse(values({ gender: 'Other' })).success).toBe(false);
+    });
+  });
+
+  describe("customFields — superadmin qo'shgan o'z maydonlari", () => {
+    const REQUIRED_FIELD = {
+      code: 'PARENT_JOB',
+      type: 'ShortText' as const,
+      labelUz: 'Ota-onangiz kasbi',
+      placeholderUz: null,
+      requirement: 'Required' as const,
+      maxLength: 200,
+      inputPattern: null,
+      options: null,
+      order: 9,
+    };
+
+    it("requireCustomFields: true bo'lsa majburiy maydon bo'sh bo'lganda rad etiladi", () => {
+      const schema = createPublicRegistrationSchema({
+        requireConsent: true,
+        customFields: [REQUIRED_FIELD],
+        requireCustomFields: true,
+      });
+      const result = schema.safeParse(values({ customFields: { PARENT_JOB: '' } }));
+      expect(result.success).toBe(false);
+    });
+
+    it("requireCustomFields: false bo'lsa (edit/consent) majburiy maydon bo'sh bo'lsa ham o'tadi", () => {
+      const schema = createPublicRegistrationSchema({
+        requireConsent: true,
+        customFields: [REQUIRED_FIELD],
+        requireCustomFields: false,
+      });
+      const result = schema.safeParse(values({ customFields: { PARENT_JOB: '' } }));
+      expect(result.success).toBe(true);
+    });
+
+    it("requireCustomFields: true bo'lsa ham to'ldirilgan qiymat bilan o'tadi", () => {
+      const schema = createPublicRegistrationSchema({
+        requireConsent: true,
+        customFields: [REQUIRED_FIELD],
+        requireCustomFields: true,
+      });
+      const result = schema.safeParse(values({ customFields: { PARENT_JOB: "O'qituvchi" } }));
+      expect(result.success).toBe(true);
     });
   });
 

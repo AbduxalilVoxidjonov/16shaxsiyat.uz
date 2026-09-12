@@ -1,6 +1,11 @@
 import type { Gender, StartPublicSessionRequestBody } from '@/shared/api/types';
 import { birthDateToIso, calculateAge } from '@/shared/lib/birthDate';
 import { extractUzLocalDigits, toE164UzPhone } from '@/shared/lib/formatPhone';
+import type { RegistrationFormCustomField } from '@/shared/api/registrationFormSettingsTypes';
+import {
+  customFieldsDefaultValues,
+  serializeCustomFieldsPayload,
+} from '@/shared/lib/registrationFormFields';
 import type { MyStudentProfile, UpdateStudentProfileRequestBody } from '../model/types';
 import {
   PARENTAL_CONSENT_AGE,
@@ -85,10 +90,16 @@ function phoneToLocalDigits(phone: string): string {
  * ham talab qilmaydi), aks holda `false` — foydalanuvchi o'zi belgilaydi.
  */
 export function profileToFormValues(profile: MyStudentProfile): PublicRegistrationFormValues {
+  // O'z maydonlar (`customFields`) FAQAT `new` rejimida so'raladi/ko'rsatiladi (`docs/07`
+  // §5.1b/§5.4: "faqat profil YARATILAYOTGANDA so'raladi") — shu sabab bo'sh boshlang'ich
+  // qiymatlar HAR IKKALA holatda ham zararsiz (ko'rsatilmasa hech qachon o'zgarmaydi).
+  const customFields = customFieldsDefaultValues(profile.registrationForm.customFields);
+
   if (!profile.hasProfile) {
     return {
       ...PUBLIC_REGISTRATION_DEFAULT_VALUES,
       fullName: profile.suggestedFullName ?? '',
+      customFields,
     };
   }
 
@@ -103,6 +114,7 @@ export function profileToFormValues(profile: MyStudentProfile): PublicRegistrati
     email: profile.email ?? '',
     consentAccepted: profile.consentCurrent,
     parentalConsent: profile.parentalConsent,
+    customFields,
   };
 }
 
@@ -110,23 +122,29 @@ export function profileToFormValues(profile: MyStudentProfile): PublicRegistrati
  * Forma qiymatlari → anketa tanasi (`PUT /api/me/profile` va `POST /api/me/sessions` uchun
  * UMUMIY qism). Ikki semantika (`docs/07` §5.4):
  *
- * - `new`: to'liq to'plam; `grade: null` = "maktabda o'qimayman", `email: null`.
+ * - `new`: to'liq to'plam; `grade: null` = "maktabda o'qimayman", `email: null`, superadmin
+ *   qo'shgan o'z maydonlari (`customFields`) ham shu yerda yuboriladi (FAQAT `new` — `docs/07`
+ *   §5.1b/§5.4: "faqat profil YARATILAYOTGANDA so'raladi").
  * - `edit`/`consent` (profil bor): server `null` ni "o'zgarmasin" deb tushunadi, shu sabab
  *   bo'sh tanlov ANIQ yuboriladi — `grade: 0` (`Student.NoGrade`), `email: ''` (tozalash).
  *   Rozilik joriy bo'lsa `consentAccepted` YUBORILMAYDI (aks holda server rozilik sanasini
- *   qayta yozardi); `parentalConsent` faqat voyaga yetmaganda.
+ *   qayta yozardi); `parentalConsent` faqat voyaga yetmaganda. `customFields` bu holatlarda
+ *   YUBORILMAYDI — forma ularni ko'rsatmaydi (`PublicRegistrationForm.tsx`).
  */
 export function buildProfilePayload(
   values: PublicRegistrationFormValues,
   mode: ProfileFormMode,
-  options: { needsConsent: boolean },
+  options: { needsConsent: boolean; customFields?: readonly RegistrationFormCustomField[] },
 ): UpdateStudentProfileRequestBody {
   const age = ageFromFormValue(values.birthDate);
   const isMinor = age !== null && age < PARENTAL_CONSENT_AGE;
   const base: UpdateStudentProfileRequestBody = {
     fullName: values.fullName,
     birthDate: birthDateToIso(values.birthDate),
-    gender: values.gender as Gender,
+    // `gender` — GLOBAL sozlamada `Hidden` bo'lsa forma uni ko'rsatmaydi, qiymati bo'sh
+    // qoladi — bo'sh bo'lsa umuman yuborilmaydi (`docs/18` §9.6.2, boshqa "Hidden" maydonlar
+    // bilan bir xil qoida).
+    gender: values.gender ? (values.gender as Gender) : undefined,
     phone: toE164UzPhone(values.phone) ?? '',
   };
 
@@ -138,6 +156,7 @@ export function buildProfilePayload(
       // Bo'sh tanlov — "maktabda o'qimayman": `null`, `0` EMAS (`docs/07` §5.4, yangi profil).
       grade: values.grade ? Number(values.grade) : null,
       email: values.email || null,
+      customFields: serializeCustomFieldsPayload(options.customFields ?? [], values.customFields),
     };
   }
 
@@ -157,10 +176,17 @@ export function buildProfilePayload(
 export function buildStartSessionPayload(
   values: PublicRegistrationFormValues,
   mode: ProfileFormMode,
-  options: { needsConsent: boolean; programCode?: string },
+  options: {
+    needsConsent: boolean;
+    programCode?: string;
+    customFields?: readonly RegistrationFormCustomField[];
+  },
 ): StartPublicSessionRequestBody {
   return {
-    ...buildProfilePayload(values, mode, { needsConsent: options.needsConsent }),
+    ...buildProfilePayload(values, mode, {
+      needsConsent: options.needsConsent,
+      customFields: options.customFields,
+    }),
     languageCode: 'uz',
     ...(options.programCode ? { programCode: options.programCode } : {}),
   };

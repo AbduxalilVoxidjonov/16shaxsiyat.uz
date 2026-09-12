@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_REGISTRATION_FIELDS } from '@/shared/api/registrationModeTypes';
+import {
+  REGISTRATION_FORM_DEFAULT_DEFINITION,
+  type RegistrationFormCoreFields,
+  type RegistrationFormCustomField,
+  type RegistrationFormDefinition,
+} from '@/shared/api/registrationFormSettingsTypes';
 import { birthDateToIso, buildRegistrationSchema, calculateAge } from './registrationSchema';
 
 function validValues(overrides: Record<string, unknown> = {}) {
@@ -14,9 +19,65 @@ function validValues(overrides: Record<string, unknown> = {}) {
     email: '',
     consentAccepted: true,
     accessCode: '',
+    customFields: {},
     ...overrides,
   };
 }
+
+/** `REGISTRATION_FORM_DEFAULT_DEFINITION.coreFields`ni qisman o'zgartirib qaytaradi. */
+function formWithCoreOverrides(
+  coreOverrides: Partial<Record<keyof RegistrationFormCoreFields, RegistrationFormCoreFields[keyof RegistrationFormCoreFields]['requirement']>>,
+  customFields: RegistrationFormCustomField[] = [],
+): RegistrationFormDefinition {
+  const coreFields = { ...REGISTRATION_FORM_DEFAULT_DEFINITION.coreFields };
+  for (const [key, requirement] of Object.entries(coreOverrides)) {
+    const typedKey = key as keyof RegistrationFormCoreFields;
+    coreFields[typedKey] = { ...coreFields[typedKey], requirement };
+  }
+  return { coreFields, customFields };
+}
+
+const SHORT_TEXT_FIELD: RegistrationFormCustomField = {
+  code: 'PARENT_JOB',
+  type: 'ShortText',
+  labelUz: 'Ota-onangiz kasbi',
+  placeholderUz: null,
+  requirement: 'Required',
+  maxLength: 200,
+  inputPattern: null,
+  options: null,
+  order: 9,
+};
+
+const SINGLE_CHOICE_FIELD: RegistrationFormCustomField = {
+  code: 'TRANSPORT',
+  type: 'SingleChoice',
+  labelUz: 'Maktabga qanday borasiz?',
+  placeholderUz: null,
+  requirement: 'Required',
+  maxLength: null,
+  inputPattern: null,
+  options: [
+    { textUz: 'Piyoda', value: 'foot', order: 1 },
+    { textUz: 'Avtobus', value: 'bus', order: 2 },
+  ],
+  order: 9,
+};
+
+const MULTI_CHOICE_FIELD: RegistrationFormCustomField = {
+  code: 'HOBBIES',
+  type: 'MultiChoice',
+  labelUz: "Qiziqishlaringiz",
+  placeholderUz: null,
+  requirement: 'Optional',
+  maxLength: null,
+  inputPattern: null,
+  options: [
+    { textUz: 'Sport', value: 'sport', order: 1 },
+    { textUz: "San'at", value: 'art', order: 2 },
+  ],
+  order: 10,
+};
 
 describe('calculateAge', () => {
   it("tug'ilgan kun hali kelmagan bo'lsa bir yosh kamroq hisoblaydi", () => {
@@ -128,9 +189,9 @@ describe('buildRegistrationSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  // ── `registrationFields` (P52, 2026-09-11, `docs/18` §9) ─────────────────────────────────
-  it("registrationFields berilmasa standart (DEFAULT_REGISTRATION_FIELDS) xatti-harakat bilan bir xil natija beradi", () => {
-    const withDefaultArg = buildRegistrationSchema(false, DEFAULT_REGISTRATION_FIELDS);
+  // ── `registrationForm.coreFields` (P52 2-to'lqin, 2026-09-12, `docs/18` §9.6.2) ──────────
+  it("registrationForm berilmasa standart (REGISTRATION_FORM_DEFAULT_DEFINITION) xatti-harakat bilan bir xil natija beradi", () => {
+    const withDefaultArg = buildRegistrationSchema(false, REGISTRATION_FORM_DEFAULT_DEFINITION);
     const withoutArg = buildRegistrationSchema(false);
     const values = validValues();
     expect(withDefaultArg.safeParse(values).success).toBe(true);
@@ -140,46 +201,43 @@ describe('buildRegistrationSchema', () => {
   });
 
   it("'email' maydoni 'Required' qilinsa bo'sh qiymatni rad etadi", () => {
-    const schema = buildRegistrationSchema(false, { ...DEFAULT_REGISTRATION_FIELDS, email: 'Required' });
+    const schema = buildRegistrationSchema(false, formWithCoreOverrides({ email: 'Required' }));
     const result = schema.safeParse(validValues({ email: '' }));
     expect(result.success).toBe(false);
   });
 
   it("'email' maydoni 'Required' qilinsa to'g'ri email bilan o'tadi", () => {
-    const schema = buildRegistrationSchema(false, { ...DEFAULT_REGISTRATION_FIELDS, email: 'Required' });
+    const schema = buildRegistrationSchema(false, formWithCoreOverrides({ email: 'Required' }));
     const result = schema.safeParse(validValues({ email: 'ali@example.com' }));
     expect(result.success).toBe(true);
   });
 
   it("'phone' maydoni 'Optional' qilinsa bo'sh qiymatni qabul qiladi", () => {
-    const schema = buildRegistrationSchema(false, { ...DEFAULT_REGISTRATION_FIELDS, phone: 'Optional' });
+    const schema = buildRegistrationSchema(false, formWithCoreOverrides({ phone: 'Optional' }));
     const result = schema.safeParse(validValues({ phone: '' }));
     expect(result.success).toBe(true);
   });
 
   it("'phone' maydoni 'Hidden' qilinganda ham bo'sh qiymatni qabul qiladi", () => {
-    const schema = buildRegistrationSchema(false, { ...DEFAULT_REGISTRATION_FIELDS, phone: 'Hidden' });
+    const schema = buildRegistrationSchema(false, formWithCoreOverrides({ phone: 'Hidden' }));
     const result = schema.safeParse(validValues({ phone: '' }));
     expect(result.success).toBe(true);
   });
 
   it("'gender' maydoni 'Optional' qilinsa bo'sh qiymatni qabul qiladi", () => {
-    const schema = buildRegistrationSchema(false, { ...DEFAULT_REGISTRATION_FIELDS, gender: 'Optional' });
+    const schema = buildRegistrationSchema(false, formWithCoreOverrides({ gender: 'Optional' }));
     const result = schema.safeParse(validValues({ gender: '' }));
     expect(result.success).toBe(true);
   });
 
   it("'grade' maydoni 'Optional' qilinsa bo'sh qiymatni qabul qiladi", () => {
-    const schema = buildRegistrationSchema(false, { ...DEFAULT_REGISTRATION_FIELDS, grade: 'Optional' });
+    const schema = buildRegistrationSchema(false, formWithCoreOverrides({ grade: 'Optional' }));
     const result = schema.safeParse(validValues({ grade: '' }));
     expect(result.success).toBe(true);
   });
 
   it("'birthDate' maydoni 'Optional' qilinsa to'liq bo'sh sanani qabul qiladi", () => {
-    const schema = buildRegistrationSchema(false, {
-      ...DEFAULT_REGISTRATION_FIELDS,
-      birthDate: 'Optional',
-    });
+    const schema = buildRegistrationSchema(false, formWithCoreOverrides({ birthDate: 'Optional' }));
     const result = schema.safeParse(
       validValues({ birthDate: { day: '', month: '', year: '' } }),
     );
@@ -187,10 +245,7 @@ describe('buildRegistrationSchema', () => {
   });
 
   it("'birthDate' maydoni 'Optional' bo'lsa ham qisman to'ldirilgan sanani rad etadi", () => {
-    const schema = buildRegistrationSchema(false, {
-      ...DEFAULT_REGISTRATION_FIELDS,
-      birthDate: 'Optional',
-    });
+    const schema = buildRegistrationSchema(false, formWithCoreOverrides({ birthDate: 'Optional' }));
     const result = schema.safeParse(
       validValues({ birthDate: { day: '17', month: '', year: '' } }),
     );
@@ -198,14 +253,82 @@ describe('buildRegistrationSchema', () => {
   });
 
   it("'birthDate' maydoni 'Optional' bo'lsa ham to'liq to'ldirilgan noto'g'ri sanani rad etadi", () => {
-    const schema = buildRegistrationSchema(false, {
-      ...DEFAULT_REGISTRATION_FIELDS,
-      birthDate: 'Optional',
-    });
+    const schema = buildRegistrationSchema(false, formWithCoreOverrides({ birthDate: 'Optional' }));
     const result = schema.safeParse(
       validValues({ birthDate: { day: '1', month: '1', year: '2000' } }),
     );
     expect(result.success).toBe(false);
+  });
+
+  // ── `customFields` (P52 2-to'lqin, 2026-09-12, `docs/18` §9.6.2) — superadmin o'z maydoni ──
+  it("majburiy ShortText o'z maydon bo'sh bo'lsa customFields.<kod> ostida xato beradi", () => {
+    const schema = buildRegistrationSchema(false, formWithCoreOverrides({}, [SHORT_TEXT_FIELD]));
+    const result = schema.safeParse(validValues({ customFields: { PARENT_JOB: '' } }));
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const issue = result.error.issues.find((i) => i.path.join('.') === 'customFields.PARENT_JOB');
+      expect(issue).toBeDefined();
+    }
+  });
+
+  it("majburiy ShortText o'z maydon to'ldirilsa o'tadi", () => {
+    const schema = buildRegistrationSchema(false, formWithCoreOverrides({}, [SHORT_TEXT_FIELD]));
+    const result = schema.safeParse(validValues({ customFields: { PARENT_JOB: "O'qituvchi" } }));
+    expect(result.success).toBe(true);
+  });
+
+  it("ShortText o'z maydon maxLength'dan oshsa xato beradi", () => {
+    const schema = buildRegistrationSchema(
+      false,
+      formWithCoreOverrides({}, [{ ...SHORT_TEXT_FIELD, maxLength: 5 }]),
+    );
+    const result = schema.safeParse(validValues({ customFields: { PARENT_JOB: 'juda uzun matn' } }));
+    expect(result.success).toBe(false);
+  });
+
+  it("majburiy SingleChoice tanlanmasa xato beradi", () => {
+    const schema = buildRegistrationSchema(false, formWithCoreOverrides({}, [SINGLE_CHOICE_FIELD]));
+    const result = schema.safeParse(validValues({ customFields: { TRANSPORT: '' } }));
+    expect(result.success).toBe(false);
+  });
+
+  it("SingleChoice noto'g'ri variant qiymati bilan xato beradi", () => {
+    const schema = buildRegistrationSchema(false, formWithCoreOverrides({}, [SINGLE_CHOICE_FIELD]));
+    const result = schema.safeParse(validValues({ customFields: { TRANSPORT: '99' } }));
+    expect(result.success).toBe(false);
+  });
+
+  it("SingleChoice to'g'ri variant (order) bilan o'tadi", () => {
+    const schema = buildRegistrationSchema(false, formWithCoreOverrides({}, [SINGLE_CHOICE_FIELD]));
+    const result = schema.safeParse(validValues({ customFields: { TRANSPORT: '2' } }));
+    expect(result.success).toBe(true);
+  });
+
+  it("ixtiyoriy MultiChoice bo'sh massiv bilan o'tadi", () => {
+    const schema = buildRegistrationSchema(false, formWithCoreOverrides({}, [MULTI_CHOICE_FIELD]));
+    const result = schema.safeParse(validValues({ customFields: { HOBBIES: [] } }));
+    expect(result.success).toBe(true);
+  });
+
+  it("MultiChoice noto'g'ri variant qiymati bilan xato beradi", () => {
+    const schema = buildRegistrationSchema(false, formWithCoreOverrides({}, [MULTI_CHOICE_FIELD]));
+    const result = schema.safeParse(validValues({ customFields: { HOBBIES: ['99'] } }));
+    expect(result.success).toBe(false);
+  });
+
+  it("MultiChoice to'g'ri variantlar bilan o'tadi", () => {
+    const schema = buildRegistrationSchema(false, formWithCoreOverrides({}, [MULTI_CHOICE_FIELD]));
+    const result = schema.safeParse(validValues({ customFields: { HOBBIES: ['1', '2'] } }));
+    expect(result.success).toBe(true);
+  });
+
+  it("'Hidden' o'z maydon majburiy bo'lsa ham bo'sh qiymatni qabul qiladi", () => {
+    const schema = buildRegistrationSchema(
+      false,
+      formWithCoreOverrides({}, [{ ...SHORT_TEXT_FIELD, requirement: 'Hidden' }]),
+    );
+    const result = schema.safeParse(validValues({ customFields: {} }));
+    expect(result.success).toBe(true);
   });
 });
 

@@ -7,8 +7,10 @@ import { ToastProvider } from '@/shared/ui/Toast';
 import { jsonResponse, problemResponse, type Schemas } from '@/test/apiMock';
 import { STORAGE_KEYS } from '@/shared/config/storageKeys';
 import { setPublicAccessToken } from '@/shared/api/publicUserClient';
+import { REGISTRATION_FORM_DEFAULT_DEFINITION } from '@/shared/api/registrationFormSettingsTypes';
 import PublicRegistrationPage from './PublicRegistrationPage';
 import { usePublicUserStore } from '../store/publicUserStore';
+import type { MyStudentProfile } from '../model/types';
 
 const START_RESULT = {
   sessionToken: 'session-token-1',
@@ -42,7 +44,8 @@ const NO_PROFILE = {
   parentalConsent: false,
   isMinor: false,
   suggestedFullName: null,
-} satisfies Schemas['MyStudentProfileDto'];
+  registrationForm: REGISTRATION_FORM_DEFAULT_DEFINITION,
+} satisfies MyStudentProfile;
 
 /** B holati: profil to'liq, rozilik joriy. */
 const FULL_PROFILE = {
@@ -58,7 +61,8 @@ const FULL_PROFILE = {
   parentalConsent: false,
   isMinor: false,
   suggestedFullName: 'Valiyev Ali',
-} satisfies Schemas['MyStudentProfileDto'];
+  registrationForm: REGISTRATION_FORM_DEFAULT_DEFINITION,
+} satisfies MyStudentProfile;
 
 function renderPage(path = '/kabinet/test') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -83,7 +87,7 @@ function renderPage(path = '/kabinet/test') {
  * qolgani (sessiya) → `sessionResponse`. Chaqiruvlar `sessionCall()` / `updateCall()` bilan olinadi.
  */
 function mockApi(
-  profile: Schemas['MyStudentProfileDto'],
+  profile: MyStudentProfile,
   sessionResponse: () => Response,
   updateResponse?: () => Response,
 ) {
@@ -534,5 +538,121 @@ describe('PublicRegistrationPage (maktabsiz anketa)', () => {
 
     expect(await screen.findByRole('button', { name: 'Qayta urinish' })).toBeInTheDocument();
     expect(screen.queryByLabelText('F.I.Sh.')).not.toBeInTheDocument();
+  });
+
+  // ---------------------------------------------------------------------------------------
+  // P52 2-to'lqin (2026-09-12, `docs/18` §9.6.2) — GLOBAL `registrationForm`: `gender` YAGONA
+  // sozlanadigan maydon (`birthDate`/`phone` bu oqimda HAMISHA majburiy), o'z maydonlar FAQAT
+  // `new` (birinchi anketa) rejimida so'raladi.
+  // ---------------------------------------------------------------------------------------
+  describe("registrationForm — GLOBAL sozlama (gender, o'z maydonlar)", () => {
+    it("gender 'Hidden' qilinsa forma jins bo'limini ko'rsatmaydi va so'rovga qo'shmaydi", async () => {
+      const user = userEvent.setup();
+      const api = mockApi(
+        {
+          ...NO_PROFILE,
+          registrationForm: {
+            ...REGISTRATION_FORM_DEFAULT_DEFINITION,
+            coreFields: {
+              ...REGISTRATION_FORM_DEFAULT_DEFINITION.coreFields,
+              gender: { requirement: 'Hidden', labelUz: 'Jinsi', placeholderUz: null, order: 3 },
+            },
+          },
+        },
+        () => jsonResponse<'StartSessionResult'>(START_RESULT),
+      );
+
+      renderPage();
+      await screen.findByLabelText('F.I.Sh.');
+      expect(screen.queryByText('Jinsi')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Erkak')).not.toBeInTheDocument();
+
+      await user.type(screen.getByLabelText('F.I.Sh.'), 'Karimov Sardor Alisherovich');
+      await user.selectOptions(screen.getByLabelText("Tug'ilgan kun"), '12');
+      await user.selectOptions(screen.getByLabelText("Tug'ilgan oy"), '4');
+      await user.selectOptions(screen.getByLabelText("Tug'ilgan yil"), '1995');
+      await user.type(screen.getByLabelText('Telefon raqami'), '901234567');
+      await user.click(screen.getByLabelText(/roziman/));
+      await user.click(screen.getByRole('button', { name: 'Testni boshlash' }));
+
+      await waitFor(() => {
+        expect(api.sessionCall()).toBeDefined();
+      });
+      const body = JSON.parse(String(api.sessionCall()![1].body)) as Record<string, unknown>;
+      expect('gender' in body).toBe(false);
+    });
+
+    it("majburiy o'z maydon 'new' rejimida ko'rsatiladi va bo'sh bo'lsa xato beradi", async () => {
+      const user = userEvent.setup();
+      const api = mockApi(
+        {
+          ...NO_PROFILE,
+          registrationForm: {
+            ...REGISTRATION_FORM_DEFAULT_DEFINITION,
+            customFields: [
+              {
+                code: 'PARENT_JOB',
+                type: 'ShortText',
+                labelUz: 'Ota-onangiz kasbi',
+                placeholderUz: null,
+                requirement: 'Required',
+                maxLength: 200,
+                inputPattern: null,
+                options: null,
+                order: 9,
+              },
+            ],
+          },
+        },
+        () => jsonResponse<'StartSessionResult'>(START_RESULT),
+      );
+
+      renderPage();
+      expect(await screen.findByLabelText('Ota-onangiz kasbi')).toBeInTheDocument();
+
+      await fillForm(user);
+      await user.click(screen.getByRole('button', { name: 'Testni boshlash' }));
+
+      expect(await screen.findByText("'Ota-onangiz kasbi' maydoni kiritilishi shart.")).toBeInTheDocument();
+      expect(api.sessionCall()).toBeUndefined();
+
+      await user.type(screen.getByLabelText('Ota-onangiz kasbi'), "O'qituvchi");
+      await user.click(screen.getByRole('button', { name: 'Testni boshlash' }));
+
+      await waitFor(() => {
+        expect(api.sessionCall()).toBeDefined();
+      });
+      const body = JSON.parse(String(api.sessionCall()![1].body)) as Record<string, unknown>;
+      expect(body.customFields).toEqual({ PARENT_JOB: "O'qituvchi" });
+    });
+
+    it("o'z maydonlar 'edit' rejimida (profil bor) ko'rsatilmaydi — faqat 'new'da so'raladi", async () => {
+      mockApi(
+        {
+          ...FULL_PROFILE,
+          registrationForm: {
+            ...REGISTRATION_FORM_DEFAULT_DEFINITION,
+            customFields: [
+              {
+                code: 'PARENT_JOB',
+                type: 'ShortText',
+                labelUz: 'Ota-onangiz kasbi',
+                placeholderUz: null,
+                requirement: 'Required',
+                maxLength: 200,
+                inputPattern: null,
+                options: null,
+                order: 9,
+              },
+            ],
+          },
+        },
+        () => jsonResponse<'StartSessionResult'>(START_RESULT),
+      );
+
+      renderPage('/kabinet/test?edit=1');
+      await screen.findByLabelText('F.I.Sh.');
+      expect(screen.queryByLabelText('Ota-onangiz kasbi')).not.toBeInTheDocument();
+    });
   });
 });

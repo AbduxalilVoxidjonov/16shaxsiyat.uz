@@ -12,6 +12,11 @@ export interface BirthDateSelectProps {
   errors?: { day?: string; month?: string; year?: string };
   minAge: number;
   maxAge: number;
+  /**
+   * Superadmin "Sozlamalar"da maydon yorlig'ini o'zgartirgan bo'lishi mumkin (P52 2-to'lqin,
+   * `docs/18` §9.6.2) — berilmasa standart i18n matni (`register.fields.birthDate`) ishlatiladi.
+   */
+  label?: string;
 }
 
 const MONTH_KEYS = [
@@ -42,6 +47,7 @@ export function BirthDateSelect({
   errors,
   minAge,
   maxAge,
+  label,
 }: BirthDateSelectProps) {
   const { t } = useTranslation();
 
@@ -77,7 +83,7 @@ export function BirthDateSelect({
   return (
     <fieldset className="flex flex-col gap-1.5">
       <legend className="mb-1.5 text-sm font-medium text-ink-soft">
-        {t('register.fields.birthDate')}
+        {label || t('register.fields.birthDate')}
       </legend>
       <div className="grid grid-cols-3 gap-2">
         <Select

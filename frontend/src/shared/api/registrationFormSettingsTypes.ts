@@ -124,6 +124,16 @@ export const REGISTRATION_FORM_DEFAULT_DEFINITION: RegistrationFormDefinition = 
   customFields: [],
 };
 
+/**
+ * `docs/07` §1.2/§5.1b/§5.4 (P52 2-to'lqin, 2026-09-12) — `POST /api/public/sessions`/`PUT`/
+ * `POST /api/me/profile`/`sessions` so'rov tanasidagi `customFields` qismi: kod → qiymat.
+ * Matn turlarida (`ShortText`/`LongText`/`Phone`) satr, `SingleChoice`da variant `order`i
+ * (butun son), `MultiChoice`da variant `order`lari massivi. `value` (matn) EMAS — `order`
+ * barqaror, admin yorliq/matnni o'zgartirsa ham yuborilgan javob buzilmaydi.
+ */
+export type RegistrationCustomFieldAnswerValue = string | number | number[];
+export type RegistrationCustomFieldAnswers = Record<string, RegistrationCustomFieldAnswerValue>;
+
 /** `docs/06` §6 — `PUT /api/admin/settings/registration-form` xato kodlari. */
 export const REGISTRATION_FORM_ERROR_CODES = {
   fullNameLocked: 'REGISTRATION_FORM_FULL_NAME_LOCKED',

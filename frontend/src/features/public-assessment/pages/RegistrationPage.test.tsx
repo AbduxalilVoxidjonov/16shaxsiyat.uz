@@ -5,11 +5,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
 import { jsonResponse, problemResponse, typedResponse, type Schemas } from '@/test/apiMock';
+import type { PublicSchoolInfoWithRegistration } from '@/shared/api/registrationModeTypes';
 import {
-  DEFAULT_REGISTRATION_FIELDS,
-  type PublicSchoolInfoWithRegistration,
-  type RegistrationFields,
-} from '@/shared/api/registrationModeTypes';
+  REGISTRATION_FORM_DEFAULT_DEFINITION,
+  type RegistrationFormCoreFields,
+  type RegistrationFormCustomField,
+  type RegistrationFormDefinition,
+} from '@/shared/api/registrationFormSettingsTypes';
 import RegistrationPage from './RegistrationPage';
 import { useSessionStore } from '../store/sessionStore';
 
@@ -74,12 +76,12 @@ const TWO_PROGRAMS = [
 ] satisfies Schemas['PublicProgramSummaryDto'][];
 
 /**
- * `registrationFields` (P52, 2026-09-11, `docs/18` §9) — `schoolInfoBody()` kabi
- * (raqamli `Schemas['GetSchoolInfoResult']` emas, `registrationMode`/`registrationFields`
- * bilan to'liq shakl kerak — pastdagi "None" holati testidagi naqsh bilan bir xil).
+ * `registrationForm` (P52 2-to'lqin, 2026-09-12, `docs/18` §9.6.2) — `schoolInfoBody()` kabi
+ * (raqamli `Schemas['GetSchoolInfoResult']` emas, `registrationMode`/`registrationForm` bilan
+ * to'liq shakl kerak — pastdagi "None" holati testidagi naqsh bilan bir xil).
  */
-function schoolInfoWithRegistrationFields(
-  fieldsOverrides: Partial<RegistrationFields>,
+function schoolInfoWithRegistrationForm(
+  registrationForm: RegistrationFormDefinition,
 ): PublicSchoolInfoWithRegistration {
   return {
     schoolId: 'school-1',
@@ -108,7 +110,7 @@ function schoolInfoWithRegistrationFields(
         estimatedMinutes: 9,
         hasPersonalityBattery: false,
         registrationMode: 'Full',
-        registrationFields: { ...DEFAULT_REGISTRATION_FIELDS, ...fieldsOverrides },
+        registrationForm,
         tests: [
           {
             code: 'MBTI16',
@@ -121,6 +123,15 @@ function schoolInfoWithRegistrationFields(
       },
     ],
   };
+}
+
+/** `REGISTRATION_FORM_DEFAULT_DEFINITION.coreFields`ni qisman o'zgartirib qaytaradi. */
+function coreFieldsWithOverrides(
+  overrides: Partial<
+    Record<keyof RegistrationFormCoreFields, RegistrationFormCoreFields[keyof RegistrationFormCoreFields]>
+  >,
+): RegistrationFormCoreFields {
+  return { ...REGISTRATION_FORM_DEFAULT_DEFINITION.coreFields, ...overrides };
 }
 
 interface RouterMockOptions {
@@ -627,13 +638,19 @@ describe('RegistrationPage', () => {
   });
 
   // ---------------------------------------------------------------------------------------
-  // `registrationFields` — har bir shaxs maydonining "Yashirin"/"Ixtiyoriy"/"Majburiy"
-  // sozlamasi (P52, 2026-09-11, `docs/18` §9). Standart sozlama bilan yuqoridagi testlar
-  // o'zgarmasdan yashil qoladi (regressiya qulfi) — bu bo'lim faqat sozlamani o'zgartirganda.
+  // `registrationForm.coreFields` — har bir shaxs maydonining "Yashirin"/"Ixtiyoriy"/"Majburiy"
+  // sozlamasi (P52 2-to'lqin, 2026-09-12, `docs/18` §9.6.2). Standart sozlama bilan yuqoridagi
+  // testlar o'zgarmasdan yashil qoladi (regressiya qulfi) — bu bo'lim faqat sozlamani
+  // o'zgartirganda.
   // ---------------------------------------------------------------------------------------
   it("'Hidden' qilingan maydon ko'rsatilmaydi va so'rovga qo'shilmaydi (email)", async () => {
     const fetchMock = mockFetch({
-      schoolInfo: schoolInfoWithRegistrationFields({ email: 'Hidden' }),
+      schoolInfo: schoolInfoWithRegistrationForm({
+        coreFields: coreFieldsWithOverrides({
+          email: { requirement: 'Hidden', labelUz: 'Email', placeholderUz: null, order: 8 },
+        }),
+        customFields: [],
+      }),
     });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderRegistration();
@@ -662,7 +679,14 @@ describe('RegistrationPage', () => {
   });
 
   it("'Optional' qilingan maydon bo'sh qoldirilganda ham forma yuboriladi (sinf)", async () => {
-    mockFetch({ schoolInfo: schoolInfoWithRegistrationFields({ grade: 'Optional' }) });
+    mockFetch({
+      schoolInfo: schoolInfoWithRegistrationForm({
+        coreFields: coreFieldsWithOverrides({
+          grade: { requirement: 'Optional', labelUz: 'Sinf', placeholderUz: null, order: 4 },
+        }),
+        customFields: [],
+      }),
+    });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderRegistration();
 
@@ -683,7 +707,14 @@ describe('RegistrationPage', () => {
   });
 
   it("'Required' qilingan maydon bo'sh bo'lsa yuborishga urinishda xato ko'rsatadi (sinf harfi)", async () => {
-    mockFetch({ schoolInfo: schoolInfoWithRegistrationFields({ classLetter: 'Required' }) });
+    mockFetch({
+      schoolInfo: schoolInfoWithRegistrationForm({
+        coreFields: coreFieldsWithOverrides({
+          classLetter: { requirement: 'Required', labelUz: 'Sinf harfi', placeholderUz: null, order: 5 },
+        }),
+        customFields: [],
+      }),
+    });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderRegistration();
 
@@ -698,7 +729,14 @@ describe('RegistrationPage', () => {
   });
 
   it("tug'ilgan sana 'Optional' bo'lganda ham takror topshirish ogohlantirishi ko'rinmaydi (kod ko'rigi topilmasi: bu ogohlantirish superadmin dastur formasiga ko'chirildi)", async () => {
-    mockFetch({ schoolInfo: schoolInfoWithRegistrationFields({ birthDate: 'Optional' }) });
+    mockFetch({
+      schoolInfo: schoolInfoWithRegistrationForm({
+        coreFields: coreFieldsWithOverrides({
+          birthDate: { requirement: 'Optional', labelUz: "Tug'ilgan sana", placeholderUz: null, order: 2 },
+        }),
+        customFields: [],
+      }),
+    });
     renderRegistration();
 
     await screen.findByText(CONSENT_TEXT);
@@ -711,5 +749,189 @@ describe('RegistrationPage', () => {
 
     await screen.findByText(CONSENT_TEXT);
     expect(screen.queryByText(/Takror topshirishni aniqlash/)).not.toBeInTheDocument();
+  });
+
+  // ---------------------------------------------------------------------------------------
+  // Sozlamadagi yorliq/tartib/o'z maydonlar (P52 2-to'lqin, 2026-09-12, `docs/18` §9.6.2).
+  // ---------------------------------------------------------------------------------------
+  it("sozlamada o'zgartirilgan yorliq va joy egallovchi matn o'quvchi formasida ko'rinadi", async () => {
+    mockFetch({
+      schoolInfo: schoolInfoWithRegistrationForm({
+        coreFields: coreFieldsWithOverrides({
+          fullName: {
+            requirement: 'Required',
+            labelUz: 'Toʻliq ismingiz',
+            placeholderUz: 'Familiya Ism',
+            order: 1,
+          },
+        }),
+        customFields: [],
+      }),
+    });
+    renderRegistration();
+
+    await screen.findByText(CONSENT_TEXT);
+    expect(screen.getByLabelText('Toʻliq ismingiz')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Familiya Ism')).toBeInTheDocument();
+    expect(screen.queryByLabelText('F.I.Sh.')).not.toBeInTheDocument();
+  });
+
+  it("maydonlar sozlamadagi 'order' bo'yicha chiziladi (email tug'ilgan sanadan oldin)", async () => {
+    mockFetch({
+      schoolInfo: schoolInfoWithRegistrationForm({
+        coreFields: coreFieldsWithOverrides({
+          // `email`ni `birthDate`dan oldinroq tartibga qo'yamiz.
+          email: { requirement: 'Optional', labelUz: 'Email', placeholderUz: null, order: 1.5 },
+        }),
+        customFields: [],
+      }),
+    });
+    renderRegistration();
+
+    await screen.findByText(CONSENT_TEXT);
+    const form = screen.getByRole('button', { name: 'Testni boshlash' }).closest('form');
+    expect(form).not.toBeNull();
+    const labels = Array.from(form?.querySelectorAll('label') ?? []).map((el) => el.textContent);
+    const emailIndex = labels.findIndex((text) => text === 'Email');
+    const fullNameIndex = labels.findIndex((text) => text === 'F.I.Sh.');
+    const gradeIndex = labels.findIndex((text) => text === 'Sinf');
+    // Standart tartibda `email` (order 8) `grade` (order 4)dan KEYIN keladi — sozlamada
+    // `order: 1.5` qilib qo'yilgach, `fullName` (1) bilan `grade` (4) orasiga o'tishi kerak.
+    expect(emailIndex).toBeGreaterThan(fullNameIndex);
+    expect(emailIndex).toBeLessThan(gradeIndex);
+  });
+
+  const SHORT_TEXT_CUSTOM_FIELD: RegistrationFormCustomField = {
+    code: 'PARENT_JOB',
+    type: 'ShortText',
+    labelUz: 'Ota-onangiz kasbi',
+    placeholderUz: "Masalan: o'qituvchi",
+    requirement: 'Required',
+    maxLength: 200,
+    inputPattern: null,
+    options: null,
+    order: 9,
+  };
+
+  const SINGLE_CHOICE_CUSTOM_FIELD: RegistrationFormCustomField = {
+    code: 'TRANSPORT',
+    type: 'SingleChoice',
+    labelUz: 'Maktabga qanday borasiz?',
+    placeholderUz: null,
+    requirement: 'Optional',
+    maxLength: null,
+    inputPattern: null,
+    options: [
+      { textUz: 'Piyoda', value: 'foot', order: 1 },
+      { textUz: 'Avtobus', value: 'bus', order: 2 },
+    ],
+    order: 10,
+  };
+
+  const MULTI_CHOICE_CUSTOM_FIELD: RegistrationFormCustomField = {
+    code: 'HOBBIES',
+    type: 'MultiChoice',
+    labelUz: "Qiziqishlaringiz",
+    placeholderUz: null,
+    requirement: 'Optional',
+    maxLength: null,
+    inputPattern: null,
+    options: [
+      { textUz: 'Sport', value: 'sport', order: 1 },
+      { textUz: "San'at", value: 'art', order: 2 },
+    ],
+    order: 11,
+  };
+
+  const LONG_TEXT_CUSTOM_FIELD: RegistrationFormCustomField = {
+    code: 'ABOUT',
+    type: 'LongText',
+    labelUz: "O'zingiz haqingizda",
+    placeholderUz: null,
+    requirement: 'Optional',
+    maxLength: 2000,
+    inputPattern: null,
+    options: null,
+    order: 12,
+  };
+
+  it("majburiy ShortText o'z maydon bo'sh bo'lsa xato ko'rsatadi va yubormaydi", async () => {
+    mockFetch({
+      schoolInfo: schoolInfoWithRegistrationForm({
+        coreFields: REGISTRATION_FORM_DEFAULT_DEFINITION.coreFields,
+        customFields: [SHORT_TEXT_CUSTOM_FIELD],
+      }),
+    });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderRegistration();
+
+    await screen.findByText(CONSENT_TEXT);
+    expect(screen.getByLabelText('Ota-onangiz kasbi')).toBeInTheDocument();
+
+    await fillValidForm(user);
+    await user.click(screen.getByLabelText(CONSENT_LABEL));
+    await user.click(screen.getByRole('button', { name: 'Testni boshlash' }));
+
+    expect(await screen.findByText("'Ota-onangiz kasbi' maydoni kiritilishi shart.")).toBeInTheDocument();
+    expect(useSessionStore.getState().sessionToken).toBeNull();
+  });
+
+  it("ShortText/SingleChoice/MultiChoice/LongText o'z maydonlar to'g'ri kod → qiymat shaklida yuboriladi", async () => {
+    const fetchMock = mockFetch({
+      schoolInfo: schoolInfoWithRegistrationForm({
+        coreFields: REGISTRATION_FORM_DEFAULT_DEFINITION.coreFields,
+        customFields: [
+          SHORT_TEXT_CUSTOM_FIELD,
+          SINGLE_CHOICE_CUSTOM_FIELD,
+          MULTI_CHOICE_CUSTOM_FIELD,
+          LONG_TEXT_CUSTOM_FIELD,
+        ],
+      }),
+    });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderRegistration();
+
+    await screen.findByText(CONSENT_TEXT);
+    await fillValidForm(user);
+    await user.type(screen.getByLabelText('Ota-onangiz kasbi'), "O'qituvchi");
+    await user.click(screen.getByLabelText('Avtobus'));
+    await user.click(screen.getByLabelText('Sport'));
+    await user.click(screen.getByLabelText("San'at"));
+    await user.type(screen.getByLabelText("O'zingiz haqingizda"), 'Salom');
+    await user.click(screen.getByLabelText(CONSENT_LABEL));
+    await user.click(screen.getByRole('button', { name: 'Testni boshlash' }));
+
+    await waitFor(() => {
+      expect(useSessionStore.getState().sessionToken).toBe('sess-token-1');
+    });
+
+    const sessionCall = fetchMock.mock.calls.find(
+      ([input, init]) =>
+        String(input).includes('/api/public/sessions') &&
+        (init as RequestInit | undefined)?.method === 'POST',
+    );
+    const body = JSON.parse((sessionCall?.[1] as RequestInit).body as string) as Record<
+      string,
+      unknown
+    >;
+    expect(body.customFields).toEqual({
+      PARENT_JOB: "O'qituvchi",
+      TRANSPORT: 2,
+      HOBBIES: [1, 2],
+      ABOUT: 'Salom',
+    });
+  });
+
+  it("'Hidden' qilingan o'z maydon ko'rsatilmaydi", async () => {
+    mockFetch({
+      schoolInfo: schoolInfoWithRegistrationForm({
+        coreFields: REGISTRATION_FORM_DEFAULT_DEFINITION.coreFields,
+        customFields: [{ ...SHORT_TEXT_CUSTOM_FIELD, requirement: 'Hidden' }],
+      }),
+    });
+    renderRegistration();
+
+    await screen.findByText(CONSENT_TEXT);
+    expect(screen.queryByLabelText('Ota-onangiz kasbi')).not.toBeInTheDocument();
   });
 });

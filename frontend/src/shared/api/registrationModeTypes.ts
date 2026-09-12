@@ -15,6 +15,10 @@
  */
 import type { components } from './schema';
 import type { Gender, PublicSchoolInfo, PublicTestCatalogItem } from './types';
+import type {
+  RegistrationCustomFieldAnswers,
+  RegistrationFormDefinition,
+} from './registrationFormSettingsTypes';
 
 /**
  * Admin dastur DTO'lari — `shared/` `features/*`ni import QILMAYDI (`docs/10` §2 "features
@@ -107,6 +111,15 @@ export interface PublicProgramRegistrationFields {
    * chunki mavjud testlar ularni allaqachon har joyda aniq bergan).
    */
   registrationFields?: RegistrationFields;
+  /**
+   * P52 2-to'lqin (2026-09-12, `docs/18` §9.6.2) — TO'LIQ GLOBAL ro'yxatdan o'tish formasi
+   * ta'rifi (superadmin qo'shgan `customFields[]` bilan birga), dastur ustunligi (batareya
+   * invarianti) QO'LLANGAN holda. `registrationFields` shu obyektning `coreFields`ga mos
+   * qisqartirilgan proyeksiyasi — ikkalasi BIR XIL manbadan hisoblanadi. Ixtiyoriy — eski
+   * javoblarda (hali yangilanmagan fixture) bo'lmasligi mumkin, `RegistrationPage`
+   * `REGISTRATION_FORM_DEFAULT_DEFINITION` bilan to'ldiradi (regressiya qulfi).
+   */
+  registrationForm?: RegistrationFormDefinition;
 }
 
 /** `PublicProgramSummaryDto` (generatsiya qilingan) + yuqoridagi yangi maydonlar. */
@@ -159,6 +172,11 @@ export interface StartSessionRegistrationRequestBody {
   consentAccepted: boolean;
   languageCode?: string;
   programCode?: string;
+  /**
+   * P52 2-to'lqin (2026-09-12, `docs/18` §9.6.2) — superadmin qo'shgan "o'z maydonlari"
+   * javoblari, kod → qiymat. Ixtiyoriy — hech qanday o'z maydon bo'lmasa umuman yuborilmaydi.
+   */
+  customFields?: RegistrationCustomFieldAnswers;
 }
 
 /**

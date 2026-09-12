@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { Dialog } from '@/shared/ui/Dialog';
@@ -11,13 +11,11 @@ import { Textarea } from '@/shared/ui/Textarea';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { useToast } from '@/shared/ui/useToast';
 import { AppError } from '@/shared/api/AppError';
-import { resolveRegistrationFields } from '@/shared/api/registrationModeTypes';
 import { useProgramQuery } from '../api/useProgramQuery';
 import { useCreateProgram } from '../api/useCreateProgram';
 import { useUpdateProgram } from '../api/useUpdateProgram';
 import { useProgramImpactQuery } from '../api/useProgramImpactQuery';
 import { ProgramImpactNotice } from './ProgramImpactNotice';
-import { RegistrationFieldsFieldset } from './RegistrationFieldsFieldset';
 import {
   programFormSchema,
   PROGRAM_FORM_DEFAULT_VALUES,
@@ -60,7 +58,6 @@ export function ProgramFormDialog({ open, programId, onClose, onCreated }: Progr
     register,
     handleSubmit,
     reset,
-    control,
     formState: { errors, isSubmitting },
   } = useForm<ProgramFormValues>({
     resolver: zodResolver(programFormSchema),
@@ -74,7 +71,6 @@ export function ProgramFormDialog({ open, programId, onClose, onCreated }: Progr
       return;
     }
     if (detailQuery.data) {
-      const resolvedFields = resolveRegistrationFields(detailQuery.data.registrationFields);
       reset({
         code: detailQuery.data.code,
         nameUz: detailQuery.data.nameUz,
@@ -82,15 +78,6 @@ export function ProgramFormDialog({ open, programId, onClose, onCreated }: Progr
         displayOrder: detailQuery.data.displayOrder,
         visibility: detailQuery.data.visibility === 'Public' ? 'Public' : 'Assigned',
         registrationMode: detailQuery.data.registrationMode === 'None' ? 'None' : 'Full',
-        // Kod ko'rigi topilmasi (P52): batareya bor dasturda `birthDate`/`grade` doim
-        // "Majburiy" bo'lishi shart. `RegistrationFieldsFieldset` bu ikkitasini `disabled`
-        // qiladi, lekin saqlangan qiymat boshqacha bo'lib qolgan taqdirda (masalan eski
-        // yozuv/parallel tuzatilayotgan backend yo'li) tanlov MUZLAB qolmasin — forma
-        // ochilganda majburiy qiymatga MAJBURLANADI, admin buzuq holatdan chiqa olmay
-        // qolmaydi.
-        registrationFields: detailQuery.data.hasPersonalityBattery
-          ? { ...resolvedFields, birthDate: 'Required', grade: 'Required' }
-          : resolvedFields,
       });
     }
   }, [open, isEdit, detailQuery.data, reset]);
@@ -107,11 +94,6 @@ export function ProgramFormDialog({ open, programId, onClose, onCreated }: Progr
   // qo'yiladi — backend `400 REGISTRATION_REQUIRED_FOR_BATTERY` bilan ajablantirmaydi.
   const programHasBattery = isEdit && (detailQuery.data?.hasPersonalityBattery ?? false);
 
-  // `registrationMode` jonli qiymati — `registrationFields` jadvalini `"None"` tanlanganda
-  // shu zahoti (saqlashni kutmasdan) o'chirish uchun (`useWatch`, `RegistrationPage.tsx`dagi
-  // React Compiler izohiga qarang: `watch()` o'rniga `useWatch` ataylab ishlatilgan).
-  const registrationModeValue = useWatch({ control, name: 'registrationMode' });
-
   async function submitValues(values: ProgramFormValues) {
     try {
       if (isEdit && programId) {
@@ -123,7 +105,6 @@ export function ProgramFormDialog({ open, programId, onClose, onCreated }: Progr
             displayOrder: values.displayOrder,
             visibility: values.visibility,
             registrationMode: values.registrationMode,
-            registrationFields: values.registrationFields,
           },
         });
         toast.show({ variant: 'success', title: t('programs.form.editSuccess') });
@@ -135,7 +116,6 @@ export function ProgramFormDialog({ open, programId, onClose, onCreated }: Progr
           displayOrder: values.displayOrder,
           visibility: values.visibility,
           registrationMode: values.registrationMode,
-          registrationFields: values.registrationFields,
         });
         toast.show({ variant: 'success', title: t('programs.form.createSuccess') });
         onCreated?.(created.id);
@@ -145,11 +125,9 @@ export function ProgramFormDialog({ open, programId, onClose, onCreated }: Progr
       const message =
         caught instanceof AppError && caught.code === 'REGISTRATION_REQUIRED_FOR_BATTERY'
           ? t('programs.errors.registrationRequiredForBattery')
-          : caught instanceof AppError && caught.code === 'REGISTRATION_FIELD_REQUIRED_FOR_BATTERY'
-            ? t('programs.errors.registrationFieldRequiredForBattery')
-            : caught instanceof AppError
-              ? caught.message
-              : t('programs.form.genericError');
+          : caught instanceof AppError
+            ? caught.message
+            : t('programs.form.genericError');
       toast.show({ variant: 'danger', title: message });
     }
   }
@@ -274,11 +252,6 @@ export function ProgramFormDialog({ open, programId, onClose, onCreated }: Progr
               ]}
               error={errors.registrationMode?.message}
               {...register('registrationMode')}
-            />
-            <RegistrationFieldsFieldset
-              control={control}
-              disabled={registrationModeValue === 'None'}
-              hasPersonalityBattery={programHasBattery}
             />
           </form>
         )}

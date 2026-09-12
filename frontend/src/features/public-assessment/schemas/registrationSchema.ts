@@ -1,9 +1,11 @@
 import { z } from 'zod';
 import { birthDateToIso, calculateAge, isValidCalendarDate } from '@/shared/lib/birthDate';
 import {
-  DEFAULT_REGISTRATION_FIELDS,
-  type RegistrationFields,
-} from '@/shared/api/registrationModeTypes';
+  REGISTRATION_FORM_DEFAULT_DEFINITION,
+  type RegistrationFormCoreFieldKey,
+  type RegistrationFormDefinition,
+} from '@/shared/api/registrationFormSettingsTypes';
+import { customFieldsRecordSchema, validateCustomFields } from '@/shared/lib/registrationFormFields';
 
 /**
  * E-2 anketa validatsiyasi — `docs/11` E-2, `prompts/20`. Yosh oralig'i va F.I.Sh. uzunligi
@@ -46,7 +48,7 @@ function validateFilledBirthDate(
   }
 }
 
-/** `registrationFields.birthDate === 'Required'` (standart) — hozirgi (o'zgarmagan) xatti-harakat. */
+/** `registrationForm.coreFields.birthDate.requirement === 'Required'` (standart). */
 const birthDateRequiredSchema = z
   .object({
     day: z.string().min(1, 'Kunni tanlang.'),
@@ -62,7 +64,7 @@ const birthDateRequiredSchema = z
   });
 
 /**
- * `registrationFields.birthDate === 'Optional' | 'Hidden'` — bo'sh qoldirish mumkin, lekin
+ * `registrationForm.coreFields.birthDate.requirement === 'Optional' | 'Hidden'` — bo'sh qoldirish mumkin, lekin
  * qisman to'ldirilsa (masalan faqat kun/oy tanlangan) xato beradi: yarim sana saqlanmasin.
  */
 const birthDateLenientSchema = z
@@ -152,40 +154,50 @@ const emailLenientSchema = z
 
 /**
  * `requiresAccessCode` maktab ma'lumotidan (`GET /schools/{slug}`) keladi — shu sabab sxema
- * dinamik quriladi (`RegistrationPage` `useMemo` bilan chaqiradi). `registrationFields` —
- * dasturning har bir shaxs maydoni uchun "Yashirin"/"Ixtiyoriy"/"Majburiy" sozlamasi (P52,
- * `docs/18` §9); berilmasa `DEFAULT_REGISTRATION_FIELDS` (hozirgi, P52dan oldingi xatti-harakat
- * — regressiya qulfi) ishlatiladi. `Hidden` maydon uchun ham "lenient" (bo'sh qoldirish mumkin)
- * sxema ishlatiladi — maydon UI'da ko'rsatilmagani sabab qiymati baribir bo'sh qoladi.
+ * dinamik quriladi (`RegistrationPage` `useMemo` bilan chaqiradi). `registrationForm` — GLOBAL
+ * ro'yxatdan o'tish formasi ta'rifi (P52 2-to'lqin, 2026-09-12, `docs/18` §9.6.2; dastur
+ * ustunligi allaqachon QO'LLANGAN — `programs[].registrationForm`); berilmasa
+ * `REGISTRATION_FORM_DEFAULT_DEFINITION` (hozirgi, P52 2-to'lqindan oldingi xatti-harakat bilan
+ * BAYT-BAYT bir xil — regressiya qulfi) ishlatiladi. `Hidden` maydon uchun ham "lenient" (bo'sh
+ * qoldirish mumkin) sxema ishlatiladi — maydon UI'da ko'rsatilmagani sabab qiymati baribir bo'sh
+ * qoladi. `customFields` — superadmin qo'shgan "o'z maydonlari" (`validateCustomFields`,
+ * `shared/lib/registrationFormFields.ts` — ikkala oqim UMUMIY, maktab oqimida MAJBURIYLIK
+ * har safar tekshiriladi, `requireMandatory` farqi YO'Q).
  */
 export function buildRegistrationSchema(
   requiresAccessCode: boolean,
-  registrationFields: RegistrationFields = DEFAULT_REGISTRATION_FIELDS,
+  registrationForm: RegistrationFormDefinition = REGISTRATION_FORM_DEFAULT_DEFINITION,
 ) {
-  const isRequired = (key: keyof RegistrationFields) => registrationFields[key] === 'Required';
+  const coreFields = registrationForm.coreFields;
+  const isRequired = (key: RegistrationFormCoreFieldKey) => coreFields[key].requirement === 'Required';
 
-  return z.object({
-    fullName: z
-      .string()
-      .trim()
-      .min(
-        MIN_FULLNAME_LENGTH,
-        `F.I.Sh. kamida ${String(MIN_FULLNAME_LENGTH)} belgidan iborat bo'lishi kerak.`,
-      ),
-    birthDate: isRequired('birthDate') ? birthDateRequiredSchema : birthDateLenientSchema,
-    gender: isRequired('gender') ? genderRequiredSchema : genderLenientSchema,
-    grade: isRequired('grade') ? gradeRequiredSchema : gradeLenientSchema,
-    classLetter: isRequired('classLetter') ? classLetterRequiredSchema : classLetterLenientSchema,
-    phone: isRequired('phone') ? phoneRequiredSchema : phoneLenientSchema,
-    parentPhone: isRequired('parentPhone') ? parentPhoneRequiredSchema : parentPhoneLenientSchema,
-    email: isRequired('email') ? emailRequiredSchema : emailLenientSchema,
-    consentAccepted: z
-      .boolean()
-      .refine((value) => value === true, { message: "Roziliksiz ro'yxatdan o'tib bo'lmaydi." }),
-    accessCode: requiresAccessCode
-      ? z.string().regex(new RegExp(`^\\d{${String(ACCESS_CODE_LENGTH)}}$`), '6 xonali kirish kodini kiriting.')
-      : z.string(),
-  });
+  return z
+    .object({
+      fullName: z
+        .string()
+        .trim()
+        .min(
+          MIN_FULLNAME_LENGTH,
+          `F.I.Sh. kamida ${String(MIN_FULLNAME_LENGTH)} belgidan iborat bo'lishi kerak.`,
+        ),
+      birthDate: isRequired('birthDate') ? birthDateRequiredSchema : birthDateLenientSchema,
+      gender: isRequired('gender') ? genderRequiredSchema : genderLenientSchema,
+      grade: isRequired('grade') ? gradeRequiredSchema : gradeLenientSchema,
+      classLetter: isRequired('classLetter') ? classLetterRequiredSchema : classLetterLenientSchema,
+      phone: isRequired('phone') ? phoneRequiredSchema : phoneLenientSchema,
+      parentPhone: isRequired('parentPhone') ? parentPhoneRequiredSchema : parentPhoneLenientSchema,
+      email: isRequired('email') ? emailRequiredSchema : emailLenientSchema,
+      consentAccepted: z
+        .boolean()
+        .refine((value) => value === true, { message: "Roziliksiz ro'yxatdan o'tib bo'lmaydi." }),
+      accessCode: requiresAccessCode
+        ? z.string().regex(new RegExp(`^\\d{${String(ACCESS_CODE_LENGTH)}}$`), '6 xonali kirish kodini kiriting.')
+        : z.string(),
+      customFields: customFieldsRecordSchema,
+    })
+    .superRefine((values, ctx) => {
+      validateCustomFields(registrationForm.customFields, values.customFields, ctx);
+    });
 }
 
 export type RegistrationFormValues = z.infer<ReturnType<typeof buildRegistrationSchema>>;
@@ -201,4 +213,5 @@ export const REGISTRATION_DEFAULT_VALUES: RegistrationFormValues = {
   email: '',
   consentAccepted: false,
   accessCode: '',
+  customFields: {},
 };
