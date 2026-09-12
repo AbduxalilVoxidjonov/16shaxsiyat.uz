@@ -82,12 +82,45 @@ public sealed record AdminStudentProfileDto(
     IReadOnlyList<AdminAssessmentSummaryDto> Assessments,
     AdminLatestAssessmentDto? LatestAssessment);
 
-/// <summary>`docs/07` 3.2-bo'lim `latestAssessment` — `results`/`aiAnalysis`/`aiHistory`.</summary>
+/// <summary>
+/// `docs/07` 3.2-bo'lim `latestAssessment` — `results`/`aiAnalysis`/`aiHistory`/`tests`/
+/// `hasPersonalityBattery`.
+///
+/// <para>
+/// ⚠️ **Egasi topgan kamchilik (2026-09-12) tuzatildi.** `Results`dagi `null` blok ikki
+/// BUTUNLAY boshqa holatni ajrata olmasdi: (1) test bu sessiyada BOR, lekin hali hisoblanmagan;
+/// (2) test bu dasturda umuman YO'Q. Admin profili ikkalasini ham "Hali natija yo'q" deb
+/// bir xil ko'rsatardi — so'rovnoma-only sessiyada (shaxsiyat batareyasisiz) 16 tip
+/// diagrammalari va "hisoblanmagan" degan taassurot bergan xato ekran chiqardi.
+/// <see cref="Tests"/> — shu sessiyaga biriktirilgan HAMMA test blokining ro'yxati
+/// (`DisplayOrder` bo'yicha), mijoz shundan "bu test umuman yo'q" (ro'yxatda yo'q) bilan
+/// "bor-u hali hisoblanmagan" (ro'yxatda bor, natija bloki `null`) holatlarini ajratadi.
+/// <see cref="HasPersonalityBattery"/> — <see cref="StudentRoadMap.Domain.Catalog.PersonalityBattery"/>
+/// domen qoidasidan (`Kind == Standard &amp;&amp; ScoringMode == Scored`), kod ro'yxatidan EMAS —
+/// `AdminProgramDetailDto.HasPersonalityBattery`/`GetSessionStateResult.HasPersonalityBattery`
+/// bilan BIR XIL manba.
+/// </para>
+/// </summary>
 public sealed record AdminLatestAssessmentDto(
     Guid Id,
     AdminTestResultsDto Results,
     AdminAiAnalysisDto? AiAnalysis,
-    IReadOnlyList<AdminAiHistoryItemDto> AiHistory);
+    IReadOnlyList<AdminAiHistoryItemDto> AiHistory,
+    IReadOnlyList<AdminLatestAssessmentTestItemDto> Tests,
+    bool HasPersonalityBattery);
+
+/// <summary>
+/// `docs/07` 3.2-bo'lim `latestAssessment.tests[]` elementi — sessiyaga biriktirilgan bitta
+/// test bloki. `Code`/`ScoringMode` — `TestDefinition`dan, `Status` — `AssessmentTest.Status`dan
+/// (`docs/07` 3.3-bo'limdagi `AdminAssessmentTestItemDto` bilan bir xil atama, lekin bu yerda
+/// faqat "bor/yo'q va holati" kerak, savol soni emas — shu sabab qisqaroq shakl).
+/// `scale`/`scaleDirection` bu yerda ham YO'Q (`CLAUDE.md` 9-band).
+/// </summary>
+public sealed record AdminLatestAssessmentTestItemDto(
+    string Code,
+    string NameUz,
+    string Status,
+    string ScoringMode);
 
 /// <summary>
 /// Har test — mavjud bo'lsagina to'ldiriladi (o'quvchi hali yechmagan test `null`).

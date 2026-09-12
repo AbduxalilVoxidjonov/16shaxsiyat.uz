@@ -926,10 +926,39 @@ lastAssessmentAt`
       "attentionFlags":[{"code":"LOW_MOTIVATION","message":"…","severity":"attention"}],
       "reliabilityNote":null,"disclaimer":"…"
     },
-    "aiHistory": [ { "id":"…","provider":"OpenAi","createdAt":"…","status":"Succeeded","isCurrent":false } ]
+    "aiHistory": [ { "id":"…","provider":"OpenAi","createdAt":"…","status":"Succeeded","isCurrent":false } ],
+    "tests": [
+      { "code":"MBTI16","nameUz":"MBTI-16 shaxsiyat testi","status":"Completed","scoringMode":"Scored" },
+      { "code":"BIG5","nameUz":"Big Five shaxsiyat xususiyatlari","status":"Completed","scoringMode":"Scored" },
+      { "code":"RIASEC","nameUz":"Kasbiy qiziqishlar (RIASEC)","status":"Completed","scoringMode":"Scored" },
+      { "code":"ACTIVITY","nameUz":"Aktivlik va motivatsiya","status":"Completed","scoringMode":"Scored" }
+    ],
+    "hasPersonalityBattery": true
   }
 }
 ```
+
+#### `latestAssessment.tests[]` / `hasPersonalityBattery` (P52, 2026-09-12 — egasi topgan kamchilik)
+
+> **Muammo:** `results`dagi `null` blok ikki BUTUNLAY boshqa holatni ajrata olmasdi —
+> (1) test sessiyada BOR, lekin hali hisoblanmagan (masalan `Analyzing` holatida); (2) test bu
+> dasturda umuman YO'Q (masalan sessiyada faqat so'rovnoma bo'lgan). Ikkalasi ham `null` bo'lib
+> kelardi, mijoz esa har doim "Hali natija yo'q" deb ko'rsatardi — so'rovnoma-only sessiyada ham
+> shaxsiyat tipi/16 tip diagrammalari bo'sh holatda chiqib ketardi.
+
+- **`tests[]`** — shu sessiyaga biriktirilgan HAMMA test bloki, `AssessmentTest.DisplayOrder`
+  bo'yicha (bazadagi haqiqiy tartib, `TestDefinition.DisplayOrder` EMAS). `code`/`nameUz` —
+  `TestDefinition`dan; `status` — `AssessmentTest.Status` (`NotStarted`/`InProgress`/`Completed`);
+  `scoringMode` — `TestDefinition.ScoringMode` (`Scored`/`Survey`, `AdminAssessmentTestItemDto`dagi
+  bilan bir xil atama, 3.3-bo'lim). Mijoz shu ro'yxatdan "bu test umuman yo'q" (kod ro'yxatda yo'q)
+  bilan "bor-u hali hisoblanmagan" (kod bor, `results`dagi mos blok `null`) holatlarini ajratadi.
+- **`hasPersonalityBattery`** — sessiyada kamida bitta ilmiy shaxsiyat batareyasi bloki bormi
+  (`Domain.Catalog.PersonalityBattery.Includes`: `Kind == Standard && ScoringMode == Scored`),
+  **test kodi ro'yxatidan EMAS** — `AdminProgramDetailDto.HasPersonalityBattery`/
+  `GetSessionStateResult.HasPersonalityBattery` bilan BIR XIL manba. `false` bo'lsa mijoz
+  shaxsiyat tipi/yetuklik/diagrammalar bo'limlarini UMUMAN ko'rsatmasligi kerak (ular hech qachon
+  hisoblanmaydi), `true` bo'lsa `results`dagi tegishli bloklar `null` bo'lishi "hali
+  hisoblanmagan" (masalan sessiya hali `Analyzing`) degani.
 
 #### `latestAssessment.results` — KALIT NOMLARI (shartnoma)
 

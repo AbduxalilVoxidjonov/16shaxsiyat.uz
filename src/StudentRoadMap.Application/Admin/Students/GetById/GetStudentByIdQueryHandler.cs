@@ -1,6 +1,7 @@
 using MediatR;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
+using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Common;
 
 namespace StudentRoadMap.Application.Admin.Students.GetById;
@@ -91,11 +92,42 @@ internal sealed class GetStudentByIdQueryHandler : IRequestHandler<GetStudentByI
 
             var currentAiAnalysis = aiAnalyses.FirstOrDefault(a => a.IsCurrent);
 
+            // Sessiyaga biriktirilgan HAMMA test bloki — `assessment_tests` + `test_definitions`ga
+            // BITTA `JOIN` (`GetAssessmentByIdQueryHandler`dagi bilan bir xil naqsh, N+1 yo'q,
+            // qo'shimcha so'rov soni sessiyadagi test soniga bog'liq emas). Shundan `tests[]` va
+            // `hasPersonalityBattery` (domen qoidasi, kod ro'yxati EMAS) IKKALASI HAM chiqadi.
+            var testRows = await _executor.ToListAsync(
+                from t in _context.AsNoTracking(_context.AssessmentTests)
+                where t.AssessmentId == latestAssessment.Id
+                join d in _context.TestDefinitions on t.TestDefinitionId equals d.Id
+                orderby t.DisplayOrder
+                select new
+                {
+                    d.Code,
+                    d.NameUz,
+                    d.Kind,
+                    d.ScoringMode,
+                    t.Status,
+                },
+                cancellationToken).ConfigureAwait(false);
+
+            var latestAssessmentTests = testRows
+                .Select(t => new AdminLatestAssessmentTestItemDto(
+                    t.Code,
+                    t.NameUz,
+                    t.Status.ToString(),
+                    t.ScoringMode.ToString()))
+                .ToList();
+
+            var hasPersonalityBattery = testRows.Any(t => PersonalityBattery.Includes(t.Kind, t.ScoringMode));
+
             latestAssessmentDto = new AdminLatestAssessmentDto(
                 latestAssessment.Id,
                 results,
                 StudentProfileMapping.BuildAiAnalysis(currentAiAnalysis),
-                StudentProfileMapping.BuildAiHistory(aiAnalyses));
+                StudentProfileMapping.BuildAiHistory(aiAnalyses),
+                latestAssessmentTests,
+                hasPersonalityBattery);
         }
 
         var profile = new AdminStudentProfileDto(studentDto, assessmentDtos, latestAssessmentDto);
