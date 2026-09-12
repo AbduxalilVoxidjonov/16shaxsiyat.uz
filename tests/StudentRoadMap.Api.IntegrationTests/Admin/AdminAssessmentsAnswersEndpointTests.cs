@@ -9,6 +9,7 @@ using StudentRoadMap.Application.Admin.Assessments;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Identity.Login;
 using StudentRoadMap.Domain.Assessments;
+using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Students;
 using StudentRoadMap.Infrastructure.Persistence;
 
@@ -127,5 +128,105 @@ public sealed class AdminAssessmentsAnswersEndpointTests : IClassFixture<PublicA
         var raw = await client.GetStringAsync(new Uri($"/api/admin/assessments/{assessment.Id}/answers", UriKind.Relative));
         raw.Should().Contain("\"scaleDirection\"");
         raw.Should().Contain("\"effectiveValue\"");
+    }
+
+    /// <summary>
+    /// Egasi topgan kamchilik (2026-09-12): `Survey` (so'rovnoma) javoblari — `MultiChoice`
+    /// variant matnlari, matn javoblari, va Likert semantikasiga oid maydonlarning `null`
+    /// bo'lishi (nol/soxta `false` EMAS). Haqiqiy DB (EF Core) orqali — real proyeksiya va
+    /// jsonb serializatsiya to'g'ri ishlashini tekshiradi.
+    /// </summary>
+    [Fact]
+    public async Task GetAnswers_SorovnomaJavoblari_VariantMatniVaMatnJavobiToLiqQaytadiVaLikertMaydonlariNullBoLadi()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var now = DateTimeOffset.UtcNow;
+
+        var scoredTest = await TestDataFactory.CreatePublishedTestAsync(db, now, "SRV-SCORED", 1, questionCount: 2);
+
+        var surveyTestId = Guid.NewGuid();
+        var surveyTest = TestDefinition.Create(
+            surveyTestId, "SRV-SURVEY", "So'rovnoma bloki", displayOrder: 2, estimatedMinutes: 3,
+            scoringStrategyCode: null, now: now, scoringMode: TestScoringMode.Survey);
+        var multiChoiceQuestion = Question.Create(
+            Guid.NewGuid(), surveyTestId, "SRV-Q1", 1, "Qaysi fanlarga qiziqasiz?",
+            QuestionType.MultiChoice, "SURVEY", scaleDirection: 1, weight: 1.0m);
+        var textQuestion = Question.Create(
+            Guid.NewGuid(), surveyTestId, "SRV-Q2", 2, "Maktab va sinf",
+            QuestionType.ShortText, "SURVEY", scaleDirection: 1, weight: 1.0m);
+        surveyTest.AddQuestion(multiChoiceQuestion, now);
+        surveyTest.AddQuestion(textQuestion, now);
+        surveyTest.Publish(now);
+        multiChoiceQuestion.AddOption(AnswerOption.Create(Guid.NewGuid(), multiChoiceQuestion.Id, "Ingliz tili", 1, 1));
+        multiChoiceQuestion.AddOption(AnswerOption.Create(Guid.NewGuid(), multiChoiceQuestion.Id, "Nemis tili", 2, 2));
+        multiChoiceQuestion.AddOption(AnswerOption.Create(Guid.NewGuid(), multiChoiceQuestion.Id, "Matematika", 3, 3));
+        db.TestDefinitions.Add(surveyTest);
+
+        var school = await TestDataFactory.CreateSchoolAsync(db, now, "assess-answers-survey", TestDataFactory.NewAccessToken("assess-answers-survey"));
+        var phone = PhoneNumber.Create("+998907773002").Value;
+        var student = Student.Create(Guid.NewGuid(), school.Id, "Yusupova Malika Alisherovna", new DateOnly(2008, 5, 5), Gender.Female, 10, phone, now, now);
+        db.Students.Add(student);
+
+        var programId = await TestDataFactory.GetOrCreateDefaultProgramIdAsync(db, now);
+        var assessment = Assessment.Create(Guid.NewGuid(), student.Id, school.Id, "assess-answers-survey-session-0123456789ab", "uz", programId, now.AddMinutes(-30), now.AddDays(7), now);
+        var assessmentTestScored = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, scoredTest.Id, 1, totalCount: 2);
+        var assessmentTestSurvey = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, surveyTestId, 2, totalCount: 2);
+        assessment.AddTest(assessmentTestScored);
+        assessment.AddTest(assessmentTestSurvey);
+
+        var scoredQuestions = await db.Questions.AsNoTracking().Where(q => q.TestDefinitionId == scoredTest.Id).OrderBy(q => q.DisplayOrder).ToListAsync();
+
+        assessment.StartTest(scoredTest.Id, now.AddMinutes(-30));
+        assessmentTestScored.UpsertAnswer(Guid.NewGuid(), scoredQuestions[0].Id, 4, null, 1200, now.AddMinutes(-29));
+        assessmentTestScored.UpsertAnswer(Guid.NewGuid(), scoredQuestions[1].Id, 3, null, 1300, now.AddMinutes(-28));
+
+        assessment.StartTest(surveyTestId, now.AddMinutes(-20));
+        // Saqlangan tartib ATAYLAB variantlar ro'yxati tartibidan (1,2,3) farqli — 3 keyin 1.
+        assessmentTestSurvey.UpsertAnswer(Guid.NewGuid(), multiChoiceQuestion.Id, null, null, 4200, now.AddMinutes(-19), selectedValues: [3, 1]);
+        assessmentTestSurvey.UpsertAnswer(Guid.NewGuid(), textQuestion.Id, null, null, 6000, now.AddMinutes(-18), textValue: "45-maktab, 9-sinf");
+
+        db.Assessments.Add(assessment);
+        await db.SaveChangesAsync();
+
+        using var client = await AuthenticatedClientAsync("assessments-answers-survey-admin");
+
+        var response = await client.GetFromJsonAsync<AdminAssessmentAnswersDto>(
+            $"/api/admin/assessments/{assessment.Id}/answers", TestJson.Options);
+
+        response!.Answers.Should().HaveCount(4);
+
+        var multiChoiceRow = response.Answers.Single(a => a.QuestionId == multiChoiceQuestion.Id);
+        multiChoiceRow.ScoringMode.Should().Be("Survey");
+        multiChoiceRow.SelectedValues.Should().Equal(3, 1);
+        multiChoiceRow.SelectedOptionTexts.Should().Equal("Matematika", "Ingliz tili");
+        multiChoiceRow.RawValue.Should().BeNull();
+        // Likert semantikasiga oid maydonlar — `Survey` qatorda `null` ("qo'llanilmaydi"),
+        // `0`/`false` EMAS (egasi topgan kamchilik).
+        multiChoiceRow.EffectiveValue.Should().BeNull();
+        multiChoiceRow.IsFastAnswer.Should().BeNull();
+
+        var textRow = response.Answers.Single(a => a.QuestionId == textQuestion.Id);
+        textRow.ScoringMode.Should().Be("Survey");
+        textRow.TextValue.Should().Be("45-maktab, 9-sinf");
+        textRow.SelectedOptionTexts.Should().BeNull();
+        textRow.EffectiveValue.Should().BeNull();
+        textRow.IsFastAnswer.Should().BeNull();
+
+        var scoredRows = response.Answers.Where(a => a.TestCode == "SRV-SCORED").ToList();
+        scoredRows.Should().HaveCount(2);
+        scoredRows.Should().OnlyContain(a => a.ScoringMode == "Scored");
+        scoredRows.Should().OnlyContain(a => a.EffectiveValue != null && a.IsFastAnswer != null);
+
+        // `docs/03` §7: `Survey` bloklari ishonchlilik hisobiga KIRMAYDI — sessiya signali
+        // faqat 2 ta `Scored` javobni sanaydi (4 EMAS).
+        response.Session.AnsweredCount.Should().Be(2, "`Survey` javoblari ishonchlilik hisobiga kirmaydi");
+
+        // XOM JSON — `effectiveValue`/`isFastAnswer` `Survey` qatorlarda `0`/`false` EMAS,
+        // `null` bo'lishi harfma-harf tekshiriladi (`ReadFromJsonAsync` kalit farqini ko'rmaydi).
+        var raw = await client.GetStringAsync(new Uri($"/api/admin/assessments/{assessment.Id}/answers", UriKind.Relative));
+        raw.Should().Contain("\"selectedOptionTexts\":[\"Matematika\",\"Ingliz tili\"]");
+        raw.Should().Contain("\"scoringMode\":\"Survey\"");
+        raw.Should().Contain("\"scoringMode\":\"Scored\"");
     }
 }

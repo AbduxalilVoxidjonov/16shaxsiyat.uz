@@ -163,9 +163,33 @@ public sealed record AdminAssessmentAnswersDto(
 /// P52 (`docs/18` §2.1/§2.7): `RawValue` endi `int?` — `ShortText`/`LongText`/`Phone`
 /// javoblari `TextValue`da, `MultiChoice` javoblari `SelectedValues`da (bo'sh bo'lsa
 /// `null` — tanlov yo'q). Bitta savolda uchtadan FAQAT bittasi to'ldirilgan bo'ladi
-/// (`Answer` shakl invarianti). `EffectiveValue`/`ScaleDirection`/`Weight` matn/ko'p tanlov
-/// javoblari uchun MA'NOSIZ (`Scale = "SURVEY"`, `Direction = 1`) — bunday qatorlarda
-/// `EffectiveValue` shunchaki `0`.
+/// (`Answer` shakl invarianti).
+/// </para>
+/// <para>
+/// ⚠️ **Egasi topgan kamchilik (2026-09-12) tuzatildi.** Ilgari `MultiChoice` javobida
+/// faqat xom `SelectedValues` (`[1, 3]`) ko'rinardi — admin qaysi variant tanlanganini
+/// BILOLMASDI. <see cref="SelectedOptionTexts"/> — har bir tanlangan qiymatning
+/// <c>AnswerOption.TextUz</c> matni, `SelectedValues` bilan BIR XIL tartibda. Variant
+/// (masalan savol keyinchalik tahrirlanib, variant o'chirilgan bo'lsa) topilmasa —
+/// YIQILMAYDI, o'rniga "Noma'lum variant (qiymat: N)" zaxira matni qo'yiladi (bu real
+/// holat: eski javob variant o'chirilgandan keyin ham qoladi).
+/// </para>
+/// <para>
+/// ⚠️ **`EffectiveValue`/`IsFastAnswer` — `Scored` qatorlarda `null` EMAS, `Survey`
+/// qatorlarda `null`.** Ilgari `Survey` (matn/ko'p tanlov) javoblarida `EffectiveValue`
+/// shunchaki `0` edi — bu "javobning qiymati 0" deb NOTO'G'RI o'qilishi mumkin edi
+/// (egasi topgan kamchilik, 2026-09-12). Endi ikkalasi ham Likert semantikasiga oid — ular
+/// FAQAT `ScoringMode = "Scored"` qatorlarda ma'noli, `Survey` qatorlarda `null`
+/// ("qo'llanilmaydi", nol EMAS). `ScaleDirection`/`Weight` (matn/ko'p tanlov javoblari
+/// uchun ma'nosiz standart qiymat, `Scale = "SURVEY"`) o'zgarishsiz qoladi — ularni
+/// aniqlash uchun mijoz <see cref="ScoringMode"/> maydoniga qaraydi.
+/// </para>
+/// <para>
+/// <see cref="ScoringMode"/> — `"Scored"` | `"Survey"` (`AdminAssessmentTestItemDto.ScoringMode`
+/// bilan bir xil satr, egasi topgan kamchilik, 2026-09-12): javob QAYSI test blokidan
+/// ekanini bilish uchun mijoz `tests[]` ro'yxati bilan ustma-ust solishtirmasin — belgi
+/// javobning O'ZIDA bo'lsin, shunda `scale`/`scaleDirection`/`weight` ustunlarini
+/// yashirish oddiy bo'ladi.
 /// </para>
 /// </summary>
 public sealed record AdminAssessmentAnswerDto(
@@ -175,16 +199,18 @@ public sealed record AdminAssessmentAnswerDto(
     string QuestionText,
     int? RawValue,
     string? SelectedOptionText,
+    IReadOnlyList<string>? SelectedOptionTexts,
     int DurationMs,
     int RevisionCount,
     DateTimeOffset AnsweredAt,
     string QuestionType,
+    string ScoringMode,
     string Scale,
     string? ScaleNameUz,
     int ScaleDirection,
     decimal Weight,
-    int EffectiveValue,
-    bool IsFastAnswer,
+    int? EffectiveValue,
+    bool? IsFastAnswer,
     int? StraightLiningBlockIndex,
     string? TextValue,
     IReadOnlyList<int>? SelectedValues);

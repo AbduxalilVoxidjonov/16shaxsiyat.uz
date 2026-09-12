@@ -295,6 +295,31 @@ Holatlar:
 Ro'yxat + holat filtri. Detal sahifasi profil bilan bir xil, qo'shimcha "Xom javoblar"
 bo'limi (savol · javob · vaqt) — audit uchun.
 
+**"Xom javoblar" bo'limi — `Survey` (so'rovnoma) bloklarini ham ko'rsatadi** (egasi topgan
+kamchilik, 2026-09-12): ilgari bu jadval faqat Likert javoblari uchun mo'ljallangan edi —
+`MultiChoice` javobida admin xom `[1, 3]` ko'rar, matn/telefon javoblarida esa ustunlar bo'sh
+qolardi. Endi bitta jadval HAR ikkala turdagi (`Scored`/`Survey`) test blokini bir xil qatorda
+ko'rsatadi, `AdminAssessmentAnswerDto.scoringMode` bo'yicha farqlanadi:
+
+- **`rawValue`** (Likert/`SingleChoice`/`ForcedChoice`) — sonli qiymat ustunida.
+- **`textValue`** (`ShortText`/`LongText`/`Phone`) — matn ustunida, o'zgarmagan holda.
+- **`selectedValues` + `selectedOptionTexts`** (`MultiChoice`) — ikkinchisi ustuvor: admin
+  `[1, 3]` emas, **"Ingliz tili, Matematika"** ko'radi (vergul bilan birlashtirilgan matnlar,
+  `selectedValues` bilan BIR XIL tartibda). Variant o'chirilgan bo'lsa (`selectedOptionTexts`
+  elementi `"Noma'lum variant (qiymat: N)"` ko'rinishida keladi) — shu matn qizg'ish rangda,
+  tushuntirish bilan ko'rsatiladi (o'chirilgan variant, xato emas).
+- **`scale`/`scaleDirection`/`weight`/`effectiveValue` ustunlari** — `scoringMode = "Survey"`
+  qatorlarda **ko'rsatilmaydi** (bo'sh katak yoki `—`), chunki ular so'rovnoma uchun ma'nosiz.
+  Mijoz buni `scoringMode` maydoniga qarab hal qiladi, `scale === "SURVEY"` satrini QIYOSLAB
+  EMAS.
+- **`effectiveValue`/`isFastAnswer`** `Survey` qatorlarda `null` — jadvalda shunchaki bo'sh
+  ("—"), `0`/"Yo'q" deb KO'RSATILMAYDI (bu "javobning qiymati 0" degan noto'g'ri taassurot
+  qoldirardi).
+- **Ishonchlilik signallari** (`session.answeredCount`, `fastAnswerCount`,
+  `straightLiningBlockCount` va h.k., sahifa yuqorisidagi banner) `Survey` javoblarini
+  HISOBGA OLMAYDI — `docs/03` §7 bo'yicha bu bloklar ballanmaydi, demak ishonchlilikka ham
+  kirmaydi. UI bu sonlarni O'ZGARTIRMAY ko'rsatadi (qayta hisoblamaydi).
+
 ### A-7 AI sozlamalari (`/admin/ai`)
 - 3 ta provider kartasi: nomi, holat belgisi (kalit bor/yo'q, faol/nofaol), model, "Default" belgisi.
 - Kalit maydoni: `password` tipi, saqlangandan keyin `AIza••••7f2b` ko'rinishida.

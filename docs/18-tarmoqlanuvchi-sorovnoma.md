@@ -844,3 +844,46 @@ Hidden/Optional/Required, standart bilan bayt-bayt regressiya),
 e'tiborsiz, Required bo'sh → 400, tur bo'yicha validatsiya, `ProfileExtra`ga yozilishi),
 `PublicUsers/StartPublicSessionCustomFieldsEndpointTests.cs` (Telegram oqimida `customFields`,
 ENG MUHIMI: ikkinchi sessiyada hech qanday maydon — o'z maydoni ham — qayta so'ralmasligi).
+
+## 10. Admin audit jadvali — egasi topgan kamchilik (2026-09-12)
+
+### 10.0 Muammo
+
+Admin o'quvchi profilidagi "Xom javoblar" bo'limi (`GET /api/admin/assessments/{id}/answers`,
+`docs/07` §3.3) Likert testlari uchun qurilgan edi — `Survey` (so'rovnoma) javoblari to'liq
+ko'rinmasdi: `MultiChoice` javobida admin xom `[1, 3]` ko'rar (variant MATNLARI yo'q edi),
+`effectiveValue`/`isFastAnswer` esa `Survey` qatorlarda ma'nosiz `0`/`false` edi ("javob 0"
+deb noto'g'ri o'qilishi mumkin edi).
+
+### 10.1 Tuzatish
+
+`AdminAssessmentAnswerDto` (`Application/Admin/Assessments/AdminAssessmentDtos.cs`):
+
+- **`SelectedOptionTexts: IReadOnlyList<string>?`** — yangi maydon. `MultiChoice` javobidagi
+  har bir tanlangan qiymatning `AnswerOption.TextUz` matni, `SelectedValues` bilan BIR XIL
+  tartibda. Variant o'chirilgan bo'lsa (savol keyin tahrirlanib, variant olib tashlangan) —
+  YIQILMAYDI, o'rniga `"Noma'lum variant (qiymat: N)"` zaxira matni. Batch: variant matnlari
+  bitta qo'shimcha SQL so'rovi bilan (savol ID'lari bo'yicha) yuklanadi — javob/savol soniga
+  BOG'LIQ EMAS (ADR-11).
+- **`EffectiveValue`/`IsFastAnswer` endi `int?`/`bool?`** — `Scored` qatorlarda avvalgidek
+  to'ldirilgan, `Survey` qatorlarda `null` ("qo'llanilmaydi", `0`/`false` EMAS).
+  `StraightLiningBlockIndex` allaqachon (P52 A2) to'g'ri `null` edi — o'zgarmadi.
+- **`ScoringMode: string`** — yangi maydon (`"Scored"` | `"Survey"`,
+  `AdminAssessmentTestItemDto.ScoringMode` bilan bir xil satr): javob QAYSI test blokidan
+  ekanini bilish uchun mijoz `tests[]` ro'yxati bilan solishtirmasin.
+
+`GetAssessmentAnswersQueryHandler` — `docs/03` §7 qoidasi (`Survey` bloklari ishonchlilik
+hisobiga kirmaydi) BUZILMAGANI tasdiqlangan: `session`/`scales` signallari o'zgarishsiz faqat
+`IsScored` qatorlar ustida hisoblanadi.
+
+To'liq shartnoma — `docs/07-api-shartnoma.md` §3.3 (`answers` javob shakli), UI tomoni —
+`docs/11-ux-va-ekranlar.md` A-6 bo'limi.
+
+### 10.2 Testlar
+
+`tests/StudentRoadMap.Application.Tests/Admin/Assessments/GetAssessmentAnswersQueryHandlerTests.cs`
+(`MultiChoice` variant matnlari va tartibi, o'chirilgan variant zaxira matni, `ShortText`/
+`LongText`/`Phone` `textValue`, `Scored` qator regressiyasi, batch so'rov soni savol soniga
+bog'liq emasligi) va `tests/StudentRoadMap.Api.IntegrationTests/Admin/
+AdminAssessmentsAnswersEndpointTests.cs` (`GetAnswers_SorovnomaJavoblari_...` — haqiqiy DB
+orqali, `session.answeredCount` faqat `Scored` javoblarni sanashi).

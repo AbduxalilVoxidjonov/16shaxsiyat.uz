@@ -68,6 +68,7 @@ internal sealed class GetAssessmentAnswersQueryHandler : IRequestHandler<GetAsse
         string? TextValue,
         IReadOnlyList<int> SelectedValues,
         string? SelectedOptionText,
+        IReadOnlyList<string>? SelectedOptionTexts,
         int DurationMs,
         int RevisionCount,
         DateTimeOffset AnsweredAt,
@@ -150,19 +151,23 @@ internal sealed class GetAssessmentAnswersQueryHandler : IRequestHandler<GetAsse
                 r.QuestionText,
                 r.RawValue,
                 r.SelectedOptionText,
+                r.SelectedOptionTexts,
                 r.DurationMs,
                 r.RevisionCount,
                 r.AnsweredAt,
                 r.QuestionType.ToString(),
+                r.IsScored ? nameof(TestScoringMode.Scored) : nameof(TestScoringMode.Survey),
                 r.Scale,
                 r.ScaleNameUz,
                 r.ScaleDirection,
                 r.Weight,
-                // `EffectiveValue` (teskari tuzatilgan Likert qiymati) faqat `Scored` qatorlarda
-                // ma'noli — `Survey` (matn/ko'p tanlov) javoblarida `Scale`/`Direction` shunchaki
-                // standart qiymat (`docs/18` §2.3), hisoblash yasama natija beradi (P52 A2).
-                r.IsScored ? EffectiveValueOf(r) : 0,
-                r.DurationMs < ScoringConstants.FastAnswerDurationThresholdMs,
+                // Egasi topgan kamchilik (2026-09-12): `EffectiveValue`/`IsFastAnswer` Likert
+                // semantikasiga oid — `Survey` (matn/ko'p tanlov) qatorlarda `Scale`/`Direction`
+                // shunchaki standart qiymat (`docs/18` §2.3), hisoblash yasama natija berardi
+                // (avval `0`/xato bool — "javob 0" deb noto'g'ri o'qilishi mumkin edi). Endi
+                // `null` — "qo'llanilmaydi", nol EMAS.
+                r.IsScored ? EffectiveValueOf(r) : null,
+                r.IsScored ? r.DurationMs < ScoringConstants.FastAnswerDurationThresholdMs : null,
                 blockIndexByQuestionId.TryGetValue(r.QuestionId, out var blockIndex) ? blockIndex : null,
                 r.TextValue,
                 r.SelectedValues.Count > 0 ? r.SelectedValues : null))
@@ -390,6 +395,20 @@ internal sealed class GetAssessmentAnswersQueryHandler : IRequestHandler<GetAsse
                 cancellationToken).ConfigureAwait(false);
         var optionTextById = options.ToDictionary(o => o.Id, o => o.TextUz);
 
+        // Egasi topgan kamchilik (2026-09-12): `MultiChoice` javobida admin faqat xom
+        // `SelectedValues` (`[1, 3]`) ko'rar edi — variant MATNLARI ko'rinmasdi. Bitta batch
+        // so'rov (savol ID'lari bo'yicha) — ADR-11, javob/savol soniga qaramay doim bitta
+        // qo'shimcha so'rov.
+        var multiChoiceQuestionIds = answers.Where(a => a.SelectedValues.Count > 0).Select(a => a.QuestionId).Distinct().ToList();
+        var multiChoiceOptions = multiChoiceQuestionIds.Count == 0
+            ? []
+            : await _executor.ToListAsync(
+                _context.AsNoTracking(_context.AnswerOptions)
+                    .Where(o => multiChoiceQuestionIds.Contains(o.QuestionId))
+                    .Select(o => new { o.QuestionId, o.Value, o.TextUz }),
+                cancellationToken).ConfigureAwait(false);
+        var multiChoiceOptionTextByKey = multiChoiceOptions.ToDictionary(o => (o.QuestionId, o.Value), o => o.TextUz);
+
         var testByAssessmentTestId = assessmentTests.ToDictionary(t => t.Id);
 
         var rows = new List<AnswerRow>(answers.Count);
@@ -403,6 +422,17 @@ internal sealed class GetAssessmentAnswersQueryHandler : IRequestHandler<GetAsse
 
             var definition = testDefinitionById.GetValueOrDefault(assessmentTest.TestDefinitionId);
             var resolver = resolverByTestDefinitionId.GetValueOrDefault(assessmentTest.TestDefinitionId, CatalogScaleNameResolver.None);
+
+            // Variant o'chirilgan bo'lishi mumkin (savol tahrirlanib, superadmin variantni
+            // olib tashlagan) — eski javob baribir qoladi. Bunday holatda YIQILMAYDI, o'rniga
+            // tushunarli zaxira matn qo'yiladi.
+            IReadOnlyList<string>? selectedOptionTexts = answer.SelectedValues.Count == 0
+                ? null
+                : answer.SelectedValues
+                    .Select(value => multiChoiceOptionTextByKey.TryGetValue((answer.QuestionId, value), out var text)
+                        ? text
+                        : $"Noma'lum variant (qiymat: {value})")
+                    .ToList();
 
             rows.Add(new AnswerRow(
                 answer.QuestionId,
@@ -427,6 +457,7 @@ internal sealed class GetAssessmentAnswersQueryHandler : IRequestHandler<GetAsse
                 answer.TextValue,
                 answer.SelectedValues,
                 answer.SelectedOptionId.HasValue ? optionTextById.GetValueOrDefault(answer.SelectedOptionId.Value) : null,
+                selectedOptionTexts,
                 answer.DurationMs,
                 answer.RevisionCount,
                 answer.AnsweredAt,

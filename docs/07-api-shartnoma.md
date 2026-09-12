@@ -1100,10 +1100,19 @@ O'girish backend'da bir joyda: `StudentProfileMapping.RiasecScaleToLetter`
     { "questionId": "…", "questionCode": "BIG5-Q17", "testCode": "BIG5",
       "questionText": "Rejalarimni oxirigacha yetkazaman",
       "rawValue": 5, "textValue": null, "selectedValues": null, "selectedOptionText": null,
+      "selectedOptionTexts": null,
       "durationMs": 820, "revisionCount": 0, "answeredAt": "2026-08-30T09:11:02Z",
-      "questionType": "Likert5",
+      "questionType": "Likert5", "scoringMode": "Scored",
       "scale": "C", "scaleNameUz": "Vijdonlilik", "scaleDirection": -1, "weight": 1.0,
-      "effectiveValue": 1, "isFastAnswer": true, "straightLiningBlockIndex": null }
+      "effectiveValue": 1, "isFastAnswer": true, "straightLiningBlockIndex": null },
+    { "questionId": "…", "questionCode": "Q2B_3", "testCode": "INTELLECT-SURVEY",
+      "questionText": "Qaysi fanlarga qiziqasiz?",
+      "rawValue": null, "textValue": null, "selectedValues": [3, 1], "selectedOptionText": null,
+      "selectedOptionTexts": ["Matematika", "Ingliz tili"],
+      "durationMs": 4200, "revisionCount": 0, "answeredAt": "2026-08-30T09:19:00Z",
+      "questionType": "MultiChoice", "scoringMode": "Survey",
+      "scale": "SURVEY", "scaleNameUz": null, "scaleDirection": 1, "weight": 1.0,
+      "effectiveValue": null, "isFastAnswer": null, "straightLiningBlockIndex": null }
   ],
   "session": { "answeredCount": 190, "fastAnswerCount": 12, "straightLiningBlockCount": 1,
                "allSameAnswer": false, "shortSession": false, "totalDurationSeconds": 1740,
@@ -1130,8 +1139,27 @@ O'girish backend'da bir joyda: `StudentProfileMapping.RiasecScaleToLetter`
 
 > **P52** (`docs/18` §2.1/§2.7): `rawValue` endi `int?` — `ShortText`/`LongText`/`Phone`
 > javoblari `textValue`da, `MultiChoice` javoblari `selectedValues[]`da (bo'sh bo'lsa
-> `null`). Bitta savolda uchtadan FAQAT bittasi to'ldirilgan bo'ladi. `Survey` (matn/ko'p
-> tanlov) javoblarida `effectiveValue` shunchaki `0` (ma'nosiz — `scale = "SURVEY"`).
+> `null`). Bitta savolda uchtadan FAQAT bittasi to'ldirilgan bo'ladi.
+>
+> ⚠️ **Egasi topgan kamchilik (2026-09-12) tuzatildi.** Ilgari `MultiChoice` javobida faqat
+> xom `selectedValues` (`[1, 3]`) qaytardi — admin qaysi variant tanlanganini bilolmasdi.
+> Endi **`selectedOptionTexts`** (`IReadOnlyList<string>?`) ham qaytadi — har bir tanlangan
+> qiymatning `AnswerOption.textUz` matni, `selectedValues` bilan BIR XIL tartibda (ikkitadan
+> qo'shimcha SQL so'rovi bilan — savol/javob soniga bog'liq EMAS, ADR-11). Variant o'chirilgan
+> bo'lsa (masalan savol keyin tahrirlanib, variant olib tashlangan) — YIQILMAYDI, o'rniga
+> `"Noma'lum variant (qiymat: N)"` zaxira matni qo'yiladi.
+>
+> **`effectiveValue`/`isFastAnswer` — endi `Survey` qatorlarda `null`, `0`/`false` EMAS**
+> (o'sha kamchilik). Ilgari matn/ko'p tanlov javoblarida `effectiveValue` shunchaki `0` edi —
+> bu "javobning qiymati 0" deb noto'g'ri o'qilishi mumkin edi. Bu ikki maydon Likert
+> semantikasiga oid — FAQAT `scoringMode = "Scored"` qatorlarda ma'noli. `scaleDirection`/
+> `weight` (matn/ko'p tanlov javoblari uchun ma'nosiz standart qiymat, `scale = "SURVEY"`)
+> o'zgarishsiz qoladi.
+>
+> **`scoringMode`** — yangi maydon, `"Scored"` | `"Survey"` (`AdminAssessmentTestItemDto.
+> scoringMode` bilan bir xil satr): javob QAYSI test blokidan ekanini bilish uchun mijoz
+> `tests[]` ro'yxati bilan solishtirmasin — belgi javobning O'ZIDA, `scale`/`scaleDirection`/
+> `weight` ustunlarini yashirish shu bilan hal qilinadi.
 
 > ⚠️ **`scale`/`scaleNameUz`/`scaleDirection`/`effectiveValue` FAQAT ADMIN javobida.**
 > `CLAUDE.md` 9-bandi O'QUVCHI API'siga tegishli: u yerda bu maydonlar o'lchanayotgan
