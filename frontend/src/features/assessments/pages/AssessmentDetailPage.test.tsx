@@ -13,6 +13,7 @@ import type {
   AssessmentDetailDto,
   AssessmentListItemDto,
 } from '../model/types';
+import type { AssessmentAnswersDto } from '@/shared/api/assessmentAnswersTypes';
 
 
 /**
@@ -152,6 +153,52 @@ function renderPage(detailResponses: DetailFetchResult[], options: RenderOptions
           ),
       );
     }
+    if (url.includes(`/api/admin/assessments/${ASSESSMENT_ID}/answers`)) {
+      const answersBody: AssessmentAnswersDto = {
+        answers: [
+          {
+            questionId: 'q-1',
+            questionCode: 'MBTI16-Q01',
+            testCode: 'MBTI16',
+            questionText: 'Men odamlar bilan bo\'lishni yaxshi ko\'raman',
+            rawValue: 4,
+            selectedOptionText: null,
+            selectedOptionTexts: null,
+            selectedValues: null,
+            textValue: null,
+            durationMs: 2500,
+            revisionCount: 0,
+            answeredAt: '2026-08-30T09:10:00Z',
+            questionType: 'Likert5',
+            scoringMode: 'Scored',
+            scale: 'EI',
+            scaleNameUz: 'Ekstraversiya',
+            scaleDirection: 1,
+            weight: 1,
+            effectiveValue: 4,
+            isFastAnswer: false,
+            straightLiningBlockIndex: null,
+          },
+        ],
+        session: {
+          answeredCount: 1,
+          fastAnswerCount: 0,
+          straightLiningBlockCount: 0,
+          allSameAnswer: false,
+          shortSession: false,
+          totalDurationSeconds: 1800,
+          reliabilityScore: 82.5,
+          reliabilityFlag: 'Reliable',
+        },
+        scales: [],
+        thresholds: {
+          fastAnswerDurationMs: 900,
+          straightLiningMinRunLength: 12,
+          shortSessionMinutes: 6,
+        },
+      };
+      return Promise.resolve(typedResponse<AssessmentAnswersDto>(answersBody));
+    }
     if (url.includes(`/api/admin/assessments/${ASSESSMENT_ID}`)) {
       const next = responses.length > 0 ? responses.shift() : last;
       last = next;
@@ -219,6 +266,22 @@ describe('AssessmentDetailPage', () => {
     // AI tahlili.
     expect(screen.getByText('Bu — sessiyaning namunaviy xulosasi.')).toBeInTheDocument();
     expect(screen.getByText('Bu tahlil tashxis emas.')).toBeInTheDocument();
+  });
+
+  /**
+   * P52-A (egasining talabi, 2026-09-12): "testning ichiga kirib qaysi savolga qaysi javob
+   * berganini ko'rish" — bu ekranda ham (`AssessmentHistoryTable`dan kelib) xuddi profildagi
+   * kabi `AnswersSection` widgeti ochilishi kerak, nusxa emas — bitta widget.
+   */
+  it("savolma-savol javoblar bo'limi shu sahifada ham ochiladi (widgets/AnswersSection qayta ishlatiladi)", async () => {
+    const user = userEvent.setup();
+    renderPage([FULL_DETAIL], { state: { assessment: LIST_ROW } });
+
+    await screen.findByText('Tahlil qilingan');
+    await user.click(screen.getByRole('button', { name: /Savolma-savol javoblar/i }));
+    await user.click(await screen.findByRole('button', { name: /MBTI16/ }));
+
+    expect(await screen.findByText("Men odamlar bilan bo'lishni yaxshi ko'raman")).toBeInTheDocument();
   });
 
   it("axe a11y tekshiruvi buzilishsiz o'tadi", async () => {

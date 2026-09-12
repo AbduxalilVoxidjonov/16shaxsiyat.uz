@@ -5,6 +5,7 @@ import { usePageTitle } from '@/shared/hooks/usePageTitle';
 import { ErrorState, Skeleton } from '@/shared/ui';
 import { GirihStar, PatternBackdrop } from '@/shared/ui/brand';
 import { ROUTES } from '@/shared/config/routes';
+import { PUBLIC_SPACE_SLUG } from '@/shared/config/publicSpace';
 import { AppError } from '@/shared/api/AppError';
 import { useSessionState } from '../api/useSessionState';
 import { useCompleteSession } from '../api/useCompleteSession';
@@ -74,6 +75,20 @@ export default function FinishPage() {
   const storedSlug = useSessionStore((state) => state.slug);
   const hasSession = Boolean(sessionToken) && storedSlug === slug;
   const handleSessionExpired = useSessionExpiredGuard(slug);
+
+  /**
+   * P52-B (egasining talabi): Telegram orqali kirgan ommaviy makon foydalanuvchisini
+   * (`slug === PUBLIC_SPACE_SLUG`) saytning tanishtiruv sahifasiga (`/`) yuborish ma'nosiz —
+   * uning allaqachon kabineti va butun test tarixi bor. Maktab o'quvchisini esa o'z maktab
+   * sahifasiga (`/t/:slug`) qaytarish ham noto'g'ri: u yerda yana ro'yxatdan o'tish taklif
+   * qilinadi, lekin takror topshirish baribir bloklanadi (`docs/07` §1.4) — shu sabab u
+   * saytning umumiy bosh sahifasiga (`/`) yuboriladi.
+   */
+  const isPublicSpaceUser = slug === PUBLIC_SPACE_SLUG;
+  const secondaryDestination = isPublicSpaceUser ? ROUTES.account.home : ROUTES.marketing.home;
+  const secondaryLabel = isPublicSpaceUser
+    ? t('pages.finish.backToAccountCta')
+    : t('pages.finish.backToHomeCta');
 
   // `refetchOnMount: 'always'` — ESKI keshga tayanib qaror qabul qilmaslik uchun.
   // `queryClient` da `staleTime: 30_000`: tez o'quvchi barcha bloklarni 30 soniyadan tez
@@ -227,6 +242,16 @@ export default function FinishPage() {
             {t('pages.finish.sentToPsychologist')}
           </p>
         )}
+
+        {/* Ikkilamchi navigatsiya — natija tugmasidagi kechikishga BOG'LIQ EMAS, darhol
+            faol (egasining talabi: kechikish faqat AI tahliliga tegishli). */}
+        <button
+          type="button"
+          className="btn btn-lg btn-ghost"
+          onClick={() => navigate(secondaryDestination)}
+        >
+          {secondaryLabel}
+        </button>
       </div>
     </section>
   );

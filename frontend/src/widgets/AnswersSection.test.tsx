@@ -2,14 +2,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { jsonResponse } from '@/test/apiMock';
+import { typedResponse } from '@/test/apiMock';
+import type { AssessmentAnswersDto, RawAnswerDto } from '@/shared/api/assessmentAnswersTypes';
 import { AnswersSection } from './AnswersSection';
-import type { AssessmentAnswersDto, RawAnswerDto } from '../model/profileTypes';
 
 /**
- * `docs/11` A-5 profil bo'limi — savolma-savol javoblar. Eng muhim tekshiruv:
- * TESKARI savolga berilgan `5` jadvalda `1` bo'lib ko'rinishi (`docs/03` §1). Xom `5`
- * psixologni butunlay teskari xulosaga olib boradi.
+ * `docs/11` A-5/A-6 — savolma-savol javoblar (`features/students` VA `features/assessments`
+ * ikkalasida ham ochiladigan `widgets/` bloki, P52-A). Eng muhim tekshiruv: TESKARI savolga
+ * berilgan `5` jadvalda `1` bo'lib ko'rinishi (`docs/03` §1). Xom `5` psixologni butunlay
+ * teskari xulosaga olib boradi.
+ *
+ * `jsonResponse<'AdminAssessmentAnswersDto'>` EMAS, `typedResponse<AssessmentAnswersDto>`
+ * ishlatiladi — sxema P52-B (`selectedValues`/`selectedOptionTexts`/`scoringMode`/
+ * `textValue`, nullable `rawValue`/`effectiveValue`/`isFastAnswer`) dan ESKIRGAN
+ * (`shared/api/assessmentAnswersTypes.ts` izohiga qarang).
  */
 const THRESHOLDS = {
   fastAnswerDurationMs: 900,
@@ -24,10 +30,14 @@ function answer(overrides: Partial<RawAnswerDto> & { questionCode: string }): Ra
     questionText: `${overrides.questionCode} savoli`,
     rawValue: 3,
     selectedOptionText: null,
+    selectedOptionTexts: null,
+    selectedValues: null,
+    textValue: null,
     durationMs: 3000,
     revisionCount: 0,
     answeredAt: '2026-08-30T09:10:00Z',
     questionType: 'Likert5',
+    scoringMode: 'Scored',
     scale: 'C',
     scaleNameUz: 'Vijdonlilik',
     scaleDirection: 1,
@@ -99,7 +109,7 @@ describe('AnswersSection', () => {
       'fetch',
       vi.fn(() =>
         Promise.resolve(
-          jsonResponse<'AdminAssessmentAnswersDto'>(
+          typedResponse<AssessmentAnswersDto>(
             response([
               answer({ questionCode: 'BIG5-Q01', scaleDirection: -1, rawValue: 5, effectiveValue: 1 }),
               answer({ questionCode: 'BIG5-Q02', scaleDirection: 1, rawValue: 4, effectiveValue: 4 }),
@@ -129,7 +139,9 @@ describe('AnswersSection', () => {
       'fetch',
       vi.fn(() =>
         Promise.resolve(
-          jsonResponse<'AdminAssessmentAnswersDto'>(response([answer({ questionCode: 'BIG5-Q01', rawValue: 5, effectiveValue: 5 })])),
+          typedResponse<AssessmentAnswersDto>(
+            response([answer({ questionCode: 'BIG5-Q01', rawValue: 5, effectiveValue: 5 })]),
+          ),
         ),
       ),
     );
@@ -145,7 +157,7 @@ describe('AnswersSection', () => {
       'fetch',
       vi.fn(() =>
         Promise.resolve(
-          jsonResponse<'AdminAssessmentAnswersDto'>(
+          typedResponse<AssessmentAnswersDto>(
             response([
               answer({ questionCode: 'BIG5-Q01', durationMs: 899, isFastAnswer: true }),
               answer({ questionCode: 'BIG5-Q02', durationMs: 900, isFastAnswer: false }),
@@ -175,7 +187,7 @@ describe('AnswersSection', () => {
       'fetch',
       vi.fn(() =>
         Promise.resolve(
-          jsonResponse<'AdminAssessmentAnswersDto'>(
+          typedResponse<AssessmentAnswersDto>(
             response(straightLined, {
               session: {
                 answeredCount: 13,
@@ -212,7 +224,7 @@ describe('AnswersSection', () => {
       'fetch',
       vi.fn(() =>
         Promise.resolve(
-          jsonResponse<'AdminAssessmentAnswersDto'>(
+          typedResponse<AssessmentAnswersDto>(
             response([answer({ questionCode: 'BIG5-Q01' })], {
               session: {
                 answeredCount: 1,
@@ -257,7 +269,7 @@ describe('AnswersSection', () => {
       'fetch',
       vi.fn(() =>
         Promise.resolve(
-          jsonResponse<'AdminAssessmentAnswersDto'>(
+          typedResponse<AssessmentAnswersDto>(
             response([
               answer({ questionCode: 'BIG5-Q01', durationMs: 500, isFastAnswer: true }),
               answer({ questionCode: 'BIG5-Q02' }),
@@ -278,5 +290,138 @@ describe('AnswersSection', () => {
       expect(screen.queryByText('BIG5-Q02 savoli')).not.toBeInTheDocument();
     });
     expect(screen.getByText('BIG5-Q01 savoli')).toBeInTheDocument();
+  });
+
+  describe("so'rovnoma (Survey) bloki — P52-B", () => {
+    function surveyAnswer(overrides: Partial<RawAnswerDto> & { questionCode: string }): RawAnswerDto {
+      return answer({
+        testCode: 'CAREER_SURVEY',
+        scale: 'SURVEY',
+        scaleNameUz: null,
+        scaleDirection: 1,
+        weight: 1,
+        effectiveValue: null,
+        isFastAnswer: null,
+        rawValue: null,
+        scoringMode: 'Survey',
+        ...overrides,
+      });
+    }
+
+    it('MultiChoice javobida selectedOptionTexts vergul bilan ko\'rsatiladi, selectedValues raqamlari EMAS', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(() =>
+          Promise.resolve(
+            typedResponse<AssessmentAnswersDto>(
+              response([
+                surveyAnswer({
+                  questionCode: 'SURVEY-Q01',
+                  questionType: 'MultiChoice',
+                  selectedValues: [3, 1],
+                  selectedOptionTexts: ['Matematika', 'Ingliz tili'],
+                }),
+              ]),
+            ),
+          ),
+        ),
+      );
+
+      renderSection();
+      await openSectionAndFirstGroup('CAREER_SURVEY');
+
+      const row = (await screen.findByText('SURVEY-Q01 savoli')).closest('tr');
+      expect(row).toHaveTextContent('Matematika, Ingliz tili');
+      expect(row).not.toHaveTextContent('3, 1');
+    });
+
+    it('matn javobi (LongText) to\'liq holda saqlanadi, uzun bo\'lsa qisqartirilib "To\'liq ko\'rish" bilan ko\'rsatiladi', async () => {
+      const longText = 'A'.repeat(300);
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(() =>
+          Promise.resolve(
+            typedResponse<AssessmentAnswersDto>(
+              response([
+                surveyAnswer({
+                  questionCode: 'SURVEY-Q02',
+                  questionType: 'LongText',
+                  textValue: longText,
+                }),
+              ]),
+            ),
+          ),
+        ),
+      );
+
+      renderSection();
+      const user = await openSectionAndFirstGroup('CAREER_SURVEY');
+
+      const row = (await screen.findByText('SURVEY-Q02 savoli')).closest('tr');
+      expect(row).not.toBeNull();
+      expect(row?.textContent).not.toContain(longText);
+      const toggle = screen.getByRole('button', { name: "To'liq ko'rish" });
+      await user.click(toggle);
+      expect(row?.textContent).toContain(longText);
+    });
+
+    it("Survey blokida Likert ustunlari (shkala, yo'nalish, samarali qiymat) ko'rsatilmaydi", async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(() =>
+          Promise.resolve(
+            typedResponse<AssessmentAnswersDto>(
+              response([
+                surveyAnswer({
+                  questionCode: 'SURVEY-Q03',
+                  questionType: 'ShortText',
+                  textValue: 'Dasturchi bo\'lishni xohlayman',
+                }),
+              ]),
+            ),
+          ),
+        ),
+      );
+
+      renderSection();
+      await openSectionAndFirstGroup('CAREER_SURVEY');
+
+      expect(screen.queryByRole('columnheader', { name: 'Shkala' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('columnheader', { name: "Yo'nalish" })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('columnheader', { name: 'Shkalaga tushgan qiymat' }),
+      ).not.toBeInTheDocument();
+      expect(await screen.findByText("Dasturchi bo'lishni xohlayman")).toBeInTheDocument();
+    });
+
+    it("soddalashtirilgan jadval — savol, javob, davomiylik, tahrirlar soni (Likert ustunlarisiz)", async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(() =>
+          Promise.resolve(
+            typedResponse<AssessmentAnswersDto>(
+              response([
+                surveyAnswer({
+                  questionCode: 'SURVEY-Q04',
+                  questionType: 'ShortText',
+                  textValue: 'Javob',
+                  durationMs: 4200,
+                  revisionCount: 2,
+                }),
+              ]),
+            ),
+          ),
+        ),
+      );
+
+      renderSection();
+      await openSectionAndFirstGroup('CAREER_SURVEY');
+
+      const row = (await screen.findByText('SURVEY-Q04 savoli')).closest('tr');
+      expect(row).toHaveTextContent('4200 ms');
+      // Tahrirlar soni ustuni — oxirgi katak, xom `2`.
+      expect(row?.querySelectorAll('td')).toHaveLength(4);
+      expect(row?.textContent).toContain('2');
+    });
   });
 });

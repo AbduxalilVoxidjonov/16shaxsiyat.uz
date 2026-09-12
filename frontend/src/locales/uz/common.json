@@ -270,7 +270,9 @@
       "heading": "Rahmat! Barcha savollarga javob berding.",
       "analyzing": "Natijang tahlil qilinmoqda…",
       "viewResultCta": "Natijani ko'rish",
-      "sentToPsychologist": "Natijalar maktab psixologiga yuboriladi."
+      "sentToPsychologist": "Natijalar maktab psixologiga yuboriladi.",
+      "backToHomeCta": "Bosh sahifaga qaytish",
+      "backToAccountCta": "Kabinetga qaytish"
     },
     "result": {
       "title": "Natija",
@@ -904,7 +906,9 @@
       },
       "empty": "Bu sessiya uchun javob topilmadi",
       "noMatches": "Tanlangan filtrga mos javob yo'q",
-      "loadError": "Javoblarni yuklab bo'lmadi"
+      "loadError": "Javoblarni yuklab bo'lmadi",
+      "showFullText": "To'liq ko'rish",
+      "collapseText": "Kamroq ko'rish"
     },
     "rerunDialog": {
       "title": "Qayta tahlil",

@@ -9,12 +9,13 @@ import { Skeleton } from '@/shared/ui/Skeleton';
 import { ErrorState } from '@/shared/ui/ErrorState';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/Table';
-import { useRawAnswersQuery } from '../api/useRawAnswersQuery';
 import type {
   AnswerScaleSignalDto,
+  AnswerScoringMode,
   AnswerThresholdsDto,
   RawAnswerDto,
-} from '../model/profileTypes';
+} from '@/shared/api/assessmentAnswersTypes';
+import { useRawAnswersQuery } from './useRawAnswersQuery';
 
 export interface AnswersSectionProps {
   assessmentId: string | null;
@@ -38,13 +39,20 @@ function isLikert5Value(value: number): value is (typeof LIKERT5_VALUES)[number]
 /** Bitta test bloki — jadval shu guruhlar ichida chiziladi (190 savol bitta ro'yxatda o'qilmaydi). */
 interface AnswerGroup {
   testCode: string;
+  scoringMode: AnswerScoringMode;
   answers: RawAnswerDto[];
 }
 
 /**
  * Savolma-savol javoblar va ularning tahlili — `docs/11` A-5 profil sahifasidagi BO'LIM
  * (oyna emas: egasi buni profilda ko'rishni so'radi, 2026-09-03; oyna ichida turgani uchun
- * u umuman topilmagan edi).
+ * u umuman topilmagan edi) VA `docs/11` A-6 sessiya detali sahifasi (P52-A, 2026-09-12 —
+ * eski sessiyaning javoblarini ko'rishning yagona yo'li shu edi, ilgari faqat ENG SO'NGGI
+ * sessiya uchun ochilardi).
+ *
+ * `widgets/`da turadi (feature EMAS): `features/students` va `features/assessments`
+ * ikkalasi ham shu bo'limni ochadi, `docs/10` §2 esa feature'lararo importni taqiqlaydi —
+ * ikki feature ham ishlatadigan blok `widgets/`ga chiqadi (xuddi `AiReportView` kabi).
  *
  * <b>Nima uchun AI talqini YO'Q.</b> Har bir savolni alohida AI bilan izohlash TAQIQLANGAN
  * (`CLAUDE.md` 6-band): bitta Likert savolining ishonchliligi deyarli nolga teng — har
@@ -58,6 +66,12 @@ interface AnswerGroup {
  * mustaqil ochiladi/yopiladi — yopiq blokning qatorlari umuman render qilinmaydi. Jadval
  * `Table` ning `overflow-x` konteyneri ichida (P30-6): 390px da faqat jadval siljiydi,
  * sahifa emas.
+ *
+ * <b>So'rovnoma (`scoringMode === 'Survey'`) bloklari</b> — Likert ustunlari (shkala,
+ * yo'nalish, samarali qiymat, tez javob, straight-lining) BU BLOKLARDA ma'nosiz (`docs/18`),
+ * shu sabab `AnswersTable` `scoringMode`ga qarab IKKI xil jadval chizadi: `Scored` bloklar
+ * eski (bayt-bayt o'zgarmagan) ko'rinishda, `Survey` bloklar esa soddalashtirilgan to'rt
+ * ustunda (savol, javob, davomiylik, o'zgartirishlar soni).
  */
 export function AnswersSection({ assessmentId }: AnswersSectionProps) {
   const { t } = useTranslation();
@@ -100,7 +114,14 @@ export function AnswersSection({ assessmentId }: AnswersSectionProps) {
         byTest.set(answer.testCode, [answer]);
       }
     }
-    return [...byTest.entries()].map(([testCode, answers]) => ({ testCode, answers }));
+    // `scoringMode` bitta test bloki ichida BIR XIL (backend `AdminAssessmentTestItemDto`
+    // bilan bir xil satr) — birinchi javobdan olinadi, guruh bo'sh bo'lmaydi (Map kaliti
+    // faqat javob qo'shilganda yaratiladi).
+    return [...byTest.entries()].map(([testCode, answers]) => ({
+      testCode,
+      scoringMode: answers[0]?.scoringMode ?? 'Scored',
+      answers,
+    }));
   }, [data, testFilter, scaleFilter, onlyFlagged]);
 
   // Ziddiyatli shkalalar — `docs/03` §7.1 band 4. Jadvaldagi "Shkala" ustunida shu
@@ -233,6 +254,7 @@ export function AnswersSection({ assessmentId }: AnswersSectionProps) {
                     {expanded && (
                       <AnswersTable
                         answers={group.answers}
+                        scoringMode={group.scoringMode}
                         conflictScales={conflictScales}
                         fastAnswerDurationMs={data.thresholds.fastAnswerDurationMs}
                       />
@@ -336,17 +358,56 @@ function ScaleSignals({ scales }: { scales: readonly AnswerScaleSignalDto[] }) {
   );
 }
 
-/** Bitta test blokining jadvali. */
+/**
+ * Bitta test blokining jadvali. `Survey` (ballanmaydigan so'rovnoma) bloklari uchun ATAYLAB
+ * ALOHIDA, SODDA jadval — `docs/18` talabiga ko'ra Likert ustunlari (shkala, yo'nalish,
+ * samarali qiymat, tez javob, straight-lining) bu yerda ma'nosiz. `Scored` blok markupi
+ * (pastda) P52-B DAN OLDINGI holat bilan BAYT-BAYT bir xil qoldirilgan — regressiya.
+ */
 function AnswersTable({
   answers,
+  scoringMode,
   conflictScales,
   fastAnswerDurationMs,
 }: {
   answers: readonly RawAnswerDto[];
+  scoringMode: AnswerScoringMode;
   conflictScales: ReadonlySet<string>;
   fastAnswerDurationMs: number;
 }) {
   const { t } = useTranslation();
+
+  if (scoringMode === 'Survey') {
+    return (
+      <Table aria-label={t('studentProfile.answers.title')}>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t('studentProfile.answers.questionColumn')}</TableHead>
+            <TableHead>{t('studentProfile.answers.answerColumn')}</TableHead>
+            <TableHead>{t('studentProfile.answers.durationColumn')}</TableHead>
+            <TableHead>{t('studentProfile.answers.revisionColumn')}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {answers.map((answer) => (
+            <TableRow key={answer.questionCode}>
+              <TableCell>
+                <span className="block">{answer.questionText}</span>
+                <span className="block text-xs text-neutral-500">{answer.questionCode}</span>
+              </TableCell>
+              <TableCell>
+                <AnswerValue answer={answer} />
+              </TableCell>
+              <TableCell className="whitespace-nowrap">
+                {t('studentProfile.answers.durationMs', { count: answer.durationMs })}
+              </TableCell>
+              <TableCell>{answer.revisionCount}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  }
 
   return (
     <Table aria-label={t('studentProfile.answers.title')}>
@@ -372,7 +433,7 @@ function AnswersTable({
               <span className="block text-xs text-neutral-500">{answer.questionCode}</span>
             </TableCell>
             <TableCell>
-              <AnswerLabel answer={answer} />
+              <AnswerValue answer={answer} />
             </TableCell>
             <TableCell>
               <span className="block">{answer.scaleNameUz ?? answer.scale}</span>
@@ -395,8 +456,10 @@ function AnswersTable({
               )}
             </TableCell>
             <TableCell>
-              <span className="font-semibold text-neutral-900">{answer.effectiveValue}</span>
-              {answer.scaleDirection < 0 && (
+              <span className="font-semibold text-neutral-900">
+                {answer.effectiveValue ?? '—'}
+              </span>
+              {answer.scaleDirection < 0 && answer.effectiveValue !== null && (
                 <span className="block text-xs text-neutral-500">
                   {t('studentProfile.answers.effectiveHint', { raw: answer.rawValue })}
                 </span>
@@ -429,25 +492,78 @@ function AnswersTable({
   );
 }
 
-/**
- * Javob SO'Z bilan. `SingleChoice` da variant matni, `Likert5` da `docs/03` §1 yorlig'i;
- * qolgan turlarda xom qiymat (hujjatda yorliq jadvali yo'q — soxta yorliq berilmaydi).
- */
-function AnswerLabel({ answer }: { answer: RawAnswerDto }) {
+/** Uzun matn javobi (`LongText`, 1000 belgigacha) — jadvalni buzmasdan qisqartirib ko'rsatish. */
+const LONG_TEXT_PREVIEW_LENGTH = 160;
+
+function TextAnswerValue({ text }: { text: string | null }) {
   const { t } = useTranslation();
+  const [expanded, setExpanded] = useState(false);
+
+  if (text === null || text === '') {
+    return <span>—</span>;
+  }
+
+  const isLong = text.length > LONG_TEXT_PREVIEW_LENGTH;
+  const shown = !isLong || expanded ? text : `${text.slice(0, LONG_TEXT_PREVIEW_LENGTH)}…`;
+
+  return (
+    <span className="block max-w-xs">
+      <span className="block whitespace-pre-wrap break-words">{shown}</span>
+      {isLong && (
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          className="mt-1 text-xs font-medium text-primary-700 underline underline-offset-2 hover:text-primary-800"
+        >
+          {expanded
+            ? t('studentProfile.answers.collapseText')
+            : t('studentProfile.answers.showFullText')}
+        </button>
+      )}
+    </span>
+  );
+}
+
+/**
+ * Javob SO'Z bilan — `docs/18` §4.2 shakli bo'yicha to'rt yo'l:
+ *
+ * 1. `MultiChoice` → `selectedOptionTexts` VERGUL bilan (`selectedValues` xom raqamlari
+ *    ASOSIY qiymat sifatida KO'RSATILMAYDI — egasi topgan kamchilik, 2026-09-12).
+ * 2. `ShortText`/`LongText`/`Phone` → `textValue` (uzun matn qisqartirilib, "to'liq ko'rish"
+ *    bilan).
+ * 3. `SingleChoice` (va boshqa variant asosidagi turlar) → mavjud `selectedOptionText`.
+ * 4. Qolgan Likert turlari → `Likert5` uchun SO'Z yorlig'i (`docs/03` §1), aks holda xom
+ *    qiymat. `rawValue`/`effectiveValue` endi NULLABLE (`Survey` qatorlarda `null`) — `0`
+ *    deb KO'RSATILMAYDI, `—` chiqadi.
+ */
+function AnswerValue({ answer }: { answer: RawAnswerDto }) {
+  const { t } = useTranslation();
+
+  if (answer.questionType === 'MultiChoice') {
+    const texts = answer.selectedOptionTexts ?? [];
+    return <span>{texts.length > 0 ? texts.join(', ') : '—'}</span>;
+  }
+
+  if (
+    answer.questionType === 'ShortText' ||
+    answer.questionType === 'LongText' ||
+    answer.questionType === 'Phone'
+  ) {
+    return <TextAnswerValue text={answer.textValue ?? null} />;
+  }
 
   if (answer.selectedOptionText) {
     return <span>{answer.selectedOptionText}</span>;
   }
 
   const label =
-    answer.questionType === 'Likert5' && isLikert5Value(answer.rawValue)
+    answer.questionType === 'Likert5' && answer.rawValue != null && isLikert5Value(answer.rawValue)
       ? t(`studentProfile.answers.likert5.${answer.rawValue}`)
       : null;
 
   return (
     <span>
-      {label ?? answer.rawValue}
+      {label ?? (answer.rawValue ?? '—')}
       {label !== null && (
         <span className="block text-xs text-neutral-500">{answer.rawValue}</span>
       )}

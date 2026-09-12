@@ -20,7 +20,7 @@ import { StudentSummaryCards } from '../components/StudentSummaryCards';
 import { StudentDiagramsSection } from '../components/StudentDiagramsSection';
 import { AiReportSection } from '../components/AiReportSection';
 import { AssessmentHistoryTable } from '../components/AssessmentHistoryTable';
-import { AnswersSection } from '../components/AnswersSection';
+import { AnswersSection } from '@/widgets/AnswersSection';
 import { RerunAnalysisDialog } from '../components/RerunAnalysisDialog';
 import type { AiProvider } from '../model/profileTypes';
 

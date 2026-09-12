@@ -11,6 +11,7 @@ import { AppError } from '@/shared/api/AppError';
 import { useAiReadinessQuery } from '@/shared/api/useAiReadinessQuery';
 import { AI_RUNNABLE_STATUSES } from '@/shared/lib/aiAnalysisState';
 import { ROUTES } from '@/shared/config/routes';
+import { AnswersSection } from '@/widgets/AnswersSection';
 import { useAssessmentDetailQuery } from '../api/useAssessmentDetailQuery';
 import { useRerunAnalysisMutation } from '../api/useRerunAnalysisMutation';
 import { AiAnalysisSection } from '../components/AiAnalysisSection';
@@ -180,6 +181,11 @@ export default function AssessmentDetailPage() {
         pollTimedOut={pollTimedOut}
         hasConfiguredProvider={hasConfiguredProvider}
       />
+
+      {/* Savolma-savol javoblar — egasining talabi (2026-09-12): tarixdagi HAR BIR
+          sessiyaning javoblarini ko'rish, faqat eng so'nggisini emas (`StudentProfilePage`
+          ilgari faqat `latestAssessment` uchun ochardi). Xuddi shu widget — `docs/10` §2. */}
+      <AnswersSection assessmentId={detail.id} />
 
       <RerunAnalysisDialog
         open={rerunOpen}

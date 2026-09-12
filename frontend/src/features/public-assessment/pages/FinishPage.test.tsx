@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
@@ -61,6 +62,8 @@ function renderPage(
       <ToastProvider>
         <MemoryRouter initialEntries={[initialPath]}>
           <Routes>
+            <Route path="/" element={<div>MARKETING_HOME_STUB</div>} />
+            <Route path="/kabinet" element={<div>ACCOUNT_HOME_STUB</div>} />
             <Route path="/t/:slug" element={<div>LANDING_STUB</div>} />
             <Route path="/t/:slug/test/:testCode" element={<div>TEST_STUB</div>} />
             <Route path="/t/:slug/finish" element={<FinishPage />} />
@@ -245,5 +248,38 @@ describe('FinishPage', () => {
 
     expect(await screen.findByText('Javoblaringiz saqlandi, rahmat.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: "Natijani ko'rish" })).not.toBeInTheDocument();
+  });
+
+  // P52-B (egasining talabi): ikkilamchi tugma manzili kirgan foydalanuvchi turiga qarab
+  // farqlanadi — Telegram (ommaviy makon) foydalanuvchisi kabinetga, maktab o'quvchisi
+  // saytning bosh sahifasiga qaytariladi. Kechikishsiz DARHOL faol (natija tugmasidagi
+  // 10 soniyalik kechikish faqat AI tahliliga tegishli).
+  it("maktab o'quvchisi uchun «Bosh sahifaga qaytish» DARHOL faol va / ga olib boradi", async () => {
+    seedSession();
+    mockFetch();
+    renderPage();
+
+    const homeButton = await screen.findByRole('button', { name: 'Bosh sahifaga qaytish' });
+    expect(homeButton).toBeEnabled();
+
+    const user = userEvent.setup();
+    await user.click(homeButton);
+
+    expect(await screen.findByText('MARKETING_HOME_STUB')).toBeInTheDocument();
+  });
+
+  it("ommaviy makon (Telegram) foydalanuvchisi uchun «Kabinetga qaytish» /kabinet ga olib boradi", async () => {
+    useSessionStore.getState().setSession('sess-token-1', 'ommaviy', 'assessment-1');
+    mockFetch();
+    renderPage('/t/ommaviy/finish');
+
+    const accountButton = await screen.findByRole('button', { name: 'Kabinetga qaytish' });
+    expect(accountButton).toBeEnabled();
+    expect(screen.queryByRole('button', { name: 'Bosh sahifaga qaytish' })).not.toBeInTheDocument();
+
+    const user = userEvent.setup();
+    await user.click(accountButton);
+
+    expect(await screen.findByText('ACCOUNT_HOME_STUB')).toBeInTheDocument();
   });
 });
