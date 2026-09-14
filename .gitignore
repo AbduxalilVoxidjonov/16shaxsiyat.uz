@@ -26,5 +26,5 @@ dist/
 # hech qachon repo'ga tushmasin (scripts/backup.sh, docs/13 §7).
 /backups/
 
-# Claude Code lokal sozlamalari
-.claude/
+# Claude Code lokal sozlamalari (agents/ jamoaviy, git'da qoladi)
+.claude/settings.local.json
