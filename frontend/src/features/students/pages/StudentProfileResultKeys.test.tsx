@@ -86,10 +86,10 @@ const BACKEND_RESPONSE_JSON = `{
     "aiAnalysis": null,
     "aiHistory": [],
     "tests": [
-      { "code": "MBTI16", "nameUz": "Shaxsiyat tipi", "status": "Completed", "scoringMode": "Scored" },
-      { "code": "BIG5", "nameUz": "Katta beshlik", "status": "Completed", "scoringMode": "Scored" },
-      { "code": "RIASEC", "nameUz": "Kasb qiziqishlari", "status": "Completed", "scoringMode": "Scored" },
-      { "code": "ACTIVITY", "nameUz": "Aktivlik", "status": "Completed", "scoringMode": "Scored" }
+      { "code": "MBTI16", "nameUz": "Shaxsiyat tipi", "status": "Completed", "scoringMode": "Scored", "batteryRole": "PersonalityType" },
+      { "code": "BIG5", "nameUz": "Katta beshlik", "status": "Completed", "scoringMode": "Scored", "batteryRole": "Traits" },
+      { "code": "RIASEC", "nameUz": "Kasb qiziqishlari", "status": "Completed", "scoringMode": "Scored", "batteryRole": "CareerInterest" },
+      { "code": "ACTIVITY", "nameUz": "Aktivlik", "status": "Completed", "scoringMode": "Scored", "batteryRole": "Activity" }
     ],
     "hasPersonalityBattery": true
   }

@@ -115,12 +115,24 @@ public sealed record AdminLatestAssessmentDto(
 /// (`docs/07` 3.3-bo'limdagi `AdminAssessmentTestItemDto` bilan bir xil atama, lekin bu yerda
 /// faqat "bor/yo'q va holati" kerak, savol soni emas — shu sabab qisqaroq shakl).
 /// `scale`/`scaleDirection` bu yerda ham YO'Q (`CLAUDE.md` 9-band).
+///
+/// <para>
+/// **`BatteryRole`** (code-review, 2026-09-14): frontend hozir batareya kartasi mavjudligini
+/// `Code == "MBTI16"|"BIG5"|"RIASEC"|"ACTIVITY"` satri bo'yicha aniqlaydi, backend esa
+/// `results.MBTI16/...` bloklarini `PersonalityBattery.RoleOf` DOMEN qoidasidan (`Kind`,
+/// `ScoringMode`, `ScoringStrategyCode`) to'ldiradi. Kod versiyalansa (masalan `MBTI16-V2`)
+/// backend natijani beradi, frontend esa satr mos kelmagani uchun kartani yashiradi — ikki
+/// tomon jimgina chalkashadi. Shu sabab rol backend'da hisoblanib DTO orqali eksport qilinadi:
+/// `"None" | "PersonalityType" | "Traits" | "CareerInterest" | "Activity"`
+/// (<see cref="StudentRoadMap.Domain.Catalog.PersonalityBatteryRole"/>).
+/// </para>
 /// </summary>
 public sealed record AdminLatestAssessmentTestItemDto(
     string Code,
     string NameUz,
     string Status,
-    string ScoringMode);
+    string ScoringMode,
+    string BatteryRole);
 
 /// <summary>
 /// Har test — mavjud bo'lsagina to'ldiriladi (o'quvchi hali yechmagan test `null`).

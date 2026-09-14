@@ -114,7 +114,8 @@ public sealed class AdminRerunAnalysisIgnoresAutoAnalyzeFlagEndpointTests : ICla
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var sessionToken = await AutoAnalyzeFlagFlow.RunSessionAsync(_factory, db, "rerun-off1", "RERUNOFF1", "RERUN-OFF-PROG1");
+            var sessionToken = await AutoAnalyzeFlagFlow.RunSessionAsync(
+                _factory, db, "rerun-off1", "RERUNOFF1", "RERUN-OFF-PROG1", usePersonalityBatteryTest: true);
 
             var assessment = await db.Assessments.AsNoTracking().SingleAsync(a => a.SessionToken == sessionToken);
             assessmentId = assessment.Id;
@@ -175,14 +176,27 @@ internal static class AutoAnalyzeFlagFlow
         string seed,
         string testCode,
         string programCode,
-        string expectedStatus = nameof(AssessmentStatus.Completed))
+        string expectedStatus = nameof(AssessmentStatus.Completed),
+        bool usePersonalityBatteryTest = false)
     {
         var now = DateTimeOffset.UtcNow;
         var accessToken = TestDataFactory.NewAccessToken(seed);
         var school = await TestDataFactory.CreateSchoolAsync(db, now, $"maktab-{seed}", accessToken);
 
-        var test = await TestDataFactory.CreateStandaloneTestAsync(
-            db, now, testCode, 1, questionCount: 3, scoringMode: TestScoringMode.Survey, scoringStrategyCode: null);
+        // `usePersonalityBatteryTest` (code-review, 2026-09-14): `RerunAnalysisCommandHandler`
+        // endi server-tomonida `PersonalityBattery.Includes`ni tekshiradi — `Survey` testli
+        // sessiyada qo'lda qayta tahlil `409 ASSESSMENT_NO_PERSONALITY_BATTERY` bilan to'xtaydi.
+        // `AdminRerunAnalysisIgnoresAutoAnalyzeFlagEndpointTests` bayroq mustaqilligini
+        // tekshiradi, batareya mavjudligini emas — shu sabab u `Standard`+`Scored` (`Kind`)
+        // test so'raydi.
+        // `CreateStandaloneSystemTestAsync` (default `SUM` strategiyasi) bu yerga mos EMAS: `SUM`
+        // har shkalada kamida 4 savol va `InterpretationBands` talab qiladi (`docs/03` §6.3) — bu
+        // fixture faqat "battery bormi" bayrog'i uchun, shu sabab tayyor `MBTI16` shakli
+        // (`EI`/`SN`/`TF`/`JP` x2, band talab qilmaydi) ishlatiladi.
+        var test = usePersonalityBatteryTest
+            ? await TestDataFactory.CreateStandaloneSystemMbtiShapedTestAsync(db, now, testCode, displayOrder: 1)
+            : await TestDataFactory.CreateStandaloneTestAsync(
+                db, now, testCode, 1, questionCount: 3, scoringMode: TestScoringMode.Survey, scoringStrategyCode: null);
         await TestDataFactory.CreateProgramAsync(db, now, programCode, [(test.Id, 1)]);
 
         using var client = factory.CreateClient();

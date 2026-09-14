@@ -928,10 +928,10 @@ lastAssessmentAt`
     },
     "aiHistory": [ { "id":"…","provider":"OpenAi","createdAt":"…","status":"Succeeded","isCurrent":false } ],
     "tests": [
-      { "code":"MBTI16","nameUz":"MBTI-16 shaxsiyat testi","status":"Completed","scoringMode":"Scored" },
-      { "code":"BIG5","nameUz":"Big Five shaxsiyat xususiyatlari","status":"Completed","scoringMode":"Scored" },
-      { "code":"RIASEC","nameUz":"Kasbiy qiziqishlar (RIASEC)","status":"Completed","scoringMode":"Scored" },
-      { "code":"ACTIVITY","nameUz":"Aktivlik va motivatsiya","status":"Completed","scoringMode":"Scored" }
+      { "code":"MBTI16","nameUz":"MBTI-16 shaxsiyat testi","status":"Completed","scoringMode":"Scored","batteryRole":"PersonalityType" },
+      { "code":"BIG5","nameUz":"Big Five shaxsiyat xususiyatlari","status":"Completed","scoringMode":"Scored","batteryRole":"Traits" },
+      { "code":"RIASEC","nameUz":"Kasbiy qiziqishlar (RIASEC)","status":"Completed","scoringMode":"Scored","batteryRole":"CareerInterest" },
+      { "code":"ACTIVITY","nameUz":"Aktivlik va motivatsiya","status":"Completed","scoringMode":"Scored","batteryRole":"Activity" }
     ],
     "hasPersonalityBattery": true
   }
@@ -952,6 +952,12 @@ lastAssessmentAt`
   `scoringMode` — `TestDefinition.ScoringMode` (`Scored`/`Survey`, `AdminAssessmentTestItemDto`dagi
   bilan bir xil atama, 3.3-bo'lim). Mijoz shu ro'yxatdan "bu test umuman yo'q" (kod ro'yxatda yo'q)
   bilan "bor-u hali hisoblanmagan" (kod bor, `results`dagi mos blok `null`) holatlarini ajratadi.
+- **`batteryRole`** (2026-09-14, code-review) — `Domain.Catalog.PersonalityBattery.RoleOf` DOMEN
+  qoidasidan (`Kind`/`ScoringMode`/`ScoringStrategyCode`), TEST KODIDAN emas:
+  `"None" | "PersonalityType" | "Traits" | "CareerInterest" | "Activity"`. Mijoz `results.MBTI16/
+  BIG5/RIASEC/ACTIVITY` bloklari qaysi kalitga to'lishini shu rol bo'yicha aniqlashi kerak, kod
+  satrini (`"MBTI16"`) qattiq yozib qo'yish EMAS — kod versiyalansa (`MBTI16-V2`) ham backend va
+  frontend bir xil rolga tayanadi.
 - **`hasPersonalityBattery`** — sessiyada kamida bitta ilmiy shaxsiyat batareyasi bloki bormi
   (`Domain.Catalog.PersonalityBattery.Includes`: `Kind == Standard && ScoringMode == Scored`),
   **test kodi ro'yxatidan EMAS** — `AdminProgramDetailDto.HasPersonalityBattery`/
@@ -1047,7 +1053,7 @@ O'girish backend'da bir joyda: `StudentProfileMapping.RiasecScaleToLetter`
 | GET | `/api/admin/assessments?schoolId=&status=&from=&to=&page=&pageSize=&sort=` | Ro'yxat — **faqat maktab sessiyalari** (pastda) |
 | GET | `/api/admin/assessments/{id}` | To'liq detal (`latestAssessment` yadrosi + sessiya sarlavhasi + `tests[]`) — ommaviy sessiya uchun ham ochiq (pastda) |
 | GET | `/api/admin/assessments/{id}/answers?testCode=` | Savolma-savol javoblar va tahlili (audit uchun) |
-| POST | `/api/admin/assessments/{id}/rerun-analysis` | `{ "provider": "Anthropic", "promptVersion": "v1.1" }` → 202 |
+| POST | `/api/admin/assessments/{id}/rerun-analysis` | `{ "provider": "Anthropic", "promptVersion": "v1.1" }` → 202. Sessiyada ballanadigan shaxsiyat batareyasi yo'q bo'lsa (so'rovnoma-only) → `409 ASSESSMENT_NO_PERSONALITY_BATTERY` (code-review, 2026-09-14: navbatga hech narsa qo'shilmaydi, holat o'zgarmaydi) |
 | POST | `/api/admin/assessments/{id}/recalculate-scores` | Scoring versiyasi o'zgargan bo'lsa |
 | GET | `/api/admin/assessments/{id}/report.pdf` | PDF hisobot |
 | DELETE | `/api/admin/assessments/{id}` | Soft delete |

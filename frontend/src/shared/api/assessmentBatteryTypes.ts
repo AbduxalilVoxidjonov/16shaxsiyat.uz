@@ -28,14 +28,26 @@
  * maydonda PM ko'rsatmasi bo'yicha kod maydoni nomi `code` — `testCode` EMAS).
  *
  * `code` — `TestDefinition.Code` (`MBTI16`/`BIG5`/`RIASEC`/`ACTIVITY`/maxsus so'rovnoma kodi
- * kabi `INTELLECT-SURVEY`). Aynan shu maydon orqali "bu metodika sessiyada bormi" tekshiriladi
- * — `features/students/model/testBattery.ts`.
+ * kabi `INTELLECT-SURVEY`). **`code` endi "bu metodika sessiyada bormi" mezoni EMAS** —
+ * kod versiyalansa (masalan `MBTI16-V2`) backend baribir natija beradi, lekin kod bo'yicha
+ * tekshirilsa kartani yashirib qo'yardi (code-review, 2026-09-14). Mavjudlik endi
+ * `batteryRole` orqali aniqlanadi — `features/students/model/testBattery.ts`.
  */
 export interface AssessmentBatteryTestBlock {
   code: string;
   nameUz: string;
   status: string;
   scoringMode: 'Scored' | 'Survey';
+  /**
+   * Anketaning shaxsiyat batareyasi ICHIDAGI roli — `PersonalityBattery.RoleOf` DOMEN
+   * qoidasidan (`AdminLatestAssessmentTestItemDto.BatteryRole`), kod ro'yxatidan EMAS.
+   * `results` kaliti bilan moslama: `PersonalityType → MBTI16`, `Traits → BIG5`,
+   * `CareerInterest → RIASEC`, `Activity → ACTIVITY`, `None` — hech qaysi kartaga tegishli
+   * emas. `undefined` — backend hali bu maydonni yubormayapti (eski moslama/mock): bu holda
+   * "xavfli taxmin" qilinmaydi, mavjudlik ANIQLANMAGAN deb hisoblanadi
+   * (`features/students/model/testBattery.ts`).
+   */
+  batteryRole?: 'None' | 'PersonalityType' | 'Traits' | 'CareerInterest' | 'Activity';
 }
 
 /**

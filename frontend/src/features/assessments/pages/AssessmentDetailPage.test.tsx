@@ -417,6 +417,33 @@ describe('AssessmentDetailPage', () => {
     ).not.toBeInTheDocument();
   });
 
+  it("so'rovnoma-only sessiya AVTOMATIK tahlil zanjirida `AnalysisFailed`ga tushsa ham \"Qayta urinish\" tugmasi ko'rsatilmaydi", async () => {
+    // P52 jonli xato tuzatish (2026-09-14): `Ai:AutoAnalyzeOnCompletion=true` sozlamasi
+    // so'rovnoma-only sessiyani ham avtomatik ravishda tahlilga yuboradi — orkestrator nol
+    // `TestResult` bilan ishlaydi va sessiya `AnalysisFailed`ga tushib qoladi. Xato haqiqiy
+    // (`showFailure`), lekin "Qayta urinish" bosilsa bekor pullik AI job navbatga qo'yiladi
+    // — shu sabab tugma YO'Q, faqat sabab tushuntirilgan.
+    renderPage([
+      {
+        ...EMPTY_DETAIL,
+        status: 'AnalysisFailed',
+        hasPersonalityBattery: false,
+        aiAnalysis: { ...AI_ANALYSIS, status: 'Failed', summary: null, errorMessage: 'Xato' },
+        tests: [testItem({ testCode: 'INTELLECT-SURVEY', scoringMode: 'Survey' })],
+      },
+    ]);
+
+    // Bir xil matn ikki joyda ko'rinadi — sessiya holati yorlig'i (`SessionMetaCard`) va AI
+    // xato kartasining sarlavhasi (`AiAnalysisSection`), shu sabab `getAllByText`.
+    expect(await screen.findAllByText('Tahlil muvaffaqiyatsiz')).toHaveLength(2);
+    expect(
+      await screen.findByText(/AI tahlili faqat shaxsiyat testlari uchun tayyorlanadi/),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Tahlilni qayta ishga tushirish|Qayta urinish/ }),
+    ).not.toBeInTheDocument();
+  });
+
   it('404 kelsa "topilmadi" holati ko\'rsatiladi', async () => {
     renderPage([{ status: 404, code: 'NOT_FOUND' }]);
 

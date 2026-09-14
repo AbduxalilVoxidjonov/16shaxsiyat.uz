@@ -9,9 +9,21 @@ import type { AssessmentBatteryTestBlock } from '@/shared/api/assessmentBatteryT
 export const CORE_TEST_CODES = ['MBTI16', 'BIG5', 'RIASEC', 'ACTIVITY'] as const;
 export type CoreTestCode = (typeof CORE_TEST_CODES)[number];
 
-function isCoreTestCode(code: string): code is CoreTestCode {
-  return (CORE_TEST_CODES as readonly string[]).includes(code);
-}
+/**
+ * Anketaning shaxsiyat batareyasi ICHIDAGI roli (`PersonalityBatteryRole`,
+ * `AdminLatestAssessmentTestItemDto.BatteryRole`) → `results` kalitiga moslama. Bu — bitta
+ * haqiqat manbai bilan (`PersonalityBattery.RoleOf` domen qoidasi) BIR XIL: rol nomi
+ * o'zgarsa, faqat shu obyekt yangilanadi.
+ */
+const ROLE_TO_CORE_CODE: Record<
+  Exclude<NonNullable<AssessmentBatteryTestBlock['batteryRole']>, 'None'>,
+  CoreTestCode
+> = {
+  PersonalityType: 'MBTI16',
+  Traits: 'BIG5',
+  CareerInterest: 'RIASEC',
+  Activity: 'ACTIVITY',
+};
 
 /**
  * P52 jonli xato tuzatish (2026-09-12): egasi "bu profil qismida chiqishi kerak emas" deb
@@ -23,23 +35,25 @@ function isCoreTestCode(code: string): code is CoreTestCode {
  * - test bu dasturda umuman YO'Q → ko'rsatishning O'ZI xato.
  *
  * `latestAssessment.tests[]` (backend P52-B, 2026-09-12) endi buni ajratadi: massiv —
- * sessiyaga BIRIKTIRILGAN test bloklari, natija hisoblanganmi emas. Shu funksiya kod →
+ * sessiyaga BIRIKTIRILGAN test bloklari, natija hisoblanganmi emas. Shu funksiya rol →
  * mavjudlik moslamasini BIR joyda ushlab turadi (`StudentSummaryCards` va
  * `StudentDiagramsSection` ikkalasi ham shu yerdan foydalanadi — ikki nusxa qattiq yozilgan
  * kod ro'yxati emas).
  *
- * `tests` `undefined`/`null` bo'lsa (masalan eski test moslamasi yoki backend hali
- * `generate:api`gacha yangilanmagan holat) BO'SH to'plam qaytadi — ya'ni HECH NARSA
- * ko'rsatilmaydi, "hammasi ko'rsatilsin" degan xavfli taxmin qilinmaydi (aynan shu taxmin
- * asl xatoga olib kelgan edi).
+ * Mezon `test.code` EMAS, `test.batteryRole` (code-review, 2026-09-14): kod versiyalansa
+ * (masalan `MBTI16-V2`) backend `PersonalityBattery.RoleOf` domen qoidasi bo'yicha baribir
+ * natija beradi — mavjudlik ANIQ SHU qoida bilan bir xil manbadan aniqlanishi kerak, kod
+ * ro'yxatidan emas. `batteryRole` `undefined` bo'lgan elementlar (eski backend/moslama)
+ * HISOBGA OLINMAYDI — ya'ni "hammasi ko'rsatilsin" degan xavfli taxmin qilinmaydi (aynan shu
+ * taxmin asl xatoga olib kelgan edi).
  */
 export function buildPresentTestCodes(
   tests: AssessmentBatteryTestBlock[] | null | undefined,
 ): ReadonlySet<CoreTestCode> {
   const present = new Set<CoreTestCode>();
   for (const test of tests ?? []) {
-    if (isCoreTestCode(test.code)) {
-      present.add(test.code);
+    if (test.batteryRole && test.batteryRole !== 'None') {
+      present.add(ROLE_TO_CORE_CODE[test.batteryRole]);
     }
   }
   return present;

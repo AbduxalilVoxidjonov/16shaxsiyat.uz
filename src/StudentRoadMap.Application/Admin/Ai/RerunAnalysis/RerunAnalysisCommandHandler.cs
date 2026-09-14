@@ -2,6 +2,7 @@ using MediatR;
 using StudentRoadMap.Application.Admin.Common;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
+using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Common;
 using StudentRoadMap.Domain.Identity;
 
@@ -11,6 +12,18 @@ namespace StudentRoadMap.Application.Admin.Ai.RerunAnalysis;
 /// `docs/07` §3.3, `prompts/18` vazifa #4. `Assessment.MarkAnalyzing` domen qo'riqchisining o'zi
 /// ruxsat etilgan boshlang'ich holatlarni (`Completed`/`Analyzed`/`AnalysisFailed`) tekshiradi —
 /// noto'g'ri holatdan (masalan `Draft`/`InProgress`) chaqirilsa `DomainException` (`409`) otiladi.
+///
+/// <para>
+/// **Server-tomoni qo'riqchisi (code-review, 2026-09-14):** `MarkAnalyzing`dan OLDIN sessiyada
+/// kamida bitta ballanadigan shaxsiyat batareyasi bloki bormi tekshiriladi
+/// (`Domain.Catalog.PersonalityBattery.Includes`, `GetAssessmentByIdQueryHandler`/
+/// `GetStudentByIdQueryHandler`dagi `HasPersonalityBattery` hisobi bilan BIR XIL manba —
+/// test kodi ro'yxati EMAS). So'rovnoma-only sessiyada `CompleteSessionCommandHandler` `Survey`
+/// bloklarini tahlildan chiqarib tashlaydi, ya'ni bunday sessiyada qayta tahlil `AnalysisOrchestrator`
+/// ni NOL `TestResult` bilan ishga tushirib, bekor va pullik AI so'rovidan so'ng
+/// `MarkAnalysisFailed`ga olib boradi. Bayroq YO'Q bo'lsa holat/navbat o'zgarmasdan `409
+/// ASSESSMENT_NO_PERSONALITY_BATTERY` qaytariladi.
+/// </para>
 /// </summary>
 internal sealed class RerunAnalysisCommandHandler : IRequestHandler<RerunAnalysisCommand, Result<RerunAnalysisResultDto>>
 {
@@ -48,6 +61,27 @@ internal sealed class RerunAnalysisCommandHandler : IRequestHandler<RerunAnalysi
         if (assessment is null)
         {
             return Result.Failure<RerunAnalysisResultDto>(new Error(ProblemCodes.NotFound, "Sessiya topilmadi."));
+        }
+
+        // Batareya bo'lmasa (so'rovnoma-only sessiya) — navbatga qo'yishdan OLDIN to'xtatiladi,
+        // holat/navbat HECH NARSA o'zgarmaydi (`MarkAnalyzing`dan OLDIN, tranzaksiyaga hech narsa
+        // qo'shilmagan holatda).
+        var testKindsAndScoringModes = await _executor.ToListAsync(
+            from t in _context.AsNoTracking(_context.AssessmentTests)
+            where t.AssessmentId == assessment.Id
+            join d in _context.AsNoTracking(_context.TestDefinitions) on t.TestDefinitionId equals d.Id
+            select new { d.Kind, d.ScoringMode },
+            cancellationToken).ConfigureAwait(false);
+
+        // `PersonalityBattery.Includes` DOMEN qoidasidan xotirada chaqiriladi (EF ifodasi sifatida
+        // emas) — `GetAssessmentByIdQueryHandler`/`GetStudentByIdQueryHandler`dagi bilan bir xil naqsh.
+        var hasPersonalityBattery = testKindsAndScoringModes.Any(t => PersonalityBattery.Includes(t.Kind, t.ScoringMode));
+
+        if (!hasPersonalityBattery)
+        {
+            return Result.Failure<RerunAnalysisResultDto>(new Error(
+                ProblemCodes.AssessmentNoPersonalityBattery,
+                "Sessiyada ballanadigan shaxsiyat metodikasi yo'q — AI tahlili mumkin emas."));
         }
 
         // `Completed`/`Analyzed`/`AnalysisFailed` dan ruxsat etiladi — boshqa holatdan

@@ -155,5 +155,26 @@ describe('resolveAiAnalysisViewState', () => {
 
       expect(view.blockedReason).toBe('noAssessment');
     });
+
+    /**
+     * P52 jonli xato tuzatish (2026-09-14): so'rovnoma-only sessiya avtomatik tahlil
+     * zanjirida `MarkAnalyzing` → orkestrator nol `TestResult` bilan → `MarkAnalysisFailed`
+     * bosqichlaridan o'tib, aynan `AnalysisFailed` holatiga tushadi. Bu holatda haqiqiy
+     * xato (`showFailure`) YASHIRILMAYDI, lekin "Qayta urinish" chaqiruvi (`action`)
+     * ko'rsatilmaydi — aks holda bosilganda bekor pullik AI job navbatga qo'yiladi.
+     */
+    it("AnalysisFailed + false → xato banneri ko'rinadi, lekin tugma YO'Q ('noPersonalityBattery')", () => {
+      const view = resolveAiAnalysisViewState({
+        status: 'AnalysisFailed',
+        analysis: FAILED_RECORD,
+        hasPersonalityBattery: false,
+      });
+
+      expect(view.showFailure).toBe(true);
+      expect(view.action).toBeNull();
+      expect(view.blockedReason).toBe('noPersonalityBattery');
+      expect(view.requiresConfirmation).toBe(false);
+      expect(view.showSkeleton).toBe(false);
+    });
   });
 });

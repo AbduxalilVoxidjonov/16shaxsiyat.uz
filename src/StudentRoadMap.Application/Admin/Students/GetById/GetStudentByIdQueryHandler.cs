@@ -107,16 +107,20 @@ internal sealed class GetStudentByIdQueryHandler : IRequestHandler<GetStudentByI
                     d.NameUz,
                     d.Kind,
                     d.ScoringMode,
+                    d.ScoringStrategyCode,
                     t.Status,
                 },
                 cancellationToken).ConfigureAwait(false);
 
+            // `RoleOf` DOMEN metodi — bazada emas, xotirada chaqiriladi (anonim proyeksiyadan
+            // keyin), chunki `Application`/`Domain`da EF ifodasi sifatida ishlay olmaydi.
             var latestAssessmentTests = testRows
                 .Select(t => new AdminLatestAssessmentTestItemDto(
                     t.Code,
                     t.NameUz,
                     t.Status.ToString(),
-                    t.ScoringMode.ToString()))
+                    t.ScoringMode.ToString(),
+                    PersonalityBattery.RoleOf(t.Kind, t.ScoringMode, t.ScoringStrategyCode).ToString()))
                 .ToList();
 
             var hasPersonalityBattery = testRows.Any(t => PersonalityBattery.Includes(t.Kind, t.ScoringMode));

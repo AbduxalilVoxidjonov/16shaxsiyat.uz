@@ -35,7 +35,10 @@ export interface AiAnalysisSectionProps {
    * Shu sessiyada ilmiy shaxsiyat batareyasi bormi (`GET /api/admin/assessments/{id}`
    * → `hasPersonalityBattery`). `false` bo'lsa tahlil chaqiruvi KO'RSATILMAYDI: so'rovnoma
    * javoblari AI tahliliga umuman kirmaydi (`CompleteSessionCommandHandler` `Survey`
-   * bloklarini chiqarib tashlaydi), ya'ni tugma `409` ga olib borardi. O'quvchi profilidagi
+   * bloklarini chiqarib tashlaydi). Bu — mijoz tomonidagi UX qulayligi (sababni oldindan
+   * ko'rsatish); haqiqiy himoya serverda: `RerunAnalysisCommandHandler` shu holatda `409
+   * ASSESSMENT_NO_PERSONALITY_BATTERY` qaytaradi (`AssessmentDetailPage` shu kodni alohida
+   * xabarga moslaydi, P52 jonli xato tuzatish, 2026-09-14). O'quvchi profilidagi
    * `AiReportSection` bilan bir xil qoida.
    */
   hasPersonalityBattery?: boolean;

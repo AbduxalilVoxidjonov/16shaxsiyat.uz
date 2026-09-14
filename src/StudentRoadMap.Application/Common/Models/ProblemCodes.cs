@@ -286,6 +286,19 @@ public static class ProblemCodes
     /// <summary>Bitta maydon ichida takroriy tanlov qiymati (`options[].value`) (409).</summary>
     public const string RegistrationFormOptionValueDuplicate = "REGISTRATION_FORM_OPTION_VALUE_DUPLICATE";
 
+    // --- code-review (2026-09-14) — `RerunAnalysisCommandHandler` server-tomoni qo'riqchisi ---
+
+    /// <summary>
+    /// `POST /api/admin/assessments/{id}/rerun-analysis` — sessiyada ballanadigan shaxsiyat
+    /// batareyasi (`Domain.Catalog.PersonalityBattery.Includes`) yo'q (masalan so'rovnoma-only
+    /// sessiya). `CompleteSessionCommandHandler` `Survey` bloklarini tahlildan chiqarib
+    /// tashlaydi, ya'ni bunday sessiyada `AnalysisOrchestrator` NOL `TestResult` bilan ishlab
+    /// `MarkAnalysisFailed`ga tushadi — bekor va pullik AI ishi. Shu sabab navbatga qo'yishdan
+    /// OLDIN serverda tekshiriladi, `hasPersonalityBattery` bilan BIR XIL manba
+    /// (`AdminAssessmentDetailDto.HasPersonalityBattery`/`AdminLatestAssessmentDto.HasPersonalityBattery`) (409).
+    /// </summary>
+    public const string AssessmentNoPersonalityBattery = "ASSESSMENT_NO_PERSONALITY_BATTERY";
+
     /// <summary>`Error.Code` → HTTP status. Ro'yxatda yo'q kod uchun standart qiymat `409` (domen holat mashinasi konflikti).</summary>
     public static readonly IReadOnlyDictionary<string, int> HttpStatusByCode = new Dictionary<string, int>(StringComparer.Ordinal)
     {
@@ -345,6 +358,7 @@ public static class ProblemCodes
         [RegistrationFormFieldCodeDuplicate] = StatusCodes.Status409Conflict,
         [RegistrationFormChoiceOptionsInsufficient] = StatusCodes.Status400BadRequest,
         [RegistrationFormOptionValueDuplicate] = StatusCodes.Status409Conflict,
+        [AssessmentNoPersonalityBattery] = StatusCodes.Status409Conflict,
     };
 
     /// <summary>Default (`docs/06` jadvaliga kirmagan domen kodlari uchun) — holat mashinasi konflikti.</summary>

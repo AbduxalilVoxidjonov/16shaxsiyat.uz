@@ -266,6 +266,7 @@ Barcha xatolar `application/problem+json`:
 | `REGISTRATION_FORM_CHOICE_OPTIONS_INSUFFICIENT` | 400 | `SingleChoice`/`MultiChoice` maydonida 2 tadan kam tanlov varianti (2026-09-11/12) |
 | `REGISTRATION_FORM_OPTION_VALUE_DUPLICATE` | 409 | Bitta maydon ichida takroriy tanlov qiymati (2026-09-11/12) |
 | `INPUT_PATTERN_INVALID` | 400 | `ShortText`/`Phone` savoli YOKI ro'yxatdan o'tish formasi maydonining `inputPattern`i kompilyatsiya qilinmadi (P52; ro'yxatdan o'tish formasiga qo'llanilishi 2026-09-11/12) |
+| `ASSESSMENT_NO_PERSONALITY_BATTERY` | 409 | `POST /api/admin/assessments/{id}/rerun-analysis`: sessiyada ballanadigan shaxsiyat batareyasi yo'q (so'rovnoma-only) — AI tahlili navbatga qo'yilmaydi (code-review, 2026-09-14) |
 
 > **`429` javobi.** `Retry-After` sarlavhasi (butun sekund) MAJBURIY, va bir xil qiymat
 > `ProblemDetails` tanasida `retryAfterSeconds` maydoni sifatida takrorlanadi — sarlavhani

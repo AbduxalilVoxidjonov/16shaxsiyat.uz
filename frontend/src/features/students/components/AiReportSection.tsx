@@ -198,15 +198,20 @@ export function AiReportSection({
             <p className="mt-1 text-sm text-danger-700">
               {aiAnalysis?.errorMessage ?? t('studentProfile.ai.failedDescription')}
             </p>
-            <Button
-              variant="danger"
-              size="sm"
-              className="mt-3"
-              isLoading={isStartingAnalysis}
-              onClick={runAnalysis}
-            >
-              {t('studentProfile.ai.retryCta')}
-            </Button>
+            {/* `noPersonalityBattery` bloklaganda `action` `null` — bu holatda tugma
+                ko'rsatilmaydi, faqat pastdagi `blockedReason` tushuntirishi qoladi (P52
+                jonli xato tuzatish, 2026-09-14: bosilganda bekor AI job navbatga qo'yiladi). */}
+            {view.action !== null && (
+              <Button
+                variant="danger"
+                size="sm"
+                className="mt-3"
+                isLoading={isStartingAnalysis}
+                onClick={runAnalysis}
+              >
+                {t('studentProfile.ai.retryCta')}
+              </Button>
+            )}
           </div>
         )}
 

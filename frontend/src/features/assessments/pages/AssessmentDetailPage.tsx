@@ -110,11 +110,18 @@ export default function AssessmentDetailPage() {
   const meta = resolveSessionMeta(detail, parseAssessmentLocationState(location.state));
   const results = normalizeTestResults(detail.results);
   const rows = buildTestSummaryRows(results, detail.tests);
+  // `noPersonalityBattery` bloklaganda tugma allaqachon ko'rinmaydi (mijoz tomonidagi UX
+  // qoidasi), lekin server har doim ham qo'riqchi — eskirgan sahifa holati yoki boshqa
+  // yo'l bilan chaqiruv yuborilsa, `RerunAnalysisCommandHandler` `409
+  // ASSESSMENT_NO_PERSONALITY_BATTERY` qaytaradi (haqiqiy himoya). Shu kod uchun alohida,
+  // aniqroq xabar — qolgan `409` (`ASSESSMENT_INVALID_TRANSITION`) umumiy xabarda qoladi.
   const rerunError = !rerunMutation.isError
     ? undefined
-    : rerunMutation.error instanceof AppError && rerunMutation.error.status === 409
-      ? t('assessmentDetail.rerunDialog.conflictError')
-      : t('assessmentDetail.rerunDialog.error');
+    : rerunMutation.error instanceof AppError && rerunMutation.error.code === 'ASSESSMENT_NO_PERSONALITY_BATTERY'
+      ? t('assessmentDetail.rerunDialog.noPersonalityBatteryError')
+      : rerunMutation.error instanceof AppError && rerunMutation.error.status === 409
+        ? t('assessmentDetail.rerunDialog.conflictError')
+        : t('assessmentDetail.rerunDialog.error');
 
   /**
    * `POST /api/admin/assessments/{id}/rerun-analysis` — `docs/07` 3.3. Domen qo'riqchisi

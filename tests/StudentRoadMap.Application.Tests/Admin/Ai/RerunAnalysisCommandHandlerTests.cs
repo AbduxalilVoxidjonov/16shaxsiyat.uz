@@ -25,6 +25,12 @@ public sealed class RerunAnalysisCommandHandlerTests
 
         public List<AuditLog> AuditLogList { get; } = [];
 
+        /// <summary>Yangi qo'riqchi (2026-09-14) shu ro'yxatlarni `AssessmentTests`/`TestDefinitions` orqali JOIN qiladi.</summary>
+        public List<AssessmentTest> AssessmentTestList { get; } = [];
+
+        /// <summary>Yangi qo'riqchi (2026-09-14) shu ro'yxatlarni `AssessmentTests`/`TestDefinitions` orqali JOIN qiladi.</summary>
+        public List<Domain.Catalog.TestDefinition> TestDefinitionList { get; } = [];
+
         public bool SaveChangesCalled { get; private set; }
 
         public IQueryable<Assessment> Assessments => AssessmentList.AsQueryable();
@@ -65,13 +71,13 @@ public sealed class RerunAnalysisCommandHandlerTests
 
         public IQueryable<Domain.Students.Student> Students => throw new NotSupportedException();
 
-        public IQueryable<AssessmentTest> AssessmentTests => throw new NotSupportedException();
+        public IQueryable<AssessmentTest> AssessmentTests => AssessmentTestList.AsQueryable();
 
         public IQueryable<Answer> Answers => throw new NotSupportedException();
 
         public IQueryable<TestResult> TestResults => throw new NotSupportedException();
 
-        public IQueryable<Domain.Catalog.TestDefinition> TestDefinitions => throw new NotSupportedException();
+        public IQueryable<Domain.Catalog.TestDefinition> TestDefinitions => TestDefinitionList.AsQueryable();
 
         public IQueryable<Domain.Catalog.Question> Questions => throw new NotSupportedException();
 
@@ -149,18 +155,48 @@ public sealed class RerunAnalysisCommandHandlerTests
     {
         var assessment = Assessment.Create(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "tok-1", "uz", Guid.NewGuid(), Now, Now.AddDays(7), Now);
 
+        var test = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, Guid.NewGuid(), 1, 1);
+        assessment.AddTest(test);
+
         if (targetStatus == AssessmentStatus.Draft)
         {
             return assessment;
         }
 
-        var test = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, Guid.NewGuid(), 1, 1);
-        assessment.AddTest(test);
         assessment.StartTest(test.TestDefinitionId, Now);
         assessment.CompleteTest(test.TestDefinitionId, [], Now);
         assessment.Complete(Now);
 
         return assessment;
+    }
+
+    /// <summary>
+    /// Yangi server-tomoni qo'riqchi (code-review, 2026-09-14) `context.AssessmentTests`/
+    /// `TestDefinitions`ga JOIN qiladi — `assessment.Tests`dagi (domen aggregat) yozuvga mos
+    /// `TestDefinition` qo'shiladi, `Kind`/`ScoringMode` `PersonalityBattery.Includes`ga mos
+    /// keladigan yoki kelmaydigan qilib beriladi.
+    /// </summary>
+    private static void SeedTestDefinition(
+        FakeContext context,
+        Assessment assessment,
+        StudentRoadMap.Domain.Catalog.TestKind kind,
+        StudentRoadMap.Domain.Catalog.TestScoringMode scoringMode)
+    {
+        foreach (var assessmentTest in assessment.Tests)
+        {
+            context.AssessmentTestList.Add(assessmentTest);
+            context.TestDefinitionList.Add(StudentRoadMap.Domain.Catalog.TestDefinition.Create(
+                assessmentTest.TestDefinitionId,
+                $"TEST-{assessmentTest.TestDefinitionId:N}",
+                "Test nomi",
+                displayOrder: 1,
+                estimatedMinutes: 5,
+                scoringStrategyCode: scoringMode == StudentRoadMap.Domain.Catalog.TestScoringMode.Survey ? null : "SUM",
+                now: Now,
+                kind: kind,
+                isSystem: true,
+                scoringMode: scoringMode));
+        }
     }
 
     [Fact]
@@ -169,6 +205,7 @@ public sealed class RerunAnalysisCommandHandlerTests
         var context = new FakeContext();
         var assessment = CreateAssessmentInStatus(AssessmentStatus.Completed);
         context.AssessmentList.Add(assessment);
+        SeedTestDefinition(context, assessment, StudentRoadMap.Domain.Catalog.TestKind.Standard, StudentRoadMap.Domain.Catalog.TestScoringMode.Scored);
 
         var jobQueue = new SpyBackgroundJobQueue();
         var postCommitActions = new SpyPostCommitActions();
@@ -215,6 +252,7 @@ public sealed class RerunAnalysisCommandHandlerTests
         var context = new FakeContext();
         var assessment = CreateAssessmentInStatus(AssessmentStatus.Completed);
         context.AssessmentList.Add(assessment);
+        SeedTestDefinition(context, assessment, StudentRoadMap.Domain.Catalog.TestKind.Standard, StudentRoadMap.Domain.Catalog.TestScoringMode.Scored);
 
         var jobQueue = new SpyBackgroundJobQueue();
         var postCommitActions = new SpyPostCommitActions();
@@ -237,6 +275,7 @@ public sealed class RerunAnalysisCommandHandlerTests
         var context = new FakeContext();
         var assessment = CreateAssessmentInStatus(AssessmentStatus.Draft);
         context.AssessmentList.Add(assessment);
+        SeedTestDefinition(context, assessment, StudentRoadMap.Domain.Catalog.TestKind.Standard, StudentRoadMap.Domain.Catalog.TestScoringMode.Scored);
 
         var handler = new RerunAnalysisCommandHandler(context, new InlineAsyncQueryExecutor(), new FakeDateTime(Now), new FakeIpHasher(), new SpyBackgroundJobQueue(), new SpyPostCommitActions());
 
@@ -244,6 +283,34 @@ public sealed class RerunAnalysisCommandHandlerTests
 
         var ex = await act.Should().ThrowAsync<DomainException>();
         ex.Which.Code.Should().Be("ASSESSMENT_INVALID_TRANSITION");
+    }
+
+    /// <summary>
+    /// Server-tomoni qo'riqchisi (code-review, 2026-09-14): so'rovnoma-only sessiyada
+    /// (`Standard`+`Scored` bloki YO'Q) navbatga HECH NARSA qo'shilmaydi, holat o'zgarmaydi —
+    /// `MarkAnalyzing`gacha to'xtatiladi.
+    /// </summary>
+    [Fact]
+    public async Task Handle_SorovnomaOnlySessiya_ReturnsAssessmentNoPersonalityBattery_NavbatgaQoshilmaydi()
+    {
+        var context = new FakeContext();
+        var assessment = CreateAssessmentInStatus(AssessmentStatus.Completed);
+        context.AssessmentList.Add(assessment);
+        SeedTestDefinition(context, assessment, StudentRoadMap.Domain.Catalog.TestKind.Standard, StudentRoadMap.Domain.Catalog.TestScoringMode.Survey);
+
+        var jobQueue = new SpyBackgroundJobQueue();
+        var postCommitActions = new SpyPostCommitActions();
+        var handler = new RerunAnalysisCommandHandler(context, new InlineAsyncQueryExecutor(), new FakeDateTime(Now), new FakeIpHasher(), jobQueue, postCommitActions);
+
+        var result = await handler.Handle(new RerunAnalysisCommand(assessment.Id, null, null, Guid.NewGuid()), CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Code.Should().Be(StudentRoadMap.Application.Common.Models.ProblemCodes.AssessmentNoPersonalityBattery);
+        assessment.Status.Should().Be(AssessmentStatus.Completed, "holat o'zgarmasligi kerak — `MarkAnalyzing` chaqirilmadi");
+        context.SaveChangesCalled.Should().BeFalse("tranzaksiyaga hech narsa yozilmagan");
+        context.AuditLogList.Should().BeEmpty();
+        postCommitActions.EnqueuedActions.Should().BeEmpty("navbatga HECH NARSA qo'shilmasligi kerak");
+        jobQueue.EnqueueCallCount.Should().Be(0);
     }
 
     [Fact]

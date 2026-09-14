@@ -6,7 +6,7 @@
  * ekranning JSX'i o'zicha qoladi — ular boshqa i18n bo'shlig'i va boshqa DTO shakli bilan
  * ishlaydi — lekin "qaysi holatda nima ko'rinadi" savoliga javob faqat shu fayldan keladi.
  *
- * Uch qoida shu funksiyada mustahkamlangan:
+ * To'rt qoida shu funksiyada mustahkamlangan:
  *
  * 1. **Eski tahlil `Analyzing` paytida YO'QOLMAYDI.** Ilgari ikkala ekran ham `Analyzing`
  *    holatida butun bo'limni skeletga almashtirardi va admin qayta tahlil bosgan zahoti
@@ -18,6 +18,13 @@
  *    "hisobot yo'q" ga qo'shib yuborilmaydi.
  * 3. **Tasdiq faqat ustiga yozilganda.** Birinchi tahlilda yo'qotiladigan narsa yo'q —
  *    `requiresConfirmation: false`; mavjud hisobot ustiga yozilganda esa `true`.
+ * 4. **`noPersonalityBattery` gate `AnalysisFailed`dan OLDIN turadi.** So'rovnoma-only
+ *    sessiya avtomatik tahlil zanjirida aynan `AnalysisFailed` holatiga tushadi (nol
+ *    `TestResult`), shu sabab bu tekshiruv `status === 'AnalysisFailed'` tarmog'idan
+ *    oldinroq bo'lishi SHART — aks holda bekor "Qayta urinish" tugmasi chiqib, bosilganda
+ *    pullik AI job behuda navbatga qo'yiladi. Xatoning o'zi (`showFailure`) baribir
+ *    ko'rsatiladi — faqat CHAQIRUV (`action`) yashiriladi (P52 jonli xato tuzatish,
+ *    2026-09-14).
  */
 
 /**
@@ -172,6 +179,30 @@ export function resolveAiAnalysisViewState({
     };
   }
 
+  // Sessiyada ballanadigan shaxsiyat metodikasi yo'q (faqat so'rovnoma) — "AI tahlil qilish"
+  // chaqiruvi ma'nosiz, chunki `CompleteSessionCommandHandler` `Survey` bloklarini
+  // tahlildan chiqarib tashlaydi. Bu tekshiruv `AnalysisFailed` tarmog'idan OLDIN turadi:
+  // `Ai:AutoAnalyzeOnCompletion=true` sozlamasida so'rovnoma-only sessiya avtomatik ravishda
+  // `MarkAnalyzing` → orkestrator nol `TestResult` bilan → `MarkAnalysisFailed` zanjiriga
+  // tushib qoladi, ya'ni aynan `AnalysisFailed` holatiga keladi. Tekshiruv keyinroq tursa,
+  // haqiqiy xato (`showFailure`) "Qayta urinish" tugmasi bilan ko'rinib, bosilganda bekor
+  // AI job navbatga qo'yiladi (P52 jonli xato tuzatish, 2026-09-14). Xatoning o'zi (bor
+  // ma'lumot) YASHIRILMAYDI — `showFailure` `AnalysisFailed`da baribir `true`, faqat
+  // CHAQIRUV (`action`) yo'qoladi. Mavjud hisobot bo'lsa (kamdan-kam, masalan dastur
+  // tarkibi keyinchalik o'zgargan bo'lsa) baribir KO'RSATILADI (P52, 2026-09-12).
+  if (!hasPersonalityBattery && (status === null || AI_RUNNABLE_STATUSES.includes(status))) {
+    return {
+      isAnalyzing: false,
+      showSkeleton: false,
+      showReport,
+      showAnalyzingBanner: false,
+      showFailure: status === 'AnalysisFailed',
+      action: null,
+      blockedReason: 'noPersonalityBattery',
+      requiresConfirmation: false,
+    };
+  }
+
   if (status === 'AnalysisFailed') {
     return {
       isAnalyzing: false,
@@ -187,23 +218,6 @@ export function resolveAiAnalysisViewState({
   }
 
   if (status === null || AI_RUNNABLE_STATUSES.includes(status)) {
-    // Sessiyada ballanadigan shaxsiyat metodikasi yo'q (faqat so'rovnoma) — "Tahlilni ishga
-    // tushirish" chaqiruvi ma'nosiz, chunki `CompleteSessionCommandHandler` `Survey`
-    // bloklarini tahlildan chiqarib tashlaydi. Mavjud hisobot bo'lsa (kamdan-kam, masalan
-    // dastur tarkibi keyinchalik o'zgargan bo'lsa) baribir KO'RSATILADI — faqat CHAQIRUV
-    // yashiriladi (P52 jonli xato tuzatish, 2026-09-12).
-    if (!hasPersonalityBattery) {
-      return {
-        isAnalyzing: false,
-        showSkeleton: false,
-        showReport,
-        showAnalyzingBanner: false,
-        showFailure: false,
-        action: null,
-        blockedReason: 'noPersonalityBattery',
-        requiresConfirmation: false,
-      };
-    }
     return {
       isAnalyzing: false,
       showSkeleton: false,

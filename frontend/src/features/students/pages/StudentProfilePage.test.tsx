@@ -178,10 +178,10 @@ function buildProfileResponse(
  * shu faylning tegishli testlarida e'lon qilinadi.
  */
 const FULL_BATTERY_TESTS: AssessmentBatteryTestBlock[] = [
-  { code: 'MBTI16', nameUz: 'Shaxsiyat tipi', status: 'Completed', scoringMode: 'Scored' },
-  { code: 'BIG5', nameUz: 'Katta beshlik', status: 'Completed', scoringMode: 'Scored' },
-  { code: 'RIASEC', nameUz: 'Kasb qiziqishlari', status: 'Completed', scoringMode: 'Scored' },
-  { code: 'ACTIVITY', nameUz: 'Aktivlik', status: 'Completed', scoringMode: 'Scored' },
+  { code: 'MBTI16', nameUz: 'Shaxsiyat tipi', status: 'Completed', scoringMode: 'Scored', batteryRole: 'PersonalityType' },
+  { code: 'BIG5', nameUz: 'Katta beshlik', status: 'Completed', scoringMode: 'Scored', batteryRole: 'Traits' },
+  { code: 'RIASEC', nameUz: 'Kasb qiziqishlari', status: 'Completed', scoringMode: 'Scored', batteryRole: 'CareerInterest' },
+  { code: 'ACTIVITY', nameUz: 'Aktivlik', status: 'Completed', scoringMode: 'Scored', batteryRole: 'Activity' },
 ];
 
 /** Xato javobi — `ProblemDetails` (`docs/06` 6-bo'lim). */
@@ -329,6 +329,41 @@ describe('StudentProfilePage', () => {
       expect(screen.queryByRole('button', { name: /AI tahlil qilish/ })).not.toBeInTheDocument();
     });
 
+    /**
+     * P52 jonli xato tuzatish (2026-09-14): `Ai:AutoAnalyzeOnCompletion=true` sozlamasida
+     * so'rovnoma-only sessiya avtomatik tahlil zanjirida `MarkAnalyzing` → orkestrator nol
+     * `TestResult` bilan → `MarkAnalysisFailed` bosqichlaridan o'tib, aynan
+     * `AnalysisFailed` holatiga tushib qoladi. Xato haqiqiy (`showFailure` — yashirilmaydi),
+     * lekin "Qayta urinish" bosilsa bekor pullik AI job navbatga qo'yiladi — shu sabab
+     * `noPersonalityBattery` gate `AnalysisFailed`dan OLDIN turishi kerak.
+     */
+    it("so'rovnoma-only sessiya `AnalysisFailed`ga tushsa ham \"Qayta urinish\" tugmasi ko'rsatilmaydi", async () => {
+      renderPage([
+        buildProfileResponse({
+          assessments: [{ ...ASSESSMENT_SUMMARY, status: 'AnalysisFailed' }],
+          latestAssessment: {
+            id: 'assessment-1',
+            results: {},
+            aiAnalysis: { ...AI_ANALYSIS, status: 'Failed', summary: null, errorMessage: 'Xato' },
+            aiHistory: [],
+            tests: SURVEY_ONLY_TESTS,
+            hasPersonalityBattery: false,
+          },
+        }),
+      ]);
+
+      // Bir xil matn uch joyda ko'rinadi — sessiya holati yorlig'i, sessiyalar tarixi
+      // jadvalidagi qator va AI xato kartasining sarlavhasi (`AiReportSection`), shu sabab
+      // `findAllByText`.
+      expect(await screen.findAllByText('Tahlil muvaffaqiyatsiz')).toHaveLength(3);
+      expect(
+        screen.getByText(
+          'Bu sessiyada ilmiy metodika yo\'q, AI tahlili faqat shaxsiyat testlari uchun tayyorlanadi.',
+        ),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Qayta urinish/ })).not.toBeInTheDocument();
+    });
+
     it('aralash sessiyada FAQAT mavjud metodikalar chiqadi (masalan faqat MBTI16)', async () => {
       renderPage([
         buildProfileResponse({
@@ -338,7 +373,7 @@ describe('StudentProfilePage', () => {
             aiAnalysis: null,
             aiHistory: [],
             tests: [
-              { code: 'MBTI16', nameUz: 'Shaxsiyat tipi', status: 'Completed', scoringMode: 'Scored' },
+              { code: 'MBTI16', nameUz: 'Shaxsiyat tipi', status: 'Completed', scoringMode: 'Scored', batteryRole: 'PersonalityType' },
               ...SURVEY_ONLY_TESTS,
             ],
             hasPersonalityBattery: true,
@@ -366,7 +401,7 @@ describe('StudentProfilePage', () => {
             results: {},
             aiAnalysis: null,
             aiHistory: [],
-            tests: [{ code: 'MBTI16', nameUz: 'Shaxsiyat tipi', status: 'Completed', scoringMode: 'Scored' }],
+            tests: [{ code: 'MBTI16', nameUz: 'Shaxsiyat tipi', status: 'Completed', scoringMode: 'Scored', batteryRole: 'PersonalityType' }],
             hasPersonalityBattery: true,
           },
         }),

@@ -1916,7 +1916,8 @@
       "submitCta": "Ha, qayta ishga tushirilsin",
       "success": "Tahlil navbatga qo'yildi",
       "error": "Tahlilni qayta ishga tushirib bo'lmadi. Birozdan so'ng qayta urinib ko'ring.",
-      "conflictError": "Bu holatdagi sessiyani qayta tahlil qilib bo'lmaydi — avval sessiya yakunlangan bo'lishi kerak."
+      "conflictError": "Bu holatdagi sessiyani qayta tahlil qilib bo'lmaydi — avval sessiya yakunlangan bo'lishi kerak.",
+      "noPersonalityBatteryError": "Bu sessiyada ballanadigan shaxsiyat metodikasi yo'q (faqat so'rovnoma) — AI tahlili faqat shaxsiyat testlari uchun tayyorlanadi."
     }
   },
   "assessments": {

@@ -117,6 +117,8 @@ public sealed class AdminStudentLatestAssessmentTestsEndpointTests : IClassFixtu
         body.LatestAssessment.Tests[0].Code.Should().Be("INTELLECT-SURVEY");
         body.LatestAssessment.Tests[0].ScoringMode.Should().Be("Survey");
         body.LatestAssessment.Tests[0].Status.Should().Be("Completed");
+        body.LatestAssessment.Tests[0].BatteryRole.Should().Be("None",
+            "`Survey` bloki batareyaga kirmaydi (`PersonalityBattery.RoleOf`)");
         body.LatestAssessment.HasPersonalityBattery.Should().BeFalse(
             "so'rovnoma-only sessiyada ilmiy shaxsiyat batareyasi umuman yo'q");
 
@@ -206,6 +208,45 @@ public sealed class AdminStudentLatestAssessmentTestsEndpointTests : IClassFixtu
         body.LatestAssessment.Tests.Should().Contain(t => t.Code == "SURVEY-MIX" && t.ScoringMode == "Survey");
         body.LatestAssessment.HasPersonalityBattery.Should().BeTrue(
             "kamida bitta `Standard`+`Scored` bloki bor — `Survey` bloki bu bayroqqa ta'sir qilmaydi");
+    }
+
+    /// <summary>
+    /// `BatteryRole` (code-review, 2026-09-14) — `PersonalityBattery.RoleOf` DOMEN qoidasidan
+    /// (`ScoringStrategyCode` bo'yicha), metodika KODIDAN emas: `MBTI16` strategiyasi
+    /// `PersonalityType` rolini beradi, `Survey` bloki esa `None`.
+    /// </summary>
+    [Fact]
+    public async Task GetById_MBTI16StrategiyaliTest_BatteryRolePersonalityType_SurveyBlokiNone()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var now = DateTimeOffset.UtcNow;
+
+        var student = await CreateStudentAsync(db, now, "latest-tests-role");
+
+        var typeTest = await TestDataFactory.CreateStandaloneSystemTestAsync(
+            db, now, "ROLE-TYPE", displayOrder: 1, questionCount: 1, scoringStrategyCode: "MBTI16");
+        var surveyTest = await TestDataFactory.CreateStandaloneTestAsync(
+            db, now, "ROLE-SURVEY", displayOrder: 2, questionCount: 1,
+            scoringMode: TestScoringMode.Survey, scoringStrategyCode: null);
+
+        var assessment = await CreateDraftAssessmentAsync(db, now, student, "latest-tests-role");
+        var typeAssessmentTest = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, typeTest.Id, displayOrder: 1, totalCount: 1);
+        var surveyAssessmentTest = AssessmentTest.Create(Guid.NewGuid(), assessment.Id, surveyTest.Id, displayOrder: 2, totalCount: 1);
+        assessment.AddTest(typeAssessmentTest);
+        assessment.AddTest(surveyAssessmentTest);
+
+        db.Assessments.Add(assessment);
+        await db.SaveChangesAsync();
+
+        using var client = await AuthenticatedClientAsync("latest-tests-role-admin");
+        var response = await client.GetAsync(new Uri($"/api/admin/students/{student.Id}", UriKind.Relative));
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var body = (await response.Content.ReadFromJsonAsync<AdminStudentProfileDto>(TestJson.Options))!;
+        body.LatestAssessment.Should().NotBeNull();
+        body.LatestAssessment!.Tests.Should().Contain(t => t.Code == "ROLE-TYPE" && t.BatteryRole == "PersonalityType");
+        body.LatestAssessment.Tests.Should().Contain(t => t.Code == "ROLE-SURVEY" && t.BatteryRole == "None");
     }
 
     [Fact]
