@@ -17,7 +17,7 @@ Superadmin uchun ekran-ekran qo'llanma: [`docs/16-foydalanuvchi-qollanmasi.md`](
 - **DB:** PostgreSQL 16 (EF Core + Npgsql, `jsonb` ballar va AI javoblari uchun)
 - **Frontend:** React 19 + TypeScript (strict) + Vite + Tailwind + TanStack Query (`frontend/`)
 - **AI:** provider-agnostik — Gemini / OpenAI / Anthropic (superadmin qaysi kalitni qo'ysa, o'sha ishlaydi)
-- **Deploy:** Docker compose (`db` → `migrate` → `seed` → `api` → `app` → `tunnel`), Cloudflare Tunnel, GitHub Actions CI
+- **Deploy:** Docker compose (`db` → `migrate` → `seed` → `api` → `app`; `tunnel` ixtiyoriy profil), GitHub Actions CI
 
 ## Arxitektura sxemasi
 
@@ -70,7 +70,7 @@ cp .env.example .env
 | `Security__EncryptionKey` | `openssl rand -base64 32` (aynan 32 bayt, AI kalitlarini shifrlash uchun) |
 | `Security__IpHashSalt` | `openssl rand -base64 24` |
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` / `ADMIN_EMAIL` | Yagona superadmin uchun o'zingiz tanlaysiz |
-| `TUNNEL_TOKEN` | Faqat production'da kerak — Cloudflare Zero Trust > Tunnels > connector token. Faqat lokal sinov uchun `tunnel` xizmatini `docker compose up` buyrug'iga qo'shmang (pastga qarang) |
+| `TUNNEL_TOKEN` | Faqat `tunnel` profili uchun (Cloudflare Zero Trust > Tunnels > connector token). Oddiy `docker compose up` da kerak emas — bo'sh qolsa ham stek ko'tariladi |
 | `App__KnownProxies` | Standart qiymat (`172.26.0.0/16`) `docker-compose.yml`dagi qotirilgan subnet bilan bir xil — odatda o'zgartirish shart emas (`docs/13` §7) |
 
 Keyin bitta buyruq bilan hamma narsa ko'tariladi:
@@ -80,8 +80,14 @@ docker compose up -d --build
 ```
 
 Bu ketma-ket bajaradi: `db` (sog'lom bo'lguncha kutadi) → `migrate` (barcha migratsiya,
-bir martalik) → `api` → `app` (frontend + `/api` proksi) → `tunnel` (production'da
-Cloudflare'ga ulaydi).
+bir martalik) → `api` → `app` (frontend + `/api` proksi). Ilova **faqat shu mashinada**
+`http://localhost:8090` da ochiladi (`WEB_PORT`, `127.0.0.1` ga bog'langan).
+
+**Tunnel bu zanjirda yo'q** (2026-09-15 dan): Cloudflare tunnel `tunnel` profili ostida,
+hozircha ishlatilmaydi. Saytni internetga chiqarish kerak bo'lganda:
+```bash
+docker compose --profile tunnel up -d tunnel     # .env da TUNNEL_TOKEN bo'lishi shart
+```
 
 **Seed bu zanjirda yo'q.** Katalog (190 savol, 16 tip, kasb xaritasi, superadmin) bir marta
 yozilgach har deploy'da qayta yugurishi shart emas, shu sabab u `init` profili ostida.
@@ -97,12 +103,9 @@ docker compose ps
 docker compose logs -f migrate     # 0-kod bilan tugashi shart
 ```
 
-**Faqat lokal sinov** (production tunnel kerak emas) — `app`ni xostga vaqtincha chiqarib
-ko'rish uchun `docker-compose.yml`dagi izohlangan `ports:` qatorini oching yoki:
+Tekshirish:
 ```bash
-docker compose up -d --build db migrate api app   # tunnel'siz
-docker compose port app 8080
-curl http://localhost:<port>/health
+curl http://localhost:8090/health
 ```
 
 Superadmin sifatida `.env`dagi `ADMIN_USERNAME`/`ADMIN_PASSWORD` bilan kiring — birinchi

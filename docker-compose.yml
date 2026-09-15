@@ -109,19 +109,24 @@ services:
       dockerfile: docker/Dockerfile.web
     depends_on:
       - api
-    # Host'ga port CHIQARILMAYDI — ilova faqat Cloudflare tunnel orqali, o'z domenida
-    # ochiladi. Shu sababli mashinada hech narsa tinglamaydi (ortiqcha hujum yuzasi yo'q).
-    # Lokal tekshiruv kerak bo'lsa vaqtincha:  docker compose port app 8080
-    # yoki quyidagini yoqing:
-    #   ports:
-    #     - "127.0.0.1:${WEB_PORT:-8080}:8080"
+    # Port FAQAT lokal interfeysga chiqariladi (2026-09-15 egasi qarori: Cloudflare tunnel
+    # hozircha ishlatilmaydi, sayt faqat shu mashinada `http://localhost:${WEB_PORT}` da
+    # ochiladi). `127.0.0.1` — bir xil Wi-Fi'dagi boshqa qurilmalar ko'ra olmaydi.
+    # Standart 8090, 8080 EMAS: shu mashinada boshqa loyiha 8080 ni egallab turadi.
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8090}:8080"
     restart: unless-stopped
 
-  # Cloudflare tunnel — `docker compose up -d --build` bilan birga ko'tariladi.
+  # Cloudflare tunnel — IXTIYORIY (`profiles: [tunnel]`): oddiy `docker compose up -d`
+  # uni KO'TARMAYDI (2026-09-15 egasi qarori — hozircha faqat localhost). Kerak bo'lganda:
+  #     docker compose --profile tunnel up -d tunnel
   # Token SIR: faqat `.env` da (`TUNNEL_TOKEN`), repoga tushmaydi (CLAUDE.md 4-qoida).
+  # `:-` (majburiy emas): compose faylni o'qishdayoq interpolyatsiya qiladi, `:?` bo'lsa
+  # profil o'chiq bo'lsa ham token yo'qligida butun stek ko'tarilmas edi.
   tunnel:
     image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN:?TUNNEL_TOKEN .env faylida berilishi shart}
+    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN:-}
+    profiles: ["tunnel"]
     depends_on:
       - app
     restart: unless-stopped
