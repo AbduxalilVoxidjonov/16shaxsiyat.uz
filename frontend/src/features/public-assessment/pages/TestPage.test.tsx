@@ -547,6 +547,21 @@ describe("TestPage — bo'lim-qadam rejimi (docs/18)", () => {
     expect(screen.getByText("3-bo'lim savoli")).toBeInTheDocument();
   });
 
+  it("so'rovnoma faqat oldinga yuriladi: keyingi bo'limga o'tilgach 'Orqaga' tugmasi yo'q", async () => {
+    seedSession();
+    mockBranchingFetch();
+    const user = userEvent.setup();
+    renderBranching();
+
+    await screen.findByText('F.I.Sh.');
+    expect(screen.queryByRole('button', { name: 'Orqaga' })).not.toBeInTheDocument();
+
+    await fillFirstSection(user, 'Intellect');
+
+    expect(await screen.findByRole('heading', { name: "Intellect o'quvchilari uchun" })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Orqaga' })).not.toBeInTheDocument();
+  });
+
   it("1.6 = 'Boshqa markaz' tanlansa 2-B ko'rinadi, 2-A/2-C ko'rinmaydi, oxirida 3-bo'lim bor", async () => {
     seedSession();
     mockBranchingFetch();

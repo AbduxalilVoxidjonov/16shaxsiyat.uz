@@ -322,22 +322,6 @@ export default function TestPage() {
     window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   }
 
-  function handlePrev() {
-    // Sahifa/bo'lim ichida harakat — serverga bog'liq emas, shu sabab kutilmaydi (oflaynda ham ishlaydi).
-    if (sections) {
-      if (currentSectionIndex <= 0) return;
-      void autosave.flush();
-      setInvalidIds(new Set());
-      setCurrentSectionId(visibleSections[currentSectionIndex - 1]!.id);
-      scrollToTop();
-      return;
-    }
-    if (page <= 1) return;
-    void autosave.flush();
-    setPage((prev) => prev - 1);
-    scrollToTop();
-  }
-
   /** `docs/18` §4.3 bilan mos — barcha ko'rinadigan majburiy savol to'ldirilgach chaqiriladi. */
   async function finishTest() {
     // OXIRGI EKRAN (P30-2 poygasi). `POST .../complete` backendda "barcha majburiy (ko'rinadigan)
@@ -572,15 +556,9 @@ export default function TestPage() {
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-paper/95 px-5 py-3 backdrop-blur-xl sm:px-8">
-        <div className="mx-auto flex w-full max-w-prose items-center justify-between gap-3">
-          <Button
-            variant="outline"
-            className={publicButtonClass('ghost', 'md')}
-            onClick={handlePrev}
-            disabled={sections ? currentSectionIndex <= 0 : page <= 1}
-          >
-            {t('common.back')}
-          </Button>
+        {/* So'rovnoma faqat OLDINGA yuriladi: "Orqaga" tugmasi ataylab yo'q — o'quvchi oldingi
+            sahifa/bo'limga qaytib javobini o'zgartira olmaydi. */}
+        <div className="mx-auto flex w-full max-w-prose items-center justify-end gap-3">
           <Button
             className={publicButtonClass('primary', 'lg')}
             onClick={() => {
