@@ -99,6 +99,60 @@ public sealed class AiHttpExecutorTests
         outcome.ErrorKind.Should().Be(AiErrorKind.Auth);
     }
 
+    [Theory]
+    [InlineData("{\"error\":{\"code\":503,\"message\":\"The model is overloaded. Please try again later.\",\"status\":\"UNAVAILABLE\"}}", "The model is overloaded. Please try again later.")]
+    [InlineData("{\"type\":\"error\",\"error\":{\"type\":\"overloaded_error\",\"message\":\"Overloaded\"}}", "Overloaded")]
+    [InlineData("[{\"error\":{\"message\":\"array wrapped\"}}]", "array wrapped")]
+    [InlineData("<html>502 Bad Gateway</html>", null)]
+    [InlineData("{\"error\":\"just a string\"}", null)]
+    [InlineData("", null)]
+    public void ExtractSafeDetail_ReadsOnlyErrorMessageField(string body, string? expected)
+    {
+        AiHttpExecutor.ExtractSafeDetail(body, "AIzaSECRET1234").Should().Be(expected);
+    }
+
+    [Fact]
+    public void ExtractSafeDetail_RedactsKeyAndTruncates()
+    {
+        var longText = new string('x', 500);
+        var body = $"{{\"error\":{{\"message\":\"key AIzaSECRET1234 bad {longText}\"}}}}";
+
+        var detail = AiHttpExecutor.ExtractSafeDetail(body, "AIzaSECRET1234");
+
+        detail.Should().NotContain("AIzaSECRET1234");
+        detail!.Length.Should().BeLessThanOrEqualTo(201);
+    }
+
+    [Theory]
+    [InlineData(503, null, 1.0)]
+    [InlineData(502, null, 1.0)]
+    [InlineData(504, null, 1.0)]
+    [InlineData(529, null, 1.0)]
+    [InlineData(503, 4.0, 4.0)]
+    [InlineData(503, 30.0, null)]
+    [InlineData(429, null, null)]
+    [InlineData(429, 2.0, 2.0)]
+    [InlineData(429, 10.0, null)]
+    [InlineData(500, null, null)]
+    [InlineData(404, null, null)]
+    public void GetRetryDelay_OnlyTransientStatusesWithBoundedRetryAfter(int status, double? retryAfterSeconds, double? expectedSeconds)
+    {
+        var outcome = new AiHttpOutcome(false, string.Empty, AiErrorKind.Server, "x", status, null,
+            retryAfterSeconds is { } ra ? TimeSpan.FromSeconds(ra) : null);
+
+        var delay = AiHttpExecutor.GetRetryDelay(outcome, TimeSpan.FromSeconds(1));
+
+        delay.Should().Be(expectedSeconds is { } e ? TimeSpan.FromSeconds(e) : null);
+    }
+
+    [Fact]
+    public void GetRetryDelay_NoStatusCode_Timeout_NoRetry()
+    {
+        var outcome = new AiHttpOutcome(false, string.Empty, AiErrorKind.Timeout, "timeout");
+
+        AiHttpExecutor.GetRetryDelay(outcome, TimeSpan.FromSeconds(1)).Should().BeNull();
+    }
+
     private sealed class ThrowingHandler : HttpMessageHandler
     {
         private readonly Exception _exception;

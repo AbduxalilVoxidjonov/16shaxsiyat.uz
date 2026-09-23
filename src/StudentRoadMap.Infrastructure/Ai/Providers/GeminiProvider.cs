@@ -27,8 +27,10 @@ public sealed class GeminiProvider : IAiAnalysisProvider
     private readonly string _apiKey;
     private readonly string _model;
     private readonly string _baseUrl;
+    private readonly Func<TimeSpan, CancellationToken, Task> _delay;
 
-    public GeminiProvider(IHttpClientFactory httpClientFactory, string apiKey, string model, string? baseUrl = null)
+    // `delay` — "Aloqani tekshirish" qayta urinishlari orasidagi kutish; faqat testlar almashtiradi (standart `Task.Delay`).
+    public GeminiProvider(IHttpClientFactory httpClientFactory, string apiKey, string model, string? baseUrl = null, Func<TimeSpan, CancellationToken, Task>? delay = null)
     {
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         if (string.IsNullOrWhiteSpace(apiKey))
@@ -44,6 +46,7 @@ public sealed class GeminiProvider : IAiAnalysisProvider
         _apiKey = apiKey;
         _model = model;
         _baseUrl = string.IsNullOrWhiteSpace(baseUrl) ? DefaultBaseUrl : baseUrl.TrimEnd('/');
+        _delay = delay ?? Task.Delay;
     }
 
     public AiProvider Kind => AiProvider.Gemini;
@@ -72,20 +75,25 @@ public sealed class GeminiProvider : IAiAnalysisProvider
         var httpClient = _httpClientFactory.CreateClient(HttpClientName);
         using var schemaDocument = JsonDocument.Parse(HealthCheckSchemaJson);
 
-        using var httpRequest = BuildRequest(
-            systemText: "Sen ulanishni tekshirish uchun chaqirilding.",
-            userText: "Faqat {\"ok\": true} qaytar.",
-            schema: schemaDocument.RootElement,
-            maxOutputTokens: 32,
-            temperature: 0);
-
+        // Vaqtinchalik xatolarda (503/429 Retry-After) qisqa backoff bilan 2 ta qayta urinish —
+        // FAQAT shu yerda; fon tahlilida `AnalysisOrchestrator`ning o'z retry'i bor (`docs/09` 7-bo'lim).
         var stopwatch = Stopwatch.StartNew();
-        var outcome = await AiHttpExecutor.SendAsync(httpClient, httpRequest, _apiKey, cancellationToken).ConfigureAwait(false);
+        var outcome = await AiHttpExecutor.SendWithTransientRetryAsync(
+            httpClient,
+            () => BuildRequest(
+                systemText: "Sen ulanishni tekshirish uchun chaqirilding.",
+                userText: "Faqat {\"ok\": true} qaytar.",
+                schema: schemaDocument.RootElement,
+                maxOutputTokens: 32,
+                temperature: 0),
+            _apiKey,
+            _delay,
+            cancellationToken).ConfigureAwait(false);
         stopwatch.Stop();
 
         return outcome.Success
             ? new AiHealthResult(true, $"Gemini ulanishi muvaffaqiyatli ({stopwatch.ElapsedMilliseconds} ms).")
-            : new AiHealthResult(false, outcome.ErrorMessage, outcome.ErrorKind);
+            : new AiHealthResult(false, outcome.ErrorMessage, outcome.ErrorKind, outcome.StatusCode, outcome.ProviderDetail, _model);
     }
 
     private HttpRequestMessage BuildRequest(string systemText, string userText, JsonElement schema, int maxOutputTokens, double temperature)

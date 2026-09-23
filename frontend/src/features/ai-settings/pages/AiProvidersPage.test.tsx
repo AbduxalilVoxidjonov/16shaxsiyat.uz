@@ -304,6 +304,34 @@ describe('AiProvidersPage', () => {
     expect(fetchMock.mock.calls.filter(([input]) => String(input).includes('/test'))).toHaveLength(2);
   });
 
+  it("'Aloqani tekshirish' 503 xabari va provayder tafsilotini alohida qatorda ko'rsatadi", async () => {
+    mockFetch({
+      testResponses: {
+        Gemini: [
+          {
+            ok: false,
+            latencyMs: 4300,
+            message:
+              "Google serverlari hozir band (503) — bir necha daqiqadan so'ng qayta urinib ko'ring yoki boshqa modelni tanlang. Tafsilot: The model is overloaded. Please try again later.",
+          },
+        ],
+      },
+    });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderPage();
+
+    await screen.findAllByTestId('masked-api-key');
+    const testButtons = screen.getAllByRole('button', { name: 'Aloqani tekshirish' });
+    await user.click(testButtons[0]!);
+
+    expect(
+      await screen.findByText(
+        "Google serverlari hozir band (503) — bir necha daqiqadan so'ng qayta urinib ko'ring yoki boshqa modelni tanlang.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Tafsilot: The model is overloaded. Please try again later.')).toBeInTheDocument();
+  });
+
   it("'Aloqani tekshirish' muvaffaqiyatli bo'lsa latency bilan ko'rsatadi", async () => {
     mockFetch({ testResponses: { Gemini: [{ ok: true, latencyMs: 640, message: 'Ulanish muvaffaqiyatli — provayder javob berdi.' }] } });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });

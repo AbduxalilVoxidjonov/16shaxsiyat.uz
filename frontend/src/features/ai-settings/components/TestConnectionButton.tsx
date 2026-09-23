@@ -18,12 +18,16 @@ export interface TestConnectionButtonProps {
  * bu yerda umumiy "Xatolik" bilan ALMASHTIRILMAYDI, aynan ko'rsatiladi). Backend `message`ni
  * `AiErrorKind` bo'yicha oldindan yozilgan matnlardan quradi — provayderning XOM javobi
  * (potentsial API kaliti bilan) u yerga TUSHMAYDI (`TestAiProviderCommandHandler`).
+ * Backend xabar oxiriga provayderning tozalangan `error.message`ini "Tafsilot: ..." sifatida
+ * qo'shishi mumkin — u alohida, kichikroq qatorda ko'rsatiladi.
  */
 export function TestConnectionButton({ provider, disabled }: TestConnectionButtonProps) {
   const { t } = useTranslation();
   const testConnection = useTestAiProviderConnection();
   const [result, setResult] = useState<TestAiConnectionResult | null>(null);
   const [networkError, setNetworkError] = useState<string | null>(null);
+
+  const failure = splitFailureMessage(result?.message ?? '');
 
   async function handleClick() {
     setResult(null);
@@ -59,12 +63,17 @@ export function TestConnectionButton({ provider, disabled }: TestConnectionButto
       )}
 
       {result && !result.ok && (
-        <p role="alert" className="flex items-center gap-1.5 text-sm font-medium text-danger-700">
-          <XCircle size={16} aria-hidden="true" />
-          {result.message.trim() === ''
-            ? t('aiSettings.provider.testConnection.unknownError')
-            : result.message}
-        </p>
+        <div role="alert" className="flex flex-col gap-0.5">
+          <p className="flex items-center gap-1.5 text-sm font-medium text-danger-700">
+            <XCircle size={16} aria-hidden="true" className="shrink-0" />
+            {failure.summary.trim() === ''
+              ? t('aiSettings.provider.testConnection.unknownError')
+              : failure.summary}
+          </p>
+          {failure.detail && (
+            <p className="break-words pl-[22px] text-xs text-ink-soft">{failure.detail}</p>
+          )}
+        </div>
       )}
 
       {networkError && (
@@ -75,4 +84,15 @@ export function TestConnectionButton({ provider, disabled }: TestConnectionButto
       )}
     </div>
   );
+}
+
+const DETAIL_MARKER = ' Tafsilot: ';
+
+/** "Xabar. Tafsilot: ..." → asosiy xabar + tafsilot qatori (marker bo'lmasa — hammasi xabar). */
+function splitFailureMessage(message: string): { summary: string; detail: string | null } {
+  const index = message.indexOf(DETAIL_MARKER);
+  if (index < 0) {
+    return { summary: message, detail: null };
+  }
+  return { summary: message.slice(0, index), detail: message.slice(index + 1) };
 }

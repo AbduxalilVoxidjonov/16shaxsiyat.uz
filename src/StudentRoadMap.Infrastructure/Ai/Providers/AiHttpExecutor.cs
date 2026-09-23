@@ -1,4 +1,7 @@
+using System.Diagnostics;
 using System.Net;
+using System.Text.Json;
+using StudentRoadMap.Application.Ai;
 using StudentRoadMap.Application.Common.Interfaces;
 
 namespace StudentRoadMap.Infrastructure.Ai.Providers;
@@ -7,8 +10,20 @@ namespace StudentRoadMap.Infrastructure.Ai.Providers;
 /// Provayder javobi haqidagi xom natija — `Body` faqat muvaffaqiyatli (`Success = true`)
 /// holatda ma'noli, aks holda `ErrorMessage` (kalitsiz, `docs/09` va `prompts/17` MAXSUS
 /// DIQQAT #1) ishlatiladi.
+/// <para>
+/// `StatusCode` — HTTP javob bo'lsa uning kodi (timeout/tarmoq xatosida `null`);
+/// `ProviderDetail` — javob tanasidagi `error.message` (kalitsiz, qisqartirilgan —
+/// `ExtractSafeDetail`); `RetryAfter` — `Retry-After` sarlavhasi (bo'lsa).
+/// </para>
 /// </summary>
-internal sealed record AiHttpOutcome(bool Success, string Body, AiErrorKind ErrorKind, string? ErrorMessage);
+internal sealed record AiHttpOutcome(
+    bool Success,
+    string Body,
+    AiErrorKind ErrorKind,
+    string? ErrorMessage,
+    int? StatusCode = null,
+    string? ProviderDetail = null,
+    TimeSpan? RetryAfter = null);
 
 /// <summary>
 /// Uchala provayder (`GeminiProvider`/`OpenAiProvider`/`AnthropicProvider`) uchun umumiy HTTP
@@ -21,6 +36,22 @@ internal static class AiHttpExecutor
 {
     /// <summary>Xato xabariga qo'shiladigan provayder tanasining maksimal uzunligi (log shovqinini cheklash uchun).</summary>
     private const int MaxErrorBodyLength = 300;
+
+    /// <summary>
+    /// "Aloqani tekshirish" uchun vaqtinchalik xatolardan keyingi kutish vaqtlari — 2 ta qayta
+    /// urinish (1 s, 3 s). FAQAT `CheckHealthAsync`da ishlatiladi: fon tahlilida
+    /// (`AnalysisOrchestrator`) o'zining 2 s / 6 s / 15 s retry'i bor — HTTP darajasida yana
+    /// retry qo'shilsa urinishlar ko'paytiriladi (3 × 3), xarajat va yuklama oshadi.
+    /// </summary>
+    internal static readonly TimeSpan[] HealthCheckRetryBackoffs = [TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(3)];
+
+    /// <summary>`Retry-After` shundan uzun bo'lsa qayta urinilmaydi (admin ekrani uzoq kutib qolmasin).</summary>
+    internal static readonly TimeSpan MaxHonoredRetryAfter = TimeSpan.FromSeconds(5);
+
+    /// <summary>`HttpClient.Timeout` cheksiz bo'lsa umumiy vaqt byudjeti (`docs/09` 7-bo'lim, 90 s).</summary>
+    private static readonly TimeSpan DefaultBudget = TimeSpan.FromSeconds(90);
+
+    private const string TimeoutMessage = "So'rov belgilangan vaqt ichida javob bermadi (timeout).";
 
     /// <summary>Noto'g'ri/bekor qilingan kalitni bildiruvchi javob belgilari (Gemini/OpenAI/Anthropic).</summary>
     private static readonly string[] InvalidKeyMarkers =
@@ -59,7 +90,7 @@ internal static class AiHttpExecutor
             // (`cancellationToken.IsCancellationRequested == false`). Chaqiruvchi bekor
             // qilgan holat esa QAYTA ULANMAYDI (yuqoriga tashlanadi) — bu haqiqiy bekor
             // qilish, fallback zanjiriga arzimaydi.
-            return new AiHttpOutcome(false, string.Empty, AiErrorKind.Timeout, "So'rov belgilangan vaqt ichida javob bermadi (timeout).");
+            return new AiHttpOutcome(false, string.Empty, AiErrorKind.Timeout, TimeoutMessage);
         }
         catch (HttpRequestException ex)
         {
@@ -75,7 +106,7 @@ internal static class AiHttpExecutor
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
-                return new AiHttpOutcome(false, string.Empty, AiErrorKind.Timeout, "So'rov belgilangan vaqt ichida javob bermadi (timeout).");
+                return new AiHttpOutcome(false, string.Empty, AiErrorKind.Timeout, TimeoutMessage);
             }
 
             if (response.IsSuccessStatusCode)
@@ -85,8 +116,152 @@ internal static class AiHttpExecutor
 
             var errorKind = ClassifyFailure(response.StatusCode, body);
             var message = Redact(BuildErrorMessage(response.StatusCode, body), apiKey);
-            return new AiHttpOutcome(false, body, errorKind, message);
+            return new AiHttpOutcome(
+                false,
+                body,
+                errorKind,
+                message,
+                (int)response.StatusCode,
+                ExtractSafeDetail(body, apiKey),
+                ReadRetryAfter(response));
         }
+    }
+
+    /// <summary>
+    /// "Aloqani tekshirish" uchun: vaqtinchalik xatoda (`IsTransient`) qisqa backoff bilan
+    /// ko'pi bilan 2 marta qayta yuboradi. `HttpRequestMessage` qayta yuborilmaydi — har urinish
+    /// uchun `requestFactory` yangisini quradi. Umumiy vaqt (barcha urinishlar + kutishlar)
+    /// `HttpClient.Timeout` dan oshmaydi: byudjet tugasa oxirgi natija / timeout qaytariladi.
+    /// </summary>
+    public static async Task<AiHttpOutcome> SendWithTransientRetryAsync(
+        HttpClient httpClient,
+        Func<HttpRequestMessage> requestFactory,
+        string apiKey,
+        Func<TimeSpan, CancellationToken, Task> delay,
+        CancellationToken cancellationToken)
+    {
+        var budget = httpClient.Timeout == Timeout.InfiniteTimeSpan ? DefaultBudget : httpClient.Timeout;
+        var stopwatch = Stopwatch.StartNew();
+        using var budgetCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        budgetCts.CancelAfter(budget);
+
+        for (var attempt = 0; ; attempt++)
+        {
+            AiHttpOutcome outcome;
+            try
+            {
+                using var request = requestFactory();
+                outcome = await SendAsync(httpClient, request, apiKey, budgetCts.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                // Umumiy byudjet tugadi (chaqiruvchi bekor qilmagan).
+                return new AiHttpOutcome(false, string.Empty, AiErrorKind.Timeout, TimeoutMessage);
+            }
+
+            if (outcome.Success || attempt >= HealthCheckRetryBackoffs.Length)
+            {
+                return outcome;
+            }
+
+            var wait = GetRetryDelay(outcome, HealthCheckRetryBackoffs[attempt]);
+            if (wait is null || stopwatch.Elapsed + wait.Value >= budget)
+            {
+                return outcome;
+            }
+
+            try
+            {
+                await delay(wait.Value, budgetCts.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                return outcome;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Qayta urinishdan oldin kutish vaqti, yoki `null` — qayta urinilmaydi.
+    /// 502/503/504/529 (vaqtinchalik yuklama) → `Retry-After` (≤ 5 s) yoki standart backoff;
+    /// 429 → FAQAT `Retry-After` bo'lsa va ≤ 5 s (sarlavhasiz 429 odatda kvota tugagani —
+    /// qayta urinish befoyda); `Retry-After` > 5 s → qayta urinilmaydi.
+    /// </summary>
+    internal static TimeSpan? GetRetryDelay(AiHttpOutcome outcome, TimeSpan defaultBackoff)
+    {
+        if (outcome.StatusCode is not { } status)
+        {
+            return null;
+        }
+
+        var retryAfter = outcome.RetryAfter;
+        if (retryAfter is { } ra && ra > MaxHonoredRetryAfter)
+        {
+            return null;
+        }
+
+        return status switch
+        {
+            429 => retryAfter,
+            502 or 503 or 504 or 529 => retryAfter ?? defaultBackoff,
+            _ => null,
+        };
+    }
+
+    /// <summary>
+    /// Provayder javobidagi `error.message` (Gemini/OpenAI/Anthropic uchalasida shu joyda) —
+    /// aniq kalit `Redact` bilan, kalitga o'xshash satrlar `AiErrorDetailSanitizer` bilan
+    /// tozalanadi va 200 belgigacha qisqartiriladi. JSON bo'lmasa yoki maydon yo'q bo'lsa `null`
+    /// (xom tana HECH QACHON qaytarilmaydi).
+    /// </summary>
+    internal static string? ExtractSafeDetail(string body, string apiKey)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(body);
+            var root = document.RootElement;
+            if (root.ValueKind == JsonValueKind.Array && root.GetArrayLength() > 0)
+            {
+                root = root[0];
+            }
+
+            if (root.ValueKind != JsonValueKind.Object ||
+                !root.TryGetProperty("error", out var error) ||
+                error.ValueKind != JsonValueKind.Object ||
+                !error.TryGetProperty("message", out var messageElement) ||
+                messageElement.ValueKind != JsonValueKind.String)
+            {
+                return null;
+            }
+
+            return AiErrorDetailSanitizer.Sanitize(Redact(messageElement.GetString() ?? string.Empty, apiKey));
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static TimeSpan? ReadRetryAfter(HttpResponseMessage response)
+    {
+        var header = response.Headers.RetryAfter;
+        if (header?.Delta is { } delta)
+        {
+            return delta < TimeSpan.Zero ? TimeSpan.Zero : delta;
+        }
+
+        if (header?.Date is { } date)
+        {
+            var diff = date - DateTimeOffset.UtcNow;
+            return diff < TimeSpan.Zero ? TimeSpan.Zero : diff;
+        }
+
+        return null;
     }
 
     /// <summary>`prompts/17` xaritalash qoidasi: 401/403 → Auth, 429 → RateLimit, 5xx → Server.

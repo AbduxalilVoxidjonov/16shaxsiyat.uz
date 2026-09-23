@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using MediatR;
+using StudentRoadMap.Application.Ai;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
+using StudentRoadMap.Domain.Ai;
 using StudentRoadMap.Domain.Common;
 
 namespace StudentRoadMap.Application.Admin.Ai.TestProvider;
@@ -15,6 +17,14 @@ namespace StudentRoadMap.Application.Admin.Ai.TestProvider;
 /// XOM javob matni HECH QACHON ishlatilmaydi — faqat `AiErrorKind` asosida qurilgan, oldindan
 /// yozilgan, aniq-harakatga-yo'naltiruvchi o'zbekcha xabar; (2) shu bilan kalit yoki ichki
 /// tafsilotlarning tasodifan sizib chiqishi imkonsiz (`AiHealthErrorMessageTests` bunga kafolat beradi).
+/// </para>
+/// <para>
+/// 2026-09-23 (Gemini 503 "model overloaded" timeout bilan bir xil xabar berardi — chalg'ituvchi):
+/// xabar endi status kodini ham hisobga oladi (503/529 → "serverlari band", boshqa 5xx →
+/// "Provayder xatosi (kod N)", timeout → "(timeout)") va oxiriga `AiHealthResult.ProviderDetail`
+/// ("Tafsilot: ...") qo'shiladi. Bu XOM tana EMAS — faqat `error.message` maydoni, Infrastructure'da
+/// aniq kalit bo'yicha, bu yerda yana kalit SHAKLI bo'yicha (`AiErrorDetailSanitizer`) tozalangan
+/// va 200 belgigacha qisqartirilgan. `AiHealthResult.Message` (xom xabar) hamon ISHLATILMAYDI.
 /// </para>
 /// </summary>
 internal sealed class TestAiProviderCommandHandler : IRequestHandler<TestAiProviderCommand, Result<AdminAiProviderTestResultDto>>
@@ -52,7 +62,7 @@ internal sealed class TestAiProviderCommandHandler : IRequestHandler<TestAiProvi
         var health = await provider.CheckHealthAsync(cancellationToken).ConfigureAwait(false);
         stopwatch.Stop();
 
-        var message = health.IsHealthy ? SuccessMessage : MessageForError(health.ErrorKind);
+        var message = health.IsHealthy ? SuccessMessage : BuildFailureMessage(request.Provider, health);
 
         var now = _dateTime.UtcNow;
         var config = await _executor.FirstOrDefaultAsync(
@@ -68,20 +78,45 @@ internal sealed class TestAiProviderCommandHandler : IRequestHandler<TestAiProvi
         return Result.Success(new AdminAiProviderTestResultDto(health.IsHealthy, (int)stopwatch.ElapsedMilliseconds, message));
     }
 
+    private static string BuildFailureMessage(AiProvider provider, AiHealthResult health)
+    {
+        var message = MessageForError(provider, health.ErrorKind, health.StatusCode, health.Model);
+        var detail = AiErrorDetailSanitizer.Sanitize(health.ProviderDetail);
+        return detail is null ? message : $"{message} Tafsilot: {detail}";
+    }
+
     /// <summary>
-    /// Xato TURIga qarab oldindan yozilgan o'zbekcha xabar — provayder javobining xom matni
-    /// (kalit, so'rov tanasi) HECH QACHON ishlatilmaydi. Har bir xabar adminni ANIQ keyingi
-    /// harakatga yo'naltiradi (`prompts/28` MAXSUS DIQQAT #3).
+    /// Xato TURI (+ status kodi) ga qarab oldindan yozilgan o'zbekcha xabar — provayder javobining
+    /// xom matni (kalit, so'rov tanasi) HECH QACHON ishlatilmaydi. Har bir xabar adminni ANIQ
+    /// keyingi harakatga yo'naltiradi (`prompts/28` MAXSUS DIQQAT #3).
     /// </summary>
-    private static string MessageForError(AiErrorKind kind) => kind switch
+    private static string MessageForError(AiProvider provider, AiErrorKind kind, int? statusCode, string? model) => kind switch
     {
         AiErrorKind.Auth => "API kaliti noto'g'ri yoki bekor qilingan — kalitni qayta kiriting.",
         AiErrorKind.RateLimit => "Provayder kvotasi/limiti tugagan — birozdan keyin urinib ko'ring yoki tarifni tekshiring.",
-        AiErrorKind.ModelNotFound => "Model topilmadi — model nomini tekshiring.",
+        AiErrorKind.ModelNotFound => string.IsNullOrWhiteSpace(model)
+            ? "Model topilmadi — model nomini tekshiring."
+            : $"'{Truncate(model.Trim(), 100)}' modeli topilmadi — model nomini tekshiring.",
         AiErrorKind.Network => "Provayderga ulanib bo'lmadi — internet aloqasini tekshiring.",
-        AiErrorKind.Timeout or AiErrorKind.Server => "Provayder javob bermadi — birozdan keyin qayta urinib ko'ring.",
+        AiErrorKind.Timeout => "Provayder belgilangan vaqt ichida javob bermadi (timeout) — birozdan keyin qayta urinib ko'ring.",
+        AiErrorKind.Server when statusCode is 503 or 529 =>
+            $"{VendorName(provider)} serverlari hozir band ({statusCode}) — bir necha daqiqadan so'ng qayta urinib ko'ring yoki boshqa modelni tanlang.",
+        AiErrorKind.Server when statusCode is not null =>
+            $"Provayder xatosi (kod {statusCode}) — birozdan keyin qayta urinib ko'ring.",
+        AiErrorKind.Server => "Provayder xatosi — birozdan keyin qayta urinib ko'ring.",
         AiErrorKind.Schema => "Provayder kutilgan shakldagi javob qaytarmadi.",
         AiErrorKind.BadRequest => "So'rov shakli noto'g'ri — bu bizning xatomiz, jurnalga qarang.",
         _ => "Noma'lum xato yuz berdi.",
     };
+
+    private static string VendorName(AiProvider provider) => provider switch
+    {
+        AiProvider.Gemini => "Google",
+        AiProvider.OpenAi => "OpenAI",
+        AiProvider.Anthropic => "Anthropic",
+        _ => "Provayder",
+    };
+
+    private static string Truncate(string text, int maxLength) =>
+        text.Length > maxLength ? string.Concat(text.AsSpan(0, maxLength), "…") : text;
 }

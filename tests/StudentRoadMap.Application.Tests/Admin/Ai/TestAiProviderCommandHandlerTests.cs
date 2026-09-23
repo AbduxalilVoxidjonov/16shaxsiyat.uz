@@ -77,8 +77,8 @@ public sealed class TestAiProviderCommandHandlerTests
     [Theory]
     [InlineData(AiErrorKind.Auth, "API kaliti")]
     [InlineData(AiErrorKind.RateLimit, "limiti")]
-    [InlineData(AiErrorKind.Timeout, "javob bermadi")]
-    [InlineData(AiErrorKind.Server, "javob bermadi")]
+    [InlineData(AiErrorKind.Timeout, "javob bermadi (timeout)")]
+    [InlineData(AiErrorKind.Server, "Provayder xatosi")]
     [InlineData(AiErrorKind.BadRequest, "So'rov shakli")]
     [InlineData(AiErrorKind.ModelNotFound, "Model topilmadi")]
     [InlineData(AiErrorKind.Network, "ulanib bo'lmadi")]
@@ -135,6 +135,71 @@ public sealed class TestAiProviderCommandHandlerTests
             result.Value.Message.Should().NotBeNullOrWhiteSpace($"'{kind}' uchun xabar yozilishi kerak");
             result.Value.Message.Should().NotContain(SecretApiKey);
         }
+    }
+
+    /// <summary>2026-09-23: Gemini 503 "overloaded" timeout bilan bir xil xabar berardi — endi alohida.</summary>
+    [Fact]
+    public async Task Handle_Gemini503_ReturnsOverloadedMessageWithDetail()
+    {
+        var provider = new FakeAiAnalysisProvider(AiProvider.Gemini, new AiHealthResult(
+            false, "raw", AiErrorKind.Server, StatusCode: 503, ProviderDetail: "The model is overloaded. Please try again later.", Model: "gemini-3.1-flash-lite"));
+
+        var result = await CreateHandler(provider).Handle(new TestAiProviderCommand(AiProvider.Gemini, Guid.NewGuid()), CancellationToken.None);
+
+        result.Value.Ok.Should().BeFalse();
+        result.Value.Message.Should().StartWith("Google serverlari hozir band (503)");
+        result.Value.Message.Should().Contain("boshqa modelni tanlang");
+        result.Value.Message.Should().EndWith("Tafsilot: The model is overloaded. Please try again later.");
+        result.Value.Message.Should().NotContain("timeout");
+    }
+
+    [Theory]
+    [InlineData(500, "Provayder xatosi (kod 500)")]
+    [InlineData(502, "Provayder xatosi (kod 502)")]
+    public async Task Handle_Other5xx_ReturnsProviderErrorWithCode(int status, string expected)
+    {
+        var provider = new FakeAiAnalysisProvider(AiProvider.OpenAi, new AiHealthResult(false, "raw", AiErrorKind.Server, StatusCode: status));
+
+        var result = await CreateHandler(provider).Handle(new TestAiProviderCommand(AiProvider.OpenAi, Guid.NewGuid()), CancellationToken.None);
+
+        result.Value.Message.Should().StartWith(expected);
+        result.Value.Message.Should().NotContain("Tafsilot");
+    }
+
+    [Fact]
+    public async Task Handle_Anthropic529_ReturnsOverloadedMessage()
+    {
+        var provider = new FakeAiAnalysisProvider(AiProvider.Anthropic, new AiHealthResult(false, "raw", AiErrorKind.Server, StatusCode: 529, ProviderDetail: "Overloaded"));
+
+        var result = await CreateHandler(provider).Handle(new TestAiProviderCommand(AiProvider.Anthropic, Guid.NewGuid()), CancellationToken.None);
+
+        result.Value.Message.Should().StartWith("Anthropic serverlari hozir band (529)");
+    }
+
+    [Fact]
+    public async Task Handle_ModelNotFound_NamesTheModel()
+    {
+        var provider = new FakeAiAnalysisProvider(AiProvider.Gemini, new AiHealthResult(
+            false, "raw", AiErrorKind.ModelNotFound, StatusCode: 404, ProviderDetail: "models/gemini-2.0-flash is not found for API version v1beta", Model: "gemini-2.0-flash"));
+
+        var result = await CreateHandler(provider).Handle(new TestAiProviderCommand(AiProvider.Gemini, Guid.NewGuid()), CancellationToken.None);
+
+        result.Value.Message.Should().StartWith("'gemini-2.0-flash' modeli topilmadi — model nomini tekshiring.");
+        result.Value.Message.Should().Contain("Tafsilot: models/gemini-2.0-flash is not found");
+    }
+
+    /// <summary>Tafsilotga kalitga o'xshash satr tushib qolsa ham (Infrastructure tozalashidan o'tib ketgan holat) — xabarga tushmaydi.</summary>
+    [Fact]
+    public async Task Handle_DetailWithKeyLikeText_IsScrubbed()
+    {
+        var provider = new FakeAiAnalysisProvider(AiProvider.Gemini, new AiHealthResult(
+            false, "raw", AiErrorKind.Server, StatusCode: 503, ProviderDetail: $"bad key {SecretApiKey} and AIzaSyD-verysecretkey1234567890"));
+
+        var result = await CreateHandler(provider).Handle(new TestAiProviderCommand(AiProvider.Gemini, Guid.NewGuid()), CancellationToken.None);
+
+        result.Value.Message.Should().NotContain(SecretApiKey);
+        result.Value.Message.Should().NotContain("AIzaSyD-verysecretkey1234567890");
+        result.Value.Message.Should().Contain("Tafsilot: bad key ***");
     }
 
     [Fact]

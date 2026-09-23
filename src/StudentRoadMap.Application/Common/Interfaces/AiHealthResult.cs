@@ -12,4 +12,17 @@ namespace StudentRoadMap.Application.Common.Interfaces;
 /// o'zbekcha xabar tuzadi ("API kaliti noto'g'ri" kabi — provayder xom javobi TO'G'RIDAN-TO'G'RI
 /// foydalanuvchiga ko'rsatilmasligi kerak). `IsHealthy = true` bo'lganda har doim `None`.
 /// </param>
-public sealed record AiHealthResult(bool IsHealthy, string? Message, AiErrorKind ErrorKind = AiErrorKind.None);
+/// <param name="StatusCode">Provayder qaytargan HTTP status kodi (javob bo'lmasa — timeout/tarmoq — `null`).
+/// Masalan 503 ("model overloaded") va boshqa 5xx ni admin uchun farqlash uchun.</param>
+/// <param name="ProviderDetail">
+/// Provayder javob tanasidagi `error.message` — qisqartirilgan, API kaliti va kalitga o'xshash
+/// satrlar olib tashlangan (`AiHttpExecutor.ExtractSafeDetail`). Butun xom tana EMAS.
+/// </param>
+/// <param name="Model">Sinalgan model nomi — "model topilmadi" xabarida ko'rsatish uchun.</param>
+public sealed record AiHealthResult(
+    bool IsHealthy,
+    string? Message,
+    AiErrorKind ErrorKind = AiErrorKind.None,
+    int? StatusCode = null,
+    string? ProviderDetail = null,
+    string? Model = null);

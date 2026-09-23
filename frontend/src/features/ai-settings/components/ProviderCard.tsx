@@ -151,7 +151,11 @@ export function ProviderCard({ provider, config }: ProviderCardProps) {
       <form onSubmit={(event) => void onSubmit(event)} noValidate className="flex flex-col gap-4">
         <Input
           label={t('aiSettings.provider.modelLabel')}
-          hint={t('aiSettings.provider.modelHint', { recommended: RECOMMENDED_AI_MODELS[provider] })}
+          hint={
+            provider === 'Gemini'
+              ? `${t('aiSettings.provider.modelHint', { recommended: RECOMMENDED_AI_MODELS[provider] })} ${t('aiSettings.provider.modelSourceHintGemini')}`
+              : t('aiSettings.provider.modelHint', { recommended: RECOMMENDED_AI_MODELS[provider] })
+          }
           error={errors.model?.message}
           {...register('model')}
         />

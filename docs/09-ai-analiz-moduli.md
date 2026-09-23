@@ -303,6 +303,44 @@ qaysi provider nima xato berganini keyin ko'rish mumkin.
 
 **Timeout:** so'rovga 90 soniya (`Ai:TimeoutSeconds`). Polly bilan retry siyosati.
 
+### 7.1 "Aloqani tekshirish" (admin) — xabarlar va qisqa retry (2026-09-23)
+
+Sabab: Gemini `503 UNAVAILABLE` ("The model is overloaded") timeout bilan bir xil
+"Provayder javob bermadi" xabarini berardi — admin uchun chalg'ituvchi.
+
+**Retry qayerda.** Fon tahlilida (yuqoridagi zanjir, `AnalysisOrchestrator`) retry allaqachon
+bor (2 s / 6 s / 15 s, keyin fallback). Shu sabab HTTP darajasida (`AiHttpExecutor.SendAsync`)
+umumiy retry QO'SHILMADI — aks holda urinishlar ko'paytiriladi (3 × 3), xarajat va provayder
+yuklamasi oshadi. Qisqa retry FAQAT `CheckHealthAsync` ("Aloqani tekshirish") da
+(`AiHttpExecutor.SendWithTransientRetryAsync`):
+
+| Javob | Qayta urinish |
+|-------|---------------|
+| 502 / 503 / 504 / 529 | 2 marta: 1 s, 3 s (`Retry-After` ≤ 5 s bo'lsa — shu qiymat) |
+| 429 | faqat `Retry-After` ≤ 5 s bo'lsa (sarlavhasiz 429 — odatda kvota tugagan) |
+| `Retry-After` > 5 s, boshqa 4xx/5xx, timeout, tarmoq | yo'q |
+
+Barcha urinishlar + kutishlar umumiy `HttpClient.Timeout` (`Ai:TimeoutSeconds`) byudjetidan oshmaydi.
+
+**Xabarlar** (`TestAiProviderCommandHandler`, status kodi ham hisobga olinadi):
+
+| Holat | Xabar |
+|-------|-------|
+| 503 / 529 | "{Google\|OpenAI\|Anthropic} serverlari hozir band (503) — bir necha daqiqadan so'ng qayta urinib ko'ring yoki boshqa modelni tanlang." |
+| boshqa 5xx | "Provayder xatosi (kod N) — birozdan keyin qayta urinib ko'ring." |
+| timeout | "Provayder belgilangan vaqt ichida javob bermadi (timeout) — ..." |
+| 404 / model yo'q | "'{model}' modeli topilmadi — model nomini tekshiring." |
+
+Xabar oxiriga provayder javobidagi `error.message` "Tafsilot: ..." sifatida qo'shiladi (UI uni
+alohida qatorda ko'rsatadi). Bu XOM tana emas: faqat shu maydon, aniq kalit (`Redact`) va kalitga
+o'xshash satrlar (`AIza…`, `sk-…`, `Bearer …`, `key=…` — `AiErrorDetailSanitizer`) `***` bilan
+almashtirilgan, 200 belgigacha qisqartirilgan.
+
+**Tavsiya etilgan Gemini modeli** (`RecommendedAiModels`, frontend `providerMeta.ts`):
+`gemini-2.0-flash` Google'da eskirgan (404) → `gemini-3.1-flash-lite` (mavjudligi jonli loglarda
+tasdiqlangan). Model ro'yxati tez o'zgaradi — UI yordam matni adminni Google AI Studio → Models
+ro'yxatiga yo'naltiradi. Bu faqat TAKLIF; DB'dagi mavjud `ai_provider_configs.model` o'zgarmaydi.
+
 ---
 
 ## 8. Fon jarayoni
