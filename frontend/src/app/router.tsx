@@ -8,6 +8,8 @@ import { PublicUserRoute } from '@/features/public-account/PublicUserRoute';
 import { ROUTE_PATTERNS } from '@/shared/config/routes';
 import { RouteFallback } from './RouteFallback';
 import NotFoundPage from './NotFoundPage';
+import { LegacyAssessmentsRedirect } from './LegacyAssessmentsRedirect';
+import { LegacyProgramsRedirect } from './LegacyProgramsRedirect';
 
 // Ommaviy tanishtiruv sahifalari (P45) — test oqimidan alohida, `MarketingLayout` ostida
 const MarketingHomePage = lazy(() => import('@/features/marketing/pages/HomePage'));
@@ -44,14 +46,11 @@ const SchoolDetailPage = lazy(() => import('@/features/schools/pages/SchoolDetai
 const PublicSpacePage = lazy(() => import('@/features/public-space/pages/PublicSpacePage'));
 const StudentsPage = lazy(() => import('@/features/students/pages/StudentsPage'));
 const StudentProfilePage = lazy(() => import('@/features/students/pages/StudentProfilePage'));
-const AssessmentsPage = lazy(() => import('@/features/assessments/pages/AssessmentsPage'));
 const AssessmentDetailPage = lazy(
   () => import('@/features/assessments/pages/AssessmentDetailPage'),
 );
 const CatalogPage = lazy(() => import('@/features/catalog/pages/CatalogPage'));
 const CatalogTestDetailPage = lazy(() => import('@/features/catalog/pages/CatalogTestDetailPage'));
-const ProgramsPage = lazy(() => import('@/features/programs/pages/ProgramsPage'));
-const ProgramDetailPage = lazy(() => import('@/features/programs/pages/ProgramDetailPage'));
 const AiProvidersPage = lazy(() => import('@/features/ai-settings/pages/AiProvidersPage'));
 const AuditLogPage = lazy(() => import('@/features/audit/pages/AuditLogPage'));
 const SettingsPage = lazy(() => import('@/features/settings/pages/SettingsPage'));
@@ -123,15 +122,17 @@ const router = createBrowserRouter([
       { path: ROUTE_PATTERNS.admin.publicSpace, element: withSuspense(PublicSpacePage) },
       { path: ROUTE_PATTERNS.admin.students, element: withSuspense(StudentsPage) },
       { path: ROUTE_PATTERNS.admin.studentProfile, element: withSuspense(StudentProfilePage) },
-      { path: ROUTE_PATTERNS.admin.assessments, element: withSuspense(AssessmentsPage) },
+      // Sessiyalar ro'yxati olib tashlandi (2026-09-23) — eski URL O'quvchilar'ga yo'naltiriladi.
+      { path: ROUTE_PATTERNS.admin.legacyAssessments, element: <LegacyAssessmentsRedirect /> },
       { path: ROUTE_PATTERNS.admin.assessmentDetail, element: withSuspense(AssessmentDetailPage) },
       { path: ROUTE_PATTERNS.admin.catalog, element: withSuspense(CatalogPage) },
       {
         path: ROUTE_PATTERNS.admin.catalogTestDetail,
         element: withSuspense(CatalogTestDetailPage),
       },
-      { path: ROUTE_PATTERNS.admin.programs, element: withSuspense(ProgramsPage) },
-      { path: ROUTE_PATTERNS.admin.programDetail, element: withSuspense(ProgramDetailPage) },
+      // "Dasturlar" bo'limi olib tashlandi (2026-09-23) — eski URL'lar Testlar katalogiga.
+      { path: ROUTE_PATTERNS.admin.legacyPrograms, element: <LegacyProgramsRedirect /> },
+      { path: ROUTE_PATTERNS.admin.legacyProgramDetail, element: <LegacyProgramsRedirect /> },
       { path: ROUTE_PATTERNS.admin.ai, element: withSuspense(AiProvidersPage) },
       { path: ROUTE_PATTERNS.admin.audit, element: withSuspense(AuditLogPage) },
       { path: ROUTE_PATTERNS.admin.settings, element: withSuspense(SettingsPage) },

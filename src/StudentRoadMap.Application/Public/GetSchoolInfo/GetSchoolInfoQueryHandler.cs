@@ -45,12 +45,10 @@ namespace StudentRoadMap.Application.Public.GetSchoolInfo;
 /// </summary>
 internal sealed class GetSchoolInfoQueryHandler : IRequestHandler<GetSchoolInfoQuery, Result<GetSchoolInfoResult>>
 {
-    // TODO: rasmiy rozilik matni kutilmoqda (PROGRESS.md ochiq savol #2, loyiha egasidan javob
-    // kelgach almashtiriladi). Hozircha vaqtinchalik, umumiy shakldagi matn ishlatilmoqda.
+    // Rozilik matni — loyiha egasi qarori (2026-09-23, PROGRESS.md ochiq savol #2 yopildi):
+    // bir qatorlik qisqa matn.
     private const string ConsentTextPlaceholder =
-        "Farzandimning \"Shaxsiyat\" platformasida psixologik-pedagogik testlardan o'tishiga " +
-        "va natijalarning ta'lim maqsadlarida (o'quvchi profili, maktab hisobotlari) qayta " +
-        "ishlanishiga roziman. Ma'lumotlar faqat maktab va superadmin tomonidan ko'riladi.";
+        "Ma'lumotlarim ta'lim maqsadida ishlatilishiga roziman.";
 
     private readonly IAppDbContext _context;
     private readonly IAsyncQueryExecutor _executor;
@@ -167,7 +165,7 @@ internal sealed class GetSchoolInfoQueryHandler : IRequestHandler<GetSchoolInfoQ
             var items = await ProgramTestCatalog.GetTestsAsync(_context, _executor, program.Id, cancellationToken).ConfigureAwait(false);
 
             var programTests = items
-                .Select(i => new PublicTestCatalogItemDto(i.Code, i.NameUz, i.ActiveQuestionCount, i.EstimatedMinutes, i.Order))
+                .Select(i => new PublicTestCatalogItemDto(i.Code, i.NameUz, NormalizeDescription(i.DescriptionUz), i.ActiveQuestionCount, i.EstimatedMinutes, i.Order))
                 .ToList();
 
             // `docs/06` 8-bo'lim: dasturda ilmiy batareya BO'LMASLIGI mumkin — mezon
@@ -192,7 +190,7 @@ internal sealed class GetSchoolInfoQueryHandler : IRequestHandler<GetSchoolInfoQ
             {
                 // Bitta test bir nechta mavjud dasturda bo'lishi mumkin — birinchi uchragan
                 // dastur tartibida qoldiriladi, takrorlanmaydi (`TestDefinitionId` kaliti).
-                testsByDefinitionId.TryAdd(item.TestDefinitionId, new PublicTestCatalogItemDto(item.Code, item.NameUz, item.ActiveQuestionCount, item.EstimatedMinutes, item.Order));
+                testsByDefinitionId.TryAdd(item.TestDefinitionId, new PublicTestCatalogItemDto(item.Code, item.NameUz, NormalizeDescription(item.DescriptionUz), item.ActiveQuestionCount, item.EstimatedMinutes, item.Order));
             }
         }
 
@@ -200,6 +198,10 @@ internal sealed class GetSchoolInfoQueryHandler : IRequestHandler<GetSchoolInfoQ
 
         return (programs, tests);
     }
+
+    /// <summary>Bo'sh yoki faqat bo'shliqdan iborat tavsif <c>null</c> sifatida qaytadi.</summary>
+    private static string? NormalizeDescription(string? description) =>
+        string.IsNullOrWhiteSpace(description) ? null : description.Trim();
 
     /// <summary>
     /// Fixed-time solishtirish (`docs/08` 3-bo'lim). Uzunlik farqi ma'lumot sizdirmaydi —

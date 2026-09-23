@@ -96,6 +96,19 @@ internal sealed class CreateSchoolCommandHandler : IRequestHandler<CreateSchoolC
 
         _context.Add(school);
 
+        if (request.TestIds is { Count: > 0 })
+        {
+            // 2026-09-23 (`docs/18` §9.7): maktab formasida endi TESTLAR tanlanadi.
+            var assignResult = await SchoolTestAssignment
+                .ReplaceAsync(_context, _executor, school.Id, request.TestIds, request.AdminUserId, now, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (assignResult.IsFailure)
+            {
+                return Result.Failure<AdminSchoolDetailDto>(assignResult.Error);
+            }
+        }
+
         // Audit'da faqat institutsional (shaxsiy bo'lmagan) maydonlar — `CLAUDE.md` 6-band
         // ruhi (o'quvchi PII haqida) maktabga ham qo'llanildi: `ContactPerson`/`ContactPhone`
         // audit'ga yozilmaydi.
@@ -105,7 +118,7 @@ internal sealed class CreateSchoolCommandHandler : IRequestHandler<CreateSchoolC
             request.AdminUserId,
             entityType: "School",
             entityId: school.Id,
-            afterJson: AuditSnapshot.Serialize(new { school.Id, school.Name, Slug = school.Slug.Value, school.Region, school.District, school.IsActive }),
+            afterJson: AuditSnapshot.Serialize(new { school.Id, school.Name, Slug = school.Slug.Value, school.Region, school.District, school.IsActive, request.TestIds }),
             ipHash: _ipHasher.Hash(request.IpAddress),
             userAgent: request.UserAgent));
 
@@ -115,7 +128,9 @@ internal sealed class CreateSchoolCommandHandler : IRequestHandler<CreateSchoolC
         // bog'liq, shu sabab shu yerda ham hisoblanadi (admin darhol "havola ishlamaydi" belgisini ko'rsin).
         var linkHealth = await SchoolLinkHealthEvaluator.EvaluateOneAsync(_context, _executor, school.Id, cancellationToken).ConfigureAwait(false);
 
-        var dto = SchoolMapping.ToDetailDto(school, _appSettings, _qrCodeGenerator, new AdminSchoolStatsDto(0, 0, 0, null, null), linkHealth);
+        var testIds = await SchoolTestAssignment.GetTestIdsAsync(_context, _executor, school.Id, cancellationToken).ConfigureAwait(false);
+
+        var dto = SchoolMapping.ToDetailDto(school, _appSettings, _qrCodeGenerator, new AdminSchoolStatsDto(0, 0, 0, null, null), linkHealth, testIds);
 
         return Result.Success(dto);
     }

@@ -3,6 +3,7 @@ import { Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/shared/lib/cn';
 import type { BranchingQuestion } from '@/shared/api/branchingTypes';
+import { RequiredMark } from '@/shared/ui/RequiredMark';
 
 export interface MultiChoiceQuestionProps {
   /** `type === 'MultiChoice'` (`docs/18` §6.2). `options` majburiy (2 tadan kam — nashrda `QUESTION_OPTIONS_REQUIRED`). */
@@ -85,6 +86,7 @@ export function MultiChoiceQuestion({
           {question.order}
         </span>
         {question.text}
+        {question.isRequired && <RequiredMark />}
       </legend>
 
       {hint && (

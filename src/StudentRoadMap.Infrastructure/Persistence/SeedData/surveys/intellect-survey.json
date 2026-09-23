@@ -2,7 +2,7 @@
   "$comment": "SEED: bu fayl `DbSeeder` tomonidan avtomatik, BIR MARTA qo'shiladi (idempotent — 'code' allaqachon bazada bo'lsa BUTUNLAY o'tkazib yuboriladi, superadmin tahriri qayta seeddan himoyalangan — docs/18 §7). Natija har doim 'Status = Draft': 2-B bo'limidagi (Q2B_1) o'quv markaz nomlari hali to'ldirilmagan namuna qiymatlar — superadmin Katalog panelida ularni o'z hududidagi haqiqiy markaz nomlariga almashtirishi, so'ngra 'Nashr qilish' tugmasini bosishi SHART. Manba: 'Maktablar uchun Elektron So'rovnoma - Savollar va Tarmoqlanish Strukturasi' hujjati (docs/18-tarmoqlanuvchi-sorovnoma.md §7).",
   "code": "INTELLECT-SURVEY",
   "nameUz": "Maktab o'quvchilari uchun so'rovnoma",
-  "descriptionUz": "Qo'shimcha ta'lim bo'yicha qisqa so'rovnoma. Javoblaringiz maxfiy saqlanadi va faqat xizmat sifatini yaxshilash uchun ishlatiladi.",
+  "descriptionUz": "Qo'shimcha ta'lim bo'yicha qisqa so'rovnoma.",
   "estimatedMinutes": 7,
   "pageSize": 60,
   "shuffleQuestions": false,

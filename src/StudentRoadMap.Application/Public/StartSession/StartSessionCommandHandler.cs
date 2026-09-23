@@ -118,7 +118,8 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
 
         // `RegistrationMode.Full` — pastdagi oqim BAYT-BAYT o'zgarmagan (regressiya bilan
         // qulflangan, `PublicSessionContractRegressionTests`) standart GLOBAL sozlama bilan
-        // (`birthDate`/`grade`/`phone`/`gender` majburiy, qolgani ixtiyoriy). P52 2-to'lqin
+        // (`birthDate`/`grade`/`parentPhone`/`gender` majburiy — 2026-09-23 dan `phone` emas,
+        // `parentPhone`, `docs/18` §9.6.4 — qolgani ixtiyoriy). P52 2-to'lqin
         // (2026-09-12, `docs/18` §9.6.2): manba endi `AssessmentProgram.RegistrationFields`
         // (§9.5, eskirgan — BOSHQA O'QILMAYDI) EMAS, GLOBAL `RegistrationFormSettings`, dastur
         // ustunligi qo'llangan holda (`RegistrationFormResolver`: batareya bor dasturda
@@ -194,7 +195,16 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
         //   1. FISH + tug'ilgan sana — eng kuchli, standart sozlamadagi yo'l;
         //   2. FISH + telefon — tug'ilgan sana yo'q bo'lsa (`Optional`/`Hidden`). Bir xil ism
         //      VA bir xil telefon amalda bitta odam;
-        //   3. ikkalasi ham yo'q — qidiruvsiz, har doim yangi yozuv.
+        //   2a. FISH + ota-ona telefoni — tug'ilgan sana HAM, o'quvchining o'z telefoni HAM
+        //      yo'q bo'lsa (2026-09-23 egasi qarori: standartda o'z telefoni IXTIYORIY, ota-ona
+        //      telefoni MAJBURIY bo'ldi — shu sabab "telefon" kaliti endi ota-ona raqamiga
+        //      tushib qolishi kerak). Bir xil ism VA bir xil ota-ona raqami amalda bitta o'quvchi
+        //      (egizaklar ismi baribir farq qiladi);
+        //   3. hech biri yo'q — qidiruvsiz, har doim yangi yozuv.
+        //
+        // Standart sozlamada (`birthDate` majburiy) 1-yo'l ishlaydi — telefonning ixtiyoriyligi
+        // BR-1/BR-5 identifikatsiyasiga TA'SIR QILMAYDI (unikal indeks ham
+        // `(school_id, normalized_name, birth_date)`, telefonsiz).
         //
         // NEGA MUHIM: bu qidiruv faqat takrorlanishni aniqlash (BR-1) uchun emas, sessiyani
         // TIKLASH (BR-5, `resumed: true`) uchun HAM ishlatiladi. Ilgari bu yerda `birthDate`
@@ -225,6 +235,16 @@ internal sealed class StartSessionCommandHandler : IRequestHandler<StartSessionC
                     !s.IsAnonymous &&
                     s.NormalizedName == normalizedName &&
                     s.Phone == phone),
+                cancellationToken).ConfigureAwait(false);
+        }
+        else if (parentPhone is not null)
+        {
+            existingStudent = await _executor.FirstOrDefaultAsync(
+                _context.Students.Where(s =>
+                    s.SchoolId == school.Id &&
+                    !s.IsAnonymous &&
+                    s.NormalizedName == normalizedName &&
+                    s.ParentPhone == parentPhone),
                 cancellationToken).ConfigureAwait(false);
         }
 

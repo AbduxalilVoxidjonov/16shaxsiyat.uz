@@ -1,27 +1,23 @@
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, ChevronDown, Zap } from 'lucide-react';
+import { AlertTriangle, Zap } from 'lucide-react';
 import { Badge } from '@/shared/ui/Badge';
 import { Card } from '@/shared/ui/Card';
-import { Select } from '@/shared/ui/Select';
-import { Checkbox } from '@/shared/ui/Checkbox';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { ErrorState } from '@/shared/ui/ErrorState';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/Table';
-import type {
-  AnswerScaleSignalDto,
-  AnswerScoringMode,
-  AnswerThresholdsDto,
-  RawAnswerDto,
-} from '@/shared/api/assessmentAnswersTypes';
+import type { AnswerScoringMode, RawAnswerDto } from '@/shared/api/assessmentAnswersTypes';
 import { useRawAnswersQuery } from './useRawAnswersQuery';
 
 export interface AnswersSectionProps {
   assessmentId: string | null;
+  /**
+   * Test kodi → katalogdagi nomi (`nameUz`) — ZAXIRA. Asosiy manba javobning o'zidagi
+   * `testNameUz` (backend, 2026-09-23); u bo'lmasa shu xarita, u ham bo'lmasa xom kod.
+   */
+  testNames?: Readonly<Record<string, string>>;
 }
-
-const ALL = '';
 
 /**
  * `Likert5` javob qiymatining SO'Z bilan yorlig'i — `docs/03` §1 jadvali. Xom `5` psixologga
@@ -39,74 +35,86 @@ function isLikert5Value(value: number): value is (typeof LIKERT5_VALUES)[number]
 /** Bitta test bloki — jadval shu guruhlar ichida chiziladi (190 savol bitta ro'yxatda o'qilmaydi). */
 interface AnswerGroup {
   testCode: string;
+  /** Katalogdagi test nomi — backend `testNameUz` (2026-09-23); eski javobda yo'q bo'lishi mumkin. */
+  testNameUz: string | null;
   scoringMode: AnswerScoringMode;
   answers: RawAnswerDto[];
 }
 
 /**
- * Savolma-savol javoblar va ularning tahlili — `docs/11` A-5 profil sahifasidagi BO'LIM
- * (oyna emas: egasi buni profilda ko'rishni so'radi, 2026-09-03; oyna ichida turgani uchun
- * u umuman topilmagan edi) VA `docs/11` A-6 sessiya detali sahifasi (P52-A, 2026-09-12 —
- * eski sessiyaning javoblarini ko'rishning yagona yo'li shu edi, ilgari faqat ENG SO'NGGI
- * sessiya uchun ochilardi).
+ * Savolma-savol javoblar — `docs/11` A-5 profil sahifasidagi BO'LIM va A-6 sessiya detali
+ * sahifasi (P52-A).
  *
  * `widgets/`da turadi (feature EMAS): `features/students` va `features/assessments`
- * ikkalasi ham shu bo'limni ochadi, `docs/10` §2 esa feature'lararo importni taqiqlaydi —
- * ikki feature ham ishlatadigan blok `widgets/`ga chiqadi (xuddi `AiReportView` kabi).
+ * ikkalasi ham shu bo'limni ochadi, `docs/10` §2 esa feature'lararo importni taqiqlaydi.
+ *
+ * <b>Ko'rinish (egasining talabi, 2026-09-23).</b> Bo'lim va test bloklari YIG'ILMAGAN —
+ * o'quvchi topshirgan har bir test (sessiya tartibida) o'z katalog nomi sarlavhasi ostida
+ * tagma-tag chiqadi, hech narsani bosib ochish shart emas. Ilgari bo'lim boshida turgan
+ * ishonchlilik signallari, teskari savol mosligi bloki va "Test bloki"/"Shkala"/"Faqat
+ * belgilanganlar" filtrlari olib tashlandi: ular javoblarni sahifaning "ichkarisiga" surib
+ * qo'yardi. Ishonchlilik balli backendda hisoblanishda davom etadi va profil sarlavhasi /
+ * sessiya detalidagi ishonchlilik kartasida ko'rinadi; qator darajasidagi belgilar (tez
+ * javob, bir xil javob bloki, teskari savol farqi) jadvalda qoladi.
  *
  * <b>Nima uchun AI talqini YO'Q.</b> Har bir savolni alohida AI bilan izohlash TAQIQLANGAN
- * (`CLAUDE.md` 6-band): bitta Likert savolining ishonchliligi deyarli nolga teng — har
- * shkalaga 10–15 savol qo'yilishining butun sababi shu. Yakka javobdan xulosa chiqarish
- * aynan noto'g'ri xulosaga olib boradi. Bu yerdagi ANIQ HISOB (teskari tuzatish, tez javob,
- * straight-lining) AI taxminidan foydaliroq va himoya qilinadigan. Shu ma'lumot AI promptiga
- * ham qo'shilmaydi (`CLAUDE.md` 5-band).
+ * (`CLAUDE.md` 6-band): yakka Likert javobidan xulosa chiqarish noto'g'ri xulosaga olib
+ * boradi. Shu ma'lumot AI promptiga ham qo'shilmaydi (`CLAUDE.md` 5-band).
  *
- * <b>Ishlash (190 savol).</b> Bo'lim boshida YOPIQ — so'rov ham yuborilmaydi. Ochilgach
- * bitta so'rov butun sessiyani oladi; test bloklari alohida yig'iladi va HAR BLOK ham
- * mustaqil ochiladi/yopiladi — yopiq blokning qatorlari umuman render qilinmaydi. Jadval
- * `Table` ning `overflow-x` konteyneri ichida (P30-6): 390px da faqat jadval siljiydi,
- * sahifa emas.
- *
- * <b>So'rovnoma (`scoringMode === 'Survey'`) bloklari</b> — Likert ustunlari (shkala,
- * yo'nalish, samarali qiymat, tez javob, straight-lining) BU BLOKLARDA ma'nosiz (`docs/18`),
- * shu sabab `AnswersTable` `scoringMode`ga qarab IKKI xil jadval chizadi: `Scored` bloklar
- * eski (bayt-bayt o'zgarmagan) ko'rinishda, `Survey` bloklar esa soddalashtirilgan to'rt
- * ustunda (savol, javob, davomiylik, o'zgartirishlar soni).
+ * <b>So'rovnoma (`scoringMode === 'Survey'`) bloklari</b> — Likert ustunlari BU BLOKLARDA
+ * ma'nosiz (`docs/18`), shu sabab `AnswersTable` `scoringMode`ga qarab IKKI xil jadval
+ * chizadi. Jadval `Table` ning `overflow-x` konteyneri ichida (P30-6): 390px da faqat
+ * jadval siljiydi, sahifa emas.
  */
-export function AnswersSection({ assessmentId }: AnswersSectionProps) {
+export function AnswersSection({ assessmentId, testNames }: AnswersSectionProps) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const [testFilter, setTestFilter] = useState<string>(ALL);
-  const [scaleFilter, setScaleFilter] = useState<string>(ALL);
-  const [onlyFlagged, setOnlyFlagged] = useState(false);
-  const [expandedTests, setExpandedTests] = useState<readonly string[]>([]);
 
-  const answersQuery = useRawAnswersQuery(assessmentId ?? undefined, open);
+  return (
+    <Card>
+      <h3 className="text-base font-semibold text-neutral-900">
+        {t('studentProfile.answers.title')}
+      </h3>
+      <p className="text-xs text-neutral-500">{t('studentProfile.answers.description')}</p>
+
+      <div className="mt-4">
+        <AnswersBody assessmentId={assessmentId} testNames={testNames} />
+      </div>
+    </Card>
+  );
+}
+
+export interface AnswersBodyProps extends AnswersSectionProps {
+  /**
+   * Test bloki sarlavhasining darajasi. `AnswersSection` ichida `h4` (karta sarlavhasi `h3`);
+   * profildagi bir nechta urinish ro'yxatida urinish sarlavhasi `h4` bo'lgani uchun `h5`
+   * (`axe` `heading-order`).
+   */
+  groupHeadingLevel?: 'h4' | 'h5';
+}
+
+/**
+ * Bitta sessiyaning savolma-savol javoblari — sarlavhasiz tana. `AnswersSection` (bitta
+ * sessiya) va profildagi urinishlar ro'yxati (`features/students` — har bir yig'iladigan
+ * urinish ichida) ikkalasi ham shuni chizadi. Faqat MOUNT bo'lganda so'rov yuboradi:
+ * yig'ilgan urinish tanasi umuman render qilinmaydi, ya'ni ortiqcha so'rov ham yo'q.
+ */
+export function AnswersBody({
+  assessmentId,
+  testNames,
+  groupHeadingLevel: GroupHeading = 'h4',
+}: AnswersBodyProps) {
+  const { t } = useTranslation();
+  const headingIdPrefix = useId();
+
+  const answersQuery = useRawAnswersQuery(assessmentId ?? undefined);
   const data = answersQuery.data;
-
-  const scaleOptions = useMemo(() => {
-    if (!data) return [];
-    const seen = new Map<string, string>();
-    for (const answer of data.answers) {
-      if (!seen.has(answer.scale)) {
-        seen.set(answer.scale, answer.scaleNameUz ?? answer.scale);
-      }
-    }
-    return [...seen.entries()].map(([code, label]) => ({ code, label }));
-  }, [data]);
-
-  const testOptions = useMemo(() => {
-    if (!data) return [];
-    return [...new Set(data.answers.map((answer) => answer.testCode))];
-  }, [data]);
 
   const groups = useMemo<AnswerGroup[]>(() => {
     if (!data) return [];
+    // Backend javoblarni sessiya ichidagi test tartibi, so'ng savol tartibi bo'yicha
+    // qaytaradi — `Map` qo'shilish tartibini saqlaydi, ya'ni bloklar ham shu tartibda.
     const byTest = new Map<string, RawAnswerDto[]>();
     for (const answer of data.answers) {
-      if (testFilter !== ALL && answer.testCode !== testFilter) continue;
-      if (scaleFilter !== ALL && answer.scale !== scaleFilter) continue;
-      if (onlyFlagged && !answer.isFastAnswer && answer.straightLiningBlockIndex == null) continue;
       const bucket = byTest.get(answer.testCode);
       if (bucket) {
         bucket.push(answer);
@@ -114,246 +122,70 @@ export function AnswersSection({ assessmentId }: AnswersSectionProps) {
         byTest.set(answer.testCode, [answer]);
       }
     }
-    // `scoringMode` bitta test bloki ichida BIR XIL (backend `AdminAssessmentTestItemDto`
-    // bilan bir xil satr) — birinchi javobdan olinadi, guruh bo'sh bo'lmaydi (Map kaliti
-    // faqat javob qo'shilganda yaratiladi).
+    // `scoringMode` bitta test bloki ichida BIR XIL — birinchi javobdan olinadi, guruh bo'sh
+    // bo'lmaydi (Map kaliti faqat javob qo'shilganda yaratiladi).
     return [...byTest.entries()].map(([testCode, answers]) => ({
       testCode,
+      testNameUz: answers[0]?.testNameUz ?? null,
       scoringMode: answers[0]?.scoringMode ?? 'Scored',
       answers,
     }));
-  }, [data, testFilter, scaleFilter, onlyFlagged]);
+  }, [data]);
 
-  // Ziddiyatli shkalalar — `docs/03` §7.1 band 4. Jadvaldagi "Shkala" ustunida shu
-  // guruhlar belgilanadi, ya'ni signal AYNAN o'sha shkala qatorlarida ko'rinadi.
+  // Ziddiyatli shkalalar — `docs/03` §7.1 band 4. Jadvaldagi "Shkala" ustunida belgilanadi.
   const conflictScales = useMemo(
     () => new Set((data?.scales ?? []).map((scale) => scale.scale)),
     [data],
   );
 
-  function toggleTest(testCode: string) {
-    setExpandedTests((current) =>
-      current.includes(testCode)
-        ? current.filter((code) => code !== testCode)
-        : [...current, testCode],
-    );
-  }
-
   return (
-    <Card>
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-        disabled={!assessmentId}
-        className="flex w-full items-center justify-between gap-2 text-left disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <span>
-          <span className="block text-base font-semibold text-neutral-900">
-            {t('studentProfile.answers.title')}
-          </span>
-          <span className="block text-xs text-neutral-500">
-            {t('studentProfile.answers.description')}
-          </span>
-        </span>
-        <ChevronDown
-          size={18}
-          aria-hidden="true"
-          className={open ? 'shrink-0 rotate-180 text-neutral-500' : 'shrink-0 text-neutral-500'}
-        />
-      </button>
+    <div className="flex flex-col gap-4">
+        {!assessmentId && <EmptyState title={t('studentProfile.answers.empty')} />}
 
-      {open && (
-        <div className="mt-4 flex flex-col gap-4">
-          {answersQuery.isPending && (
-            <div className="flex flex-col gap-2">
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-            </div>
-          )}
+        {assessmentId && answersQuery.isPending && (
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+          </div>
+        )}
 
-          {answersQuery.isError && (
-            <ErrorState
-              description={t('studentProfile.answers.loadError')}
-              onRetry={() => void answersQuery.refetch()}
-            />
-          )}
+        {answersQuery.isError && (
+          <ErrorState
+            description={t('studentProfile.answers.loadError')}
+            onRetry={() => void answersQuery.refetch()}
+          />
+        )}
 
-          {answersQuery.isSuccess && data && data.answers.length === 0 && (
-            <EmptyState title={t('studentProfile.answers.empty')} />
-          )}
+        {answersQuery.isSuccess && groups.length === 0 && (
+          <EmptyState title={t('studentProfile.answers.empty')} />
+        )}
 
-          {answersQuery.isSuccess && data && data.answers.length > 0 && (
-            <>
-              <SessionSignals
-                answeredCount={data.session.answeredCount}
-                fastAnswerCount={data.session.fastAnswerCount}
-                straightLiningBlockCount={data.session.straightLiningBlockCount}
-                allSameAnswer={data.session.allSameAnswer}
-                shortSession={data.session.shortSession}
-                reliabilityScore={data.session.reliabilityScore ?? null}
-                thresholds={data.thresholds}
+        {answersQuery.isSuccess &&
+          data &&
+          groups.map((group) => (
+            <section
+              key={group.testCode}
+              aria-labelledby={`${headingIdPrefix}-${group.testCode}`}
+              className="flex flex-col gap-2"
+            >
+              <GroupHeading
+                id={`${headingIdPrefix}-${group.testCode}`}
+                className="text-sm font-semibold text-neutral-900"
+              >
+                {group.testNameUz ?? testNames?.[group.testCode] ?? group.testCode}{' '}
+                <span className="font-normal text-neutral-500">
+                  {t('studentProfile.answers.groupCount', { count: group.answers.length })}
+                </span>
+              </GroupHeading>
+              <AnswersTable
+                answers={group.answers}
+                scoringMode={group.scoringMode}
+                conflictScales={conflictScales}
+                fastAnswerDurationMs={data.thresholds.fastAnswerDurationMs}
               />
-
-              {data.scales.length > 0 && <ScaleSignals scales={data.scales} />}
-
-              <div className="flex flex-wrap items-end gap-3">
-                <Select
-                  label={t('studentProfile.answers.testLabel')}
-                  value={testFilter}
-                  onChange={(event) => setTestFilter(event.target.value)}
-                  options={[
-                    { value: ALL, label: t('studentProfile.answers.allTests') },
-                    ...testOptions.map((code) => ({ value: code, label: code })),
-                  ]}
-                />
-                <Select
-                  label={t('studentProfile.answers.scaleLabel')}
-                  value={scaleFilter}
-                  onChange={(event) => setScaleFilter(event.target.value)}
-                  options={[
-                    { value: ALL, label: t('studentProfile.answers.allScales') },
-                    ...scaleOptions.map((scale) => ({ value: scale.code, label: scale.label })),
-                  ]}
-                />
-                <Checkbox
-                  label={t('studentProfile.answers.onlyFlagged')}
-                  checked={onlyFlagged}
-                  onChange={(event) => setOnlyFlagged(event.target.checked)}
-                />
-              </div>
-
-              {groups.length === 0 && <EmptyState title={t('studentProfile.answers.noMatches')} />}
-
-              {groups.map((group) => {
-                const expanded = expandedTests.includes(group.testCode);
-                return (
-                  <div key={group.testCode} className="rounded-xl border border-neutral-200">
-                    <button
-                      type="button"
-                      onClick={() => toggleTest(group.testCode)}
-                      aria-expanded={expanded}
-                      className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left"
-                    >
-                      <span className="text-sm font-medium text-neutral-900">
-                        {group.testCode}{' '}
-                        <span className="font-normal text-neutral-500">
-                          {t('studentProfile.answers.groupCount', { count: group.answers.length })}
-                        </span>
-                      </span>
-                      <ChevronDown
-                        size={16}
-                        aria-hidden="true"
-                        className={expanded ? 'rotate-180 text-neutral-500' : 'text-neutral-500'}
-                      />
-                    </button>
-
-                    {/* Yopiq blok qatorlari UMUMAN render qilinmaydi — 190 savolli sessiyada
-                        sahifa og'irlashmasligining asosiy sababi shu. */}
-                    {expanded && (
-                      <AnswersTable
-                        answers={group.answers}
-                        scoringMode={group.scoringMode}
-                        conflictScales={conflictScales}
-                        fastAnswerDurationMs={data.thresholds.fastAnswerDurationMs}
-                      />
-                    )}
-                  </div>
-                );
-              })}
-            </>
-          )}
-        </div>
-      )}
-    </Card>
-  );
-}
-
-/**
- * Sessiya darajasidagi signallar — "nega ishonchlilik 62" savoliga javob (`docs/03` §7).
- * Chegaralar (`900 ms`, `12`, `6 daqiqa`) matnga QO'LDA yozilmaydi: hammasi `thresholds`
- * dan, ya'ni `ScoringConstants` dan keladi.
- */
-function SessionSignals({
-  answeredCount,
-  fastAnswerCount,
-  straightLiningBlockCount,
-  allSameAnswer,
-  shortSession,
-  reliabilityScore,
-  thresholds,
-}: {
-  answeredCount: number;
-  fastAnswerCount: number;
-  straightLiningBlockCount: number;
-  allSameAnswer: boolean;
-  shortSession: boolean;
-  reliabilityScore: number | null;
-  thresholds: AnswerThresholdsDto;
-}) {
-  const { t } = useTranslation();
-
-  return (
-    <div className="flex flex-col gap-2 rounded-xl bg-neutral-50 p-3">
-      <p className="text-xs font-medium text-neutral-500">
-        {t('studentProfile.answers.signals.heading', {
-          score: reliabilityScore == null ? '—' : reliabilityScore.toFixed(0),
-        })}
-      </p>
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="neutral">
-          {t('studentProfile.answers.signals.answered', { count: answeredCount })}
-        </Badge>
-        <Badge variant={fastAnswerCount > 0 ? 'warning' : 'neutral'}>
-          {t('studentProfile.answers.signals.fast', {
-            count: fastAnswerCount,
-            ms: thresholds.fastAnswerDurationMs,
-          })}
-        </Badge>
-        <Badge variant={straightLiningBlockCount > 0 ? 'warning' : 'neutral'}>
-          {t('studentProfile.answers.signals.straightLining', {
-            count: straightLiningBlockCount,
-            run: thresholds.straightLiningMinRunLength,
-          })}
-        </Badge>
-        {allSameAnswer && (
-          <Badge variant="danger">{t('studentProfile.answers.signals.allSame')}</Badge>
-        )}
-        {shortSession && (
-          <Badge variant="warning">
-            {t('studentProfile.answers.signals.shortSession', {
-              minutes: thresholds.shortSessionMinutes,
-            })}
-          </Badge>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/** Teskari savol ziddiyati shkala bo'yicha — `docs/03` §7.1 band 4 (`d_shkala`). */
-function ScaleSignals({ scales }: { scales: readonly AnswerScaleSignalDto[] }) {
-  const { t } = useTranslation();
-
-  return (
-    <div className="flex flex-col gap-2 rounded-xl border border-neutral-200 p-3">
-      <p className="text-xs font-medium text-neutral-500">
-        {t('studentProfile.answers.reverseConflict.heading')}
-      </p>
-      <ul className="flex flex-col gap-1">
-        {scales.map((scale) => (
-          <li key={scale.scale} className="text-sm text-neutral-700">
-            <span className="font-medium text-neutral-900">{scale.scaleNameUz ?? scale.scale}</span>{' '}
-            <span className="text-xs text-neutral-500">({scale.scale})</span> —{' '}
-            {t('studentProfile.answers.reverseConflict.row', {
-              forward: scale.forwardAvgPct.toFixed(0),
-              reverse: scale.reverseAvgPct.toFixed(0),
-              mismatch: scale.mismatchPct.toFixed(0),
-            })}
-          </li>
-        ))}
-      </ul>
+            </section>
+          ))}
     </div>
   );
 }

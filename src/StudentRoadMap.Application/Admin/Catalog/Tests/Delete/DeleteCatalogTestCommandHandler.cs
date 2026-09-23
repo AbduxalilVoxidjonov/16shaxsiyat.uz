@@ -1,4 +1,5 @@
 using MediatR;
+using StudentRoadMap.Application.Admin.Catalog.Tests.Assignment;
 using StudentRoadMap.Application.Admin.Common;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
@@ -46,8 +47,14 @@ internal sealed class DeleteCatalogTestCommandHandler : IRequestHandler<DeleteCa
             return Result.Failure(new Error(ProblemCodes.SystemTestLocked, "Tizim metodikasi o'chirilmaydi (BR-8)."));
         }
 
+        // 2026-09-23 (`docs/18` §9.7): testning O'Z test dasturi "boshqa dasturda ishlatilgan"
+        // hisoblanmaydi — u test bilan birga o'chiriladi (maktab biriktirmalari ham, kaskad).
+        // Sessiyasi bor bo'lsa baribir `usedInSession` to'xtatadi (`assessment_tests`).
+        var ownProgram = await TestPrograms.FindAsync(_context, _executor, test.Id, cancellationToken).ConfigureAwait(false);
+        var ownProgramId = ownProgram?.Id;
+
         var usedInProgram = await _executor.AnyAsync(
-            _context.ProgramTests.Where(pt => pt.TestDefinitionId == test.Id),
+            _context.ProgramTests.Where(pt => pt.TestDefinitionId == test.Id && pt.ProgramId != ownProgramId),
             cancellationToken).ConfigureAwait(false);
 
         var usedInSession = await _executor.AnyAsync(
@@ -68,6 +75,20 @@ internal sealed class DeleteCatalogTestCommandHandler : IRequestHandler<DeleteCa
             beforeJson: AuditSnapshot.Serialize(new { test.Id, test.Code, test.NameUz }),
             ipHash: _ipHasher.Hash(request.IpAddress),
             userAgent: request.UserAgent));
+
+        if (ownProgram is not null)
+        {
+            var ownProgramHasSessions = await _executor.AnyAsync(
+                _context.Assessments.Where(a => a.ProgramId == ownProgram.Id),
+                cancellationToken).ConfigureAwait(false);
+
+            if (ownProgramHasSessions)
+            {
+                return Result.Failure(new Error(ProblemCodes.TestInUse, "Bu anketa sessiyada ishlatilgan — o'chirish o'rniga arxivlang."));
+            }
+
+            _context.Remove(ownProgram);
+        }
 
         _context.Remove(test);
 

@@ -15,7 +15,7 @@ function validValues(overrides: Record<string, unknown> = {}) {
     grade: '9',
     classLetter: 'B',
     phone: '901234567',
-    parentPhone: '',
+    parentPhone: '901112233',
     email: '',
     consentAccepted: true,
     accessCode: '',
@@ -153,10 +153,28 @@ describe('buildRegistrationSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it("bo'sh ota-ona telefonini (ixtiyoriy) qabul qiladi", () => {
+  // 2026-09-23 egasi qarori: standartda ota-ona telefoni MAJBURIY, o'z telefoni IXTIYORIY.
+  it("standartda bo'sh ota-ona telefonini rad etadi ('kiriting' xabari bilan)", () => {
     const schema = buildRegistrationSchema(false);
     const result = schema.safeParse(validValues({ parentPhone: '' }));
+    expect(result.success).toBe(false);
+    const issue = result.error?.issues.find((i) => i.path[0] === 'parentPhone');
+    expect(issue?.message).toMatch(/kiriting\.$/);
+    expect(issue?.message).not.toMatch(/bo'sh qoldiring/);
+  });
+
+  it("standartda bo'sh shaxsiy telefonni (ixtiyoriy) qabul qiladi", () => {
+    const schema = buildRegistrationSchema(false);
+    const result = schema.safeParse(validValues({ phone: '' }));
     expect(result.success).toBe(true);
+  });
+
+  it("standartda chala shaxsiy telefon 'to'liq kiriting yoki bo'sh qoldiring' xabarini beradi", () => {
+    const schema = buildRegistrationSchema(false);
+    const result = schema.safeParse(validValues({ phone: '9012' }));
+    expect(result.success).toBe(false);
+    const issue = result.error?.issues.find((i) => i.path[0] === 'phone');
+    expect(issue?.message).toMatch(/bo'sh qoldiring/);
   });
 
   it("noto'g'ri email formatini rad etadi", () => {

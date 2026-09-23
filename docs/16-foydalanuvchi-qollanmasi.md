@@ -122,6 +122,7 @@ Yuqoridagi **"Yangi maktab"** tugmasini bosing. Ochilgan formada:
 | **"Kunlik ro'yxatdan o'tish limiti"** | Ha | Standart qiymat — **500** |
 | **"Kirish kodi"** | Yo'q | **6 xonali raqam**; bo'sh qoldirilsa hamma ro'yxatdan o'ta oladi |
 | **"Izoh"** | Yo'q | O'zingiz uchun eslatma |
+| **"Testlar"** | Yo'q | Shu maktab havolasida ochiladigan testlar (faqat nashr qilingan va faol testlar taklif qilinadi). "Barcha maktablarga" ochiq testlarni belgilash shart emas (3.2) |
 
 **"Yaratish"** tugmasini bosing. Maktab ro'yxatga qo'shiladi va unga avtomatik
 **shaxsiy havola** yaratiladi.
@@ -194,6 +195,8 @@ Jadvaldagi maktab nomini bosing (yoki **"Maktabni ochish"**) — alohida sahifa 
 - **"Ishtirok statistikasi"** — "Ro'yxatdan o'tgan", "Testni yakunlagan",
   "Yakunlash ulushi", "Jarayonda", "Oxirgi topshirilgan".
 - **"Maktab ma'lumotlari"** — barcha kiritilgan maydonlar, shu jumladan "Havola".
+- **"Biriktirilgan testlar"** — shu maktabga alohida biriktirilgan testlar nomi (bosilsa
+  test sahifasi ochiladi). "Barcha maktablarga" ochiq testlar bu ro'yxatda ko'rsatilmaydi.
 - **"O'quvchilar"** → **"Shu maktab o'quvchilarini ko'rish"** tugmasi.
 
 ### 2.7 Boshqaruv paneli (umumiy holat)
@@ -218,113 +221,95 @@ kodi to'sqinlik qilyapti; "Boshlagan" katta, "Yakunlagan" kichik bo'lsa — test
 
 ---
 
-## 3. Dasturlar
+## 3. Testni o'quvchilarga ochish (Biriktirish)
 
-Chap menyu → **"Dasturlar"**.
+> **2026-09-23 egasi qarori:** ilgari alohida **"Dasturlar"** bo'limi bor edi, lekin u
+> **"Testlar katalogi"** bilan amalda bir xil narsa edi (deyarli har dastur bitta testdan
+> iborat edi). Endi "Dasturlar" bo'limi **yo'q** — testni kimga ochish **test sahifasining
+> o'zida**, **"Biriktirish"** bo'limida sozlanadi. Eski `/admin/programs` havolalari
+> avtomatik **"Testlar katalogi"**ga olib boradi.
 
-### 3.1 Dastur nima
+Chap menyu → **"Testlar katalogi"** → kerakli testni oching → **"Biriktirish"** bo'limi
+(test sarlavhasi ostida).
 
-**Dastur** — bu maktabga beriladigan **anketalar to'plami** va ularning tartibi.
-Masalan: "9-sinf profil dasturi" = shaxsiyat testi + kasb qiziqishlari + aktivlik anketasi.
+### 3.1 Holat — test hozir kimga ko'rinadi
 
-O'quvchi alohida testni emas, **butun dasturni** topshiradi. Shuning uchun maktabga
-havola berishdan oldin unga dastur biriktirilgan (yoki ommaviy dastur mavjud) bo'lishi kerak.
+Bo'lim tepasida rangli belgi va bir jumla:
 
-Jadvaldagi ustunlar: **"Nomi"**, **"Kodi"**, **"Turi"**, **"Ko'rinishi"**,
-**"Testlar soni"**, **"Holat"**, **"Faollik"**.
+| Belgi | Ma'nosi |
+|-------|---------|
+| **"Faol"** | *"Faol — o'quvchilarga ko'rinadi."* |
+| **"Qoralama"** | *"Qoralama — test nashr qilinganda o'quvchilarga ochiladi."* Biriktirishni oldindan tayyorlab qo'yish mumkin |
+| **"To'xtatilgan"** | Test nofaol — tepadagi **"Faollashtirish"** tugmasi bilan yoqing |
+| **"Biriktirilmagan"** | *"Hech kimga biriktirilmagan — o'quvchilar bu testni ko'rmaydi."* |
+| **"Arxiv"** | Test arxivlangan — biriktirishni o'zgartirib bo'lmaydi |
 
-- **"Turi"**: **"Tizim"** (tayyor, tarkibi himoyalangan) yoki **"Mening"** (siz yaratgan).
-- **"Holat"**: **"Qoralama"** → **"Nashr etilgan"** → **"Arxiv"**.
-- **"Faollik"**: **"Faol"** / **"Nofaol"**.
+Yonida — shu biriktirish orqali nechta sessiya ochilgani. Holat **testga ergashadi**:
+testni nashr qilish, nofaol qilish yoki arxivlash (sahifa tepasidagi tugmalar) uni o'zi
+o'zgartiradi — alohida "dastur holati" yo'q.
 
-### 3.2 Ommaviy va Biriktirilgan — farqi
+### 3.2 "Kimga ochiq" — barcha yoki tanlangan maktablar
 
-Dastur formasidagi **"Ko'rinishi"** maydoni. Dasturda buning izohi shunday yozilgan:
-*"Ommaviy — barcha maktabda; Biriktirilgan — faqat tanlangan maktablarda"*.
+- **"Barcha maktablarga"** — test **har bir** maktab havolasida (keyin qo'shiladigan
+  maktablarda ham) va ommaviy kabinetda ko'rinadi. Ehtiyot bo'ling: saqlashingiz bilanoq
+  test hamma joyda paydo bo'ladi. Sinov uchun **"Tanlangan maktablarga"**ni ishlating.
+- **"Tanlangan maktablarga"** — faqat siz tanlagan maktablarda:
+  1. **"Maktab qidirish"** maydoniga maktab nomini yozing;
+  2. ro'yxatda kerakli maktablarni belgilang (bir nechtasini birdan);
+  3. tanlanganlar yuqorida "chip" ko'rinishida chiqadi — **×** bilan olib tashlanadi.
 
-| Ko'rinishi | Kim ko'radi | Qachon ishlatiladi |
-|-----------|-------------|--------------------|
-| **"Ommaviy"** | **Barcha** maktab — biriktirish shart emas | Standart dastur; hamma maktab bir xil to'plamni topshiradi |
-| **"Biriktirilgan"** | Faqat siz biriktirgan maktablar | Bitta maktab uchun maxsus to'plam, sinov yoki tadqiqot dasturi |
+### 3.3 "Ommaviy (kabinet orqali hamma uchun)"
 
-Ehtiyot bo'ling: **"Ommaviy"** dasturni nashr qilishingiz bilanoq u **barcha** maktabda
-paydo bo'ladi. Sinov uchun mo'ljallangan dasturni **"Biriktirilgan"** qilib qo'ying.
+Bu belgi qo'yilsa, test **maktabsiz** foydalanuvchilarga ham ochiladi — Telegram orqali
+`/kirish` sahifasidan kirgan har kim uni kabinetda ko'radi (**"Ommaviy makon"** bo'limi).
+**"Barcha maktablarga"** tanlanganda bu belgi avtomatik qo'yilgan bo'ladi.
 
-### 3.3 ⚠️ O'quvchi bir nechta dastur bo'lsa TANLAYDI
+Agar *"Ommaviy makon hali sozlanmagan"* xabari chiqsa — ommaviy makon tizimda hali ishga
+tushirilmagan; belgini olib, qolgan sozlamalarni saqlashingiz mumkin (texnik mutaxassisga
+xabar bering).
 
-Bu eng ko'p chalkashlik tug'diradigan joy, shuning uchun alohida ta'kidlanadi.
+### 3.4 Ro'yxatdan o'tish
 
-Maktab havolasini ochgan o'quvchi ko'radigan narsa — **shu maktabga tegishli dasturlar
-soniga** bog'liq:
+- **"To'liq ro'yxatdan o'tish"** — o'quvchi test oldidan anketani to'ldiradi (maydonlar
+  **"Sozlamalar"** → ro'yxatdan o'tish formasida sozlanadi).
+- **"Ro'yxatdan o'tmasdan (anonim)"** — anketa so'ralmaydi; kerakli ma'lumotlar
+  so'rovnoma savollari ichida so'raladi.
 
-| Maktabga tegishli dasturlar soni | O'quvchi nima ko'radi |
-|----------------------------------|------------------------|
+Shaxsiyat batareyasi (16 tip, Big Five, RIASEC, Aktivlik) bor testda anonim rejim
+**tanlanmaydi** — natija yosh, sinf va jinsga tayanadi (tugma o'chiq, sababi yozilgan).
+
+### 3.5 Saqlash
+
+O'zgartirishdan keyin **"Biriktirishni saqlash"**ni bosing (**"O'zgarishlarni bekor
+qilish"** — saqlanmagan tanlovni qaytaradi). Muvaffaqiyatli bo'lsa *"Biriktirish saqlandi"*.
+
+Maktabga testni **maktab formasidan** ham berish mumkin — **"Maktablar"** → **"Tahrirlash"**
+→ **"Testlar"** (2.1-bo'lim). Ikkalasi bir xil biriktirmani o'zgartiradi.
+
+### 3.6 ⚠️ Bir maktabda bir nechta test ko'rinsa, o'quvchi TANLAYDI
+
+Maktab havolasini ochgan o'quvchi ko'radigan narsa — shu maktabga ochiq testlar soniga
+bog'liq:
+
+| Maktabga ochiq testlar soni | O'quvchi nima ko'radi |
+|-----------------------------|------------------------|
 | **0 ta** | **"Test hali tayyor emas"** — *"Bu maktab uchun test hali tayyorlanmagan, maktabingizga murojaat qiling."* |
 | **1 ta** | To'g'ridan-to'g'ri test boshlash sahifasi. Tanlov so'ralmaydi |
-| **2 va undan ko'p** | **"Dasturni tanlang"** ekrani — har bir dastur alohida karta ko'rinishida (nomi, tavsifi, "N ta test · M ta savol · ~K daqiqa"). O'quvchi **o'zi** birini tanlaydi va shundan keyin davom etadi |
+| **2 va undan ko'p** | Tanlov ekrani — har bir test alohida karta ko'rinishida (nomi, tavsifi, savol soni, vaqti). O'quvchi **o'zi** birini tanlaydi |
 
-**Buning oqibati:** agar bitta maktabda bir nechta dastur ko'rinsa, sizda barcha o'quvchi
-bir xil to'plamni topshirishiga **kafolat yo'q** — kimdir bittasini, kimdir boshqasini
-tanlaydi va natijalarni bir-biriga solishtirib bo'lmaydi.
+Bir xil to'plamni hamma topshirishi kerak bo'lsa, maktabda bir vaqtda **faqat bitta**
+test ochiq turishiga ishonch hosil qiling (ortiqchasini nofaol qiling yoki
+"Tanlangan maktablarga" qilib, kerakli maktablardan olib tashlang).
 
-**Shuning uchun:** bir maktabda bir vaqtda **faqat bitta** dastur ko'rinib turishiga
-ishonch hosil qiling. Buning uchun:
-- ortiqcha dasturlarni **"Nofaollashtirish"** yoki **"Arxivlash"**;
-- yoki ularni **"Biriktirilgan"** qilib, faqat kerakli maktablarga bog'lash.
+### 3.7 Endi yo'q imkoniyatlar
 
-Ataylab tanlov bermoqchi bo'lsangiz (masalan, qisqa va to'liq variant) — bu ham to'g'ri
-ishlatilishi, lekin bunda maktabga oldindan qaysi birini tanlash kerakligini aytib qo'ying.
-
-### 3.4 Yangi dastur yaratish
-
-1. **"Yangi dastur"** tugmasi. Formada:
-   - **"Dastur kodi"** — faqat lotin katta harflari, raqam, `_` va `-` (masalan `PROFILE_9`).
-     **Kod yaratilgandan keyin o'zgartirilmaydi.**
-   - **"Nomi"**, **"Tavsifi"** — o'quvchi tanlov ekranida shularni o'qiydi, tushunarli yozing.
-   - **"Tartib raqami"** — ro'yxatdagi joyi.
-   - **"Ko'rinishi"** — 3.2-bo'limga qarang.
-2. **"Yaratish"**.
-3. Ochilgan dastur sahifasidagi **"Testlar"** bo'limida **"Test qo'shish"** tugmasini
-   bosing, kerakli anketani qidirib toping va **"Qo'shish"**ni bosing.
-4. Tartibni **"Yuqoriga ko'chirish"** / **"Pastga ko'chirish"** tugmalari bilan
-   o'zgartiring — o'quvchi aynan shu tartibda topshiradi. Ortiqchasini
-   **"Olib tashlash"** bilan chiqarib tashlang.
-
-Dastur sarlavhasi ostida "N ta savol · ~M daqiqa" yig'indisi ko'rinadi. Agar dasturda
-yetuklik va aktivlik hisoblanadigan testlar bo'lmasa, ogohlantirish chiqadi:
-*"Bu dasturda yetuklik va aktivlik indekslari hisoblanmaydi, AI hisoboti qisqartirilgan
-bo'ladi."*
-
-### 3.5 Nashr qilish
-
-**"Nashr qilish"** tugmasi — dastur **"Qoralama"**dan **"Nashr etilgan"** holatiga o'tadi.
-Faqat shundan keyin o'quvchilar uni ko'radi.
-
-- Dasturda **kamida bitta test** bo'lishi shart, aks holda:
-  *"Kamida bitta test biriktirilmasa dasturni nashr qilib bo'lmaydi"*.
-- Umumiy vaqt uzun bo'lsa ogohlantirish chiqadi:
-  *"Jami vaqt N daqiqa — sessiya juda uzun, o'quvchilar tashlab ketishi mumkin"*.
-  Bu taqiq emas, lekin jiddiy qabul qiling: uzun test tashlab ketishni oshiradi va
-  ishonchlilikni tushiradi.
-
-**"Arxivlash"** — dastur o'quvchilarga ko'rinmay qoladi; eski natijalar saqlanib qoladi.
-Bu amalni **bekor qilib bo'lmaydi**.
-
-### 3.6 Dasturni maktabga biriktirish
-
-Dastur sahifasidagi **"Biriktirilgan maktablar"** bo'limi:
-
-1. **"Maktab qidirish"** maydoniga maktab nomini yozing.
-2. Topilgan maktab yonidagi **"Biriktirish"**ni bosing.
-3. Biriktirilgan maktablar ro'yxat ko'rinishida chiqadi; olib tashlash uchun maktab
-   yonidagi olib tashlash belgisini bosing.
-
-Hech qanday dasturi yo'q maktab **"Dastursiz"** belgisi bilan ko'rinadi — bunday maktab
-havolasini ochgan o'quvchi "Test hali tayyor emas" xabarini oladi.
-
-**"Tizim"** dasturlarining tarkibini o'zgartirib bo'lmaydi
-(*"Tizim dasturining tarkibi (testlar) himoyalangan — o'zgartirilmaydi"*), lekin
-maktablarga biriktirish/olib tashlash mumkin.
+"Dasturlar" bo'limi bilan birga quyidagilar olib tashlandi: bir nechta testni bitta
+"dastur"ga yig'ish va ularning tartibini belgilash, dasturga alohida kod/nom/tavsif/tartib
+raqami berish, dasturni alohida nashr qilish/to'xtatish/arxivlash/tiklash, dasturni
+o'chirishdan oldingi "nechta maktab havolasiz qoladi" ogohlantirishi. Endi har test o'zi
+alohida ochiladi; landing va kabinetda **test nomi** ko'rinadi. Eski (ko'p testli) dastur
+ommaviy makonda qolgan bo'lsa, u yerda **"Eski dastur"** belgisi bilan ko'rinadi va faqat
+olib tashlanadi.
 
 ---
 
@@ -496,8 +481,9 @@ ko'p uchraydiganlari:
 
 Muammolarni tuzatib **"Qayta urinish"**ni bosing.
 
-**Nashr etilgandan keyin** anketa dasturga qo'shilishi mumkin (3.4-bo'lim). Anketaning
-o'zi dasturga qo'shilmasa, o'quvchi uni **hech qachon ko'rmaydi**.
+**Nashr etilgandan keyin** anketani o'quvchilarga ochish — test sahifasidagi
+**"Biriktirish"** bo'limida (3-bo'lim). Biriktirilmagan anketani o'quvchi **hech qachon
+ko'rmaydi**.
 
 **Boshqa amallar:** **"Faollashtirish" / "Faollikni to'xtatish"**, **"Arxivlash"**
 (*"Arxivlangan anketa yangi sessiyalarga qo'shilmaydi. Eski natijalar saqlanib qoladi"*),
@@ -558,13 +544,13 @@ Natijada uch daraja chiqadi:
    **"Vaqt"** ustuniga qarang. Agar deyarli hamma javob bir necha yuz millisekundda
    berilgan bo'lsa — o'quvchi shunchaki bosib chiqqan.
 3. **Sababini aniqlang.** Odatda uchtadan biri: test dars oxirida shoshib topshirilgan;
-   o'quvchi maqsadini tushunmagan ("baho qo'yiladi" deb o'ylagan); dastur juda uzun
+   o'quvchi maqsadini tushunmagan ("baho qo'yiladi" deb o'ylagan); test juda uzun
    bo'lgani uchun charchagan.
 4. **Qayta topshirtiring.** O'quvchiga bu baho emasligini, to'g'ri-noto'g'ri javob
    yo'qligini va natija o'ziga foyda qilishini tushuntiring. Tinch vaqt va yetarli
    muddat bering.
 5. **Bir maktabda ko'p "Ishonchsiz" chiqsa** — muammo o'quvchilarda emas, tashkil
-   qilishda. Dasturni qisqartiring yoki testni boshqa vaqtga ko'chiring.
+   qilishda. Testni qisqartiring yoki uni boshqa vaqtga ko'chiring.
 
 "Ishonchsiz" o'quvchilar ro'yxatda **"E'tibor talab qiladi"** belgisi bilan ko'rinadi va
 ularni **"Faqat e'tibor talab qiladiganlar"** filtri bilan ajratib olish mumkin.
@@ -814,7 +800,7 @@ Ro'yxatdan o'tishda u rozilik belgisini qo'yadi:
 |---------------------------|-------|-------------------|
 | **"Havola ishlamayapti"** — *"Havola ishlamayapti, maktabingizdan yangisini so'rang."* | Havola noto'g'ri ko'chirilgan yoki **"Havolani yangilash"** bilan almashtirilgan | **"Maktablar"**dan **"Havolani nusxalash"** bilan joriy havolani oling va qayta yuboring |
 | **"Test vaqtincha yopilgan"** | Maktab **"Nofaol"** holatda | Maktab qatorida **"Faollashtirish"** |
-| **"Test hali tayyor emas"** — *"Bu maktab uchun test hali tayyorlanmagan..."* | Maktabga hech qanday dastur tegishli emas | **"Dasturlar"**dan nashr etilgan dasturni maktabga **"Biriktirish"** yoki ommaviy dasturni nashr qilish (3.2, 3.6) |
+| **"Test hali tayyor emas"** — *"Bu maktab uchun test hali tayyorlanmagan..."* | Maktabga hech qanday ochiq test yo'q | Test sahifasidagi **"Biriktirish"** bo'limida maktabni tanlang yoki **"Barcha maktablarga"** qiling; testning o'zi nashr qilingan va faol bo'lishi kerak (3.1, 3.2) |
 | **"Sen allaqachon testni topshirgansan..."** | Bu o'quvchi allaqachon ro'yxatdan o'tgan | To'g'ri xatti-harakat. Qayta topshirish kerak bo'lsa, muammoni tekshiring |
 | **"Juda ko'p urinish bo'ldi..."** | Kunlik limit tugagan yoki juda tez-tez urinilgan | Maktab **"Tahrirlash"** → **"Kunlik ro'yxatdan o'tish limiti"**ni oshiring (2.2) |
 | **"Sessiya muddati tugagan..."** | O'quvchi juda uzoq tanaffus qilgan | Qaytadan boshlashi kerak |
@@ -831,7 +817,7 @@ Ro'yxatdan o'tishda u rozilik belgisini qo'yadi:
 | **AI tahlil "tayyorlanmoqda"da qotib qoldi** | Bir necha daqiqa kuting. O'zgarmasa **"Qayta tahlil"**. Undan oldin **"AI sozlamalari"**da **"Aloqani tekshirish"** |
 | **"Avtomatik shablon hisobot"** belgisi chiqdi | 6.3-bo'lim — bu AI matni emas |
 | **"Faol AI provider topilmadi"** | **"AI sozlamalari"**da kamida bitta provayderga kalit kiriting va **"Faol"** qiling (6.1) |
-| **Dasturni nashr qila olmayapman** | *"Kamida bitta test biriktirilmasa..."* — **"Test qo'shish"** (3.4) |
+| **"Biriktirish" saqlanmayapti: "Test arxivlangan"** | Arxivlangan testni biriktirib bo'lmaydi — nusxa oling yoki boshqa test tanlang (3.1) |
 | **Anketani nashr qila olmayapman** | **"Nashrga to'sqinlik qilayotgan..."** ro'yxatiga qarang; ko'pincha talqin oraliqlari to'liq emas (4.4) |
 | **Tizim testida savol qo'sha olmayapman** | Bu ataylab: 4.1 va 4.2. **"Nusxa olish"** bilan nusxa yarating |
 | **"Eksport hali mavjud emas"** | Eksport xizmati javob bermayapti — birozdan keyin qayta urining, davom etsa texnik mutaxassisga murojaat qiling |
@@ -853,7 +839,7 @@ Quyidagilar hozircha **yo'q**. Ular haqida so'ralsa, "hali qurilmagan" deng.
 
 | Nima | Holat |
 |------|-------|
-| **"Sessiyalar"** bo'limi (chap menyuda ko'rinadi) | **Hali mavjud emas.** Ochilsa *"Bu sahifa hali qurilmoqda"* chiqadi. Boshqaruv panelidagi **"Tahlil navbatida"** kartochkasini bosish ham shu qurilmagan sahifaga olib boradi. Sessiyalar haqidagi ma'lumot hozircha **"O'quvchilar"** ro'yxati va o'quvchi profilidagi **"Sessiyalar tarixi"** orqali ko'riladi |
+| **"Sessiyalar"** bo'limi | **Olib tashlangan** (2026-09-23 egasi qarori) — u "O'quvchilar" bilan bir xil narsani ko'rsatardi. Eski havola ochilsa **"O'quvchilar"** ro'yxatiga o'tadi. Boshqaruv panelidagi **"Tahlil navbatida"** kartochkasi ham "O'quvchilar" ro'yxatini *"Tahlil qilinmoqda"* holati bilan ochadi. Bitta sessiyaning tafsiloti o'quvchi profilidagi **"Sessiyalar tarixi"** orqali ochiladi |
 | **Maktab mas'uli uchun alohida login** | **Hali mavjud emas** va MVP rejasida ham yo'q. Bitta rol — superadmin |
 | **2FA yoqishda QR kod rasmi** | **Hali mavjud emas.** Faqat matn ko'rinishidagi **"Maxfiy kalit"** beriladi, ilovaga qo'lda kiritiladi (1.3) |
 | **Zaxira kodlarni qayta ko'rish yoki qayta yaratish** | **Hali mavjud emas.** Kodlar faqat bir marta ko'rsatiladi (1.3) |
@@ -889,14 +875,15 @@ va, ehtimol, uning **QR kodi**. Balki qo'shimcha **6 xonali kirish kodi** ham be
      davom ettirsa bo'ladi (**"Keyinroq davom ettiraman"** tugmasi bor).
    - **Internet uzilsa javoblar yo'qolmaydi** — sahifani yopmasin, ulanish tiklanganda
      o'zi yuboriladi.
-4. **Sharoit yarating:** tinch xona, yetarli vaqt (~20–40 daqiqa, dasturga qarab),
+4. **Sharoit yarating:** tinch xona, yetarli vaqt (~20–40 daqiqa, testga qarab),
    zaryadlangan telefon yoki kompyuter. Dars oxirining oxirgi 5 daqiqasida
    **topshirtirmang** — natija ishonchsiz chiqadi.
-5. **Bir necha dastur ko'rinsa** — o'quvchiga **qaysi birini** tanlash kerakligini
+5. **Bir necha test ko'rinsa** — o'quvchiga **qaysi birini** tanlash kerakligini
    oldindan ayting, aks holda har kim boshqasini tanlaydi.
 
 **O'quvchi nima ko'radi:** havolani ochadi → qisqa anketa (F.I.Sh., tug'ilgan sana,
-jinsi, sinf, telefon; ota-ona telefoni va email ixtiyoriy) → rozilik belgisi →
+jinsi, sinf, **ota-ona telefoni — majburiy**; o'quvchining shaxsiy raqami ("Shaxsiy
+raqamingiz (bo'lsa)") va email ixtiyoriy — *2026-09-23 egasi qarori*) → rozilik belgisi →
 **"Testni boshlash"** → savollar bloklari → oxirida qisqacha natija
 ("Kuchli tomonlaring" va "Senga mos yo'nalishlar").
 
@@ -911,7 +898,7 @@ PDF hisobot tayyorlab bera oladi.
 |------------------------|-------------|
 | *"Havola ishlamayapti..."* | Platforma mas'ulidan yangi havola so'rang |
 | *"Test vaqtincha yopilgan"* | Platforma mas'uliga xabar bering — maktab nofaol qilingan |
-| *"Bu maktab uchun test hali tayyorlanmagan..."* | Platforma mas'uliga xabar bering — dastur biriktirilmagan |
+| *"Bu maktab uchun test hali tayyorlanmagan..."* | Platforma mas'uliga xabar bering — maktabga test biriktirilmagan |
 | *"Juda ko'p urinish bo'ldi..."* | Kunlik limit tugagan. Ertaga davom ettiring yoki limitni oshirishni so'rang |
 | *"Sen allaqachon testni topshirgansan..."* | O'quvchi allaqachon topshirgan. Qayta kerak bo'lsa, platforma mas'uliga murojaat qiling |
 
@@ -924,9 +911,7 @@ PDF hisobot tayyorlab bera oladi.
 | **"Boshqaruv paneli"** | 2.7 |
 | **"Maktablar"** | 2 |
 | **"O'quvchilar"** | 5.1, 5.4 |
-| **"Sessiyalar"** | ⚠️ hali qurilmagan — 8.4 |
-| **"Testlar katalogi"** | 4 |
-| **"Dasturlar"** | 3 |
+| **"Testlar katalogi"** | 3 (biriktirish), 4 |
 | **"AI sozlamalari"** | 6 |
 | **"Audit jurnali"** | 7.3 |
 | **"Sozlamalar"** | 1.2, 1.3 |

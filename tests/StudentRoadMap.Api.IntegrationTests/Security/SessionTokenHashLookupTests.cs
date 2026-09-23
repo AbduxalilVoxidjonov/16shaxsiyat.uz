@@ -37,7 +37,7 @@ public sealed class SessionTokenHashLookupTests : IClassFixture<PublicApiTestFac
         using var client = _factory.CreateClient();
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, fullName, new DateOnly(2010, 3, 3),
-            Gender.Male, 8, "B", "+998901112233", null, null, true, "uz", TestDataFactory.DefaultProgramCode);
+            Gender.Male, 8, "B", "+998901112233", "+998909998877", null, true, "uz", TestDataFactory.DefaultProgramCode);
 
         var response = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
         response.EnsureSuccessStatusCode();

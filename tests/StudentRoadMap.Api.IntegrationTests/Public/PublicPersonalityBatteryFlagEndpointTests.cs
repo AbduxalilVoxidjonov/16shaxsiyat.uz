@@ -57,7 +57,7 @@ public sealed class PublicPersonalityBatteryPresentEndpointTests : IClassFixture
 
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, "Batareya Bor Talabasi", new DateOnly(2010, 5, 5),
-            Gender.Male, 9, "A", "+998901234567", null, null, true, "uz", ProgramCode: "PROG-BATTERY-YES");
+            Gender.Male, 9, "A", "+998901234567", "+998909998877", null, true, "uz", ProgramCode: "PROG-BATTERY-YES");
 
         var startResponse = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
         startResponse.EnsureSuccessStatusCode();
@@ -111,7 +111,7 @@ public sealed class PublicPersonalityBatteryAbsentEndpointTests : IClassFixture<
 
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, "Batareya Yoq Talabasi", new DateOnly(2010, 5, 5),
-            Gender.Male, 9, "A", "+998901234567", null, null, true, "uz", ProgramCode: "PROG-BATTERY-NO");
+            Gender.Male, 9, "A", "+998901234567", "+998909998877", null, true, "uz", ProgramCode: "PROG-BATTERY-NO");
 
         var startResponse = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
         startResponse.EnsureSuccessStatusCode();

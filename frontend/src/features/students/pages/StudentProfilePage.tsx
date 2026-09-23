@@ -20,7 +20,7 @@ import { StudentSummaryCards } from '../components/StudentSummaryCards';
 import { StudentDiagramsSection } from '../components/StudentDiagramsSection';
 import { AiReportSection } from '../components/AiReportSection';
 import { AssessmentHistoryTable } from '../components/AssessmentHistoryTable';
-import { AnswersSection } from '@/widgets/AnswersSection';
+import { StudentAnswersSection } from '../components/StudentAnswersSection';
 import { RerunAnalysisDialog } from '../components/RerunAnalysisDialog';
 import type { AiProvider } from '../model/profileTypes';
 import { buildPresentTestCodes } from '../model/testBattery';
@@ -210,6 +210,19 @@ export default function StudentProfilePage() {
         </>
       )}
 
+      {/* Savolma-savol javoblar — natija kartalari/diagrammalaridan DARHOL keyin, AI
+          hisobotidan OLDIN (egasining talabi, 2026-09-23: "juda ichkariga ketib qolgan").
+          Faqat so'rovnoma topshirilgan bo'lsa (kartalar chizilmaydi) — sarlavhadan keyingi
+          BIRINCHI kontent shu bo'ladi. */}
+      {/* Bir nechta yakunlangan urinish bo'lsa — har biri yig'iladigan blok (2026-09-23). */}
+      <StudentAnswersSection
+        assessments={assessments}
+        latestAssessmentId={latestAssessment?.id ?? null}
+        testNames={Object.fromEntries(
+          (latestAssessment?.tests ?? []).map((test) => [test.code, test.nameUz]),
+        )}
+      />
+
       <AiReportSection
         assessmentStatus={latestSummary?.status ?? null}
         aiAnalysis={latestAssessment?.aiAnalysis}
@@ -227,10 +240,6 @@ export default function StudentProfilePage() {
           // docs/07 3.3 da yo'q — PM bilan aniqlanishi kerak bo'lgan bo'shliq (hisobotda bor).
         }}
       />
-
-      {/* Savolma-savol javoblar — OYNA emas, profilning o'z bo'limi (egasining talabi,
-          2026-09-03): dialog ichida turgani uchun bu ma'lumot umuman topilmagan edi. */}
-      <AnswersSection assessmentId={latestAssessment?.id ?? null} />
 
       <AssessmentHistoryTable assessments={assessments} />
 

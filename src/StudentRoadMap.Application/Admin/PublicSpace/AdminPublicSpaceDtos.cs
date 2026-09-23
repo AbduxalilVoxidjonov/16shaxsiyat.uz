@@ -31,8 +31,8 @@ public sealed record AdminPublicSpaceAvailabilityDto(
 /// (`AssessmentProgram.State`). Ilgari bu yerda ham ikkita belgi bor edi va ular
 /// "Arxiv + Faol" kabi ziddiyatni ko'rsatishi mumkin edi.
 ///
-/// Dasturni yoqish/o'chirish bu yerda EMAS — u `Admin/Programs` bo'limining ishi
-/// (`POST /api/admin/programs/{id}/toggle-active`); bu bo'lim faqat BIRIKTIRISHNI boshqaradi.
+/// Dasturni yoqish/o'chirish bu yerda EMAS — 2026-09-23 dan test dasturi holati testga ergashadi (`TestPrograms`)
+/// (test nashri/faolligi); bu bo'lim faqat BIRIKTIRISHNI boshqaradi.
 /// </summary>
 public sealed record AdminPublicSpaceProgramDto(
     Guid Id,
@@ -41,7 +41,13 @@ public sealed record AdminPublicSpaceProgramDto(
     string State,
     string Visibility,
     int TestCount,
-    bool HasUsableTest);
+    bool HasUsableTest,
+    /// <summary>
+    /// 2026-09-23 (`docs/18` §9.7): test dasturi bo'lsa — uning testi (UI shu ID bilan
+    /// `DELETE /api/admin/public-space/tests/{testId}` chaqiradi). Eski (ko'p testli / tizim)
+    /// dasturda `null` — uni faqat eski `programs/{programId}` endpointi bilan olib tashlash mumkin.
+    /// </summary>
+    Guid? TestDefinitionId = null);
 
 /// <summary>
 /// Ommaviy makon statistikasi. Atamalar ATAYLAB maktabnikidan farq qiladi

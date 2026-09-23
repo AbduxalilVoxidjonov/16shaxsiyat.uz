@@ -24,7 +24,7 @@ Maktab havolasi to'g'riligini tekshirish va boshlanish ekranini to'ldirish.
   "region": "Farg'ona", "district": "Qo'qon",
   "requiresAccessCode": false,
   "tests": [
-    { "code": "MBTI16", "name": "16 tipli shaxsiyat modeli", "questionCount": 60, "estimatedMinutes": 9, "order": 1 },
+    { "code": "MBTI16", "name": "16 tipli shaxsiyat modeli", "description": "O'zingizning fikrlash, muloqot va qaror qabul qilish uslubingizni aniqlaydigan 60 savolli shaxsiyat testi.", "questionCount": 60, "estimatedMinutes": 9, "order": 1 },
     { "code": "BIG5", "name": "Shaxsiyatning 5 omili", "questionCount": 50, "estimatedMinutes": 8, "order": 2 },
     { "code": "RIASEC", "name": "Kasb qiziqishlari", "questionCount": 48, "estimatedMinutes": 7, "order": 3 },
     { "code": "ACTIVITY", "name": "Aktivlik va motivatsiya", "questionCount": 32, "estimatedMinutes": 5, "order": 4 }
@@ -36,7 +36,7 @@ Maktab havolasi to'g'riligini tekshirish va boshlanish ekranini to'ldirish.
       "testCount": 4, "questionCount": 190, "estimatedMinutes": 31, "hasPersonalityBattery": true,
       "registrationMode": "Full",
       "registrationFields": { "birthDate": "Required", "gender": "Required", "grade": "Required",
-        "classLetter": "Optional", "phone": "Required", "parentPhone": "Optional", "email": "Optional" },
+        "classLetter": "Optional", "phone": "Optional", "parentPhone": "Required", "email": "Optional" },
       "registrationForm": {
         "coreFields": {
           "fullName": { "requirement": "Required", "labelUz": "F.I.Sh.", "placeholderUz": null, "order": 1 },
@@ -44,8 +44,8 @@ Maktab havolasi to'g'riligini tekshirish va boshlanish ekranini to'ldirish.
           "gender": { "requirement": "Required", "labelUz": "Jins", "placeholderUz": null, "order": 3 },
           "grade": { "requirement": "Required", "labelUz": "Sinf", "placeholderUz": null, "order": 4 },
           "classLetter": { "requirement": "Optional", "labelUz": "Sinf harfi", "placeholderUz": null, "order": 5 },
-          "phone": { "requirement": "Required", "labelUz": "Telefon raqami", "placeholderUz": null, "order": 6 },
-          "parentPhone": { "requirement": "Optional", "labelUz": "Ota-ona telefoni", "placeholderUz": null, "order": 7 },
+          "parentPhone": { "requirement": "Required", "labelUz": "Ota-ona telefoni", "placeholderUz": null, "order": 6 },
+          "phone": { "requirement": "Optional", "labelUz": "Shaxsiy raqamingiz (bo'lsa)", "placeholderUz": null, "order": 7 },
           "email": { "requirement": "Optional", "labelUz": "Email", "placeholderUz": null, "order": 8 }
         },
         "customFields": [
@@ -55,7 +55,7 @@ Maktab havolasi to'g'riligini tekshirish va boshlanish ekranini to'ldirish.
         ]
       },
       "tests": [
-        { "code": "MBTI16", "name": "16 tipli shaxsiyat modeli", "questionCount": 60, "estimatedMinutes": 9, "order": 1 },
+        { "code": "MBTI16", "name": "16 tipli shaxsiyat modeli", "description": "O'zingizning fikrlash, muloqot va qaror qabul qilish uslubingizni aniqlaydigan 60 savolli shaxsiyat testi.", "questionCount": 60, "estimatedMinutes": 9, "order": 1 },
         { "code": "BIG5", "name": "Shaxsiyatning 5 omili", "questionCount": 50, "estimatedMinutes": 8, "order": 2 },
         { "code": "RIASEC", "name": "Kasb qiziqishlari", "questionCount": 48, "estimatedMinutes": 7, "order": 3 },
         { "code": "ACTIVITY", "name": "Aktivlik va motivatsiya", "questionCount": 32, "estimatedMinutes": 5, "order": 4 }
@@ -64,9 +64,9 @@ Maktab havolasi to'g'riligini tekshirish va boshlanish ekranini to'ldirish.
       "testCount": 1, "questionCount": 20, "estimatedMinutes": 5, "hasPersonalityBattery": false,
       "registrationMode": "None",
       "registrationFields": { "birthDate": "Required", "gender": "Required", "grade": "Required",
-        "classLetter": "Optional", "phone": "Required", "parentPhone": "Optional", "email": "Optional" },
+        "classLetter": "Optional", "phone": "Optional", "parentPhone": "Required", "email": "Optional" },
       "tests": [
-        { "code": "CAREER_SURVEY_Q", "name": "Kasb so'rovnomasi savollari", "questionCount": 20, "estimatedMinutes": 5, "order": 1 }
+        { "code": "CAREER_SURVEY_Q", "name": "Kasb so'rovnomasi savollari", "description": null, "questionCount": 20, "estimatedMinutes": 5, "order": 1 }
       ] }
   ]
 }
@@ -75,6 +75,13 @@ Maktab havolasi to'g'riligini tekshirish va boshlanish ekranini to'ldirish.
 bir nechta bo'lsa o'quvchi tanlaydi, `code` → `POST /sessions` `programCode`).
 `programs[].tests` — AYNAN shu dasturning test bloklari (`ProgramTest.DisplayOrder` bo'yicha),
 sessiya boshlanganda (`POST /sessions`) biriktiriladigan ro'yxat bilan BIR XIL manbadan keladi.
+
+**`tests[].description` / `programs[].tests[].description`** (2026-09-23) — katalogdagi anketa
+tavsifi (`TestDefinition.DescriptionUz`, superadmin anketa sozlamalarida to'ldiradi); bo'sh yoki
+faqat bo'shliqdan iborat bo'lsa `null`. Landing (E-1) test kartasi shuni ko'rsatadi; `null`
+bo'lsa frontend test kodi bo'yicha i18n matniga (faqat tizim metodikalari uchun bor) tushadi,
+u ham bo'lmasa izoh qatori umuman chiqmaydi. Qo'shimcha (nullable) maydon — eski mijozlar uchun
+buzuvchi o'zgarish emas.
 
 **`programs[].registrationMode`** (P52, 2026-09-11) — `"Full"`/`"None"` (`AssessmentProgram.RegistrationMode`).
 `Full` bo'lsa mijoz registratsiya ekranini (F.I.Sh./tug'ilgan sana/jins/sinf/telefon) ko'rsatadi
@@ -618,8 +625,8 @@ Tana bo'sh. Har doim `204 No Content` (idempotent), cookie tozalanadi.
 |-------|------|------|
 | GET | `/api/admin/schools?search=&region=&isActive=&page=1&pageSize=20&sort=name` | `PagedResult<SchoolListItemDto>` |
 | GET | `/api/admin/schools/{id}` | Batafsil + statistika (o'quvchi soni, yakunlangan sessiyalar) |
-| POST | `/api/admin/schools` | Yaratish; `slug` avtomatik (nom+tuman), band bo'lsa `-2` |
-| PUT | `/api/admin/schools/{id}` | Yangilash |
+| POST | `/api/admin/schools` | Yaratish; `slug` avtomatik (nom+tuman), band bo'lsa `-2`; ixtiyoriy `testIds` (2026-09-23) |
+| PUT | `/api/admin/schools/{id}` | Yangilash; ixtiyoriy `testIds` — biriktirilgan testlarni TO'LIQ almashtiradi (2026-09-23) |
 | POST | `/api/admin/schools/{id}/regenerate-link` | Yangi `accessToken` → `{ publicUrl, qrCodeBase64 }` |
 | POST | `/api/admin/schools/{id}/regenerate-entry-code` | Yangi maktab kodi → `{ entryCode }` (`XXXX-XXXX`); eski kod darhol yaroqsiz, audit `School.EntryCodeRegenerated` (2026-09-07) |
 | POST | `/api/admin/schools/{id}/toggle-active` | Faol/nofaol |
@@ -627,6 +634,37 @@ Tana bo'sh. Har doim `204 No Content` (idempotent), cookie tozalanadi.
 | GET | `/api/admin/schools/link-health` | Tizim bo'yicha "nechta maktab havolasi ishlamaydi" (dashboard banneri) |
 
 `SchoolListItemDto`: `id, name, region, district, slug, publicUrl, isActive, studentCount, completedCount, lastActivityAt, linkHealth, entryCode`
+
+#### Maktabga testlar — `testIds` (2026-09-23 egasi qarori)
+
+"Dasturlar" bo'limi olib tashlandi (`docs/18` §9.7): maktab formasida endi DASTUR emas,
+TESTLAR tanlanadi. Ichkarida har test o'z **test dasturiga** (1:1, tizim avtomatik yaratadi)
+map qilinadi — ommaviy oqim (1.1, 1.2) o'zgarmagan.
+
+`POST /api/admin/schools` va `PUT /api/admin/schools/{id}` so'rov tanasiga:
+
+```jsonc
+{
+  "name": "12-son maktab", "region": "Toshkent", "district": "Chilonzor",
+  // ... qolgan maydonlar o'zgarmagan ...
+  "testIds": ["3f0c…", "9a1b…"]   // ixtiyoriy; `null`/berilmasa — biriktirmalar O'ZGARMAYDI,
+                                  // `[]` — hamma test biriktirmasi olib tashlanadi
+}
+```
+
+- To'plam **to'liq almashtiriladi**; test dasturi bo'lmagan test uchun u yaratiladi (holati
+  testga ergashadi — `Draft` test maktabda ko'rinmaydi, nashr qilingach ochiladi).
+- Faqat test dasturlari biriktirmasi boshqariladi: eski (ko'p testli/tizim) dastur biriktirmasi
+  bo'lsa — tegilmaydi.
+- `isPublic` test (3.4.1) barcha maktabda baribir ko'rinadi — uni `testIds`ga qo'shish shart emas.
+- Validatsiya: `≤ 500` ta, bo'sh GUID yo'q → `400 VALIDATION_ERROR`.
+- Xatolar: noma'lum test → `404 NOT_FOUND` (`extensions.testIds` — topilmaganlar); YANGI
+  biriktirilayotgan test arxivlangan → `409 TEST_ARCHIVED` (`extensions.testIds`; allaqachon
+  biriktirilgan arxiv test ro'yxatda qolsa — xato emas). Xato bo'lsa maktab ham saqlanmaydi.
+
+`GET`/`POST`/`PUT`/`toggle-active` javobidagi `SchoolDetailDto`ga **`testIds: Guid[]`** qo'shildi —
+shu maktabga ANIQ biriktirilgan testlar (biriktirilgan tartibda). Ommaviy (`isPublic`) testlar va
+eski dastur biriktirmalari bu ro'yxatga kirmaydi.
 
 #### `linkHealth` — "bu havola ishlaydimi" (2026-09-03)
 
@@ -666,6 +704,13 @@ ketmasligi test bilan qulflangan (`SchoolLinkHealthCriterionTests`) — aks hold
 FAQAT **faol** maktablar hisoblanadi (nofaol maktab havolasi `410 SCHOOL_INACTIVE` bilan
 ATAYIN ishlamaydi — u yolg'on ogohlantirish bermasligi kerak). `schools[]` — ko'pi bilan
 10 ta namuna; qolgani `brokenSchoolCount - schools.length`.
+
+> ⛔ **2026-09-23 egasi qarori — `/api/admin/programs/*` endpointlari OLIB TASHLANDI**
+> (`GET`/`POST`/`PUT`, `publish`/`archive`/`restore`/`toggle-active`, `tests`/`tests/reorder`,
+> `schools/{schoolId}`, `impact`). Biriktirish endi test ichida — 3.4.1; maktab tomonidan —
+> 3.1 `testIds`; ommaviy makon — 3.7 `tests/{testId}`. Quyidagi 2026-09-03…11 bo'limlar
+> TARIXIY (dastur modeli ichki qatlam sifatida qoladi, `state`/`registrationMode`/
+> `hasPersonalityBattery` mazmuni 3.4.1 javobiga ko'chgan).
 
 #### Dastur holati — `state` (2026-09-06)
 
@@ -817,7 +862,7 @@ faqat tasdiq oynasi oqibatni ko'rsatishi uchun.
 
 **`GET /api/admin/schools/{id}` — 200** (`SchoolDetailDto`): `id, name, region, district,
 schoolNumber, contactPerson, contactPhone, slug, publicUrl, qrCodeBase64, accessCode, entryCode,
-dailyRegistrationLimit, isActive, notes, createdAt, updatedAt, stats`
+dailyRegistrationLimit, isActive, notes, createdAt, updatedAt, stats, linkHealth, testIds`
 
 `entryCode` (2026-09-07) — maktab kodi, KO'RSATISH shaklida (`"7K3M-9XQ2"`); yaratish (`POST`)
 javobida ham bor — admin uni havola/QR bilan birga maktabga beradi. `accessCode` (ixtiyoriy sinf
@@ -898,7 +943,7 @@ lastAssessmentAt`
   "assessments": [
     { "id":"…","status":"Analyzed","startedAt":"…","completedAt":"…",
       "durationMinutes":29,"reliabilityScore":82.5,"reliabilityFlag":"Reliable",
-      "isLatest":true }
+      "isLatest":true, "programNameUz":"Standart batareya" }
   ],
   "latestAssessment": {
     "id": "…",
@@ -937,6 +982,10 @@ lastAssessmentAt`
   }
 }
 ```
+
+> **`assessments[].programNameUz`** (2026-09-23, ixtiyoriy, `string?`) — sessiya topshirilgan
+> dasturning katalogdagi nomi (`AssessmentProgram.NameUz`); topilmasa `null`. Profildagi
+> "Savolma-savol javoblar" bo'limida har urinish sarlavhasi uchun.
 
 #### `latestAssessment.tests[]` / `hasPersonalityBattery` (P52, 2026-09-12 — egasi topgan kamchilik)
 
@@ -1133,6 +1182,7 @@ O'girish backend'da bir joyda: `StudentProfileMapping.RiasecScaleToLetter`
 {
   "answers": [
     { "questionId": "…", "questionCode": "BIG5-Q17", "testCode": "BIG5",
+      "testNameUz": "Katta beshlik",
       "questionText": "Rejalarimni oxirigacha yetkazaman",
       "rawValue": 5, "textValue": null, "selectedValues": null, "selectedOptionText": null,
       "selectedOptionTexts": null,
@@ -1141,6 +1191,7 @@ O'girish backend'da bir joyda: `StudentProfileMapping.RiasecScaleToLetter`
       "scale": "C", "scaleNameUz": "Vijdonlilik", "scaleDirection": -1, "weight": 1.0,
       "effectiveValue": 1, "isFastAnswer": true, "straightLiningBlockIndex": null },
     { "questionId": "…", "questionCode": "Q2B_3", "testCode": "INTELLECT-SURVEY",
+      "testNameUz": "Maktab o'quvchilari uchun so'rovnoma",
       "questionText": "Qaysi fanlarga qiziqasiz?",
       "rawValue": null, "textValue": null, "selectedValues": [3, 1], "selectedOptionText": null,
       "selectedOptionTexts": ["Matematika", "Ingliz tili"],
@@ -1209,6 +1260,9 @@ O'girish backend'da bir joyda: `StudentProfileMapping.RiasecScaleToLetter`
 > (ballanmaydigan) bloklar signallarga kirmaydi — `recalculate-scores` ham ularni
 > `ReliabilityCalculator`ga bermaydi.
 
+> **`testNameUz`** (2026-09-23, ixtiyoriy, `string?`) — test blokining katalogdagi nomi
+> (`TestDefinition.NameUz`). Admin UI blok sarlavhasida xom `testCode` o'rniga shuni ko'rsatadi.
+>
 > **`straightLiningBlockIndex`** — javob TO'LIQ `straightLiningMinRunLength` (12) talik
 > bir xil qiymat blokiga tushsa uning tartib raqami (1 dan), aks holda `null`. Barcha javob
 > bir xil bo'lsa (`allSameAnswer: true`) bloklar BELGILANMAYDI — `docs/03` §7.1 band 1
@@ -1460,6 +1514,87 @@ bo'yicha ishlaydi.
 > `PublicTestQuestionsEndpointTests.GetTestQuestions_JavobVaSwaggerda_ScaleMaydoniYoq` da xom
 > JSON ustidan tekshiriladi.
 
+### 3.4.1 Test biriktirish — ommaviy yoki maktablar (2026-09-23 egasi qarori)
+
+"Testlar katalogi" va "Dasturlar" amalda bir xil edi — "Dasturlar" bo'limi olib tashlandi
+(`docs/18` §9.7). Test KIMGA ochiqligi endi test ichida boshqariladi. Ichkarida — **test
+dasturi** (har test uchun ko'pi bilan bitta, `assessment_programs.owner_test_definition_id`,
+tizim avtomatik yaratadi); shartnomada "dastur" va `programId` YO'Q.
+
+| Metod | Yo'l | Izoh |
+|-------|------|------|
+| GET | `/api/admin/catalog/tests/{id}/assignment` | joriy biriktirma; biriktirilmagan testda standart bo'sh qiymatlar (test dasturi YARATILMAYDI) |
+| PUT | `/api/admin/catalog/tests/{id}/assignment` | saqlash — kerak bo'lsa test dasturini yaratadi |
+
+**`PUT` so'rovi**
+
+```jsonc
+{
+  "isPublic": false,                   // true — BARCHA maktab havolalarida + ommaviy kabinetda
+  "schoolIds": ["a1…", "b2…"],         // maktablar to'plami — TO'LIQ almashtiriladi; [] — hammasi olinadi
+                                       // (null → []). Faqat `SchoolKind.School` (ommaviy makon ID'si → 404)
+  "registrationMode": "Full",          // "Full" | "None"; berilmasa "Full"
+  "isInPublicSpace": true              // ixtiyoriy: ommaviy makonga (kabinet) ALOHIDA biriktirish;
+                                       // berilmasa (null) — o'zgarmaydi (3.7 bilan bir xil yozuv)
+}
+```
+
+**`GET`/`PUT` — 200** (`AdminTestAssignmentDto`)
+
+```jsonc
+{
+  "testDefinitionId": "3f0c…",
+  "testStatus": "Published",        // "Draft" | "Published" | "Archived"
+  "testIsActive": true,
+  "isConfigured": true,             // test dasturi bormi; false — quyidagilar standart qiymatda
+  "isPublic": false,
+  "schoolIds": ["a1…", "b2…"],       // biriktirilgan tartibda
+  "isInPublicSpace": true,
+  "registrationMode": "Full",
+  "state": "Active",                // "Draft" | "Active" | "Paused" | "Archived" | null (isConfigured=false)
+  "isAvailable": true,              // state == Active VA (isPublic || schoolIds.length > 0 || isInPublicSpace)
+  "hasPersonalityBattery": false,   // Standard + Scored metodika (`PersonalityBattery`)
+  "sessionCount": 4                 // shu biriktirish orqali ochilgan sessiyalar (tarix)
+}
+```
+
+Biriktirilmagan test (`isConfigured: false`): `isPublic: false, schoolIds: [], isInPublicSpace:
+false, registrationMode: "Full", state: null, isAvailable: false, sessionCount: 0`. "Bo'sh" `PUT`
+(`isPublic: false`, `schoolIds: []`, `isInPublicSpace` ≠ `true`, `registrationMode: "Full"`)
+biriktirilmagan testda test dasturini yaratmaydi — javob shu standart qiymatlar.
+
+**Holat (`state`) testga ergashadi** — admin uni alohida boshqarmaydi:
+
+| Test | `state` |
+|---|---|
+| `Draft` | `Draft` (o'quvchiga ko'rinmaydi) |
+| `Published` + faol | `Active` |
+| `Published` + nofaol (`toggle-active`) | `Paused` |
+| `Archived` | `Archived` |
+
+Sinxron test amallarida avtomatik: `PUT tests/{id}` (nom/tavsif/tartib → ommaviy landing va
+kabinetda **test nomi** ko'rinadi), `publish`, `toggle-active`, `archive`. `DELETE tests/{id}` —
+testning o'z test dasturi (sessiyasiz) u bilan birga o'chiriladi; sessiya bo'lsa `409 TEST_IN_USE`.
+
+**Biznes qoidalar:** `Draft` testni biriktirish RUXSAT etiladi (oldindan tayyorlash) — nashr
+qilinmaguncha hech qayerda ko'rinmaydi. Arxivlangan test → `409`.
+
+**Xatolar**
+
+| Status | `code` | Qachon |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | `registrationMode` `Full`/`None` emas; `schoolIds` > 1000 yoki bo'sh GUID |
+| 400 | `REGISTRATION_REQUIRED_FOR_BATTERY` | shaxsiyat batareyasi testida `registrationMode: "None"` (hech narsa saqlanmaydi) |
+| 401 | `UNAUTHORIZED` | token yo'q |
+| 404 | `NOT_FOUND` | test yo'q; yoki `schoolIds`da noma'lum/o'chirilgan maktab yoki ommaviy makon ID'si (`extensions.schoolIds`) |
+| 409 | `TEST_ARCHIVED` | test arxivlangan |
+| 409 | `PUBLIC_SPACE_NOT_CONFIGURED` | `isInPublicSpace: true`, lekin makon seed qilinmagan |
+
+Audit: `Catalog.TestAssignmentUpdated` (`entityType: "TestDefinition"`).
+
+> Katalog DTO'laridagi `usedInProgramCount` endi testning o'z test dasturini ham sanaydi
+> (biriktirilgan testda `≥ 1`) — UI uni "dasturlarda ishlatilgan" deb ko'rsatmasligi kerak.
+
 ### 3.5 AI sozlamalari
 | Metod | Yo'l | Izoh |
 |-------|------|------|
@@ -1479,7 +1614,7 @@ bo'yicha ishlaydi.
 
 ```json
 [{
-  "provider": "Gemini", "displayName": "Google Gemini", "model": "gemini-2.0-flash",
+  "provider": "Gemini", "displayName": "Google Gemini", "model": "gemini-3.1-flash-lite",
   "baseUrl": null, "maxOutputTokens": 4096, "temperature": 0.40,
   "isDefault": true, "isActive": true, "fallbackOrder": 1,
   "maskedApiKey": "AIza••••••cdef",
@@ -1584,11 +1719,18 @@ o'chirish/faolsizlantirish endpointi YO'Q (domen taqiqlaydi).
 |-------|------|------|
 | GET | `/api/admin/public-space` | holat, biriktirilgan dasturlar, sozlamalar, statistika |
 | GET | `/api/admin/public-space/users?search=&status=&page=&pageSize=&sort=` | ro'yxatdan o'tgan foydalanuvchilar |
-| POST | `/api/admin/public-space/programs/{programId}` | dastur biriktirish (idempotent) |
-| DELETE | `/api/admin/public-space/programs/{programId}` | biriktirishni olib tashlash (idempotent) |
+| POST | `/api/admin/public-space/tests/{testId}` | **2026-09-23:** TEST biriktirish (idempotent; test dasturi bo'lmasa yaratiladi). Test yo'q → `404`, yangi biriktirishda arxiv test → `409 TEST_ARCHIVED` |
+| DELETE | `/api/admin/public-space/tests/{testId}` | **2026-09-23:** test biriktirmasini olib tashlash (idempotent; test dasturi yaratilmaydi) |
+| POST | `/api/admin/public-space/programs/{programId}` | (eski) dastur biriktirish (idempotent) — faqat eski dasturlar uchun qoldirilgan |
+| DELETE | `/api/admin/public-space/programs/{programId}` | (eski) biriktirishni olib tashlash — `programs[].testDefinitionId == null` bo'lgan eski dasturni tozalash uchun |
 | PUT | `/api/admin/public-space/show-result` | `{ "enabled": true }` — natija foydalanuvchiga ko'rinadimi |
 
 Xato: makon seed qilinmagan bo'lsa barcha endpointlar `409 PUBLIC_SPACE_NOT_CONFIGURED`.
+
+**2026-09-23:** `programs[]` elementiga `testDefinitionId: Guid | null` qo'shildi — test dasturi
+bo'lsa uning testi (UI "olib tashlash" uchun `DELETE tests/{testId}` chaqiradi), eski dasturda
+`null`. `nameUz` test dasturida = test nomi. Tanlov ro'yxati endi `GET /api/admin/catalog/tests`
+dan olinadi (`GET /api/admin/programs` yo'q).
 
 **`GET /api/admin/public-space` — `stats` bloki**
 ```jsonc
@@ -1689,7 +1831,9 @@ Egasining talabi: "Sozlamalar" sahifasidan ro'yxatdan o'tish formasini GLOBAL bo
 | GET | `/api/admin/settings/registration-form` | Sozlama yo'q bo'lsa STANDART qaytadi (`null` emas) |
 | PUT | `/api/admin/settings/registration-form` | To'liq almashtirish — `docs/05` jsonb shakli |
 
-**`GET`/`PUT ... → RegistrationFormDefinitionDto`** (ikkalasi ham BIR XIL shakl, round-trip):
+**`GET`/`PUT ... → RegistrationFormDefinitionDto`** (ikkalasi ham BIR XIL shakl, round-trip;
+misol — standart qiymat, **2026-09-23 egasi qarori**: ota-ona telefoni majburiy va birinchi,
+shaxsiy raqam ixtiyoriy — `docs/18` §9.6.4):
 
 ```json
 {
@@ -1699,8 +1843,8 @@ Egasining talabi: "Sozlamalar" sahifasidan ro'yxatdan o'tish formasini GLOBAL bo
     "gender":      { "requirement": "Required", "labelUz": "Jins", "placeholderUz": null, "order": 3 },
     "grade":       { "requirement": "Required", "labelUz": "Sinf", "placeholderUz": null, "order": 4 },
     "classLetter": { "requirement": "Optional", "labelUz": "Sinf harfi", "placeholderUz": null, "order": 5 },
-    "phone":       { "requirement": "Required", "labelUz": "Telefon raqami", "placeholderUz": null, "order": 6 },
-    "parentPhone": { "requirement": "Optional", "labelUz": "Ota-ona telefoni", "placeholderUz": null, "order": 7 },
+    "parentPhone": { "requirement": "Required", "labelUz": "Ota-ona telefoni", "placeholderUz": null, "order": 6 },
+    "phone":       { "requirement": "Optional", "labelUz": "Shaxsiy raqamingiz (bo'lsa)", "placeholderUz": null, "order": 7 },
     "email":       { "requirement": "Optional", "labelUz": "Email", "placeholderUz": null, "order": 8 }
   },
   "customFields": [

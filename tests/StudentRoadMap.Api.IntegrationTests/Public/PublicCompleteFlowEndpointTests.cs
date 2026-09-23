@@ -153,7 +153,7 @@ public sealed class PublicCompleteFlowEndpointTests : IClassFixture<PublicApiTes
     {
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, fullName, birthDate, Gender.Male, 9, "A",
-            "+998901234567", null, null, true, "uz");
+            "+998901234567", "+998909998877", null, true, "uz");
 
         var response = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
         response.EnsureSuccessStatusCode();
@@ -185,7 +185,7 @@ public sealed class PublicCompleteTestValidationEndpointTests : IClassFixture<Pu
         using var client = _factory.CreateClient();
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, "Nortoshov Sardorbek Muzaffarovich", new DateOnly(2010, 2, 2), Gender.Male, 9, "A",
-            "+998901234567", null, null, true, "uz");
+            "+998901234567", "+998909998877", null, true, "uz");
         var startSessionResponse = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
         startSessionResponse.EnsureSuccessStatusCode();
         var sessionToken = (await startSessionResponse.Content.ReadFromJsonAsync<StartSessionResult>(TestJson.Options))!.SessionToken;
@@ -230,7 +230,7 @@ public sealed class PublicCompleteTestValidationEndpointTests : IClassFixture<Pu
         using var client = _factory.CreateClient();
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, "Bekova Nodira Sherzodovna", new DateOnly(2010, 7, 7), Gender.Female, 9, "A",
-            "+998901234567", null, null, true, "uz");
+            "+998901234567", "+998909998877", null, true, "uz");
         var startSessionResponse = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
         startSessionResponse.EnsureSuccessStatusCode();
         var sessionToken = (await startSessionResponse.Content.ReadFromJsonAsync<StartSessionResult>(TestJson.Options))!.SessionToken;
@@ -277,7 +277,7 @@ public sealed class PublicCompleteTestValidationEndpointTests : IClassFixture<Pu
         using var client = _factory.CreateClient();
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, "Qosimov Jahongir Baxtiyorovich", new DateOnly(2010, 8, 8), Gender.Male, 9, "A",
-            "+998901234567", null, null, true, "uz");
+            "+998901234567", "+998909998877", null, true, "uz");
         var startSessionResponse = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
         startSessionResponse.EnsureSuccessStatusCode();
         var sessionToken = (await startSessionResponse.Content.ReadFromJsonAsync<StartSessionResult>(TestJson.Options))!.SessionToken;

@@ -64,6 +64,8 @@ const SCHOOL_DETAIL = {
     lastActivityAt: SCHOOL_1.lastActivityAt,
   },
   linkHealth: SCHOOL_1.linkHealth,
+  // `docs/07` 3.1 (2026-09-23) — maktabga aniq biriktirilgan testlar.
+  testIds: [],
 } satisfies Schemas['AdminSchoolDetailDto'];
 
 interface FetchMockOptions {
@@ -320,7 +322,7 @@ describe('SchoolsPage', () => {
     expect(await screen.findByText('Havola ishlamaydi')).toBeInTheDocument();
 
     // Umumiy "xato" yetarli emas — admin NIMA QILISHNI bilishi kerak.
-    expect(screen.getByText(/Maktabga dastur biriktirilmagan/)).toBeInTheDocument();
+    expect(screen.getByText(/Maktabga test biriktirilmagan/)).toBeInTheDocument();
 
     // Havolani nusxalash/QR yonida ham ogohlantirish bo'lishi kerak.
     expect(screen.getByText(/Bu havolani hozir tarqatish foydasiz/)).toBeInTheDocument();
@@ -353,7 +355,7 @@ describe('SchoolsPage', () => {
     await screen.findByText('12-son maktab');
 
     expect(await screen.findByText("Test yo'q")).toBeInTheDocument();
-    expect(screen.getByText(/Dasturda faol test yo'q/)).toBeInTheDocument();
+    expect(screen.getByText(/Biriktirilgan testda savol yo'q yoki u nashr qilinmagan/)).toBeInTheDocument();
   });
 
   it('QR modal havola va maktab nomi bilan ochiladi', async () => {

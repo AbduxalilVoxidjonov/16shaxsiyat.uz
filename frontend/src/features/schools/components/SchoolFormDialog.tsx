@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
 import { Dialog } from '@/shared/ui/Dialog';
@@ -14,6 +14,7 @@ import { useSchoolDetailQuery } from '../api/useSchoolDetailQuery';
 import { useCreateSchool } from '../api/useCreateSchool';
 import { useUpdateSchool } from '../api/useUpdateSchool';
 import { UZBEKISTAN_REGIONS } from '../model/regions';
+import { SchoolTestsField } from './SchoolTestsField';
 import {
   schoolFormSchema,
   SCHOOL_FORM_DEFAULT_VALUES,
@@ -46,7 +47,21 @@ function toFormValues(detail: SchoolDetailDto): SchoolFormValues {
     contactPhone: detail.contactPhone ?? '',
     dailyRegistrationLimit: detail.dailyRegistrationLimit,
     notes: detail.notes ?? '',
+    testIds: [...(detail.testIds ?? [])],
   };
+}
+
+/**
+ * Saqlash xatosi matni. `testIds` bilan bog'liq ikki holat (`docs/07` §3.1, 2026-09-23) aniq
+ * o'zbekcha matn bilan; qolganida backend xabari (u ham o'zbekcha) yoki umumiy matn.
+ */
+function toSchoolSaveErrorMessage(caught: unknown, t: (key: string) => string): string {
+  if (!(caught instanceof AppError)) return t('schools.form.genericError');
+  if (caught.code === 'TEST_ARCHIVED') return t('schools.form.errors.testArchived');
+  if (caught.code === 'NOT_FOUND' && Array.isArray(caught.extensions?.testIds)) {
+    return t('schools.form.errors.testsNotFound');
+  }
+  return caught.message;
 }
 
 /**
@@ -71,6 +86,7 @@ function SchoolFormFields({
   const { t } = useTranslation();
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<SchoolFormValues>({
@@ -144,6 +160,20 @@ function SchoolFormFields({
           {...register('notes')}
         />
       </div>
+      {/* 2026-09-23: "Dasturlar" bo'limi olib tashlandi — maktabga TESTLAR tanlanadi (`testIds`). */}
+      <div className="sm:col-span-2">
+        <Controller
+          control={control}
+          name="testIds"
+          render={({ field }) => (
+            <SchoolTestsField
+              value={field.value}
+              onChange={field.onChange}
+              error={errors.testIds?.message}
+            />
+          )}
+        />
+      </div>
     </form>
   );
 }
@@ -175,6 +205,9 @@ export function SchoolFormDialog({ open, schoolId, onClose }: SchoolFormDialogPr
       dailyRegistrationLimit: values.dailyRegistrationLimit,
       // `accessCode` ATAYLAB yuborilmaydi — backend `null` deb qabul qiladi (eskirgan maydon).
       notes: emptyToUndefined(values.notes),
+      // To'plam TO'LIQ almashtiriladi (`docs/07` §3.1): tahrirlashda joriy biriktirmalar
+      // formaga yuklangan, shu sabab o'zgartirilmagan bo'lsa ular o'z holicha qaytadi.
+      testIds: values.testIds,
     };
     try {
       if (isEdit && schoolId) {
@@ -193,7 +226,7 @@ export function SchoolFormDialog({ open, schoolId, onClose }: SchoolFormDialogPr
       }
       onClose();
     } catch (caught) {
-      const message = caught instanceof AppError ? caught.message : t('schools.form.genericError');
+      const message = toSchoolSaveErrorMessage(caught, t);
       toast.show({ variant: 'danger', title: message });
     }
   }

@@ -64,10 +64,16 @@ Belgilar: **[M]** — Must (MVP majburiy), **[S]** — Should (MVP'da bo'lsa yax
 - FR-1.6 [M] Maktab bo'yicha kunlik ro'yxatdan o'tish limiti (default 500).
 
 ### FR-2 O'quvchi va sessiya
-- FR-2.1 [M] Anketa maydonlari: FISH*, tug'ilgan sana*, jinsi*, sinf (1–11)*, sinf harfi, telefon*,
-  ota-ona telefoni, email, rozilik checkbox*.
+- FR-2.1 [M] Anketa maydonlari: FISH*, tug'ilgan sana*, jinsi*, sinf (1–11)*, sinf harfi,
+  ota-ona telefoni*, shaxsiy telefon ("Shaxsiy raqamingiz (bo'lsa)", ixtiyoriy), email, rozilik
+  checkbox*. *(2026-09-23 egasi qarori: ota-ona telefoni majburiy va telefonlar ichida birinchi,
+  o'quvchining o'z telefoni ixtiyoriy; standart qiymat — superadmin "Sozlamalar"da o'zgartira
+  oladi, `docs/18` §9.6.4.)*
 - FR-2.2 [M] Dublikat aniqlash: bir maktabda bir xil (FISH normalized + tug'ilgan sana) bo'lsa —
   mavjud o'quvchiga bog'lanadi, yangi sessiya ochiladi yoki tugallanmagan sessiya davom ettiriladi.
+  Telefon bu kalitga kirmaydi — o'z telefonining ixtiyoriyligi (2026-09-23) dublikat aniqlashga
+  ta'sir qilmaydi. Tug'ilgan sana sozlamada o'chirilgan bo'lsa zaxira kalit: FISH + telefon,
+  u ham bo'lmasa FISH + ota-ona telefoni (`docs/18` §9.5.3).
 - FR-2.3 [M] Sessiya yaratilganda `SessionToken` qaytadi; frontend uni `localStorage` da saqlaydi.
 - FR-2.4 [M] Sessiya holatlari: `Draft → InProgress → Completed → Analyzing → Analyzed | Failed`.
 - FR-2.5 [M] Sessiya `ExpiresAt` (default 7 kun) — muddati o'tsa `Expired`.

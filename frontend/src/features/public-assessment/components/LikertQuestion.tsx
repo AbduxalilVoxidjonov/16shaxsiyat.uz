@@ -3,6 +3,7 @@ import { Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/shared/lib/cn';
 import type { PublicQuestion, PublicScaleLabel } from '@/shared/api/types';
+import { RequiredMark } from '@/shared/ui/RequiredMark';
 
 export interface LikertQuestionProps {
   question: PublicQuestion;
@@ -173,6 +174,7 @@ export function LikertQuestion({
           {question.order}
         </span>
         {question.text}
+        {question.isRequired && <RequiredMark />}
       </legend>
 
       <div
@@ -181,6 +183,7 @@ export function LikertQuestion({
         tabIndex={-1}
         role="radiogroup"
         aria-labelledby={legendId}
+        aria-required={question.isRequired || undefined}
         aria-describedby={invalid ? errorId : undefined}
         onKeyDown={handleKeyDown}
         className="clear-both focus:outline-none"

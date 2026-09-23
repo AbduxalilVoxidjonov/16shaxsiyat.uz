@@ -4,7 +4,13 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
-import { jsonResponse, pagedResponse, problemResponse, type Schemas } from '@/test/apiMock';
+import {
+  jsonResponse,
+  listResponse,
+  pagedResponse,
+  problemResponse,
+  type Schemas,
+} from '@/test/apiMock';
 import PublicSpacePage from './PublicSpacePage';
 
 /**
@@ -21,8 +27,22 @@ const PAUSED_PROGRAM = {
   nameUz: 'Shaxsiyat profili',
   state: 'Paused',
   visibility: 'Assigned',
+  testCount: 1,
+  hasUsableTest: true,
+  // 2026-09-23 (`docs/07` §3.7): test dasturi — biriktirish/olib tashlash TEST orqali.
+  testDefinitionId: 'test-1',
+} satisfies Schemas['AdminPublicSpaceProgramDto'];
+
+/** "Dasturlar" bo'limidan qolgan ESKI (ko'p testli) dastur — `testDefinitionId == null`. */
+const LEGACY_PROGRAM = {
+  id: 'legacy-program-1',
+  code: 'LEGACY_PACK',
+  nameUz: 'Eski to’plam',
+  state: 'Active',
+  visibility: 'Assigned',
   testCount: 4,
   hasUsableTest: true,
+  testDefinitionId: null,
 } satisfies Schemas['AdminPublicSpaceProgramDto'];
 
 const BLOCKED_SPACE = {
@@ -68,17 +88,33 @@ const EMPTY_SPACE = {
   programs: [],
 } satisfies Schemas['AdminPublicSpaceDto'];
 
-const PROGRAM_OPTION = {
-  id: 'program-1',
-  code: 'PERSONALITY_PROFILE',
-  nameUz: 'Shaxsiyat profili',
-  kind: 'System',
-  visibility: 'Assigned',
-  state: 'Paused',
-  isSystem: true,
-  displayOrder: 1,
-  testCount: 4,
-} satisfies Schemas['AdminProgramListItemDto'];
+/** `GET /api/admin/catalog/tests` — ommaviy makonga biriktirish tanlovi (2026-09-23). */
+function catalogTest(
+  overrides: Partial<Schemas['CatalogTestListItemDto']>,
+): Schemas['CatalogTestListItemDto'] {
+  return {
+    id: 'test-1',
+    code: 'PERSONALITY_PROFILE',
+    nameUz: 'Shaxsiyat profili',
+    kind: 'Custom',
+    isSystem: false,
+    status: 'Published',
+    isActive: true,
+    scoringMode: 'Scored',
+    questionCount: 40,
+    scaleCount: 4,
+    estimatedMinutes: 10,
+    version: 1,
+    usedInProgramCount: 1,
+    ...overrides,
+  };
+}
+
+const TEST_OPTIONS = [
+  catalogTest({}),
+  catalogTest({ id: 'test-archived', code: 'OLD_TEST', nameUz: 'Arxiv test', status: 'Archived' }),
+  catalogTest({ id: 'test-draft', code: 'DRAFT_TEST', nameUz: 'Qoralama test', status: 'Draft' }),
+];
 
 interface FetchMockOptions {
   space?: Schemas['AdminPublicSpaceDto'];
@@ -93,8 +129,8 @@ function mockFetch(options: FetchMockOptions = {}) {
     const url = String(input);
     const method = init?.method ?? 'GET';
 
-    if (url.includes('/api/admin/programs')) {
-      return Promise.resolve(pagedResponse<'AdminProgramListItemDto'>([PROGRAM_OPTION]));
+    if (url.includes('/api/admin/catalog/tests')) {
+      return Promise.resolve(listResponse<'CatalogTestListItemDto'>(TEST_OPTIONS));
     }
 
     // Foydalanuvchilar ro'yxati — `/api/admin/public-space` prefiksidan OLDIN ushlanadi.
@@ -132,7 +168,7 @@ function renderPage() {
         <MemoryRouter initialEntries={['/admin/ommaviy']}>
           <Routes>
             <Route path="/admin/ommaviy" element={<PublicSpacePage />} />
-            <Route path="/admin/programs/:id" element={<div>PROGRAM_DETAIL_STUB</div>} />
+            <Route path="/admin/catalog/tests/:id" element={<div>TEST_DETAIL_STUB</div>} />
           </Routes>
         </MemoryRouter>
       </ToastProvider>
@@ -174,22 +210,23 @@ describe('PublicSpacePage', () => {
    * Egasining jonli holati: dastur nashr qilingan, lekin TO'XTATILGAN — oqim jimgina
    * o'lik. 2026-09-03 da aynan shu holat panelda hech qanday belgi bermagan edi.
    */
-  it("dastur to'xtatilgan bo'lsa aniq ogohlantirish va o'sha dasturga havola ko'rsatiladi", async () => {
+  it("test to'xtatilgan bo'lsa aniq ogohlantirish va o'sha testga havola ko'rsatiladi", async () => {
     mockFetch();
     renderPage();
 
     const alert = await screen.findByTestId('public-space-availability-alert');
     expect(within(alert).getByText('Hozir hech kim test boshlay olmaydi')).toBeInTheDocument();
     expect(
-      within(alert).getByText(/Dastur o’chirilgan — hech kim test boshlay olmaydi/),
+      within(alert).getByText(/Biriktirilgan test o’chirilgan yoki arxivlangan/),
     ).toBeInTheDocument();
     expect(
-      within(alert).getByText(/“Shaxsiyat profili” dasturi hozir faol emas/),
+      within(alert).getByText(/“Shaxsiyat profili” hozir faol emas/),
     ).toBeInTheDocument();
 
-    // Havola aynan o'sha dasturning sahifasiga olib boradi (dastur bu yerdan YOQILMAYDI).
-    const link = within(alert).getByRole('link', { name: 'Dasturni ochish' });
-    expect(link).toHaveAttribute('href', '/admin/programs/program-1');
+    // Havola aynan o'sha TESTning sahifasiga olib boradi (2026-09-23: "Dasturlar" bo'limi yo'q;
+    // test bu yerdan YOQILMAYDI).
+    const link = within(alert).getByRole('link', { name: 'Testni ochish' });
+    expect(link).toHaveAttribute('href', '/admin/catalog/tests/test-1');
   });
 
   it("hammasi joyida bo'lsa ogohlantirish CHIQMAYDI", async () => {
@@ -200,25 +237,28 @@ describe('PublicSpacePage', () => {
     expect(screen.queryByTestId('public-space-availability-alert')).not.toBeInTheDocument();
   });
 
-  it('dastur biriktiriladi va yangilangan holat keshga yoziladi', async () => {
+  it('test biriktiriladi (POST tests/{testId}) va yangilangan holat keshga yoziladi', async () => {
     const fetchMock = mockFetch({ space: EMPTY_SPACE, mutationResult: HEALTHY_SPACE });
     const user = userEvent.setup();
     renderPage();
 
-    expect(await screen.findByText('Hali dastur biriktirilmagan')).toBeInTheDocument();
-    // Dasturlar ro'yxati alohida so'rov bilan keladi — variant paydo bo'lguncha kutamiz
+    expect(await screen.findByText('Hali test biriktirilmagan')).toBeInTheDocument();
+    // Katalog testlari alohida so'rov bilan keladi — variant paydo bo'lguncha kutamiz
     // (aks holda `<select>` hali `disabled` holatda bo'ladi).
     await screen.findByRole('option', { name: /PERSONALITY_PROFILE/ });
+    // Arxivlangan test tanlovda UMUMAN yo'q; qoralama — belgi bilan.
+    expect(screen.queryByRole('option', { name: /OLD_TEST/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /DRAFT_TEST .*\(qoralama\)/ })).toBeInTheDocument();
 
-    await user.selectOptions(screen.getByLabelText('Dastur biriktirish'), 'program-1');
+    await user.selectOptions(screen.getByLabelText('Test biriktirish'), 'test-1');
     await user.click(screen.getByRole('button', { name: 'Biriktirish' }));
 
-    expect(await screen.findByText('Dastur biriktirildi')).toBeInTheDocument();
+    expect(await screen.findByText('Test biriktirildi')).toBeInTheDocument();
     await waitFor(() => {
       expect(
         fetchMock.mock.calls.some(
           ([input, init]) =>
-            String(input).includes('/api/admin/public-space/programs/program-1') &&
+            String(input).includes('/api/admin/public-space/tests/test-1') &&
             (init as RequestInit | undefined)?.method === 'POST',
         ),
       ).toBe(true);
@@ -227,26 +267,53 @@ describe('PublicSpacePage', () => {
     expect(await screen.findByText('Shaxsiyat profili')).toBeInTheDocument();
   });
 
-  it('biriktirilgan dastur olib tashlanadi', async () => {
+  it('biriktirilgan test olib tashlanadi (DELETE tests/{testId})', async () => {
     const fetchMock = mockFetch({ mutationResult: EMPTY_SPACE });
     const user = userEvent.setup();
     renderPage();
 
     const programs = within(await screen.findByTestId('public-space-programs'));
     await user.click(
-      programs.getByRole('button', { name: '“Shaxsiyat profili” dasturini olib tashlash' }),
+      programs.getByRole('button', { name: '“Shaxsiyat profili” ni olib tashlash' }),
     );
 
-    expect(await screen.findByText('Dastur olib tashlandi')).toBeInTheDocument();
+    expect(await screen.findByText('Test olib tashlandi')).toBeInTheDocument();
     await waitFor(() => {
       expect(
         fetchMock.mock.calls.some(
           ([input, init]) =>
-            String(input).includes('/api/admin/public-space/programs/program-1') &&
+            String(input).includes('/api/admin/public-space/tests/test-1') &&
             (init as RequestInit | undefined)?.method === 'DELETE',
         ),
       ).toBe(true);
     });
+  });
+
+  it("eski dastur (testDefinitionId == null) faqat olib tashlash bilan ko'rsatiladi va eski endpoint chaqiriladi", async () => {
+    const fetchMock = mockFetch({
+      space: { ...HEALTHY_SPACE, programs: [LEGACY_PROGRAM] },
+      mutationResult: EMPTY_SPACE,
+    });
+    const user = userEvent.setup();
+    renderPage();
+
+    const programs = within(await screen.findByTestId('public-space-programs'));
+    expect(programs.getByText('Eski dastur')).toBeInTheDocument();
+    expect(programs.getByText('4 ta anketa')).toBeInTheDocument();
+    await user.click(programs.getByRole('button', { name: '“Eski to’plam” ni olib tashlash' }));
+
+    expect(await screen.findByText('Test olib tashlandi')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(
+          ([input, init]) =>
+            String(input).includes('/api/admin/public-space/programs/legacy-program-1') &&
+            (init as RequestInit | undefined)?.method === 'DELETE',
+        ),
+      ).toBe(true);
+    });
+    // Eski dasturni tanlovdan QAYTA qo'shib bo'lmaydi — tanlov faqat katalog testlaridan.
+    expect(screen.queryByRole('option', { name: /LEGACY_PACK/ })).not.toBeInTheDocument();
   });
 
   it("natijani ko'rsatish sozlamasi PUT so'rovi bilan o'zgaradi", async () => {

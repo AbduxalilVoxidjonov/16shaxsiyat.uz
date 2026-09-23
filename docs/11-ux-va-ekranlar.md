@@ -62,23 +62,35 @@ palitra, faqat farqlash uchun.
 ```
 
 ### E-1 Landing (`/t/:slug`)
-- Maktab nomi, "Sen haqingdagi test" sarlavhasi.
+- Maktab nomi va sarlavha (2026-09-23) — katalogdagi nom AYNAN o'zi: bitta dastur va unda
+  bitta test/so'rovnoma bo'lsa — test nomi (`programs[0].tests[0].name`); bitta dastur, bir
+  nechta test — dastur nomi (`programs[0].nameUz`); bir nechta dastur yoki dastur yo'q — neytral
+  "Testlar". Brauzer yorlig'i: "<sarlavha> — <maktab nomi> · Shaxsiyat". Barcha matnlar hurmat
+  shaklida ("siz").
 - 3 ta oddiy jumlada nima bo'lishi: "190 savol · ~30 daqiqa · to'g'ri yoki noto'g'ri javob yo'q".
-- 4 ta test kartasi: nomi, nima o'lchaydi, savol soni, vaqti.
+- Test kartalari: nomi, nima o'lchaydi (katalog tavsifi `description`, bo'lmasa tizim metodikasi
+  uchun i18n matni, ikkalasi ham bo'lmasa qator chiqmaydi — xom i18n kalit HECH QACHON), savol
+  soni, vaqti.
 - "Bu test baho emas" izohi.
 - Katta tugma: **Boshlash**.
 - Xato holatlar: havola noto'g'ri → "Havola ishlamayapti, maktabingizdan yangisini so'rang";
   maktab nofaol → "Bu maktab uchun test vaqtincha yopilgan".
 
 ### E-2 Anketa (`/t/:slug/register`)
-- Maydonlar tartibi: FISH → tug'ilgan sana → jins → sinf + harf → telefon → ota-ona telefoni
-  → email (ixtiyoriy).
+- Maydonlar tartibi (standart; GLOBAL sozlamadagi `order` bo'yicha chiqadi, `docs/18` §9.6.4):
+  FISH → tug'ilgan sana → jins → sinf → sinf harfi → **ota-ona telefoni (majburiy)** →
+  **"Shaxsiy raqamingiz (bo'lsa)" (ixtiyoriy)** → email (ixtiyoriy). *2026-09-23 egasi qarori:*
+  ota-ona telefoni telefonlar ichida birinchi va majburiy, o'quvchining o'z telefoni undan keyin
+  va ixtiyoriy.
+- Validatsiya xabarlari sozlamaga mos: majburiy telefon bo'sh/chala — "… to'liq kiriting.",
+  ixtiyoriy telefon chala — "… to'liq kiriting yoki bo'sh qoldiring." "Ixtiyoriy" izohi ota-ona
+  telefoni ostida faqat u `Optional` bo'lganda chiqadi.
 - Telefon maskasi `+998 (__) ___-__-__`, inline validatsiya.
 - Tug'ilgan sana — 3 ta select (kun/oy/yil), kalendar emas (telefonda qulayroq).
 - Rozilik bloki: qisqa matn + checkbox ("Ma'lumotlarim ta'lim maqsadida ishlatilishiga roziman").
 - Agar `requiresAccessCode` — 6 raqamli kod maydoni.
-- Dublikat javobi (`409`) → "Sen allaqachon testni topshirgansan. Qayta topshirish uchun
-  o'qituvchingga murojaat qil."
+- Dublikat javobi (`409`) → "Siz allaqachon testni topshirgansiz. Qayta topshirish uchun
+  o'qituvchingizga murojaat qiling."
 - Yakuni: **Testni boshlash**.
 
 ### E-3 Test sahifasi (`/t/:slug/test/:testCode`)
@@ -233,7 +245,8 @@ Xato: "Login yoki parol noto'g'ri" (qaysi biri ekani aytilmaydi). Blok: "Hisob 1
 └──────────────────────────────────────────────────┘
 ```
 Yuqorida sana oralig'i filtri (7 kun / 30 kun / o'quv yili / ixtiyoriy).
-"Tahlil kutilmoqda: 12" — bosilsa `AnalysisFailed`/`Analyzing` filtri bilan sessiyalarga o'tadi.
+"Tahlil kutilmoqda: 12" — bosilsa `Analyzing` filtri bilan **O'quvchilar** ro'yxatiga o'tadi
+(sessiyalar ro'yxati 2026-09-23 egasi qarori bilan olib tashlangan — A-6).
 
 ### A-3 Maktablar (`/admin/schools`)
 - Jadval: Nomi · Viloyat/Tuman · Havola · O'quvchi · Yakunlangan · Holat · ⋯
@@ -241,6 +254,16 @@ Yuqorida sana oralig'i filtri (7 kun / 30 kun / o'quv yili / ixtiyoriy).
 - QR modal: katta QR + "PNG yuklab olish" (maktabga chop etib berish uchun).
 - "Havolani yangilash" — tasdiq modali: "Eski havola ishlamay qoladi. Davom etasizmi?"
 - Yaratish/tahrirlash — o'ng tomondan chiquvchi panel (drawer).
+- **Testlar** (2026-09-23 egasi qarori, `docs/07` §3.1 `testIds`) — formada "Testlar"
+  checkbox ro'yxati: faqat nashr qilingan VA faol testlar taklif qilinadi (qoralama/nofaol/
+  arxivlangan ko'rsatilmaydi); maktabga allaqachon biriktirilgan test holatidan qat'i nazar
+  belgilangan holda qoladi va yonida "(nofaol)"/"(qoralama)"/"(arxivlangan)" izohi chiqadi
+  (to'plam saqlashda TO'LIQ almashtiriladi — ko'rinmay o'chib ketmasin). Xato: `409
+  TEST_ARCHIVED` / `404` (`extensions.testIds`) — tushunarli o'zbekcha matn, oyna yopilmaydi.
+- Maktab detalida **"Biriktirilgan testlar"** kartasi — test nomlari (test sahifasiga havola),
+  noma'lum ID — "Noma'lum test"; izoh: "Barcha maktablarga" ochiq testlar bu ro'yxatda yo'q.
+- Havola holati sabablari (`linkHealth`) "dastur" emas, "test" so'zi bilan yoziladi
+  (masalan "Maktabga test biriktirilmagan — maktab formasida test tanlang yoki …").
 
 ### A-4 O'quvchilar (`/admin/students`)
 - Filtr paneli: maktab, sinf, holat, tip, aktivlik darajasi, "faqat e'tibor talab qiladiganlar",
@@ -291,9 +314,23 @@ Holatlar:
 - `Unreliable` → hisobot ustida sariq banner: "Javoblar juda tez berilgan, natija ishonchsiz
   bo'lishi mumkin. Qayta topshirish tavsiya etiladi."
 
-### A-6 Sessiyalar (`/admin/assessments`)
-Ro'yxat + holat filtri. Detal sahifasi profil bilan bir xil, qo'shimcha "Xom javoblar"
-bo'limi (savol · javob · vaqt) — audit uchun.
+### A-6 Sessiya detali (`/admin/assessments/:id`)
+
+> **Sessiyalar ro'yxati ekrani olib tashlandi — 2026-09-23 egasi qarori.** Yon menyudagi
+> "Sessiyalar" bo'limi "O'quvchilar" bilan bir xil narsani ko'rsatardi, shu sabab u menyudan
+> ham, marshrutlardan ham olib tashlandi. Eski `/admin/assessments` URL'i (bookmark'lar
+> buzilmasin) `/admin/students` ga yo'naltiriladi; umumiy filtrlar (`status`, `schoolId`,
+> `from`, `to`) saqlanadi, chunki O'quvchilar ro'yxatida ular aynan shu nom va ma'noda bor
+> (`docs/07` 3.2: `status` — "shu holatdagi sessiyasi BOR o'quvchilar"). A-2 dagi "Tahlil
+> navbatida" kartasi endi `/admin/students?status=Analyzing` ga o'tadi. Backend
+> `GET /api/admin/assessments` endpointi o'zgarmadi.
+>
+> **Detal sahifa QOLDI** — u o'quvchi profilidagi testlar tarixidan ochiladi. "Orqaga"
+> havolasi: o'quvchi ma'lum bo'lsa — "O'quvchi profiliga", aks holda (404, yuklanish xatosi)
+> — "O'quvchilar ro'yxatiga".
+
+Detal sahifasi profil bilan bir xil, qo'shimcha "Xom javoblar" bo'limi (savol · javob · vaqt)
+— audit uchun.
 
 **"Xom javoblar" bo'limi — `Survey` (so'rovnoma) bloklarini ham ko'rsatadi** (egasi topgan
 kamchilik, 2026-09-12): ilgari bu jadval faqat Likert javoblari uchun mo'ljallangan edi —
@@ -401,8 +438,61 @@ Tafsilotlar:
   ko'rsatiladi. Bu aniq anketa (`INTELLECT-SURVEY`) endi SEED qilinadi (`docs/18` §7) — admin
   uni Katalogda tayyor `Draft` sifatida ko'radi, qayta import qilishning hojati yo'q.
 
+**Biriktirish kartasi (2026-09-23 egasi qarori — "Dasturlar" bo'limi olib tashlandi;
+`CatalogTestDetailPage` → `TestAssignmentCard`, `docs/07` §3.4.1).** Test sarlavhasi
+kartasidan keyin, bo'limlar/savollardan oldin:
+
+```
+┌ Biriktirish ──────────────────────────────────────────────────────────┐
+│ Bu test kimga ochiq: barcha maktablarga, tanlangan maktablarga va/yoki │
+│ ommaviy kabinetga. …                                                    │
+│ [Faol] Faol — o'quvchilarga ko'rinadi.   Shu biriktirish orqali 4 ta … │
+│                                                                         │
+│ Kimga ochiq                                                             │
+│ ( ) Barcha maktablarga — har bir maktab havolasida va kabinetda         │
+│ (•) Tanlangan maktablarga                                               │
+│       Tanlangan maktablar (2): [12-son maktab ×] [5-son maktab ×]       │
+│       Maktab qidirish [__________]                                      │
+│       [✓] 12-son maktab  Farg'ona, Qo'qon                               │
+│       [ ] 7-son maktab   Toshkent, Chilonzor                            │
+│ 🌐 [ ] Ommaviy (kabinet orqali hamma uchun)                             │
+│                                                                         │
+│ Ro'yxatdan o'tish                                                       │
+│ (•) To'liq ro'yxatdan o'tish                                            │
+│ ( ) Ro'yxatdan o'tmasdan (anonim)   ← batareyali testda o'chiq + izoh   │
+│                          [O'zgarishlarni bekor qilish] [Biriktirishni saqlash] │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+- Holat belgisi faqat backend maydonlaridan (`state`, `isAvailable`): "Faol — o'quvchilarga
+  ko'rinadi" · "Qoralama — test nashr qilinganda o'quvchilarga ochiladi" · "To'xtatilgan — test
+  nofaol …" · "Hech kimga biriktirilmagan — o'quvchilar bu testni ko'rmaydi" · "Test arxivlangan".
+  Holat testga ergashadi — alohida boshqarilmaydi (sarlavhadagi Nashr/Faollik/Arxiv tugmalari).
+- "Barcha maktablarga" (`isPublic`) tanlansa maktab tanlovi yashiriladi va `schoolIds: []`
+  yuboriladi (yashirin biriktirma qolmaydi); ommaviy kabinet belgisi belgilangan va o'chiq
+  ko'rinadi ("test ommaviy kabinetda ham ko'rinadi").
+- Maktab tanlovi — qidiruvli ko'p tanlov (`GET /api/admin/schools?search=`), tanlanganlar chip;
+  saqlash BITTA `PUT` bilan (to'plam to'liq almashtiriladi). "Saqlash" faqat o'zgarish bo'lsa yoqiq.
+- Xatolar karta ichida (`role="alert"`), xom `code` chiqmaydi: `PUBLIC_SPACE_NOT_CONFIGURED`
+  ("Ommaviy makon hali sozlanmagan …"), `REGISTRATION_REQUIRED_FOR_BATTERY`, `404`
+  (`extensions.schoolIds` — "N tasi topilmadi"), `VALIDATION_ERROR`. `409 TEST_ARCHIVED` (yoki
+  GET'da `testStatus: Archived`) — forma faqat o'qish uchun, "Saqlash" yo'q, izoh chiqadi.
+- Katalog DTO'laridagi `usedInProgramCount` UI'da "dasturda ishlatilgan" deb ko'rsatilmaydi.
+- Eski `/admin/programs`, `/admin/programs/:id` URL'lari `/admin/catalog` ga `replace` bilan
+  yo'naltiriladi; chap menyuda "Dasturlar" yo'q.
+
+**Ommaviy makon (`/admin/ommaviy`), 2026-09-23:** "Biriktirilgan testlar" — tanlov
+katalog testlaridan (arxivlanganlar ko'rsatilmaydi, qoralama/nofaol — izoh bilan),
+`POST`/`DELETE /api/admin/public-space/tests/{testId}`. `programs[].testDefinitionId == null`
+bo'lgan eski dastur "Eski dastur" belgisi va FAQAT "Olib tashlash" tugmasi bilan ko'rinadi
+(eski `DELETE programs/{programId}`). Ogohlantirishdagi havola — testning o'z sahifasiga
+(eski dasturda — Testlar katalogiga).
+
 ### A-9 Audit log (`/admin/audit`)
 Filtr: harakat turi, obyekt, sana. Qator kengaytirilsa `before/after` JSON diff ko'rinadi.
+2026-09-23: yangi harakat `Catalog.TestAssignmentUpdated` ("Test biriktirmasi yangilandi"),
+obyekt `TestDefinition` ("Test"); eski `Program.*` yozuvlari tarix uchun "Dastur …" nomi bilan
+qoladi (obyekt "Dastur (eski)").
 
 ---
 
@@ -427,6 +517,7 @@ Filtr: harakat turi, obyekt, sana. Qator kengaytirilsa `before/after` JSON diff 
 | Bo'sh javob | "Xato: majburiy maydon" | "Bu savolga javob berishni unutdik" |
 | Past aktivlik (adminda) | "Passiv o'quvchi" | "Faollik past — suhbat foydali bo'lishi mumkin" |
 | Past ball | "Yomon natija" | "Bu soha hozircha kuchli emas — o'sish uchun joy bor" |
-| Yuklanmoqda | "Loading..." | "Natijalaring tayyorlanmoqda…" |
+| Yuklanmoqda | "Loading..." | "Natijalaringiz tayyorlanmoqda…" |
 
-Har doim **"sen"** shakli o'quvchi bilan, **"siz"** shakli admin panelida.
+Har doim **"siz"** (hurmat shakli) — o'quvchi bilan ham, admin panelida ham (2026-09-23 egasi
+qarori; avvalgi "o'quvchiga sen" qoidasi bekor qilindi).

@@ -200,7 +200,7 @@ async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
   await user.selectOptions(screen.getByLabelText("Tug'ilgan yil"), '2015');
   await user.click(screen.getByLabelText("O'g'il bola"));
   await user.selectOptions(screen.getByLabelText('Sinf'), '9');
-  await user.type(screen.getByLabelText('Telefon raqami'), '901234567');
+  await user.type(screen.getByLabelText('Ota-ona telefoni'), '901234567');
 }
 
 describe('RegistrationPage', () => {
@@ -247,11 +247,27 @@ describe('RegistrationPage', () => {
     renderRegistration();
 
     await screen.findByText(CONSENT_TEXT);
-    const phoneInput = screen.getByLabelText('Telefon raqami');
+    const phoneInput = screen.getByLabelText("Shaxsiy raqamingiz (bo'lsa)");
     await user.type(phoneInput, '901234567');
 
     expect(phoneInput).toHaveValue('(90) 123-45-67');
     expect(screen.getAllByText('+998').length).toBeGreaterThan(0);
+  });
+
+  // 2026-09-23 egasi qarori: standartda ota-ona telefoni telefonlar ichida BIRINCHI va
+  // majburiy ("Ixtiyoriy" izohisiz), shaxsiy raqam undan keyin va ixtiyoriy.
+  it("standartda ota-ona telefoni shaxsiy raqamdan oldin turadi va 'Ixtiyoriy' izohi yo'q", async () => {
+    mockFetch({});
+    renderRegistration();
+
+    await screen.findByText(CONSENT_TEXT);
+    const parentPhone = screen.getByLabelText('Ota-ona telefoni');
+    const ownPhone = screen.getByLabelText("Shaxsiy raqamingiz (bo'lsa)");
+
+    expect(parentPhone.compareDocumentPosition(ownPhone) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // "Ixtiyoriy" izohi (`parentPhoneHint`) faqat `Optional` bo'lganda — izoh yo'q bo'lsa
+    // `PhoneField` `aria-describedby` qo'ymaydi.
+    expect(parentPhone).not.toHaveAttribute('aria-describedby');
   });
 
   it("F.I.Sh. maydoniga harfma-harf yozish ishlaydi va fokus maydonda qoladi", async () => {
@@ -336,7 +352,7 @@ describe('RegistrationPage', () => {
 
     expect(
       await screen.findByText(
-        "Sen allaqachon testni topshirgansan. Qayta topshirish uchun o'qituvchingga murojaat qil.",
+        "Siz allaqachon testni topshirgansiz. Qayta topshirish uchun o'qituvchingizga murojaat qiling.",
       ),
     ).toBeInTheDocument();
     expect(useSessionStore.getState().sessionToken).toBeNull();
@@ -439,7 +455,7 @@ describe('RegistrationPage', () => {
     await user.click(screen.getByLabelText(CONSENT_LABEL));
     await user.click(screen.getByRole('button', { name: 'Testni boshlash' }));
 
-    expect(await screen.findByText('Boshlagan testingni davom ettiramiz.')).toBeInTheDocument();
+    expect(await screen.findByText('Boshlagan testingizni davom ettiramiz.')).toBeInTheDocument();
     expect(await screen.findByText('TEST_STUB')).toBeInTheDocument();
     expect(useSessionStore.getState().sessionToken).toBe('resumed-token');
   });
@@ -497,7 +513,7 @@ describe('RegistrationPage', () => {
     await user.selectOptions(screen.getByLabelText("Tug'ilgan yil"), '2020');
     await user.click(screen.getByLabelText("O'g'il bola"));
     await user.selectOptions(screen.getByLabelText('Sinf'), '9');
-    await user.type(screen.getByLabelText('Telefon raqami'), '901234567');
+    await user.type(screen.getByLabelText('Ota-ona telefoni'), '901234567');
     await user.click(screen.getByLabelText(CONSENT_LABEL));
     await user.click(screen.getByRole('button', { name: 'Testni boshlash' }));
 
@@ -697,7 +713,7 @@ describe('RegistrationPage', () => {
     await user.selectOptions(screen.getByLabelText("Tug'ilgan yil"), '2015');
     await user.click(screen.getByLabelText("O'g'il bola"));
     // Sinf ATAYLAB tanlanmaydi — endi `Optional`.
-    await user.type(screen.getByLabelText('Telefon raqami'), '901234567');
+    await user.type(screen.getByLabelText('Ota-ona telefoni'), '901234567');
     await user.click(screen.getByLabelText(CONSENT_LABEL));
     await user.click(screen.getByRole('button', { name: 'Testni boshlash' }));
 

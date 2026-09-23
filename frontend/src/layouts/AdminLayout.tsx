@@ -3,10 +3,8 @@ import { NavLink, Outlet, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import {
   BookOpen,
-  ClipboardList,
   LayoutDashboard,
   Globe,
-  Layers,
   LogOut,
   Menu,
   School,
@@ -42,9 +40,9 @@ const NAV_ITEMS: NavItem[] = [
   // (backend `Kind = School` bo'yicha filtrlaydi), shu sabab yagona kirish nuqtasi shu yerda.
   { to: ROUTES.admin.publicSpace, key: 'nav.publicSpace', icon: Globe },
   { to: ROUTES.admin.students, key: 'nav.students', icon: Users },
-  { to: ROUTES.admin.assessments, key: 'nav.assessments', icon: ClipboardList },
   { to: ROUTES.admin.catalog, key: 'nav.catalog', icon: BookOpen },
-  { to: ROUTES.admin.programs, key: 'nav.programs', icon: Layers },
+  // "Dasturlar" bo'limi 2026-09-23 da olib tashlandi (egasining qarori): test kimga ochiqligi
+  // endi Testlar katalogida, test ichidagi "Biriktirish" kartasida boshqariladi.
   { to: ROUTES.admin.ai, key: 'nav.ai', icon: Sparkles },
   { to: ROUTES.admin.audit, key: 'nav.audit', icon: ScrollText },
   { to: ROUTES.admin.settings, key: 'nav.settings', icon: Settings },

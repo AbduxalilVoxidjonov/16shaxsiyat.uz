@@ -22,4 +22,9 @@ public sealed record UpdateSchoolCommand(
     string? Notes,
     Guid AdminUserId,
     string? IpAddress = null,
-    string? UserAgent = null) : IRequest<Result<AdminSchoolDetailDto>>;
+    string? UserAgent = null,
+    /// <summary>
+    /// 2026-09-23 (`docs/18` §9.7): maktabga biriktiriladigan testlar — to'plam TO'LIQ
+    /// almashtiriladi. `null` — biriktirmalar o'zgarmaydi.
+    /// </summary>
+    IReadOnlyList<Guid>? TestIds = null) : IRequest<Result<AdminSchoolDetailDto>>;

@@ -51,6 +51,20 @@ internal sealed class AssessmentProgramConfiguration : IEntityTypeConfiguration<
 
         builder.HasIndex(p => p.Code).IsUnique().HasDatabaseName("ux_assessment_programs_code");
 
+        // 2026-09-23 (`docs/05`, `docs/18` §9.7): test dasturi — har test uchun ko'pi bilan
+        // BITTA. `RESTRICT`: testni o'chirishdan oldin handler test dasturini o'zi o'chiradi
+        // (`DeleteCatalogTestCommandHandler`), sessiyasi bor dastur esa baribir o'chmaydi
+        // (`assessments.program_id` ham `RESTRICT`).
+        builder.Property(p => p.OwnerTestDefinitionId);
+        builder.HasOne<TestDefinition>()
+            .WithMany()
+            .HasForeignKey(p => p.OwnerTestDefinitionId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(p => p.OwnerTestDefinitionId)
+            .IsUnique()
+            .HasFilter("owner_test_definition_id IS NOT NULL")
+            .HasDatabaseName("ux_assessment_programs_owner_test");
+
         builder.HasIndex(p => new { p.IsActive, p.DisplayOrder })
             .HasFilter("status = 2")
             .HasDatabaseName("ix_assessment_programs_active");

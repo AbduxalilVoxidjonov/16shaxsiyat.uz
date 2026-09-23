@@ -107,6 +107,25 @@ function mockFetch({
 }: MockOptions = {}) {
   const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
     const url = String(input);
+    // `docs/07` §3.4.1 — "Biriktirish" kartasi (biriktirilmagan testning standart javobi).
+    if (url.endsWith('/assignment')) {
+      return Promise.resolve(
+        jsonResponse<'AdminTestAssignmentDto'>({
+          testDefinitionId: detail.id,
+          testStatus: detail.status,
+          testIsActive: detail.isActive,
+          isConfigured: false,
+          isPublic: false,
+          schoolIds: [],
+          isInPublicSpace: false,
+          registrationMode: 'Full',
+          state: null,
+          isAvailable: false,
+          hasPersonalityBattery: false,
+          sessionCount: 0,
+        }),
+      );
+    }
     if (url.endsWith('/publish')) {
       return Promise.resolve(
         publishResponse ? publishResponse() : jsonResponse<'CatalogTestDetailDto'>(detail),

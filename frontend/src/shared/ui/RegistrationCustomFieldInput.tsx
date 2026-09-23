@@ -3,6 +3,7 @@ import { cn } from '@/shared/lib/cn';
 import type { RegistrationFormCustomField } from '@/shared/api/registrationFormSettingsTypes';
 import { Checkbox } from './Checkbox';
 import { Input } from './Input';
+import { RequiredMark } from './RequiredMark';
 import { Textarea } from './Textarea';
 
 export interface RegistrationCustomFieldInputProps<TFieldValues extends FieldValues> {
@@ -32,6 +33,9 @@ export function RegistrationCustomFieldInput<TFieldValues extends FieldValues>({
   name,
   error,
 }: RegistrationCustomFieldInputProps<TFieldValues>) {
+  // `Hidden` chaqiruvchida allaqachon filtrlanadi — bu yerda faqat `Required`/`Optional`.
+  const isRequired = field.requirement === 'Required';
+
   if (field.type === 'LongText') {
     return (
       <Controller
@@ -41,6 +45,7 @@ export function RegistrationCustomFieldInput<TFieldValues extends FieldValues>({
         render={({ field: rhfField }) => (
           <Textarea
             label={field.labelUz}
+            isRequired={isRequired}
             placeholder={field.placeholderUz ?? undefined}
             maxLength={field.maxLength ?? undefined}
             error={error}
@@ -63,7 +68,10 @@ export function RegistrationCustomFieldInput<TFieldValues extends FieldValues>({
           const selected = typeof rhfField.value === 'string' ? rhfField.value : '';
           return (
             <fieldset className="flex flex-col gap-1.5">
-              <legend className="mb-1.5 text-sm font-medium text-ink-soft">{field.labelUz}</legend>
+              <legend className="mb-1.5 text-sm font-medium text-ink-soft">
+                {field.labelUz}
+                {isRequired && <RequiredMark />}
+              </legend>
               <div className="flex flex-wrap gap-2">
                 {(field.options ?? []).map((option) => {
                   const value = String(option.order);
@@ -81,6 +89,9 @@ export function RegistrationCustomFieldInput<TFieldValues extends FieldValues>({
                       <input
                         type="radio"
                         className="sr-only"
+                        // Native `required` — forma `noValidate`, faqat AT'ga majburiylikni bildiradi
+                        // (`aria-required` radio rolida qo'llab-quvvatlanmaydi).
+                        required={isRequired}
                         checked={checked}
                         onChange={() => {
                           // `PathValue<TFieldValues, TName>` bu generik funksiyada aniqlab
@@ -123,7 +134,10 @@ export function RegistrationCustomFieldInput<TFieldValues extends FieldValues>({
           const selected: string[] = Array.isArray(rhfField.value) ? (rhfField.value as string[]) : [];
           return (
             <fieldset className="flex flex-col gap-1.5">
-              <legend className="mb-1.5 text-sm font-medium text-ink-soft">{field.labelUz}</legend>
+              <legend className="mb-1.5 text-sm font-medium text-ink-soft">
+                {field.labelUz}
+                {isRequired && <RequiredMark />}
+              </legend>
               <div className="flex flex-col gap-1">
                 {(field.options ?? []).map((option) => {
                   const value = String(option.order);
@@ -166,6 +180,7 @@ export function RegistrationCustomFieldInput<TFieldValues extends FieldValues>({
       render={({ field: rhfField }) => (
         <Input
           label={field.labelUz}
+          isRequired={isRequired}
           type={field.type === 'Phone' ? 'tel' : 'text'}
           placeholder={field.placeholderUz ?? undefined}
           maxLength={field.maxLength ?? undefined}

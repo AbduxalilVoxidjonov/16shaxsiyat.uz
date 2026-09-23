@@ -451,8 +451,107 @@ describe('LandingPage', () => {
 
     await screen.findByText(SCHOOL_INFO_BODY.name);
     expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
-    expect(screen.queryByText('Shaxsiyat profili')).not.toBeInTheDocument();
+    // Dastur nomi endi faqat SARLAVHADA (h1) chiqadi — tanlov kartasi (radio) sifatida EMAS.
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Boshlash' })).toBeEnabled();
+  });
+
+  // ---------------------------------------------------------------------------------------
+  // Sarlavha — katalogdagi nom (egasining talabi, 2026-09-23). "Sen haqingdagi test" kabi
+  // umumiy "sen" shaklidagi sarlavha endi YO'Q.
+  // ---------------------------------------------------------------------------------------
+  it("bitta dastur, bir nechta test: sarlavha va sahifa title'i dastur nomi bo'ladi", async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(typedResponse<PublicSchoolInfoWithRegistration>(SCHOOL_INFO_BODY)),
+    );
+
+    renderLanding();
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Shaxsiyat profili' }),
+    ).toBeInTheDocument();
+    expect(document.title).toContain(`Shaxsiyat profili — ${SCHOOL_INFO_BODY.name}`);
+    expect(screen.queryByText(/Sen haqingdagi/)).not.toBeInTheDocument();
+  });
+
+  it("bitta dastur, bitta test (yangi so'rovnoma): sarlavha test nomi, xom i18n kalit chiqmaydi", async () => {
+    const survey = {
+      code: 'INTELLECT-SURVEY',
+      name: "Maktab o'quvchilari uchun so'rovnoma",
+      description: null,
+      questionCount: 12,
+      estimatedMinutes: 6,
+      order: 1,
+    };
+    const body = {
+      ...SCHOOL_INFO_BODY,
+      tests: [survey],
+      programs: [
+        {
+          ...SCHOOL_INFO_BODY.programs[0]!,
+          code: 'INTELLECT',
+          nameUz: 'Intellekt dasturi',
+          testCount: 1,
+          questionCount: 12,
+          estimatedMinutes: 6,
+          hasPersonalityBattery: false,
+          tests: [survey],
+        },
+      ],
+    } satisfies PublicSchoolInfoWithRegistration;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(typedResponse<PublicSchoolInfoWithRegistration>(body)),
+    );
+
+    const { container } = renderLanding();
+
+    expect(await screen.findByRole('heading', { level: 1, name: survey.name })).toBeInTheDocument();
+    expect(document.title).toContain(`${survey.name} — ${SCHOOL_INFO_BODY.name}`);
+    expect(container.textContent).not.toContain('pages.landing');
+    expect(container.textContent).not.toContain('testDescriptions');
+  });
+
+  it("bir nechta dastur bo'lganda sarlavha neytral umumiy matn ('Testlar')", async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(typedResponse<PublicSchoolInfoWithRegistration>(TWO_PROGRAMS_BODY)),
+    );
+
+    renderLanding();
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Testlar' })).toBeInTheDocument();
+  });
+
+  it("test kartasida katalog tavsifi i18n matnidan ustun, tavsif bo'lmasa i18n zaxirasi (siz shaklida)", async () => {
+    const tests = [
+      { ...PERSONALITY_PROFILE_TESTS[0]!, description: 'Katalogdagi MBTI tavsifi' },
+      ...PERSONALITY_PROFILE_TESTS.slice(1),
+    ];
+    const body = {
+      ...SCHOOL_INFO_BODY,
+      tests,
+      programs: [{ ...SCHOOL_INFO_BODY.programs[0]!, tests }],
+    } satisfies PublicSchoolInfoWithRegistration;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(typedResponse<PublicSchoolInfoWithRegistration>(body)),
+    );
+
+    renderLanding();
+
+    expect(await screen.findByText('Katalogdagi MBTI tavsifi')).toBeInTheDocument();
+    expect(screen.queryByText(/O'zingizga xos fikrlash/)).not.toBeInTheDocument();
+    expect(screen.getByText("Xarakteringizning 5 asosiy jihatini o'lchaydi.")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Bu yerda to'g'ri yoki noto'g'ri javob yo'q — faqat sizga xos javoblar bor.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Bu test baho emas, shuning uchun tashvishlanmang.'),
+    ).toBeInTheDocument();
   });
 
   it("bir nechta dastur bo'lganda tanlov kartalarini ko'rsatadi, tanlanmaguncha Boshlash o'chiq bo'ladi", async () => {
@@ -533,7 +632,9 @@ describe('LandingPage', () => {
       'fetch',
       vi
         .fn()
-        .mockResolvedValue(typedResponse<PublicSchoolInfoWithRegistration>(bodyWithStaleTopLevelTests)),
+        .mockResolvedValue(
+          typedResponse<PublicSchoolInfoWithRegistration>(bodyWithStaleTopLevelTests),
+        ),
     );
 
     renderLanding();
@@ -693,7 +794,7 @@ describe('LandingPage', () => {
     await user.click(screen.getByRole('button', { name: 'Boshlash' }));
 
     expect(
-      await screen.findByText('Juda ko\'p urinish bo\'ldi. Birozdan keyin qayta urinib ko\'ring.'),
+      await screen.findByText("Juda ko'p urinish bo'ldi. Birozdan keyin qayta urinib ko'ring."),
     ).toBeInTheDocument();
     expect(useSessionStore.getState().sessionToken).toBeNull();
   });

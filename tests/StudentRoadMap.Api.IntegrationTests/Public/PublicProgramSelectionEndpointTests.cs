@@ -47,7 +47,7 @@ public sealed class PublicSingleProgramAutoSelectEndpointTests : IClassFixture<P
 
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, "Regressiya Talabasi Ismoilovich", new DateOnly(2010, 5, 5),
-            Gender.Male, 9, "A", "+998901234567", null, null, true, "uz", ProgramCode: null);
+            Gender.Male, 9, "A", "+998901234567", "+998909998877", null, true, "uz", ProgramCode: null);
 
         var response = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
 
@@ -84,7 +84,7 @@ public sealed class PublicMultiProgramRequiredEndpointTests : IClassFixture<Publ
 
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, "Ikki Dastur Talabasi", new DateOnly(2010, 5, 5),
-            Gender.Male, 9, "A", "+998901234567", null, null, true, "uz", ProgramCode: null);
+            Gender.Male, 9, "A", "+998901234567", "+998909998877", null, true, "uz", ProgramCode: null);
 
         var response = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
 
@@ -111,7 +111,7 @@ public sealed class PublicMultiProgramRequiredEndpointTests : IClassFixture<Publ
 
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, "Togri Dastur Talabasi", new DateOnly(2010, 5, 5),
-            Gender.Male, 9, "A", "+998901234567", null, null, true, "uz", ProgramCode: "MULTI-PROG-B2");
+            Gender.Male, 9, "A", "+998901234567", "+998909998877", null, true, "uz", ProgramCode: "MULTI-PROG-B2");
 
         var response = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
 
@@ -152,7 +152,7 @@ public sealed class PublicProgramWrongSchoolEndpointTests : IClassFixture<Public
 
         var command = new StartSessionCommand(
             otherSchool.Slug.Value, accessTokenOther, null, "Notogri Maktab Talabasi", new DateOnly(2010, 5, 5),
-            Gender.Male, 9, "A", "+998901234567", null, null, true, "uz", ProgramCode: "ASSIGNED-PROG1");
+            Gender.Male, 9, "A", "+998901234567", "+998909998877", null, true, "uz", ProgramCode: "ASSIGNED-PROG1");
 
         var response = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
 
@@ -188,7 +188,7 @@ public sealed class PublicProgramAssignedOkEndpointTests : IClassFixture<PublicA
         // Faqat shu bitta (Assigned) dastur mavjud bo'lgani uchun `programCode`siz ham ishlashi kerak.
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, "Biriktirilgan Dastur Talabasi", new DateOnly(2010, 5, 5),
-            Gender.Male, 9, "A", "+998901234567", null, null, true, "uz", ProgramCode: null);
+            Gender.Male, 9, "A", "+998901234567", "+998909998877", null, true, "uz", ProgramCode: null);
 
         var response = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
 

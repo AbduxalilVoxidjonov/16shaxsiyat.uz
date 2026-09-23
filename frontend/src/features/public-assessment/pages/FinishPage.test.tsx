@@ -120,7 +120,7 @@ describe('FinishPage', () => {
     renderPage('/t/demo-school/finish', queryClient);
 
     // Eski keshga qarab `TEST_STUB`ga qaytarib yubormaydi — yangi javobni kutadi.
-    expect(await screen.findByText('Rahmat! Barcha savollarga javob berding.')).toBeInTheDocument();
+    expect(await screen.findByText('Rahmat! Barcha savollarga javob berdingiz.')).toBeInTheDocument();
     expect(screen.queryByText('TEST_STUB')).not.toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/sessions/me'),
@@ -148,7 +148,7 @@ describe('FinishPage', () => {
     const fetchMock = mockFetch();
     renderPage();
 
-    expect(await screen.findByText('Rahmat! Barcha savollarga javob berding.')).toBeInTheDocument();
+    expect(await screen.findByText('Rahmat! Barcha savollarga javob berdingiz.')).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/sessions/complete'),
       expect.objectContaining({ method: 'POST' }),
@@ -206,7 +206,7 @@ describe('FinishPage', () => {
 
     expect(await screen.findByText('Javoblaringiz saqlandi, rahmat.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: "Natijani ko'rish" })).not.toBeInTheDocument();
-    expect(screen.queryByText('Natijang tahlil qilinmoqda…')).not.toBeInTheDocument();
+    expect(screen.queryByText('Natijangiz tahlil qilinmoqda…')).not.toBeInTheDocument();
   });
   // ⚠️ REGRESSIYA: bayroq `hasPersonalityBattery` — YAGONA manba. Quyidagi ikki holat ataylab
   // metodika KODI bilan ZID: eski (satr solishtiruvchi) mantiq ikkalasida ham jimgina noto'g'ri

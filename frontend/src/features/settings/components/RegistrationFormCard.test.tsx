@@ -56,8 +56,11 @@ describe('RegistrationFormCard', () => {
     expect(screen.getByDisplayValue('Jins')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Sinf')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Sinf harfi')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Telefon raqami')).toBeInTheDocument();
+    // 2026-09-23 egasi qarori: ota-ona telefoni birinchi (majburiy), keyin shaxsiy raqam (ixtiyoriy).
     expect(screen.getByDisplayValue('Ota-ona telefoni')).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Shaxsiy raqamingiz (bo'lsa)")).toBeInTheDocument();
+    const labelValues = screen.getAllByLabelText("Yorlig'i").map((input) => (input as HTMLInputElement).value);
+    expect(labelValues.indexOf('Ota-ona telefoni')).toBeLessThan(labelValues.indexOf("Shaxsiy raqamingiz (bo'lsa)"));
     expect(screen.getByDisplayValue('Email')).toBeInTheDocument();
     // Hali hech narsa o'zgarmagan — saqlash tugmasi o'chiq.
     expect(screen.getByText('Formani saqlash')).toBeDisabled();

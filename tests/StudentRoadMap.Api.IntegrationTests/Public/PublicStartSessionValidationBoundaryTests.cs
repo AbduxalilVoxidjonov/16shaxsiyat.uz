@@ -55,7 +55,7 @@ public sealed class PublicStartSessionValidationBoundaryTests : IClassFixture<Pu
             Grade: grade,
             ClassLetter: "B",
             Phone: "+998901234567",
-            ParentPhone: null,
+            ParentPhone: "+998909998877",
             Email: null,
             ConsentAccepted: true,
             LanguageCode: "uz");

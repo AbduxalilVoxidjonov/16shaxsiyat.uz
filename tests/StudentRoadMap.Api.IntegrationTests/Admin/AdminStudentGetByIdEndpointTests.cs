@@ -115,6 +115,10 @@ public sealed class AdminStudentGetByIdEndpointTests : IClassFixture<PublicApiTe
         body.Student.Id.Should().Be(student.Id);
         body.Student.School.Id.Should().Be(school.Id);
         body.Assessments.Should().ContainSingle(a => a.Id == assessment.Id && a.IsLatest);
+        // Dastur nomi (2026-09-23) — profil javoblar bo'limidagi urinish sarlavhasi uchun.
+        var expectedProgramName = await db.AssessmentPrograms.AsNoTracking()
+            .Where(p => p.Id == programId).Select(p => p.NameUz).SingleAsync();
+        body.Assessments.Single(a => a.Id == assessment.Id).ProgramNameUz.Should().Be(expectedProgramName);
         body.LatestAssessment.Should().NotBeNull();
         body.LatestAssessment!.Results.Mbti16.Should().NotBeNull();
         body.LatestAssessment.Results.Mbti16!.ResultCode.Should().Be("INTJ");

@@ -9,4 +9,6 @@ export const SCHOOLS_QUERY_KEYS = {
   detail: (id: string) => ['schools', 'detail', id] as const,
   /** `GET /api/admin/schools/link-health` — dashboard banneri (`docs/07` 3.1, 2026-09-03). */
   linkHealth: () => ['schools', 'link-health'] as const,
+  /** Maktab formasidagi "Testlar" tanlovi — `GET /api/admin/catalog/tests` (2026-09-23). */
+  testOptions: () => ['schools', 'test-options'] as const,
 };

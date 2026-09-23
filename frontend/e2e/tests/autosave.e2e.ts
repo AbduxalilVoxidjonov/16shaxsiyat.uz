@@ -60,7 +60,7 @@ test('E2E-3: oflaynda javoblar yo\'qolmaydi, onlayn bo\'lganda yuboriladi', asyn
     .getAttribute('data-question-id');
 
   await context.setOffline(true);
-  await expect(page.getByText('Internet yo\'q — javoblaring saqlanmoqda')).toBeVisible();
+  await expect(page.getByText('Internet yo\'q — javoblaringiz saqlanmoqda')).toBeVisible();
 
   await answerFirstQuestions(page, 5);
 

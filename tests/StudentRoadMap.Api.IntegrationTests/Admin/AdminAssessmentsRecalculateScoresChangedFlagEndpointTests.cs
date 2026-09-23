@@ -85,7 +85,7 @@ public sealed class AdminAssessmentsRecalculateScoresChangedFlagEndpointTests : 
         using var publicClient = _factory.CreateClient();
         var startCommand = new StartSessionCommand(
             school.Slug.Value, accessToken, null, "Ochilova Kamila Rustamovna", new DateOnly(2010, 4, 4), Gender.Female, 9, "A",
-            "+998907774003", null, null, true, "uz");
+            "+998907774003", "+998909998877", null, true, "uz");
         var startResponse = await publicClient.PostAsJsonAsync("/api/public/sessions", startCommand, TestJson.Options);
         startResponse.EnsureSuccessStatusCode();
         var sessionToken = (await startResponse.Content.ReadFromJsonAsync<StartSessionResult>(TestJson.Options))!.SessionToken;

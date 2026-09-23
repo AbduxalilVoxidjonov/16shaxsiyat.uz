@@ -2,6 +2,7 @@ import { useId, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/shared/lib/cn';
 import type { BranchingQuestion } from '@/shared/api/branchingTypes';
+import { RequiredMark } from '@/shared/ui/RequiredMark';
 
 export interface TextQuestionProps {
   /** `type` — `ShortText` yoki `Phone` (`docs/18` §6.2). */
@@ -102,6 +103,7 @@ export function TextQuestion({
           {question.order}
         </span>
         {question.text}
+        {question.isRequired && <RequiredMark />}
       </label>
 
       <div
@@ -118,6 +120,7 @@ export function TextQuestion({
           maxLength={maxLength}
           placeholder={placeholder}
           autoComplete={isPhone ? 'tel' : 'off'}
+          aria-required={question.isRequired || undefined}
           aria-invalid={showError || undefined}
           aria-describedby={showError ? errorId : undefined}
           onChange={(event) => {

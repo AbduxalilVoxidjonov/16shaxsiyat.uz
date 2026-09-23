@@ -63,6 +63,15 @@ internal sealed class GetStudentByIdQueryHandler : IRequestHandler<GetStudentByI
             cancellationToken).ConfigureAwait(false);
         var orderedAssessments = assessments.OrderByDescending(a => a.StartedAt).ToList();
 
+        // Dastur nomlari — bitta qo'shimcha so'rov (sessiyalar soniga bog'liq emas, N+1 yo'q).
+        var programIds = assessments.Select(a => a.ProgramId).Distinct().ToList();
+        var programs = await _executor.ToListAsync(
+            _context.AsNoTracking(_context.AssessmentPrograms)
+                .Where(p => programIds.Contains(p.Id))
+                .Select(p => new { p.Id, p.NameUz }),
+            cancellationToken).ConfigureAwait(false);
+        var programNameById = programs.ToDictionary(p => p.Id, p => p.NameUz);
+
         var assessmentDtos = orderedAssessments
             .Select((a, index) => new AdminAssessmentSummaryDto(
                 a.Id,
@@ -72,7 +81,8 @@ internal sealed class GetStudentByIdQueryHandler : IRequestHandler<GetStudentByI
                 a.TotalDurationSeconds.HasValue ? a.TotalDurationSeconds.Value / 60 : null,
                 a.ReliabilityScore,
                 a.ReliabilityFlag?.ToString(),
-                IsLatest: index == 0))
+                IsLatest: index == 0,
+                ProgramNameUz: programNameById.GetValueOrDefault(a.ProgramId)))
             .ToList();
 
         var latestAssessment = orderedAssessments.FirstOrDefault();

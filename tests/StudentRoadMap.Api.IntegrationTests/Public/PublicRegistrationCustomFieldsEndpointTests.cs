@@ -94,6 +94,7 @@ public sealed class PublicRegistrationCustomFieldsEndpointTests : IClassFixture<
         gender = "Male",
         grade = 8,
         phone,
+        parentPhone = "+998909998877",
         consentAccepted = true,
         languageCode = "uz",
         programCode,

@@ -54,6 +54,11 @@ export const AUDIT_ACTION_OPTIONS: readonly AuditActionOption[] = [
   { value: 'AiConfig.Updated', labelKey: 'audit.actionLabels.AiConfigUpdated' },
   { value: 'AiConfig.KeyChanged', labelKey: 'audit.actionLabels.AiConfigKeyChanged' },
   { value: 'Catalog.QuestionUpdated', labelKey: 'audit.actionLabels.CatalogQuestionUpdated' },
+  // 2026-09-23 (`docs/07` §3.4.1): test biriktirmasi — ommaviy/maktablar/ommaviy makon/rejim.
+  {
+    value: 'Catalog.TestAssignmentUpdated',
+    labelKey: 'audit.actionLabels.CatalogTestAssignmentUpdated',
+  },
   { value: 'Export.StudentsDownloaded', labelKey: 'audit.actionLabels.ExportStudentsDownloaded' },
 ];
 
@@ -67,6 +72,7 @@ export const AUDIT_ENTITY_TYPE_OPTIONS: readonly AuditEntityTypeOption[] = [
   { value: 'Student', labelKey: 'audit.entityTypeLabels.Student' },
   { value: 'Assessment', labelKey: 'audit.entityTypeLabels.Assessment' },
   { value: 'AssessmentProgram', labelKey: 'audit.entityTypeLabels.AssessmentProgram' },
+  { value: 'TestDefinition', labelKey: 'audit.entityTypeLabels.TestDefinition' },
   { value: 'AiProviderConfig', labelKey: 'audit.entityTypeLabels.AiProviderConfig' },
 ];
 

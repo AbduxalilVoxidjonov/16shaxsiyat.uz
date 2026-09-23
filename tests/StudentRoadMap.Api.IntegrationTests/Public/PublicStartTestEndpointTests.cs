@@ -25,7 +25,7 @@ public sealed class PublicStartTestEndpointTests : IClassFixture<PublicApiTestFa
     {
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, fullName, birthDate, Gender.Male, 9, "A",
-            "+998901234567", null, null, true, "uz");
+            "+998901234567", "+998909998877", null, true, "uz");
 
         var response = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
         response.EnsureSuccessStatusCode();

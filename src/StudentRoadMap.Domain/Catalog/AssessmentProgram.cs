@@ -64,6 +64,20 @@ public sealed class AssessmentProgram : AggregateRoot
 
     public Guid? CreatedByAdminUserId { get; private set; }
 
+    /// <summary>
+    /// **2026-09-23 egasi qarori** (`docs/18` §9.7, `docs/06` ADR): admin UI'dan "dastur"
+    /// tushunchasi olib tashlandi — biriktirish (ommaviy / maktablar) endi TEST ichida qilinadi.
+    /// Dastur jadvali ICHKI biriktirish qatlami bo'lib qoladi: har bir `TestDefinition` uchun
+    /// ko'pi bilan BITTA "test dasturi" (1:1, tarkibida faqat shu test) bo'ladi, uni tizim
+    /// avtomatik yaratadi va boshqaradi. Bu ustun o'sha testni ko'rsatadi (`NULL` — eski/tizim
+    /// dasturi, admin UI'da ko'rinmaydi, sessiya tarixi uchun saqlanadi). Unikal —
+    /// `ux_assessment_programs_owner_test` (qisman, `NOT NULL` qatorlar uchun).
+    /// </summary>
+    public Guid? OwnerTestDefinitionId { get; private set; }
+
+    /// <summary>Test dasturi (<see cref="OwnerTestDefinitionId"/> bor) — tarkibi, nomi va holati testdan boshqariladi.</summary>
+    public bool IsTestProgram => OwnerTestDefinitionId is not null;
+
     public DateTimeOffset CreatedAt { get; private set; }
 
     public DateTimeOffset UpdatedAt { get; private set; }
@@ -141,6 +155,152 @@ public sealed class AssessmentProgram : AggregateRoot
         return new AssessmentProgram(
             id, code, nameUz, descriptionUz, displayOrder, kind, visibility, registrationMode, registrationFields,
             isSystem: false, createdByAdminUserId, now);
+    }
+
+    /// <summary>
+    /// Test dasturi (2026-09-23) — AYNAN bitta testli, <see cref="OwnerTestDefinitionId"/> shu
+    /// testga bog'langan. Boshlang'ich holat: `Draft`, `Assigned` (hech qayerda ko'rinmaydi),
+    /// `RegistrationMode.Full`. Nashr holati keyin <see cref="SyncStateWithTest"/> bilan testga
+    /// ergashtiriladi; nom/tavsif/tartib — <see cref="SyncDetailsFromTest"/>.
+    /// </summary>
+    public static AssessmentProgram CreateForTest(
+        Guid id,
+        Guid testDefinitionId,
+        string code,
+        string nameUz,
+        string? descriptionUz,
+        int displayOrder,
+        DateTimeOffset now,
+        Guid? createdByAdminUserId = null)
+    {
+        if (testDefinitionId == Guid.Empty)
+        {
+            throw new ArgumentException("Test identifikatori bo'sh bo'lishi mumkin emas.", nameof(testDefinitionId));
+        }
+
+        var program = Create(
+            id, code, nameUz, now, displayOrder, ProgramKind.Custom, ProgramVisibility.Assigned,
+            RegistrationMode.Full, registrationFields: null, descriptionUz, createdByAdminUserId);
+
+        program.OwnerTestDefinitionId = testDefinitionId;
+        program._tests.Add(ProgramTest.Create(Guid.NewGuid(), id, testDefinitionId, 1));
+
+        return program;
+    }
+
+    /// <summary>
+    /// Test dasturining kodi/nomi/tavsifi/tartibini testdan ko'chiradi (test nomi o'zgarganda
+    /// ommaviy oqimda — landing, kabinet — ham yangi nom ko'rinsin). Faqat test dasturida.
+    /// O'zgarish bo'lsa `true`.
+    /// </summary>
+    public bool SyncDetailsFromTest(string code, string nameUz, string? descriptionUz, int displayOrder, DateTimeOffset now)
+    {
+        GuardTestProgram();
+
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            throw new ArgumentException("Dastur kodi bo'sh bo'lishi mumkin emas.", nameof(code));
+        }
+
+        if (string.IsNullOrWhiteSpace(nameUz))
+        {
+            throw new ArgumentException("Dastur nomi bo'sh bo'lishi mumkin emas.", nameof(nameUz));
+        }
+
+        if (Code == code && NameUz == nameUz && DescriptionUz == descriptionUz && DisplayOrder == displayOrder)
+        {
+            return false;
+        }
+
+        Code = code;
+        NameUz = nameUz;
+        DescriptionUz = descriptionUz;
+        DisplayOrder = displayOrder;
+        UpdatedAt = now;
+        return true;
+    }
+
+    /// <summary>
+    /// Test dasturining nashr holatini testning holatiga ergashtiradi — dastur o'quvchiga
+    /// FAQAT test o'zi ochiq bo'lganda (`Published` + `IsActive`) ko'rinadi. Aks holda
+    /// ommaviy landing'da testsiz (bo'sh) dastur chiqib qolardi (`ProgramTestCatalog` nashr
+    /// qilinmagan testni tushirib qoldiradi, `ProgramAvailability` esa faqat dasturga qaraydi).
+    ///
+    /// | Test | Dastur |
+    /// |---|---|
+    /// | `Draft` | `Draft` o'zgarmaydi; nashr qilingan bo'lsa — `Paused` |
+    /// | `Published` + faol | `Active` (`Publish` / `Restore`+`Activate` / `Activate`) |
+    /// | `Published` + nofaol | `Paused` |
+    /// | `Archived` | `Archived` |
+    ///
+    /// Faqat mavjud domen o'tishlaridan foydalanadi — batareya invarianti (`Publish`) ham
+    /// avtomatik tekshiriladi. O'zgarish bo'lsa `true`.
+    /// </summary>
+    public bool SyncStateWithTest(TestDefinitionStatus testStatus, bool testIsActive, bool hasPersonalityBattery, DateTimeOffset now)
+    {
+        GuardTestProgram();
+
+        var before = State;
+
+        switch (testStatus)
+        {
+            case TestDefinitionStatus.Archived:
+                if (Status != ProgramStatus.Archived)
+                {
+                    Archive(now);
+                }
+
+                break;
+
+            case TestDefinitionStatus.Published:
+                if (Status == ProgramStatus.Draft)
+                {
+                    Publish(now, hasPersonalityBattery);
+                }
+                else if (Status == ProgramStatus.Archived)
+                {
+                    Restore(now);
+                }
+
+                if (testIsActive && !IsActive)
+                {
+                    Activate(now);
+                }
+                else if (!testIsActive && IsActive)
+                {
+                    Deactivate(now);
+                }
+
+                break;
+
+            default:
+                // `Draft` test: dastur hali nashr qilinmagan bo'lsa shunday qoladi; nashr
+                // qilingan bo'lsa orqaga `Draft`ga o'tish yo'q — to'xtatiladi (`Paused`).
+                if (Status == ProgramStatus.Published && IsActive)
+                {
+                    Deactivate(now);
+                }
+
+                break;
+        }
+
+        return before != State;
+    }
+
+    /// <summary>
+    /// Test dasturini "ommaviy" (`Public` — barcha maktab va ommaviy kabinet) yoki
+    /// "biriktirilgan" (`Assigned` — faqat `school_programs`) qiladi.
+    /// </summary>
+    public bool SetPublic(bool isPublic, DateTimeOffset now)
+    {
+        var target = isPublic ? ProgramVisibility.Public : ProgramVisibility.Assigned;
+        if (Visibility == target)
+        {
+            return false;
+        }
+
+        SetVisibility(target, now);
+        return true;
     }
 
     /// <summary>
@@ -573,6 +733,20 @@ public sealed class AssessmentProgram : AggregateRoot
         if (IsSystem)
         {
             throw new DomainException("SYSTEM_PROGRAM_LOCKED", "Tizim dasturining tarkibini o'zgartirib bo'lmaydi.");
+        }
+
+        if (IsTestProgram)
+        {
+            // Test dasturi AYNAN bitta testli (1:1) — tarkibi testning o'zidan kelib chiqadi.
+            throw new DomainException("TEST_PROGRAM_LOCKED", "Test dasturining tarkibi o'zgartirilmaydi — u faqat o'z testidan iborat.");
+        }
+    }
+
+    private void GuardTestProgram()
+    {
+        if (!IsTestProgram)
+        {
+            throw new DomainException("TEST_PROGRAM_REQUIRED", "Bu amal faqat test dasturi uchun.");
         }
     }
 }

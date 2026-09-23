@@ -124,7 +124,7 @@ public sealed class PublicSchoolInfoProgramScopedEndpointTests : IClassFixture<P
             Grade: 9,
             ClassLetter: "A",
             Phone: "+998901234568",
-            ParentPhone: null,
+            ParentPhone: "+998909998877",
             Email: null,
             ConsentAccepted: true,
             LanguageCode: "uz",

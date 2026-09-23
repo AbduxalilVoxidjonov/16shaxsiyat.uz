@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { ToastProvider } from '@/shared/ui/Toast';
 import { ROUTE_PATTERNS } from '@/shared/config/routes';
-import { jsonResponse, problemResponse } from '@/test/apiMock';
+import { jsonResponse, listResponse, problemResponse } from '@/test/apiMock';
 import SchoolDetailPage from './SchoolDetailPage';
 import type { SchoolDetailDto, SchoolStatsDto } from '../model/types';
 
@@ -36,6 +36,8 @@ const BASE_DETAIL: SchoolDetailDto = {
   },
   // `docs/07` 3.1 (2026-09-03) — asosiy fikstura "sog'lom" havola; buzuq holat alohida testda.
   linkHealth: { status: 'Ok', availableProgramCount: 1, usableProgramCount: 1 },
+  // `docs/07` 3.1 (2026-09-23) — maktabga aniq biriktirilgan testlar.
+  testIds: [],
 };
 
 /**
@@ -45,7 +47,7 @@ function mockFetch(
   stats?: Partial<SchoolStatsDto>,
   status = 200,
   linkHealth?: SchoolDetailDto['linkHealth'],
-  overrides?: Partial<Pick<SchoolDetailDto, 'accessCode'>>,
+  overrides?: Partial<Pick<SchoolDetailDto, 'accessCode' | 'testIds'>>,
 ) {
   const detail: SchoolDetailDto = {
     ...BASE_DETAIL,
@@ -55,6 +57,28 @@ function mockFetch(
   };
   const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
     const url = String(input);
+    // 2026-09-23: "Biriktirilgan testlar" kartasi nomlarni katalogdan oladi.
+    if (url.includes('/api/admin/catalog/tests')) {
+      return Promise.resolve(
+        listResponse<'CatalogTestListItemDto'>([
+          {
+            id: 'test-1',
+            code: 'INTELLECT-SURVEY',
+            nameUz: "Intellect so'rovnomasi",
+            kind: 'Custom',
+            isSystem: false,
+            status: 'Published',
+            isActive: true,
+            scoringMode: 'Survey',
+            questionCount: 25,
+            scaleCount: 0,
+            estimatedMinutes: 8,
+            version: 1,
+            usedInProgramCount: 1,
+          },
+        ]),
+      );
+    }
     if (url.includes('/api/admin/schools/school-1')) {
       return Promise.resolve(
         status === 200
@@ -168,7 +192,7 @@ describe('SchoolDetailPage', () => {
     renderDetailPage();
 
     expect(await screen.findByText('Havola ishlamaydi')).toBeInTheDocument();
-    expect(screen.getByText(/Mos dastur o'chirilgan yoki arxivlangan/)).toBeInTheDocument();
+    expect(screen.getByText(/Biriktirilgan test o'chirilgan yoki arxivlangan/)).toBeInTheDocument();
     // Havolani nusxalash/QR yonidagi ogohlantirish.
     expect(screen.getByText(/Bu havolani hozir tarqatish foydasiz/)).toBeInTheDocument();
   });
@@ -292,5 +316,22 @@ describe('SchoolDetailPage', () => {
       await waitFor(() => expect(within(entryCodeRow()).getByText('WXYZ-6789')).toBeInTheDocument());
       expect(within(entryCodeRow()).queryByText('ABCD-2345')).not.toBeInTheDocument();
     });
+  });
+  it("biriktirilgan testlar nomlari ko'rsatiladi (noma'lumi — \"Noma'lum test\")", async () => {
+    mockFetch(undefined, 200, undefined, { testIds: ['test-1', 'test-gone'] });
+    renderDetailPage();
+
+    const card = within(await screen.findByTestId('school-tests-card'));
+    const link = await card.findByRole('link', { name: "Intellect so'rovnomasi" });
+    expect(link).toHaveAttribute('href', '/admin/catalog/tests/test-1');
+    expect(card.getByText("Noma'lum test")).toBeInTheDocument();
+  });
+
+  it("test biriktirilmagan maktabda bo'sh holat matni", async () => {
+    mockFetch();
+    renderDetailPage();
+
+    const card = within(await screen.findByTestId('school-tests-card'));
+    expect(card.getByText("Bu maktabga alohida test biriktirilmagan.")).toBeInTheDocument();
   });
 });

@@ -71,8 +71,9 @@ function firstDefined<T>(...values: (T | null | undefined)[]): T | null {
 
 /**
  * Sarlavha ma'lumotini ikki manbadan yig'adi: (1) detal javobining o'zi — backend bu
- * maydonlarni qo'shgan kuni avtomatik ishlaydi; (2) sessiyalar ro'yxatidan kelgan
- * navigatsiya holati (`AdminAssessmentListItemDto` qatori). Ikkalasida ham yo'q maydon
+ * maydonlarni qo'shgan kuni avtomatik ishlaydi; (2) ZAXIRA — navigatsiya holati
+ * (`AdminAssessmentListItemDto` qatori; uni sessiyalar ro'yxati uzatardi, ro'yxat 2026-09-23
+ * da olib tashlangan). Ikkalasida ham yo'q maydon
  * `null` bo'lib qoladi va UI uni "ma'lumot yo'q" deb ANIQ ko'rsatadi.
  */
 export function resolveSessionMeta(

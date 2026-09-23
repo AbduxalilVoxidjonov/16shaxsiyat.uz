@@ -59,6 +59,8 @@ export type RawAnswerDto = Omit<
   /** `ShortText`/`LongText`/`Phone` javobining xom matni. */
   textValue?: string | null;
   scoringMode: AnswerScoringMode;
+  /** Katalogdagi test nomi (backend `AdminAssessmentAnswerDto.TestNameUz`, 2026-09-23). */
+  testNameUz?: string | null;
 };
 
 /** Sessiya darajasidagi ishonchlilik signallari — backend `AdminAnswerSessionSignalsDto` (`docs/03` §7). */

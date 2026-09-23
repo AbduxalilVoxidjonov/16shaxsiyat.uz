@@ -23,3 +23,14 @@ export function formatDate(iso: string | null | undefined): string {
   if (Number.isNaN(date.getTime())) return '—';
   return `${pad2(date.getUTCDate())}.${pad2(date.getUTCMonth() + 1)}.${String(date.getUTCFullYear())}`;
 }
+
+/**
+ * `ISO-8601` sanani `KK.OO.YYYY HH:mm` shaklida qaytaradi (UTC — `formatDate` bilan bir xil
+ * sabab); `null`/noto'g'ri qiymatda `'—'`.
+ */
+export function formatDateTime(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '—';
+  return `${formatDate(iso)} ${pad2(date.getUTCHours())}:${pad2(date.getUTCMinutes())}`;
+}

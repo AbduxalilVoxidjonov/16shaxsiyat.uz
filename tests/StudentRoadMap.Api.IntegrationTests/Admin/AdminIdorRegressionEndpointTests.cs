@@ -46,7 +46,7 @@ public sealed class AdminIdorRegressionEndpointTests : IClassFixture<PublicApiTe
         using var client = _factory.CreateClient();
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, "Nomozov Iskandar Farhodovich",
-            new DateOnly(2010, 3, 3), Gender.Male, 9, "A", "+998901234574", null, null, true, "uz");
+            new DateOnly(2010, 3, 3), Gender.Male, 9, "A", "+998901234574", "+998909998877", null, true, "uz");
 
         var response = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
         response.StatusCode.Should().Be(HttpStatusCode.Created);

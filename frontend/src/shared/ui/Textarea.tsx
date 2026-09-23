@@ -1,15 +1,21 @@
 import { forwardRef, useId, type TextareaHTMLAttributes } from 'react';
 import { cn } from '@/shared/lib/cn';
+import { RequiredMark } from './RequiredMark';
 
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
+  /**
+   * Majburiy maydon: yorliq oxirida qizil `*` (`RequiredMark`, `aria-hidden`) va maydonda
+   * `aria-required`. Native `required` EMAS — formalar `noValidate`, tekshiruv zod'da.
+   */
+  isRequired?: boolean;
   error?: string;
   hint?: string;
 }
 
 /** `Input.tsx` bilan bir xil naqsh, ko'p qatorli matn uchun (masalan maktab izohi). */
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
-  { className, label, error, hint, id, rows = 3, ...props },
+  { className, label, isRequired, error, hint, id, rows = 3, ...props },
   ref,
 ) {
   const generatedId = useId();
@@ -21,6 +27,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
       {label && (
         <label htmlFor={textareaId} className="text-sm font-medium text-ink-soft">
           {label}
+          {isRequired && <RequiredMark />}
         </label>
       )}
       <textarea
@@ -36,6 +43,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
           error && 'border-terakota-600',
           className,
         )}
+        aria-required={isRequired || undefined}
         aria-invalid={Boolean(error) || undefined}
         aria-describedby={descriptionId}
         {...props}

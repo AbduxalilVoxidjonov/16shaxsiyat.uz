@@ -12,6 +12,7 @@ import {
   Input,
   PhoneField,
   RegistrationCustomFieldInput,
+  RequiredMark,
   Select,
   Skeleton,
 } from '@/shared/ui';
@@ -29,6 +30,7 @@ import { useStartSession } from '../api/useStartSession';
 import { useSessionStore } from '../store/sessionStore';
 import { pickNextTestCode } from '@/shared/lib/nextTest';
 import { publicButtonClass } from '../components/publicStyles';
+import { SchoolNameBadge } from '../components/SchoolNameBadge';
 import {
   MAX_AGE,
   MIN_AGE,
@@ -327,7 +329,7 @@ export default function RegistrationPage() {
   return (
     <div className="flex animate-fade-up flex-col gap-6 motion-reduce:animate-none">
       <header className="flex flex-col items-center gap-2 text-center">
-        <p className="eyebrow text-firuza-700">{school.name}</p>
+        <SchoolNameBadge name={school.name} />
         <h1 className="font-display text-2xl font-extrabold tracking-tight text-balance text-ink">
           {t('pages.register.title')}
         </h1>
@@ -368,6 +370,8 @@ export default function RegistrationPage() {
 
           const coreField = registrationForm.coreFields[item.key];
           if (item.key !== 'fullName' && coreField.requirement === 'Hidden') return null;
+          // Qizil `*` (2026-09-23 egasi talabi) — `fullName` sozlamadan qat'i nazar doim majburiy.
+          const isRequired = item.key === 'fullName' || coreField.requirement === 'Required';
 
           switch (item.key) {
             case 'fullName':
@@ -375,6 +379,7 @@ export default function RegistrationPage() {
                 <Input
                   key="fullName"
                   label={coreField.labelUz || t('register.fields.fullName')}
+                  isRequired={isRequired}
                   placeholder={coreField.placeholderUz ?? undefined}
                   autoComplete="name"
                   error={errors.fullName?.message}
@@ -390,6 +395,7 @@ export default function RegistrationPage() {
                   render={({ field }) => (
                     <BirthDateSelect
                       label={coreField.labelUz || t('register.fields.birthDate')}
+                      isRequired={isRequired}
                       value={field.value}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
@@ -409,6 +415,7 @@ export default function RegistrationPage() {
                 <fieldset key="gender" className="flex flex-col gap-1.5">
                   <legend className="mb-1.5 text-sm font-medium text-ink-soft">
                     {coreField.labelUz || t('register.fields.gender')}
+                    {isRequired && <RequiredMark />}
                   </legend>
                   <div className="flex gap-3">
                     {(['Male', 'Female'] as const).map((option) => (
@@ -430,6 +437,8 @@ export default function RegistrationPage() {
                           type="radio"
                           value={option}
                           className="sr-only"
+                          // Native `required` — forma `noValidate`, faqat AT uchun majburiylik belgisi.
+                          required={isRequired}
                           {...register('gender')}
                         />
                         {t(`register.genderOptions.${option === 'Male' ? 'male' : 'female'}`)}
@@ -448,6 +457,7 @@ export default function RegistrationPage() {
                 <Select
                   key="grade"
                   label={coreField.labelUz || t('register.fields.grade')}
+                  isRequired={isRequired}
                   placeholder={coreField.placeholderUz || t('register.fields.gradePlaceholder')}
                   options={GRADE_OPTIONS}
                   error={errors.grade?.message}
@@ -459,6 +469,7 @@ export default function RegistrationPage() {
                 <Input
                   key="classLetter"
                   label={coreField.labelUz || t('register.fields.classLetter')}
+                  isRequired={isRequired}
                   placeholder={coreField.placeholderUz ?? undefined}
                   maxLength={2}
                   error={errors.classLetter?.message}
@@ -474,6 +485,7 @@ export default function RegistrationPage() {
                   render={({ field }) => (
                     <PhoneField
                       label={coreField.labelUz || t('register.fields.phone')}
+                      isRequired={isRequired}
                       autoComplete="tel-national"
                       value={field.value}
                       onValueChange={field.onChange}
@@ -492,11 +504,18 @@ export default function RegistrationPage() {
                   render={({ field }) => (
                     <PhoneField
                       label={coreField.labelUz || t('register.fields.parentPhone')}
+                      isRequired={isRequired}
                       value={field.value}
                       onValueChange={field.onChange}
                       onBlur={field.onBlur}
                       error={errors.parentPhone?.message}
-                      hint={errors.parentPhone ? undefined : t('register.fields.parentPhoneHint')}
+                      // "Ixtiyoriy" izohi faqat sozlamada ixtiyoriy bo'lsa — 2026-09-23 dan
+                      // standartda ota-ona telefoni MAJBURIY (`docs/18` §9.6).
+                      hint={
+                        errors.parentPhone || coreField.requirement !== 'Optional'
+                          ? undefined
+                          : t('register.fields.parentPhoneHint')
+                      }
                     />
                   )}
                 />
@@ -506,10 +525,16 @@ export default function RegistrationPage() {
                 <Input
                   key="email"
                   label={coreField.labelUz || t('register.fields.email')}
+                  isRequired={isRequired}
                   placeholder={coreField.placeholderUz ?? undefined}
                   type="email"
                   autoComplete="email"
-                  hint={errors.email ? undefined : t('register.fields.emailHint')}
+                  // "Ixtiyoriy" faqat haqiqatan ixtiyoriy bo'lsa — `*` bilan birga chiqmasin.
+                  hint={
+                    errors.email || coreField.requirement !== 'Optional'
+                      ? undefined
+                      : t('register.fields.emailHint')
+                  }
                   error={errors.email?.message}
                   {...register('email')}
                 />
@@ -536,6 +561,7 @@ export default function RegistrationPage() {
         {requiresAccessCode && (
           <Input
             label={t('register.fields.accessCode')}
+            isRequired
             inputMode="numeric"
             maxLength={6}
             error={errors.accessCode?.message}

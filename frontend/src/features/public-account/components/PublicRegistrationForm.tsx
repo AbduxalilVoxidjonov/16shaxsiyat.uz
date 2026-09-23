@@ -10,6 +10,7 @@ import {
   Input,
   PhoneField,
   RegistrationCustomFieldInput,
+  RequiredMark,
   Select,
 } from '@/shared/ui';
 import { AppError } from '@/shared/api/AppError';
@@ -108,6 +109,9 @@ export function PublicRegistrationForm({
   // bilan bir xil naqsh).
   const registrationForm = profile.registrationForm;
   const genderHidden = registrationForm.coreFields.gender.requirement === 'Hidden';
+  // Qizil `*` (2026-09-23): F.I.Sh./sana/telefon bu oqimda DOIM majburiy (sxemaga qarang),
+  // `gender` sozlamaga ergashadi, `grade`/`email` doim ixtiyoriy.
+  const genderRequired = registrationForm.coreFields.gender.requirement === 'Required';
   const schema = useMemo(
     () =>
       createPublicRegistrationSchema({
@@ -220,6 +224,7 @@ export function PublicRegistrationForm({
 
       <Input
         label={registrationForm.coreFields.fullName.labelUz || t('register.fields.fullName')}
+        isRequired
         placeholder={registrationForm.coreFields.fullName.placeholderUz ?? undefined}
         autoComplete="name"
         hint={errors.fullName || !showSuggestedNameHint ? undefined : t('account.register.suggestedNameHint')}
@@ -238,6 +243,7 @@ export function PublicRegistrationForm({
         render={({ field }) => (
           <BirthDateSelect
             label={registrationForm.coreFields.birthDate.labelUz || t('register.fields.birthDate')}
+            isRequired
             value={field.value}
             onChange={field.onChange}
             onBlur={field.onBlur}
@@ -257,6 +263,7 @@ export function PublicRegistrationForm({
         <fieldset className="flex flex-col gap-1.5">
           <legend className="mb-1.5 text-sm font-medium text-ink-soft">
             {registrationForm.coreFields.gender.labelUz || t('register.fields.gender')}
+            {genderRequired && <RequiredMark />}
           </legend>
           <div className="flex gap-3">
             {(['Male', 'Female'] as const).map((option) => (
@@ -271,7 +278,14 @@ export function PublicRegistrationForm({
                     : 'border-line bg-paper-card text-ink-soft hover:border-firuza-300',
                 )}
               >
-                <input type="radio" value={option} className="sr-only" {...register('gender')} />
+                <input
+                  type="radio"
+                  value={option}
+                  className="sr-only"
+                  // Native `required` — forma `noValidate`, faqat AT uchun majburiylik belgisi.
+                  required={genderRequired}
+                  {...register('gender')}
+                />
                 {/*
                   Yorliqlar maktab anketasidan FARQ QILADI: u yerda "O'g'il bola"/"Qiz bola"
                   (o'quvchilar uchun), bu yerda esa foydalanuvchi 99 yoshgacha bo'lishi
@@ -306,7 +320,15 @@ export function PublicRegistrationForm({
             onValueChange={field.onChange}
             onBlur={field.onBlur}
             error={errors.phone?.message}
-            label={registrationForm.coreFields.phone.labelUz || t('register.fields.phone')}
+            isRequired
+            // Bu oqimda telefon HAR DOIM majburiy — sozlamadagi yorliq faqat `Required` bo'lsa
+            // olinadi. 2026-09-23 dan standartda `phone` ixtiyoriy ("Shaxsiy raqamingiz
+            // (bo'lsa)") — majburiy maydonda "(bo'lsa)" yorlig'i chalg'itardi.
+            label={
+              (registrationForm.coreFields.phone.requirement === 'Required'
+                ? registrationForm.coreFields.phone.labelUz
+                : '') || t('register.fields.phone')
+            }
           />
         )}
       />
@@ -372,6 +394,7 @@ export function PublicRegistrationForm({
               </p>
               <Checkbox
                 label={t('account.register.parentalConsentLabel')}
+                isRequired
                 checked={field.value}
                 onChange={(event) => {
                   field.onChange(event.target.checked);

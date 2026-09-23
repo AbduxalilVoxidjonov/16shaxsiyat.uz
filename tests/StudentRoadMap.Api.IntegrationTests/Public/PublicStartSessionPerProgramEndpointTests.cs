@@ -64,7 +64,7 @@ public sealed class PublicStartSessionPerProgramEndpointTests : IClassFixture<Pu
             Grade: 9,
             ClassLetter: "A",
             Phone: "+998901234567",
-            ParentPhone: null,
+            ParentPhone: "+998909998877",
             Email: null,
             ConsentAccepted: true,
             LanguageCode: "uz",

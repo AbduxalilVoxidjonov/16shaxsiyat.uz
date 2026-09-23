@@ -100,7 +100,7 @@ public sealed class PublicSurveyOnlySessionEndpointTests : IClassFixture<PublicA
     {
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, fullName, birthDate, Gender.Male, 9, "A",
-            "+998901234567", null, null, true, "uz", programCode);
+            "+998901234567", "+998909998877", null, true, "uz", programCode);
 
         var response = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
         response.EnsureSuccessStatusCode();
@@ -175,7 +175,7 @@ public sealed class PublicBig5WithoutActivityEndpointTests : IClassFixture<Publi
     {
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, fullName, birthDate, Gender.Male, 9, "A",
-            "+998901234567", null, null, true, "uz", programCode);
+            "+998901234567", "+998909998877", null, true, "uz", programCode);
 
         var response = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
         response.EnsureSuccessStatusCode();
@@ -270,7 +270,7 @@ public sealed class PublicStudentSnapshotPreservedEndpointTests : IClassFixture<
     {
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, fullName, birthDate, Gender.Male, 9, "A",
-            "+998901234567", null, null, true, "uz", programCode);
+            "+998901234567", "+998909998877", null, true, "uz", programCode);
 
         var response = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
         response.EnsureSuccessStatusCode();
@@ -416,7 +416,7 @@ public sealed class PublicSurveyExcludedFromReliabilityEndpointTests : IClassFix
     {
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, fullName, birthDate, Gender.Male, 9, "A",
-            "+998901234567", null, null, true, "uz", programCode);
+            "+998901234567", "+998909998877", null, true, "uz", programCode);
 
         var response = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
         response.EnsureSuccessStatusCode();

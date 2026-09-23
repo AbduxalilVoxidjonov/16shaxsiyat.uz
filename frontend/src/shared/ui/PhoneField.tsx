@@ -1,5 +1,6 @@
 import { forwardRef, useId, type InputHTMLAttributes } from 'react';
 import { cn } from '@/shared/lib/cn';
+import { RequiredMark } from './RequiredMark';
 import { extractUzLocalDigits, formatUzLocalDigits } from '@/shared/lib/formatPhone';
 
 export interface PhoneFieldProps extends Omit<
@@ -7,6 +8,11 @@ export interface PhoneFieldProps extends Omit<
   'value' | 'onChange' | 'type'
 > {
   label?: string;
+  /**
+   * Majburiy maydon: yorliq oxirida qizil `*` (`RequiredMark`, `aria-hidden`) va maydonda
+   * `aria-required`. Native `required` EMAS — formalar `noValidate`, tekshiruv zod'da.
+   */
+  isRequired?: boolean;
   error?: string;
   hint?: string;
   /** Mahalliy raqamlar (ko'pi bilan 9 ta), `+998`siz — E.164'ga o'girish chaqiruvchi tomonda. */
@@ -26,7 +32,7 @@ export interface PhoneFieldProps extends Omit<
  * darhol ko'zga tashlanadi. `Input` uslubi o'zgarsa, bu yer ham yangilanishi kerak.
  */
 export const PhoneField = forwardRef<HTMLInputElement, PhoneFieldProps>(function PhoneField(
-  { className, label, error, hint, value, onValueChange, id, ...props },
+  { className, label, isRequired, error, hint, value, onValueChange, id, ...props },
   ref,
 ) {
   const generatedId = useId();
@@ -38,6 +44,7 @@ export const PhoneField = forwardRef<HTMLInputElement, PhoneFieldProps>(function
       {label && (
         <label htmlFor={inputId} className="text-sm font-medium text-ink-soft">
           {label}
+          {isRequired && <RequiredMark />}
         </label>
       )}
       <div
@@ -65,6 +72,7 @@ export const PhoneField = forwardRef<HTMLInputElement, PhoneFieldProps>(function
           onChange={(event) => {
             onValueChange(extractUzLocalDigits(event.target.value));
           }}
+          aria-required={isRequired || undefined}
           aria-invalid={Boolean(error) || undefined}
           aria-describedby={descriptionId}
           {...props}

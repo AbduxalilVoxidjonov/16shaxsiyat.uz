@@ -46,7 +46,8 @@ function DetailSkeleton() {
  * `docs/07` 3.3-bo'lim).
  *
  * Ma'lumot manbalari: `GET /api/admin/assessments/{id}` (natijalar va AI tahlili) hamda —
- * sarlavha maydonlari uchun — sessiyalar ro'yxatidan kelgan navigatsiya holati. Detal
+ * sarlavha maydonlari uchun ZAXIRA sifatida — navigatsiya holati (`location.state`; uni
+ * ilgari sessiyalar ro'yxati uzatardi, ro'yxat 2026-09-23 da olib tashlangan). Detal
  * endpointi hozircha `{id, results, aiAnalysis, aiHistory}` dan iborat (`docs/07` 3.3:
  * "yuqoridagi `latestAssessment` shakli"), shu sabab holat/vaqt/maktab/o'quvchi to'g'ridan-
  * to'g'ri kelmaydi. Ular topilmasa sahifa "ma'lumot yo'q" deb ANIQ yozadi va sababini
@@ -72,15 +73,25 @@ export default function AssessmentDetailPage() {
     detailStatus !== null && AI_RUNNABLE_STATUSES.includes(detailStatus),
   );
 
-  const backLink = (
-    <Link
-      to={ROUTES.admin.assessments}
-      className="flex w-fit items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900"
-    >
-      <ArrowLeft size={16} aria-hidden="true" />
-      {t('assessmentDetail.backCta')}
-    </Link>
-  );
+  /**
+   * "Orqaga" havolasi. Sessiyalar ro'yxati 2026-09-23 da olib tashlangan (egasining qarori),
+   * shu sabab: o'quvchi ma'lum bo'lsa — uning profiliga (sessiya odatda o'sha yerdan
+   * ochiladi), aks holda (yuklanish xatosi, 404, sarlavha maydonlari yo'q) — O'quvchilar
+   * ro'yxatiga.
+   */
+  function renderBackLink(studentId: string | null) {
+    return (
+      <Link
+        to={studentId ? ROUTES.admin.studentProfile(studentId) : ROUTES.admin.students}
+        className="flex w-fit items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900"
+      >
+        <ArrowLeft size={16} aria-hidden="true" />
+        {studentId
+          ? t('assessmentDetail.backToStudentCta')
+          : t('assessmentDetail.backToStudentsCta')}
+      </Link>
+    );
+  }
 
   if (detailQuery.isPending) {
     return <DetailSkeleton />;
@@ -90,7 +101,7 @@ export default function AssessmentDetailPage() {
     const isNotFound = detailQuery.error instanceof AppError && detailQuery.error.status === 404;
     return (
       <div className="flex flex-col gap-4">
-        {backLink}
+        {renderBackLink(null)}
         {isNotFound ? (
           <EmptyState
             title={t('assessmentDetail.notFoundTitle')}
@@ -156,7 +167,7 @@ export default function AssessmentDetailPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      {backLink}
+      {renderBackLink(meta.student?.id ?? null)}
 
       <div>
         <h1 className="text-xl font-semibold text-neutral-900">{t('assessmentDetail.heading')}</h1>
@@ -178,6 +189,16 @@ export default function AssessmentDetailPage() {
         <TestResultsSummary rows={rows} />
       </div>
 
+      {/* Savolma-savol javoblar — egasining talabi (2026-09-12): tarixdagi HAR BIR
+          sessiyaning javoblarini ko'rish. Xuddi shu widget — `docs/10` §2. Natijalar
+          jadvalidan DARHOL keyin, AI tahlilidan OLDIN (2026-09-23). */}
+      <AnswersSection
+        assessmentId={detail.id}
+        testNames={Object.fromEntries(
+          (detail.tests ?? []).map((test) => [test.testCode, test.nameUz]),
+        )}
+      />
+
       <AiAnalysisSection
         analysis={detail.aiAnalysis}
         history={detail.aiHistory ?? []}
@@ -189,11 +210,6 @@ export default function AssessmentDetailPage() {
         hasConfiguredProvider={hasConfiguredProvider}
         hasPersonalityBattery={detail.hasPersonalityBattery}
       />
-
-      {/* Savolma-savol javoblar — egasining talabi (2026-09-12): tarixdagi HAR BIR
-          sessiyaning javoblarini ko'rish, faqat eng so'nggisini emas (`StudentProfilePage`
-          ilgari faqat `latestAssessment` uchun ochardi). Xuddi shu widget — `docs/10` §2. */}
-      <AnswersSection assessmentId={detail.id} />
 
       <RerunAnalysisDialog
         open={rerunOpen}

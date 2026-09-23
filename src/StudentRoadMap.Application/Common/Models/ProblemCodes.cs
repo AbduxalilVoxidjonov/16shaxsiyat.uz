@@ -21,6 +21,13 @@ public static class ProblemCodes
     /// <summary>`prompts/34` — `AssessmentProgram.Publish` kamida bitta test talab qiladi (`TEST_NOT_PUBLISHABLE` bilan bir xil uslub, 400).</summary>
     public const string ProgramNotPublishable = "PROGRAM_NOT_PUBLISHABLE";
     public const string TestInUse = "TEST_IN_USE";
+
+    /// <summary>
+    /// 2026-09-23 (`docs/18` §9.7): arxivlangan testni biriktirib (ommaviy qilib / maktabga
+    /// ulab) bo'lmaydi — `PUT /api/admin/catalog/tests/{id}/assignment`, maktab `testIds`,
+    /// ommaviy makon `tests/{testId}`. `409`.
+    /// </summary>
+    public const string TestArchived = "TEST_ARCHIVED";
     public const string RateLimited = "RATE_LIMITED";
     public const string AiProviderError = "AI_PROVIDER_ERROR";
     public const string InternalError = "INTERNAL_ERROR";
@@ -314,6 +321,7 @@ public static class ProblemCodes
         [TestNotPublishable] = StatusCodes.Status400BadRequest,
         [ProgramNotPublishable] = StatusCodes.Status400BadRequest,
         [TestInUse] = StatusCodes.Status409Conflict,
+        [TestArchived] = StatusCodes.Status409Conflict,
         [RateLimited] = StatusCodes.Status429TooManyRequests,
         [AiProviderError] = StatusCodes.Status502BadGateway,
         [InternalError] = StatusCodes.Status500InternalServerError,

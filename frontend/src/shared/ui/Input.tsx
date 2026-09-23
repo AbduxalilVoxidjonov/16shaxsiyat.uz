@@ -1,8 +1,14 @@
 import { forwardRef, useId, type InputHTMLAttributes } from 'react';
 import { cn } from '@/shared/lib/cn';
+import { RequiredMark } from './RequiredMark';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
+  /**
+   * Majburiy maydon: yorliq oxirida qizil `*` (`RequiredMark`, `aria-hidden`) va maydonda
+   * `aria-required`. Native `required` EMAS — formalar `noValidate`, tekshiruv zod'da.
+   */
+  isRequired?: boolean;
   /** Maydon ostida ko'rsatiladigan xato matni; berilsa `aria-invalid` avtomatik qo'yiladi. */
   error?: string;
   /** Yordamchi matn (xato yo'q holatda). */
@@ -11,7 +17,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 /** Yorliqli, xato/yordamchi matnli bazaviy input — barcha formalar shu komponentdan foydalanadi. */
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { className, label, error, hint, id, ...props },
+  { className, label, isRequired, error, hint, id, ...props },
   ref,
 ) {
   const generatedId = useId();
@@ -23,6 +29,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       {label && (
         <label htmlFor={inputId} className="text-sm font-medium text-ink-soft">
           {label}
+          {isRequired && <RequiredMark />}
         </label>
       )}
       <input
@@ -39,6 +46,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           error && 'border-terakota-600',
           className,
         )}
+        aria-required={isRequired || undefined}
         aria-invalid={Boolean(error) || undefined}
         aria-describedby={descriptionId}
         {...props}

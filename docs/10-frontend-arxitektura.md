@@ -68,10 +68,9 @@ frontend/
 │   │   ├── dashboard/            # DashboardPage, StatCard, DistributionChart
 │   │   ├── schools/              # SchoolsPage, SchoolFormDialog, LinkCell, QrDialog
 │   │   ├── students/             # StudentsPage, StudentFilters, StudentProfilePage
-│   │   ├── assessments/          # AssessmentsPage, AssessmentDetailPage, AnswersDialog
-│   │   ├── programs/             # ProgramsPage, ProgramDetailPage, ProgramFiltersBar
+│   │   ├── assessments/          # AssessmentDetailPage (ro'yxat 2026-09-23 da olib tashlangan)
 │   │   ├── ai-settings/          # AiProvidersPage, ProviderCard, TestConnectionButton
-│   │   ├── catalog/              # TestsPage, QuestionsTable, QuestionEditDialog
+│   │   ├── catalog/              # TestsPage, QuestionsTable, QuestionEditDialog, TestAssignmentCard
 │   │   └── audit/                # AuditLogPage
 │   │
 │   ├── widgets/                  # bir necha feature ishlatadigan katta bloklar
@@ -119,12 +118,11 @@ frontend/
 | `/admin/schools/:id` | Admin | Maktab detali |
 | `/admin/students` | Admin | O'quvchilar |
 | `/admin/students/:id` | Admin | **Individual profil** |
-| `/admin/assessments` | Admin | Sessiyalar |
+| `/admin/assessments` | Admin | → `/admin/students` ga yo'naltirish (sessiyalar ro'yxati olib tashlangan — 2026-09-23 egasi qarori, `docs/11` A-6) |
 | `/admin/assessments/:id` | Admin | Sessiya detali |
 | `/admin/catalog` | Admin | Testlar va savollar |
 | `/admin/catalog/tests/:id` | Admin | Anketa konstruktori / tizim testi tahriri |
-| `/admin/programs` | Admin | Dasturlar |
-| `/admin/programs/:id` | Admin | Dastur detali |
+| `/admin/programs`, `/admin/programs/*` | Admin | → `/admin/catalog` ga yo'naltirish (`replace`; "Dasturlar" bo'limi olib tashlangan — **2026-09-23 egasi qarori**, `docs/11` A-8 "Biriktirish") |
 | `/admin/ai` | Admin | AI provayderlar va promptlar |
 | `/admin/audit` | Admin | Audit log |
 | `/admin/settings` | Admin | Parol, 2FA, umumiy sozlamalar |
@@ -135,6 +133,19 @@ frontend/
 > `/admin/programs/:id` bu jadvalda yo'q edi (P23/P35/P38 dan beri, ya'ni bu jadval P45'dan ancha
 > oldin ham eskirgan edi) — `router.tsx`ga qarab to'ldirildi. Marketing qatori (P45) yangi.
 > Haqiqiy manba doim `frontend/src/shared/config/routes.ts` (`ROUTES`/`ROUTE_PATTERNS`).
+
+> **2026-09-23 egasi qarori — "Dasturlar" bo'limi olib tashlandi.** `features/programs/`
+> (ro'yxat, yaratish/tahrirlash, detal, hook'lar, tiplar, testlar) va `nav.programs`,
+> `pages.programs*`, `programs.*` i18n kalitlari o'chirildi (dastur holati yorliqlari —
+> `programState.*`, `shared/lib/programState.ts`). Eski URL'lar `app/LegacyProgramsRedirect.tsx`
+> orqali Testlar katalogiga yo'naltiriladi. Test KIMGA ochiqligi endi test detalidagi
+> `features/catalog/components/TestAssignmentCard.tsx` da (`GET`/`PUT
+> /api/admin/catalog/tests/{id}/assignment`, `docs/07` §3.4.1); maktab formasida —
+> `testIds` ko'p tanlovi (`features/schools/components/SchoolTestsField.tsx`); ommaviy makon —
+> `POST`/`DELETE /api/admin/public-space/tests/{testId}` (`features/public-space`). `schema.d.ts`
+> qo'lda kengaytirildi (`AdminTestAssignmentDto`, `UpdateTestAssignmentRequest`,
+> `testIds`, `testDefinitionId`; `/api/admin/programs/*` yo'llari va `AdminProgram*` sxemalari
+> olib tashlandi) — `npm run generate:api` ishga tushgach tasdiqlanadi.
 
 ---
 

@@ -127,6 +127,7 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
             gender = "Male",
             grade = 8,
             phone = "+998901234567",
+            parentPhone = "+998909998877",
             consentAccepted = true,
             languageCode = "uz",
             programCode,
@@ -172,6 +173,7 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
             gender = "Female",
             grade = 7,
             phone = "+998901234568",
+            parentPhone = "+998909998877",
             consentAccepted = true,
             languageCode = "uz",
             programCode,
@@ -205,7 +207,7 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
     public async Task StartSession_BirthDateVaTelefonYoQ_HarSafarYangiOquvchiYaratiladi()
     {
         // Uchinchi holat: hech qanday ishonchli kalit yo'q (`birthDate` ixtiyoriy va
-        // kiritilmagan, telefon esa `Hidden`). Faqat ism bo'yicha izlash bir xil ismli ikki
+        // kiritilmagan, telefon VA ota-ona telefoni `Hidden`). Faqat ism bo'yicha izlash bir xil ismli ikki
         // o'quvchini bitta yozuvga qo'shib yuborardi — ma'lumot buzilishi takroriy yozuvdan
         // yomonroq, shu sabab qidiruv ataylab bajarilmaydi.
         var (school, accessToken, programCode) = await SeedProgramAsync("ob2");
@@ -216,7 +218,10 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
             await SeedGlobalRegistrationFormAsync(
                 db,
                 DateTimeOffset.UtcNow,
-                DefaultDefinitionWith(birthDate: RegistrationFieldRequirement.Optional, phone: RegistrationFieldRequirement.Hidden));
+                DefaultDefinitionWith(
+                    birthDate: RegistrationFieldRequirement.Optional,
+                    phone: RegistrationFieldRequirement.Hidden,
+                    parentPhone: RegistrationFieldRequirement.Hidden));
         }
 
         using var client = _factory.CreateClient();
@@ -271,6 +276,7 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
             birthDate = "2011-02-02",
             grade = 6,
             phone = "+998901234569",
+            parentPhone = "+998909998877",
             consentAccepted = true,
             languageCode = "uz",
             programCode,
@@ -284,7 +290,7 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
         problem.GetProperty("errors").TryGetProperty("email", out _).Should().BeTrue();
     }
 
-    /// <summary>`parentPhone` standart bo'yicha ixtiyoriy — GLOBAL sozlamada `Required` qilinsa bo'sh qoldirib bo'lmaydi.</summary>
+    /// <summary>`parentPhone` `Required` bo'lsa (2026-09-23 dan standart ham shunday) bo'sh qoldirib bo'lmaydi.</summary>
     [Fact]
     public async Task StartSession_RequiredParentPhone_BoshBoSa400()
     {
@@ -342,6 +348,7 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
             birthDate = "2012-04-04",
             grade = 5,
             phone = "+998901234571",
+            parentPhone = "+998909998877",
             consentAccepted = true,
             languageCode = "uz",
             programCode,
@@ -383,6 +390,7 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
             gender = "Male",
             grade = 5,
             phone = "+998901234572",
+            parentPhone = "+998909998877",
             consentAccepted = true,
             languageCode = "uz",
             programCode,
@@ -427,7 +435,7 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
         program.RegistrationFields.Grade.Should().Be("Required");
         program.RegistrationFields.ClassLetter.Should().Be("Optional");
         program.RegistrationFields.Phone.Should().Be("Hidden");
-        program.RegistrationFields.ParentPhone.Should().Be("Optional");
+        program.RegistrationFields.ParentPhone.Should().Be("Required");
         program.RegistrationFields.Email.Should().Be("Required");
 
         // `registrationForm` — TO'LIQ GLOBAL ta'rif (`docs/18` §9.6.2), BIR XIL manbadan.
@@ -437,14 +445,14 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
     }
 
     /// <summary>
-    /// Regressiya qulfi: standart sozlama bilan xatti-harakat — `fullName`/`phone`/`gender`
-    /// yo'q bo'lsa `400`, boshqa maydonlar (`classLetter`/`parentPhone`/`email`) haqida xato
-    /// YO'Q. Sozlama ANIQ `Default`ga o'rnatiladi (`IClassFixture` bitta bazani BUTUN klass
+    /// Regressiya qulfi: standart sozlama bilan xatti-harakat — `fullName`/`parentPhone`/`gender`
+    /// yo'q bo'lsa `400`, boshqa maydonlar (`classLetter`/`phone`/`email`) haqida xato YO'Q
+    /// (2026-09-23 egasi qarori: ota-ona telefoni majburiy, o'z telefoni ixtiyoriy). Sozlama ANIQ `Default`ga o'rnatiladi (`IClassFixture` bitta bazani BUTUN klass
     /// bo'yicha baham ko'radi — boshqa test metodlari qatorni allaqachon o'zgartirgan bo'lishi
     /// mumkin, "qator yo'q = standart" holatiga tayanish tartibga bog'liq bo'lib qolardi).
     /// </summary>
     [Fact]
-    public async Task StartSession_StandartSozlama_FishTelefonVaJinssiz400VaBoshqaXatoYoq()
+    public async Task StartSession_StandartSozlama_FishOtaOnaTelefoniVaJinssiz400VaBoshqaXatoYoq()
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -473,10 +481,10 @@ public sealed class PublicRegistrationFieldsEndpointTests : IClassFixture<Public
         problem.GetProperty("code").GetString().Should().Be("VALIDATION_ERROR");
         var errors = problem.GetProperty("errors");
         errors.TryGetProperty("fullName", out _).Should().BeTrue();
-        errors.TryGetProperty("phone", out _).Should().BeTrue();
+        errors.TryGetProperty("parentPhone", out _).Should().BeTrue();
         errors.TryGetProperty("gender", out _).Should().BeTrue();
         errors.TryGetProperty("classLetter", out _).Should().BeFalse();
-        errors.TryGetProperty("parentPhone", out _).Should().BeFalse();
+        errors.TryGetProperty("phone", out _).Should().BeFalse();
         errors.TryGetProperty("email", out _).Should().BeFalse();
     }
 }

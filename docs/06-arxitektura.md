@@ -188,6 +188,7 @@ Qoidalar:
 | ADR-13 | Superadmin anketalari uchun universal `SUM` strategiyasi | Kod yozmasdan yangi test qo'shish mumkin; ilmiy metodikalar himoyalangan qoladi | Har anketaga alohida kod — superadmin qila olmaydi |
 | ADR-14 | Tizim testlari `IsSystem` bayrog'i bilan qulflangan | Savol soni normalizatsiyaga kiradi; o'zgarsa eski natijalar taqqoslanmay qoladi | Hamma narsani tahrirlashga ruxsat — yaxlitlik buziladi |
 | ADR-15 | `Draft → Published → Archived` holat oqimi | Yarim tayyor anketa o'quvchiga chiqib ketmaydi | Darhol faol — xato anketa sessiyalarga tushadi |
+| ADR-16 | **2026-09-23 egasi qarori:** admin UI'dan "Dasturlar" olib tashlandi — biriktirish (ommaviy / maktablar) TEST ichida (`/api/admin/catalog/tests/{id}/assignment`); `AssessmentProgram` ICHKI qatlam: har test uchun ko'pi bilan bitta avtomatik "test dasturi" (`owner_test_definition_id`, 1:1, nom/holat testga ergashadi), `docs/18` §9.7 | "Testlar katalogi" va "Dasturlar" amalda bir xil edi; sessiya tarixi, `school_programs`, ommaviy oqim va `RegistrationMode` dasturga tayanadi — jadvalni o'chirmasdan, UI'ni soddalashtirish | Dastur jadvalini o'chirib `school_tests`ga o'tish — `assessments.program_id` tarixi va butun ommaviy oqim qayta yoziladi; `ProgramKind.TestWrapper` — bir testga bir nechta o'rovchi bo'lishini DB darajasida taqiqlamaydi |
 
 ---
 
@@ -236,6 +237,7 @@ Barcha xatolar `application/problem+json`:
 | `SYSTEM_TEST_LOCKED` | 409 | Tizim metodikasini o'zgartirishga urinish |
 | `TEST_NOT_PUBLISHABLE` | 400 | Anketa nashr validatsiyasidan o'tmadi |
 | `TEST_IN_USE` | 409 | Ishlatilgan testni o'chirishga urinish |
+| `TEST_ARCHIVED` | 409 | Arxivlangan testni biriktirishga urinish — test biriktirmasi, maktab `testIds`, ommaviy makon `tests/{testId}` (2026-09-23) |
 | `RATE_LIMITED` | 429 | Limit oshdi |
 | `AI_PROVIDER_ERROR` | 502 | Provider javob bermadi |
 | `INTERNAL_ERROR` | 500 | Kutilmagan |

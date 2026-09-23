@@ -3,7 +3,7 @@ import { expectNoSeriousA11yViolations } from '../support/a11y';
 import { waitForAnimationsToSettle } from '../support/animation';
 import { expectNoConsoleErrors, expectNoHorizontalScroll } from '../support/layout';
 import { UI, fillRegistration, typeAndVerifyFocus, uniqueStudentName } from '../support/flow';
-import { createAndPublishBranchingSurvey, createProgramWithTest } from '../support/adminApi';
+import { assignTestToSchool, createAndPublishBranchingSurvey } from '../support/adminApi';
 import type { Browser, Page } from '@playwright/test';
 import { WEB_BASE_URL } from '../support/config';
 
@@ -206,13 +206,14 @@ test('tarmoqlanuvchi so\'rovnoma: 1.6 ning A/B/C tarmoqlari va "Boshqa (kiriting
   const survey = surveyDefinition(code);
 
   const created = await createAndPublishBranchingSurvey(adminToken, clientIp, survey);
-  const program = await createProgramWithTest(adminToken, clientIp, {
-    code: `${code}-PROG`,
-    nameUz: survey.nameUz,
+  // 2026-09-23: dastur emas — test to'g'ridan-to'g'ri maktabga biriktiriladi (landing'da test
+  // nomi bilan alohida variant bo'lib chiqadi).
+  const assignment = await assignTestToSchool(adminToken, clientIp, {
     testDefinitionId: created.id,
     schoolId: school.id,
   });
-  expect(program.id).toBeTruthy();
+  expect(assignment.isConfigured).toBe(true);
+  expect(assignment.schoolIds).toEqual([school.id]);
 
   // --- Filial A: Q1=1 → faqat S2A/Q2A ko'rinadi, S2B/S2C butunlay yashirin. ---
   {

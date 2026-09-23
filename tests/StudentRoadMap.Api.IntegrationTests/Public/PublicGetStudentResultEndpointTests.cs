@@ -157,7 +157,7 @@ public sealed class PublicGetStudentResultEndpointTests : IClassFixture<ShowResu
     {
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, fullName, birthDate, Gender.Male, 9, "A",
-            "+998901234567", null, null, true, "uz", programCode);
+            "+998901234567", "+998909998877", null, true, "uz", programCode);
 
         var response = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
         response.EnsureSuccessStatusCode();
@@ -194,7 +194,7 @@ public sealed class PublicGetStudentResultForbiddenEndpointTests : IClassFixture
         using var client = _factory.CreateClient();
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, "Ismoilova Zarina Otabekovna", new DateOnly(2010, 6, 6), Gender.Female, 9, "A",
-            "+998901234567", null, null, true, "uz");
+            "+998901234567", "+998909998877", null, true, "uz");
         var startResponse = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
         startResponse.EnsureSuccessStatusCode();
         var sessionToken = (await startResponse.Content.ReadFromJsonAsync<StartSessionResult>(TestJson.Options))!.SessionToken;

@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "Shaxsiyat",
-    "tagline": "O'zingni bilib, yo'lingni tanla"
+    "tagline": "O'zingizni bilib, yo'lingizni tanlang"
   },
   "common": {
     "skipToContent": "Asosiy mazmunga o'tish",
@@ -15,7 +15,8 @@
     "next": "Keyingi",
     "search": "Qidiruv",
     "yes": "Ha",
-    "no": "Yo'q"
+    "no": "Yo'q",
+    "requiredMark": "*"
   },
   "error": {
     "title": "Xatolik yuz berdi",
@@ -32,7 +33,6 @@
     "dashboard": "Boshqaruv paneli",
     "schools": "Maktablar",
     "students": "O'quvchilar",
-    "assessments": "Sessiyalar",
     "catalog": "Testlar katalogi",
     "ai": "AI sozlamalari",
     "audit": "Audit jurnali",
@@ -42,7 +42,6 @@
     "comingSoon": "Tez orada",
     "openMenu": "Menyuni ochish",
     "closeMenu": "Menyuni yopish",
-    "programs": "Dasturlar",
     "publicSpace": "Ommaviy makon"
   },
   "dataTable": {
@@ -165,7 +164,7 @@
         "heading": "Asosiy maydonlar",
         "labelFieldLabel": "Yorlig'i",
         "placeholderFieldLabel": "Placeholder (ixtiyoriy)",
-        "fullNameLockedHint": "Ism har doim majburiy. Umuman so'ralmasligi kerak bo'lsa, dastur sozlamasida \"Ro'yxatdan o'tish: So'ralmaydi\" ni tanlang.",
+        "fullNameLockedHint": "Ism har doim majburiy. Umuman so'ralmasligi kerak bo'lsa, Testlar katalogida test ichidagi \"Biriktirish\" bo'limida \"Ro'yxatdan o'tmasdan (anonim)\" ni tanlang.",
         "moveUpAria": "{{label}}ni yuqoriga ko'chirish",
         "moveDownAria": "{{label}}ni pastga ko'chirish"
       },
@@ -227,12 +226,12 @@
     "notFoundDescription": "Bunday sahifa mavjud emas.",
     "landing": {
       "title": "Maktab sahifasi",
-      "heading": "Sen haqingdagi test",
+      "heading": "Testlar",
       "summary": "{{count}} ta savol · ~{{minutes}} daqiqa vaqt ketadi.",
-      "noRightWrong": "Bu yerda to'g'ri yoki noto'g'ri javob yo'q — faqat senga xos javoblar bor.",
-      "notAGrade": "Bu test baho emas, shuning uchun tashvishlanma.",
+      "noRightWrong": "Bu yerda to'g'ri yoki noto'g'ri javob yo'q — faqat sizga xos javoblar bor.",
+      "notAGrade": "Bu test baho emas, shuning uchun tashvishlanmang.",
       "startCta": "Boshlash",
-      "resumeNotice": "Sen bu testni allaqachon boshlagansan.",
+      "resumeNotice": "Siz bu testni allaqachon boshlagansiz.",
       "resumeCta": "Davom ettirish",
       "notFoundTitle": "Havola ishlamayapti",
       "notFoundDescription": "Havola ishlamayapti, maktabingizdan yangisini so'rang.",
@@ -240,18 +239,18 @@
       "inactiveDescription": "Bu maktab uchun test vaqtincha yopilgan.",
       "testMeta": "{{count}} ta savol · ~{{minutes}} daqiqa",
       "testDescriptions": {
-        "MBTI16": "O'zingga xos fikrlash, muloqot va qaror qabul qilish uslubingni aniqlaydi.",
-        "BIG5": "Xarakteringning 5 asosiy jihatini o'lchaydi.",
-        "RIASEC": "Qanday kasb yo'nalishlari senga ko'proq mos kelishini aniqlaydi.",
-        "ACTIVITY": "O'quv faolligi va motivatsiyangni o'lchaydi."
+        "MBTI16": "O'zingizga xos fikrlash, muloqot va qaror qabul qilish uslubingizni aniqlaydi.",
+        "BIG5": "Xarakteringizning 5 asosiy jihatini o'lchaydi.",
+        "RIASEC": "Qanday kasb yo'nalishlari sizga ko'proq mos kelishini aniqlaydi.",
+        "ACTIVITY": "O'quv faolligingiz va motivatsiyangizni o'lchaydi."
       },
       "anonymousNotice": "Bu so'rovnomada alohida ro'yxatdan o'tish yo'q — F.I.Sh. va boshqa ma'lumotlar kerak bo'lsa, savollar ichida so'raladi."
     },
     "register": {
       "title": "Ro'yxatdan o'tish",
-      "duplicateAssessment": "Sen allaqachon testni topshirgansan. Qayta topshirish uchun o'qituvchingga murojaat qil.",
+      "duplicateAssessment": "Siz allaqachon testni topshirgansiz. Qayta topshirish uchun o'qituvchingizga murojaat qiling.",
       "rateLimited": "Juda ko'p urinish bo'ldi. Birozdan keyin qayta urinib ko'ring.",
-      "resumedNotice": "Boshlagan testingni davom ettiramiz.",
+      "resumedNotice": "Boshlagan testingizni davom ettiramiz.",
       "resumeHint": "Avval boshlagan bo'lsangiz, xuddi shu ma'lumotlarni kiriting — test davom etadi.",
       "genericSubmitError": "Yuborishda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring."
     },
@@ -267,8 +266,8 @@
     },
     "finish": {
       "title": "Test yakunlandi",
-      "heading": "Rahmat! Barcha savollarga javob berding.",
-      "analyzing": "Natijang tahlil qilinmoqda…",
+      "heading": "Rahmat! Barcha savollarga javob berdingiz.",
+      "analyzing": "Natijangiz tahlil qilinmoqda…",
       "viewResultCta": "Natijani ko'rish",
       "sentToPsychologist": "Natijalar maktab psixologiga yuboriladi.",
       "backToHomeCta": "Bosh sahifaga qaytish",
@@ -276,12 +275,12 @@
     },
     "result": {
       "title": "Natija",
-      "strengthsHeading": "Kuchli tomonlaring",
-      "careerFieldsHeading": "Senga mos yo'nalishlar",
+      "strengthsHeading": "Kuchli tomonlaringiz",
+      "careerFieldsHeading": "Sizga mos yo'nalishlar",
       "notReadyTitle": "Natija hali tayyor emas",
       "notReadyDescription": "Tahlil hali tugallanmadi. Birozdan keyin qayta urinib ko'ring.",
       "forbiddenTitle": "Natija ko'rsatilmaydi",
-      "forbiddenDescription": "Natijalaring maktabingizga yuboriladi, u yerdan bilib olasan."
+      "forbiddenDescription": "Natijalaringiz maktabingizga yuboriladi, u yerdan bilib olasiz."
     },
     "login": {
       "title": "Tizimga kirish"
@@ -301,9 +300,6 @@
     "studentProfile": {
       "title": "O'quvchi profili"
     },
-    "assessments": {
-      "title": "Sessiyalar"
-    },
     "assessmentDetail": {
       "title": "Sessiya detali"
     },
@@ -322,12 +318,6 @@
     "notFound": {
       "title": "Sahifa topilmadi"
     },
-    "programs": {
-      "title": "Dasturlar"
-    },
-    "programDetail": {
-      "title": "Dastur"
-    },
     "catalogTestDetail": {
       "title": "Test"
     },
@@ -343,9 +333,9 @@
     "blockIndicatorLabel": "{{current}}-blok, jami {{total}} ta blokdan",
     "progressLabel": "{{answered}} ta savoldan {{total}} tasiga javob berildi",
     "progressText": "{{answered}}/{{total}} savol",
-    "offlineBanner": "Internet yo'q — javoblaring saqlanmoqda, ulanish tiklanganda yuboriladi.",
+    "offlineBanner": "Internet yo'q — javoblaringiz saqlanmoqda, ulanish tiklanganda yuboriladi.",
     "saveFailedTitle": "Javoblar serverga yuborilmadi",
-    "saveFailedDescription": "Internet aloqasini tekshirib, \"Keyingi\" tugmasini qayta bos. Javoblaring qurilmangda saqlanib turibdi — yo'qolmaydi.",
+    "saveFailedDescription": "Internet aloqasini tekshirib, \"Keyingi\" tugmasini qayta bosing. Javoblaringiz qurilmangizda saqlanib turibdi — yo'qolmaydi.",
     "saveStatus": {
       "saving": "Saqlanmoqda…",
       "saved": "Saqlandi"
@@ -410,11 +400,11 @@
       "brokenBadge": "Havola ishlamaydi",
       "warningBadge": "Test yo'q",
       "reason": {
-        "NoProgramsAtAll": "Tizimda dastur yo'q — avval dastur yarating va nashr qiling.",
-        "NoProgramAssigned": "Maktabga dastur biriktirilmagan — dasturni bu maktabga biriktiring yoki uni \"Ommaviy\" qiling.",
-        "ProgramsDeactivated": "Mos dastur o'chirilgan yoki arxivlangan — dasturni qayta yoqing.",
-        "ProgramsWithoutTests": "Dasturda faol test yo'q — dastur tarkibiga nashr qilingan test qo'shing.",
-        "unknown": "Havola ishlamaydi — dastur sozlamalarini tekshiring."
+        "NoProgramsAtAll": "Tizimda ochiq test yo'q — Testlar katalogida testni nashr qiling va biriktiring.",
+        "NoProgramAssigned": "Maktabga test biriktirilmagan — maktab formasida test tanlang yoki test ichidagi \"Biriktirish\" bo'limida uni \"Barcha maktablarga\" qiling.",
+        "ProgramsDeactivated": "Biriktirilgan test o'chirilgan yoki arxivlangan — testni qayta faollashtiring.",
+        "ProgramsWithoutTests": "Biriktirilgan testda savol yo'q yoki u nashr qilinmagan — testni tekshirib nashr qiling.",
+        "unknown": "Havola ishlamaydi — test biriktirmalarini tekshiring."
       },
       "shareWarning": "Bu havolani hozir tarqatish foydasiz — o'quvchi testga kira olmaydi.",
       "detailHeading": "Havola holati"
@@ -458,6 +448,12 @@
         "heading": "O'quvchilar",
         "description": "Bu maktabda {{count}} ta o'quvchi ro'yxatdan o'tgan.",
         "cta": "Shu maktab o'quvchilarini ko'rish"
+      },
+      "tests": {
+        "heading": "Biriktirilgan testlar",
+        "empty": "Bu maktabga alohida test biriktirilmagan.",
+        "unknown": "Noma'lum test",
+        "publicNote": "\"Barcha maktablarga\" ochiq testlar bu ro'yxatda ko'rsatilmaydi — ular har bir maktabda baribir ko'rinadi. Biriktirishni \"Tahrirlash\" yoki Testlar katalogida test ichidan o'zgartirish mumkin."
       }
     },
     "filters": {
@@ -551,7 +547,20 @@
       "createSuccess": "Maktab yaratildi",
       "editSuccess": "O'zgarishlar saqlandi",
       "genericError": "Saqlashda xatolik yuz berdi. Birozdan so'ng qayta urinib ko'ring.",
-      "createSuccessCode": "Maktab kodi: {{code}} — maktabga havola bilan birga bering."
+      "createSuccessCode": "Maktab kodi: {{code}} — maktabga havola bilan birga bering.",
+      "testsLabel": "Testlar",
+      "testsHint": "Maktab havolasida qaysi testlar ochilishini tanlang. \"Barcha maktablarga\" ochiq testlarni belgilash shart emas.",
+      "testsLoadError": "Testlar ro'yxatini yuklab bo'lmadi — joriy biriktirmalar o'zgarmaydi.",
+      "testsEmpty": "Nashr qilingan faol test yo'q — avval Testlar katalogida testni nashr qiling.",
+      "testStatus": {
+        "draft": "qoralama",
+        "inactive": "nofaol",
+        "archived": "arxivlangan"
+      },
+      "errors": {
+        "testArchived": "Tanlangan testlardan biri arxivlangan — uni belgidan chiqarib, qayta saqlang.",
+        "testsNotFound": "Tanlangan testlardan biri topilmadi (o'chirilgan bo'lishi mumkin) — oynani yopib, qayta oching."
+      }
     },
     "entryCodeCopied": "Maktab kodi nusxalandi",
     "regenerateEntryCodeDialog": {
@@ -864,12 +873,11 @@
     "answers": {
       "title": "Savolma-savol javoblar",
       "description": "Har bir savolga berilgan javob, uning shkalasi va natijaga qanday tushgani.",
-      "testLabel": "Test bloki",
-      "scaleLabel": "Shkala",
-      "allTests": "Barcha bloklar",
-      "allScales": "Barcha shkalalar",
-      "onlyFlagged": "Faqat belgilanganlar",
       "groupCount": "({{count}} ta javob)",
+      "attempt": {
+        "fallbackTitle": "Sessiya",
+        "meta": "· {{number}}-urinish · {{date}}"
+      },
       "questionColumn": "Savol",
       "answerColumn": "Javob",
       "scaleColumn": "Shkala",
@@ -892,21 +900,10 @@
         "forward": "To'g'ri",
         "reverse": "Teskari"
       },
-      "signals": {
-        "heading": "Ishonchlilik: {{score}}. Bu ball quyidagi signallardan chiqadi:",
-        "answered": "{{count}} ta javob",
-        "fast": "{{count}} ta tez javob ({{ms}} ms dan qisqa)",
-        "straightLining": "{{count}} ta bir xil javob bloki ({{run}} ta ketma-ket)",
-        "allSame": "Barcha javob bir xil",
-        "shortSession": "Sessiya {{minutes}} daqiqadan qisqa"
-      },
       "reverseConflict": {
-        "heading": "Teskari savollar mosligi (shkala bo'yicha)",
-        "row": "to'g'ri savollar {{forward}}%, teskari savollar {{reverse}}% — farq {{mismatch}}%",
         "marker": "· teskari savol farqi"
       },
       "empty": "Bu sessiya uchun javob topilmadi",
-      "noMatches": "Tanlangan filtrga mos javob yo'q",
       "loadError": "Javoblarni yuklab bo'lmadi",
       "showFullText": "To'liq ko'rish",
       "collapseText": "Kamroq ko'rish"
@@ -938,7 +935,7 @@
     "linkHealth": {
       "title_one": "{{count}} ta maktab havolasi ishlamaydi",
       "title_other": "{{count}} ta maktab havolasi ishlamaydi",
-      "description": "Bu maktablarga hech qanday dastur to'g'ri kelmayapti — o'quvchi havolani ochsa test ko'rmaydi.",
+      "description": "Bu maktablarga hech qanday ochiq test biriktirilmagan — o'quvchi havolani ochsa test ko'rmaydi.",
       "more": "va yana {{count}} ta",
       "cta": "Maktablarni ko'rish"
     },
@@ -957,7 +954,7 @@
       "students": "O'quvchilar",
       "completedAssessments": "Yakunlangan sessiyalar",
       "pendingAnalysis": "Tahlil navbatida",
-      "pendingAnalysisHint": "Bosing — sessiyalar ro'yxatiga o'tadi",
+      "pendingAnalysisHint": "Bosing — tahlildagi o'quvchilar ro'yxatiga o'tadi",
       "needsAttention": "E'tibor talab qiladi",
       "needsAttentionHint": "Bosing — o'quvchilar ro'yxatiga o'tadi"
     },
@@ -1089,190 +1086,92 @@
       "description": "Shaxsiyat tipi ushbu dasturda hisoblanmaydi. Batafsil ma'lumot uchun maktabingizga murojaat qiling."
     }
   },
-  "programs": {
-    "impact": {
-      "checking": "Ta'sir hisoblanmoqda…",
-      "none": "Bu amal hech qaysi maktabni dastursiz qoldirmaydi.",
-      "warning_one": "Diqqat: bu amaldan keyin {{count}} ta maktab umuman dastursiz qoladi — ularning havolasi ishlamay qoladi.",
-      "warning_other": "Diqqat: bu amaldan keyin {{count}} ta maktab umuman dastursiz qoladi — ularning havolasi ishlamay qoladi.",
-      "more": "va yana {{count}} ta maktab",
-      "loadError": "Ta'sirni hisoblab bo'lmadi — davom etishdan oldin dasturlar qamrovini tekshiring."
-    },
-    "deactivateDialog": {
-      "title": "Dasturni to'xtatish",
-      "description": "To'xtatilgan dastur o'quvchilarga ko'rinmaydi. Uni istalgan vaqtda qayta faollashtirish mumkin.",
-      "confirmCta": "To'xtatish",
-      "genericError": "Dasturni to'xtatib bo'lmadi."
-    },
-    "filters": {
-      "searchLabel": "Qidiruv",
-      "searchPlaceholder": "Nomi yoki kodi bo'yicha",
-      "stateLabel": "Holat",
-      "stateAll": "Hammasi"
-    },
-    "table": {
-      "ariaLabel": "Dasturlar ro'yxati",
-      "name": "Nomi",
-      "code": "Kodi",
-      "kind": "Turi",
-      "visibility": "Ko'rinishi",
-      "testCount": "Testlar soni",
-      "state": "Holat",
-      "emptyTitle": "Dastur topilmadi",
-      "emptyDescription": "Filtrlarni o'zgartiring yoki yangi dastur yarating."
-    },
-    "kind": {
-      "system": "Tizim",
-      "custom": "Mening"
-    },
-    "visibility": {
-      "public": "Ommaviy",
-      "assigned": "Biriktirilgan"
-    },
-    "registrationMode": {
-      "full": "So'raladi",
-      "none": "So'ralmaydi"
-    },
-    "state": {
-      "draft": "Qoralama",
-      "active": "Faol",
-      "paused": "To'xtatilgan",
-      "archived": "Arxiv",
-      "unknown": "Noma'lum"
-    },
-    "actions": {
-      "create": "Yangi dastur",
-      "edit": "Tahrirlash",
-      "publish": "Nashr qilish",
-      "archive": "Arxivlash",
-      "pause": "To'xtatish",
-      "resume": "Faollashtirish",
-      "addTest": "Test qo'shish",
-      "restore": "Arxivdan tiklash"
-    },
-    "form": {
-      "createTitle": "Yangi dastur",
-      "editTitle": "Dasturni tahrirlash",
-      "codeLabel": "Dastur kodi",
-      "codeHint": "Faqat lotin katta harflari, raqam, '_' va '-' (masalan PROFILE_9)",
-      "codeLockedHint": "Kod yaratilgandan keyin o'zgartirilmaydi",
-      "nameLabel": "Nomi",
-      "descriptionLabel": "Tavsifi",
-      "displayOrderLabel": "Tartib raqami",
-      "visibilityLabel": "Ko'rinishi",
-      "visibilityHint": "Ommaviy — barcha maktabda; Biriktirilgan — faqat tanlangan maktablarda",
-      "registrationModeLabel": "Ro'yxatdan o'tish",
-      "registrationModeHint": "So'raladi — o'quvchi F.I.Sh./tug'ilgan sana/telefonini alohida anketada to'ldiradi; So'ralmaydi — bu ma'lumotlar so'rovnoma savollari ichida so'raladi (agar kerak bo'lsa).",
-      "registrationModeBatteryHint": "Bu dasturda shaxsiyat batareyasi (16 tip/Big Five/RIASEC/Aktivlik) bor — natija yosh/sinf/jinsga tayanadi, shu sabab \"So'ralmaydi\" tanlanmaydi.",
-      "submitCreateCta": "Yaratish",
-      "submitEditCta": "Saqlash",
-      "createSuccess": "Dastur yaratildi",
-      "editSuccess": "Dastur yangilandi",
-      "genericError": "Saqlashda xatolik yuz berdi"
-    },
-    "publishDialog": {
-      "title": "Dasturni nashr qilish",
-      "confirmCta": "Nashr qilish",
-      "successTitle": "Dastur nashr qilindi",
-      "notPublishableError": "Kamida bitta test biriktirilmasa dasturni nashr qilib bo'lmaydi",
-      "genericError": "Nashr qilishda xatolik yuz berdi",
-      "durationWarning": "Jami vaqt {{minutes}} daqiqa — sessiya juda uzun, o'quvchilar tashlab ketishi mumkin"
-    },
-    "archiveDialog": {
-      "title": "Dasturni arxivlash",
-      "confirmCta": "Arxivlash",
-      "successTitle": "Dastur arxivlandi",
-      "genericError": "Arxivlashda xatolik yuz berdi",
-      "descriptionRestorable": "Arxivlangan dastur o'quvchilarga ko'rinmay qoladi; testlar tarkibi va maktab biriktirishlari saqlanadi. Keyinchalik \"Arxivdan tiklash\" orqali qaytarish mumkin — dastur 'To'xtatilgan' holatiga qaytadi."
-    },
-    "toggleActive": {
-      "success": "Dastur holati yangilandi",
-      "error": "Holatni o'zgartirishda xatolik yuz berdi"
-    },
-    "detail": {
-      "notFoundTitle": "Dastur topilmadi",
-      "notFoundDescription": "Bunday dastur mavjud emas yoki o'chirilgan",
-      "testsHeading": "Testlar",
-      "schoolsHeading": "Biriktirilgan maktablar",
-      "durationSummary": "{{questions}} ta savol · ~{{minutes}} daqiqa",
-      "durationUnknown": "Savol/vaqt ma'lumoti hali mavjud emas",
-      "noBatteryNotice": "Bu dasturda yetuklik va aktivlik indekslari hisoblanmaydi, AI hisoboti qisqartirilgan bo'ladi."
-    },
-    "testsList": {
-      "emptyTitle": "Hali test yo'q",
-      "emptyDescription": "\"Test qo'shish\" tugmasi bilan dasturga test biriktiring.",
-      "systemLockedNotice": "Tizim dasturining tarkibi (testlar) himoyalangan — o'zgartirilmaydi.",
-      "moveUp": "Yuqoriga ko'chirish",
-      "moveDown": "Pastga ko'chirish",
-      "remove": "Olib tashlash",
-      "removeConfirmTitle": "Testni dasturdan olib tashlash",
-      "removeConfirmCta": "Olib tashlash",
-      "removeSuccess": "Test dasturdan olib tashlandi",
-      "removeError": "Olib tashlashda xatolik yuz berdi",
-      "reorderError": "Tartiblashda xatolik yuz berdi"
-    },
-    "addTestDialog": {
-      "title": "Dasturga test qo'shish",
-      "searchLabel": "Qidiruv",
-      "searchPlaceholder": "Nomi yoki kodi bo'yicha",
-      "addCta": "Qo'shish",
-      "successTitle": "Test dasturga qo'shildi",
-      "genericError": "Qo'shishda xatolik yuz berdi",
-      "questionsAndMinutes": "{{questions}} ta savol · ~{{minutes}} daqiqa",
-      "catalogUnavailableTitle": "Test katalogi hozircha mavjud emas",
-      "catalogUnavailableDescription": "Testlarni ro'yxatlaydigan xizmat hali ulanmagan. Birozdan keyin qayta urinib ko'ring.",
-      "emptyTitle": "Qo'shiladigan test topilmadi",
-      "emptyDescription": "Barcha mos testlar allaqachon dasturga biriktirilgan yoki qidiruvga mos test yo'q."
-    },
-    "schoolPanel": {
-      "assignedHeading": "Biriktirilgan maktablar ({{count}})",
-      "noneAssignedTitle": "Hali maktab biriktirilmagan",
-      "noneAssignedDescription": "Quyidagi qidiruvdan maktab tanlang.",
-      "unassignAria": "{{name}} maktabini olib tashlash",
-      "searchLabel": "Maktab qidirish",
-      "searchPlaceholder": "Maktab nomi bo'yicha",
-      "assignCta": "Biriktirish",
-      "noProgramBadge": "Dastursiz",
-      "assignError": "Biriktirishda xatolik yuz berdi",
-      "unassignError": "Olib tashlashda xatolik yuz berdi"
-    },
-    "publicSpace": {
-      "heading": "Ommaviy makon",
-      "assignedBadge": "Biriktirilgan",
-      "unassignedBadge": "Biriktirilmagan",
-      "note": "Ommaviy makonga biriktirilgan dasturni Telegram orqali kirgan har kim topshira oladi.",
-      "assignCta": "Ommaviyga biriktirish",
-      "unassignCta": "Ommaviydan olib tashlash",
-      "inactiveReason": "Faqat faol dastur biriktiriladi",
-      "assignSuccess": "Dastur ommaviy makonga biriktirildi",
-      "unassignSuccess": "Dastur ommaviy makondan olib tashlandi",
-      "assignError": "Ommaviy makonga biriktirishda xatolik yuz berdi",
-      "unassignError": "Ommaviy makondan olib tashlashda xatolik yuz berdi",
-      "unassignDialog": {
-        "title": "Ommaviy makondan olib tashlash",
-        "description": "Bu amaldan keyin Telegram orqali kirgan foydalanuvchilar bu dasturni topshira olmaydi. Boshlangan sessiyalar saqlanib qoladi.",
-        "confirmCta": "Olib tashlash"
-      }
-    },
-    "errors": {
-      "systemProgramLocked": "Tizim dasturining tarkibini o'zgartirib bo'lmaydi",
-      "registrationRequiredForBattery": "Bu dasturda shaxsiyat batareyasi bor — ro'yxatdan o'tishni \"So'ralmaydi\" qilib bo'lmaydi."
-    },
-    "visibilityChange": {
-      "title": "Dastur ommaviy bo'lmay qoladi",
-      "description": "Bu dastur endi faqat unga aniq biriktirilgan maktablarda ko'rinadi. Biriktirilmagan maktablarning havolasi ishlamay qolishi mumkin — quyida ta'sir ko'rsatilgan.",
-      "confirmCta": "Ha, o'zgartirilsin"
-    },
-    "restoreDialog": {
-      "title": "Dasturni arxivdan tiklash",
-      "description": "Dastur 'To'xtatilgan' holatiga qaytadi — o'quvchilarga hali ko'rinmaydi. Test boshlanishi uchun keyin 'Faollashtirish' bosiladi. Arxivda saqlangan testlar tarkibi va maktab biriktirishlari o'z joyida qoladi.",
-      "confirmCta": "Tiklash",
-      "successTitle": "Dastur arxivdan tiklandi — holati 'To'xtatilgan'",
-      "genericError": "Tiklashda xatolik yuz berdi"
-    }
+  "programState": {
+    "draft": "Qoralama",
+    "active": "Faol",
+    "paused": "To'xtatilgan",
+    "archived": "Arxiv",
+    "unknown": "Noma'lum"
   },
   "catalog": {
     "title": "Testlar katalogi",
+    "assignment": {
+      "title": "Biriktirish",
+      "description": "Bu test kimga ochiq: barcha maktablarga, tanlangan maktablarga va/yoki ommaviy kabinetga. Test o'quvchilarga faqat nashr qilingan va faol bo'lganda ko'rinadi.",
+      "loadErrorTitle": "Biriktirish ma'lumotini yuklab bo'lmadi",
+      "loadErrorDescription": "Sahifani yangilang yoki birozdan keyin qayta urinib ko'ring.",
+      "sessionCount_one": "Shu biriktirish orqali {{count}} ta sessiya ochilgan",
+      "sessionCount_other": "Shu biriktirish orqali {{count}} ta sessiya ochilgan",
+      "status": {
+        "active": {
+          "badge": "Faol",
+          "text": "Faol — o'quvchilarga ko'rinadi."
+        },
+        "draft": {
+          "badge": "Qoralama",
+          "text": "Qoralama — test nashr qilinganda o'quvchilarga ochiladi."
+        },
+        "paused": {
+          "badge": "To'xtatilgan",
+          "text": "To'xtatilgan — test nofaol, o'quvchilarga ko'rinmaydi. Tepadagi \"Faollashtirish\" tugmasi bilan yoqing."
+        },
+        "unassigned": {
+          "badge": "Biriktirilmagan",
+          "text": "Hech kimga biriktirilmagan — o'quvchilar bu testni ko'rmaydi."
+        },
+        "archived": {
+          "badge": "Arxiv",
+          "text": "Test arxivlangan — o'quvchilarga ko'rinmaydi."
+        },
+        "unknown": {
+          "badge": "Noma'lum",
+          "text": "Holatni aniqlab bo'lmadi — sahifani yangilang."
+        }
+      },
+      "readOnlyNotice": "Test arxivlangan — biriktirishni o'zgartirib bo'lmaydi. Bu yerda faqat oxirgi saqlangan sozlama ko'rsatiladi.",
+      "audience": {
+        "legend": "Kimga ochiq",
+        "all": "Barcha maktablarga",
+        "allHint": "Har bir maktab havolasida va ommaviy kabinetda ko'rinadi — yangi qo'shilgan maktablarda ham.",
+        "selected": "Tanlangan maktablarga",
+        "selectedHint": "Faqat quyida tanlangan maktablar havolasida ko'rinadi."
+      },
+      "schools": {
+        "selectedHeading_one": "Tanlangan maktablar ({{count}})",
+        "selectedHeading_other": "Tanlangan maktablar ({{count}})",
+        "noneSelected": "Hali maktab tanlanmagan.",
+        "unknownSchool": "Noma'lum maktab",
+        "removeAria": "{{name}} maktabini olib tashlash",
+        "searchLabel": "Maktab qidirish",
+        "searchPlaceholder": "Maktab nomi bo'yicha",
+        "noResults": "Mos maktab topilmadi.",
+        "loadError": "Maktablar ro'yxatini yuklab bo'lmadi."
+      },
+      "publicSpace": {
+        "label": "Ommaviy (kabinet orqali hamma uchun)",
+        "hint": "Telegram orqali kirgan har kim (maktabsiz, /kirish) bu testni kabinetda ko'radi.",
+        "impliedByAll": "\"Barcha maktablarga\" tanlangan — test ommaviy kabinetda ham ko'rinadi."
+      },
+      "registration": {
+        "legend": "Ro'yxatdan o'tish",
+        "full": "To'liq ro'yxatdan o'tish",
+        "fullHint": "O'quvchi test oldidan anketani to'ldiradi (F.I.Sh., tug'ilgan sana, sinf va h.k. — maydonlar \"Sozlamalar\"da).",
+        "none": "Ro'yxatdan o'tmasdan (anonim)",
+        "noneHint": "Anketa so'ralmaydi — kerakli ma'lumotlar so'rovnoma savollari ichida so'raladi.",
+        "batteryNote": "Bu testda shaxsiyat batareyasi bor — natija yosh, sinf va jinsga tayanadi, shu sabab anonim rejim tanlanmaydi."
+      },
+      "saveCta": "Biriktirishni saqlash",
+      "resetCta": "O'zgarishlarni bekor qilish",
+      "saveSuccess": "Biriktirish saqlandi",
+      "errors": {
+        "registrationRequiredForBattery": "Bu testda shaxsiyat batareyasi bor — ro'yxatdan o'tmasdan (anonim) rejimni tanlab bo'lmaydi.",
+        "publicSpaceNotConfigured": "Ommaviy makon hali sozlanmagan — uni \"Ommaviy makon\" bo'limi ishga tushirilgandan keyin belgilang. Qolgan sozlamalarni belgini olib saqlashingiz mumkin.",
+        "testArchived": "Test arxivlangan — biriktirishni o'zgartirib bo'lmaydi.",
+        "validation": "Ma'lumotlar noto'g'ri — tanlovni tekshirib, qayta saqlang.",
+        "schoolsNotFound_one": "Tanlangan maktablardan {{count}} tasi topilmadi (o'chirilgan bo'lishi mumkin). Sahifani yangilab, tanlovni tekshiring.",
+        "schoolsNotFound_other": "Tanlangan maktablardan {{count}} tasi topilmadi (o'chirilgan bo'lishi mumkin). Sahifani yangilab, tanlovni tekshiring."
+      }
+    },
     "actions": {
       "import": "Anketa yuklash",
       "edit": "Tahrirlash",
@@ -1674,6 +1573,7 @@
       },
       "modelLabel": "Model nomi",
       "modelHint": "Tavsiya etilgan: {{recommended}} (majburiy emas — istalgan model nomini kiritishingiz mumkin)",
+      "modelSourceHintGemini": "Joriy model nomini Google AI Studio → Models ro'yxatidan oling (eski modellar o'chirilishi mumkin).",
       "maxOutputTokensLabel": "Maksimal token soni",
       "temperatureLabel": "Temperature",
       "isActiveLabel": "Faol (tahlilda ishlatiladi)",
@@ -1793,18 +1693,21 @@
       "AiConfigKeyChanged": "AI API kaliti almashtirildi",
       "CatalogQuestionUpdated": "Katalog savoli tahrirlandi",
       "ExportStudentsDownloaded": "O'quvchilar ro'yxati eksport qilindi",
-      "ProgramRestored": "Dastur arxivdan tiklandi"
+      "ProgramRestored": "Dastur arxivdan tiklandi",
+      "CatalogTestAssignmentUpdated": "Test biriktirmasi yangilandi"
     },
     "entityTypeLabels": {
       "School": "Maktab",
       "Student": "O'quvchi",
       "Assessment": "Sessiya",
-      "AssessmentProgram": "Dastur",
+      "AssessmentProgram": "Dastur (eski)",
+      "TestDefinition": "Test",
       "AiProviderConfig": "AI provayder"
     }
   },
   "assessmentDetail": {
-    "backCta": "Sessiyalar ro'yxatiga",
+    "backToStudentCta": "O'quvchi profiliga",
+    "backToStudentsCta": "O'quvchilar ro'yxatiga",
     "heading": "Sessiya",
     "idCaption": "Sessiya ID: {{id}}",
     "overviewHeading": "Sessiya haqida umumiy ma'lumot",
@@ -1831,11 +1734,11 @@
     "meta": {
       "heading": "Sessiya ma'lumoti",
       "unknown": "Ma'lumot yo'q",
-      "unavailableNotice": "Bu sessiyaning holati, vaqti, maktabi va o'quvchisi hozircha faqat sessiyalar ro'yxatidan ochilganda ko'rsatiladi. Ro'yxatga qayting va sessiyani o'sha yerdan oching.",
+      "unavailableNotice": "Server bu sessiyaning holati, vaqti, maktabi va o'quvchisi haqida ma'lumot qaytarmadi. Sessiyani o'quvchi profilidagi testlar tarixidan qayta ochib ko'ring.",
       "status": "Holat",
       "student": "O'quvchi",
       "school": "Maktab",
-      "program": "Dastur",
+      "program": "Test",
       "startedAt": "Boshlangan",
       "completedAt": "Yakunlangan",
       "notCompleted": "Yakunlanmagan",
@@ -1918,29 +1821,6 @@
       "error": "Tahlilni qayta ishga tushirib bo'lmadi. Birozdan so'ng qayta urinib ko'ring.",
       "conflictError": "Bu holatdagi sessiyani qayta tahlil qilib bo'lmaydi — avval sessiya yakunlangan bo'lishi kerak.",
       "noPersonalityBatteryError": "Bu sessiyada ballanadigan shaxsiyat metodikasi yo'q (faqat so'rovnoma) — AI tahlili faqat shaxsiyat testlari uchun tayyorlanadi."
-    }
-  },
-  "assessments": {
-    "filters": {
-      "status": "Holat",
-      "allStatuses": "Barcha holatlar",
-      "school": "Maktab",
-      "allSchools": "Barcha maktablar",
-      "from": "Sanadan",
-      "to": "Sanagacha",
-      "clearAll": "Filtrlarni tozalash"
-    },
-    "table": {
-      "ariaLabel": "Sessiyalar ro'yxati",
-      "student": "O'quvchi",
-      "school": "Maktab",
-      "program": "Dastur",
-      "status": "Holat",
-      "startedAt": "Boshlangan",
-      "completedAt": "Yakunlangan",
-      "reliability": "Ishonchlilik",
-      "emptyTitle": "Sessiya topilmadi",
-      "emptyDescription": "Tanlangan filtrlarga mos sessiya yo'q. Filtrlarni o'zgartirib ko'ring."
     }
   },
   "account": {
@@ -2553,15 +2433,15 @@
       "okDescription": "Foydalanuvchilar test boshlay oladi.",
       "brokenTitle": "Hozir hech kim test boshlay olmaydi",
       "reason": {
-        "NoProgramsAtAll": "Tizimda umuman dastur yo’q.",
-        "NoProgramAssigned": "Bu makonga bironta dastur biriktirilmagan.",
-        "ProgramsDeactivated": "Dastur o’chirilgan — hech kim test boshlay olmaydi.",
-        "ProgramsWithoutTests": "Dastur bor, lekin uning tarkibida nashr qilingan anketa yo’q.",
-        "unknown": "Sabab noma’lum — dasturlar bo’limini tekshiring."
+        "NoProgramsAtAll": "Tizimda ochiq test yo’q — Testlar katalogida testni nashr qiling va biriktiring.",
+        "NoProgramAssigned": "Bu makonga bironta test biriktirilmagan.",
+        "ProgramsDeactivated": "Biriktirilgan test o’chirilgan yoki arxivlangan — hech kim test boshlay olmaydi.",
+        "ProgramsWithoutTests": "Biriktirilgan testda nashr qilingan, savoli bor anketa yo’q.",
+        "unknown": "Sabab noma’lum — Testlar katalogini tekshiring."
       },
-      "inactiveProgramNotice": "“{{name}}” dasturi hozir faol emas. U faollashtirilmaguncha bu makonda test boshlanmaydi.",
-      "goToProgram": "Dasturni ochish",
-      "goToPrograms": "Dasturlar bo’limi"
+      "inactiveProgramNotice": "“{{name}}” hozir faol emas. U faollashtirilmaguncha bu makonda test boshlanmaydi.",
+      "goToProgram": "Testni ochish",
+      "goToPrograms": "Testlar katalogi"
     },
     "stats": {
       "title": "Statistika",
@@ -2574,24 +2454,28 @@
       "deletedUserHint": "shundan {{count}} tasi o’chirilgan"
     },
     "programs": {
-      "title": "Biriktirilgan dasturlar",
-      "emptyTitle": "Hali dastur biriktirilmagan",
-      "emptyDescription": "Pastdagi ro’yxatdan dastur tanlab biriktiring — usiz hech kim test boshlay olmaydi.",
+      "title": "Biriktirilgan testlar",
+      "emptyTitle": "Hali test biriktirilmagan",
+      "emptyDescription": "Pastdagi ro’yxatdan test tanlab biriktiring — usiz hech kim test boshlay olmaydi.",
       "columnCode": "Kod",
       "columnName": "Nomi",
       "columnStatus": "Holat",
       "columnTests": "Anketalar",
-      "testCount": "{{count}} ta",
+      "testCount": "{{count}} ta anketa",
       "noUsableTest": "Nashr qilingan anketa yo’q",
+      "legacyBadge": "Eski dastur",
+      "legacyHint": "“Dasturlar” bo’limi olib tashlanishidan oldin biriktirilgan to’plam — faqat olib tashlash mumkin.",
+      "draftSuffix": "qoralama",
+      "inactiveSuffix": "nofaol",
       "remove": "Olib tashlash",
-      "removeAria": "“{{name}}” dasturini olib tashlash",
-      "addLabel": "Dastur biriktirish",
-      "addPlaceholder": "Dasturni tanlang…",
+      "removeAria": "“{{name}}” ni olib tashlash",
+      "addLabel": "Test biriktirish",
+      "addPlaceholder": "Testni tanlang…",
       "addCta": "Biriktirish",
-      "addSuccess": "Dastur biriktirildi",
-      "removeSuccess": "Dastur olib tashlandi",
+      "addSuccess": "Test biriktirildi",
+      "removeSuccess": "Test olib tashlandi",
       "mutationError": "Amal bajarilmadi — qayta urinib ko’ring",
-      "allAssigned": "Barcha dasturlar allaqachon biriktirilgan"
+      "allAssigned": "Barcha testlar allaqachon biriktirilgan"
     },
     "showResult": {
       "title": "Natijani foydalanuvchiga ko’rsatish",

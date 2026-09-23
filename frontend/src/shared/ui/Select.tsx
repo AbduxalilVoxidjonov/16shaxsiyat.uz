@@ -1,6 +1,7 @@
 import { forwardRef, useId, type SelectHTMLAttributes } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/shared/lib/cn';
+import { RequiredMark } from './RequiredMark';
 
 export interface SelectOption {
   value: string;
@@ -10,6 +11,11 @@ export interface SelectOption {
 
 export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
+  /**
+   * Majburiy maydon: yorliq oxirida qizil `*` (`RequiredMark`, `aria-hidden`) va maydonda
+   * `aria-required`. Native `required` EMAS — formalar `noValidate`, tekshiruv zod'da.
+   */
+  isRequired?: boolean;
   error?: string;
   hint?: string;
   options: SelectOption[];
@@ -19,7 +25,7 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 
 /** Yorliqli, native `<select>` asosidagi bazaviy tanlov komponenti. */
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
-  { className, label, error, hint, options, placeholder, id, ...props },
+  { className, label, isRequired, error, hint, options, placeholder, id, ...props },
   ref,
 ) {
   const generatedId = useId();
@@ -31,6 +37,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
       {label && (
         <label htmlFor={selectId} className="text-sm font-medium text-ink-soft">
           {label}
+          {isRequired && <RequiredMark />}
         </label>
       )}
       <div className="relative">
@@ -45,6 +52,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
             error && 'border-terakota-600',
             className,
           )}
+          aria-required={isRequired || undefined}
           aria-invalid={Boolean(error) || undefined}
           aria-describedby={descriptionId}
           {...props}

@@ -594,7 +594,8 @@ qiladi (`docs/06` §8, 2026-09-05 qarori: ikki oqim ataylab ajratilgan).
 - `POST /api/public/sessions` — `registrationMode = None` dasturda shaxs maydonlari talab
   qilinmaydi va berilsa ham e'tiborsiz qoldiriladi (`docs/07` §1.2 "Anonim oqim").
 - Admin: `POST`/`PUT /api/admin/programs` `registrationMode` qabul qiladi/qaytaradi
-  (`docs/07` §3.5).
+  (`docs/07` §3.5). **2026-09-23:** bu endpointlar olib tashlandi — `registrationMode` endi
+  `PUT /api/admin/catalog/tests/{id}/assignment` orqali (§9.7).
 - DDL: `assessment_programs.registration_mode`, `students.is_anonymous`,
   `students.birth_date`/`students.phone` → NULLABLE (`docs/05`, migratsiya
   `AddProgramRegistrationModeAndAnonymousStudents`).
@@ -638,6 +639,10 @@ nullable — `null` bazada `NULL` (jsonb), "standart qiymatlar ishlatilsin" dega
 | `phone` | `Required` |
 | `parentPhone` | `Optional` |
 | `email` | `Optional` |
+
+> ℹ️ Bu jadval — eskirgan §9.5 (`AssessmentProgram.RegistrationFields`) standarti, endi
+> O'QILMAYDI. Amaldagi standart — GLOBAL `RegistrationFormDefinition.Default`, §9.6.4
+> (**2026-09-23 egasi qarori** bilan `phone`/`parentPhone` o'rin almashgan).
 
 **`fullName` sozlamada YO'Q** — `RegistrationMode = Full` bo'lsa har doim majburiy (ism
 kerak bo'lmasa `RegistrationMode = None` bor — ikkita mustaqil "ism shart emas" mexanizmi
@@ -702,14 +707,16 @@ Kalit **mavjud bo'lgan eng kuchli identifikator** bo'yicha tanlanadi:
 |---|-------|--------|
 | 1 | `NormalizedName` + `BirthDate` | `birthDate` bor (standart yo'l) |
 | 2 | `NormalizedName` + `Phone` | `birthDate` yo'q, telefon bor — bir xil ism VA bir xil telefon amalda bitta odam |
-| 3 | qidiruvsiz, har doim yangi `Student` | ikkalasi ham yo'q |
+| 2a | `NormalizedName` + `ParentPhone` | `birthDate` ham, o'z telefoni ham yo'q, ota-ona telefoni bor (**2026-09-23 egasi qarori**, §9.6.4) |
+| 3 | qidiruvsiz, har doim yangi `Student` | hech biri yo'q |
 
 3-holat ataylab shunday: faqat ism bo'yicha izlash bir xil ismli ikki o'quvchini bitta
 yozuvga qo'shib yuborardi — **ma'lumot buzilishi takroriy yozuvdan yomonroq**. Anonim
 yozuvlar (`RegistrationMode.None`) qidiruvdan chiqariladi.
 
 Qulflangan: `PublicRegistrationFieldsEndpointTests.StartSession_OptionalBirthDate_TelefonBoLsaOquvchiTopiladiVaSessiyaTiklanadi`
-va `...StartSession_BirthDateVaTelefonYoQ_HarSafarYangiOquvchiYaratiladi`.
+va `...StartSession_BirthDateVaTelefonYoQ_HarSafarYangiOquvchiYaratiladi`; 2a-holat —
+`PublicRegistrationParentPhoneLookupEndpointTests` (2026-09-23).
 
 > **Tarix:** dastlabki yechim "`birthDate` yo'q bo'lsa qidiruv UMUMAN bajarilmasin" edi. Kod
 > ko'rigi ko'rsatdiki, o'sha qidiruv sessiyani tiklash uchun ham ishlatiladi — ya'ni yechim
@@ -844,6 +851,104 @@ Hidden/Optional/Required, standart bilan bayt-bayt regressiya),
 e'tiborsiz, Required bo'sh → 400, tur bo'yicha validatsiya, `ProfileExtra`ga yozilishi),
 `PublicUsers/StartPublicSessionCustomFieldsEndpointTests.cs` (Telegram oqimida `customFields`,
 ENG MUHIMI: ikkinchi sessiyada hech qanday maydon — o'z maydoni ham — qayta so'ralmasligi).
+
+### 9.6.4 Standart qiymatlar (`RegistrationFormDefinition.Default`) — 2026-09-23 egasi qarori
+
+`registration_form_settings` jadvalida qator bo'lmasa ("NULL = standart") shu ta'rif ishlaydi;
+frontend ko'zgusi — `frontend/src/shared/api/registrationFormSettingsTypes.ts`
+(`REGISTRATION_FORM_DEFAULT_DEFINITION`). Forma maydonlari `order` bo'yicha chiqadi
+(`orderedRegistrationFields`), tartib qattiq kodlanmagan.
+
+| `order` | Maydon | Holat | Yorliq (`labelUz`) |
+|---|---|---|---|
+| 1 | `fullName` | `Required` (qulflangan) | F.I.Sh. |
+| 2 | `birthDate` | `Required` | Tug'ilgan sana |
+| 3 | `gender` | `Required` | Jins |
+| 4 | `grade` | `Required` | Sinf |
+| 5 | `classLetter` | `Optional` | Sinf harfi |
+| 6 | `parentPhone` | **`Required`** | Ota-ona telefoni |
+| 7 | `phone` | **`Optional`** | Shaxsiy raqamingiz (bo'lsa) |
+| 8 | `email` | `Optional` | Email |
+
+**2026-09-23 egasi qarori:** o'quvchi ro'yxatdan o'tish formasida ota-ona telefoni MAJBURIY va
+telefonlar ichida BIRINCHI; o'quvchining o'z telefoni undan keyin, IXTIYORIY ("Shaxsiy
+raqamingiz (bo'lsa)"). Ilgari: `phone` `Required`/6 "Telefon raqami", `parentPhone`
+`Optional`/7.
+
+**Ta'sir tahlili (nima buzilmaydi):**
+- **Identifikatsiya (BR-1 takroriy topshirish `409`, BR-5 davom ettirish):** standartda kalit
+  `NormalizedName + BirthDate` (§9.5.3, 1-holat) — telefonga BOG'LIQ EMAS. Unikal indeks ham
+  `(school_id, normalized_name, birth_date)`. `birthDate` sozlamada `Optional`/`Hidden` qilinsa
+  va o'z telefoni kiritilmasa — yangi 2a-holat: `NormalizedName + ParentPhone`.
+- **DB:** `students.phone` allaqachon NULL bo'lishi mumkin (P52) — **migratsiya kerak emas**.
+- **Admin ro'yxati/profili/eksport:** `Phone?.Value` — `null`ga tayyor.
+- **Telegram/kabinet oqimi** (`POST /api/me/sessions`): u yerda `phone` sozlamadan qat'i nazar
+  HAMON majburiy (§9.6.2 "Ma'lum cheklov"), ota-ona telefoni so'ralmaydi. Sozlamadagi
+  "(bo'lsa)" yorlig'i majburiy maydonga chalg'ituvchi bo'lgani uchun u formada yorliq faqat
+  `phone` `Required` bo'lsa sozlamadan olinadi, aks holda "Telefon raqami".
+
+## 9.7 Dasturlar UI'dan olib tashlandi — test ↔ dastur 1:1 ichki qatlam (2026-09-23 egasi qarori)
+
+### 9.7.0 Muammo
+
+Admin panelidagi "Testlar katalogi" va "Dasturlar" amalda bir xil narsa bo'lib qolgan edi:
+deyarli har dastur bitta testdan iborat (jonli bazada faol yagona dastur — `FORMS`, faqat
+`INTELLECT-SURVEY`). Admin bitta testni o'quvchilarga ochish uchun ikki bo'limda ishlashi kerak edi.
+
+### 9.7.1 Qaror
+
+**2026-09-23 egasi qarori — dasturlar UI'dan olib tashlandi, test ↔ dastur 1:1 ichki qatlam.**
+
+- "Dasturlar" bo'limi va `/api/admin/programs/*` endpointlari olib tashlandi. Testni ommaviy
+  (hamma uchun — barcha maktab havolalari va ommaviy kabinet) qilish yoki alohida maktablarga
+  biriktirish AYNAN TEST ichida: `GET`/`PUT /api/admin/catalog/tests/{id}/assignment`
+  (`docs/07` §3.4.1). Maktab formasida — `testIds` (`docs/07` §3.1), ommaviy makonda —
+  `POST`/`DELETE /api/admin/public-space/tests/{testId}` (`docs/07` §3.7).
+- `AssessmentProgram` jadvali/entity'si O'CHIRILMADI — ICHKI biriktirish qatlami bo'lib
+  qoladi (sessiyalar tarixi `assessments.program_id`, `school_programs`, ommaviy oqim
+  `ProgramAvailability`/`ProgramTestCatalog`, `RegistrationMode` unga tayanadi). Ommaviy API
+  (`GET /api/public/schools/{slug}`, `POST /api/public/sessions`, kabinet) O'ZGARMADI.
+- Har test uchun ko'pi bilan BITTA **test dasturi**: `assessment_programs.owner_test_definition_id`
+  (qisman unikal indeks, `docs/05`; `docs/04` §2.13). Tizim uni avtomatik yaratadi
+  (`TestPrograms.EnsureAsync`), kodi/nomi/tavsifi/tartibi testdan, holati testga ergashadi
+  (`Published`+faol ⟺ `Active`). Test nomi o'zgarsa landing/kabinetda ham yangi nom chiqadi.
+- **Identifikatsiya usuli:** `ProgramKind.TestWrapper` o'rniga alohida ustun tanlandi — "bitta
+  test — bitta test dasturi" DB darajasida unikal indeks bilan kafolatlanadi, test ↔ dastur
+  bog'lanishi FK bilan aniq (kind + `program_tests` orqali qidirish shart emas).
+- **Draft test** biriktirilishi mumkin (oldindan tayyorlash) — test nashr qilinmaguncha test
+  dasturi `Draft` bo'lib qoladi va hech qayerda ko'rinmaydi. **Arxivlangan test** →
+  `409 TEST_ARCHIVED`.
+- `isPublic` → `ProgramVisibility.Public` (barcha maktab + kabinet), aks holda `Assigned`
+  (`schoolIds` + ixtiyoriy `isInPublicSpace`).
+- Batareya invarianti (§9.2) o'zgarmadi: batareyali testda `registrationMode: "None"` →
+  `400 REGISTRATION_REQUIRED_FOR_BATTERY`.
+
+### 9.7.2 Ma'lumot migratsiyasi (`AddTestProgramOwner`)
+
+Idempotent, yangi dastur yaratilmaydi: faol (`Published` + `is_active`), `Custom`, AYNAN bitta
+testli va shu test uchun hali test dasturi bo'lmagan dastur → o'sha testning test dasturi.
+`FORMS` → `INTELLECT-SURVEY` test dasturi (2 maktab biriktirmasi va 4 sessiya saqlanadi, kod/nom
+testdan). Ko'p testli yoki arxivlangan dasturlar (`PERSONALITY_PROFILE`, `1`) TEGILMAYDI —
+admin UI'dan yashirin, sessiya tarixi uchun saqlanadi.
+
+### 9.7.3 Ma'lum cheklovlar
+
+- Yangi o'rnatishda seed `PERSONALITY_PROFILE` tizim dasturini `Public` + `Active` qilib
+  yaratadi (`DbSeeder.SeedSystemProgramAsync`) — u endi admin UI'da boshqarilmaydi (jonli bazada
+  arxivlangan, ta'siri yo'q). Kerak bo'lsa keyingi to'lqinda seed arxivlangan holatda yaratishi
+  yoki 4 metodika test dasturlariga ajratilishi mumkin — PM qarori.
+- Eski dasturning ommaviy makonga biriktirmasi faqat eski `programs/{programId}` endpointi bilan
+  olinadi (`programs[].testDefinitionId == null`).
+
+### 9.7.4 Testlar (DoD)
+
+`Domain.Tests/Catalog/TestProgramTests.cs` (1:1 tarkib, qulf, nom sinxroni, holat mashinasi),
+`Api.IntegrationTests/Admin/AdminTestAssignmentEndpointTests.cs` (GET standart, bo'sh PUT,
+ommaviy qilish + birinchi marta yaratish + landing'da test nomi, maktablarni almashtirish,
+ommaviy makon, Draft, faollik sinxroni, nom sinxroni, arxiv 409, noma'lum maktab 404, batareya
+400, test o'chirish, eski endpoint 404), `AdminSchoolTestIdsEndpointTests.cs` (maktab `testIds`
+bilan yaratish/yangilash), `Migrations.Tests/TestProgramOwnerMigrationTests.cs` (FORMS →
+INTELLECT-SURVEY, tegilmaydiganlar, idempotentlik, unikal indeks).
 
 ## 10. Admin audit jadvali — egasi topgan kamchilik (2026-09-12)
 

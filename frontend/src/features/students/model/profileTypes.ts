@@ -46,6 +46,12 @@ export type AssessmentSummaryDto = Omit<
 > & {
   status: AssessmentStatus;
   reliabilityFlag?: ReliabilityFlag | null;
+  /**
+   * Sessiya dasturining katalogdagi nomi — backend `AdminAssessmentSummaryDto.ProgramNameUz`
+   * (2026-09-23; `schema.d.ts` hali generatsiya qilinmagan). Javoblar bo'limidagi urinish
+   * sarlavhasi uchun.
+   */
+  programNameUz?: string | null;
 };
 
 /** 16 tipli model o'qi — backend `AdminAxisDto` (`docs/03` 2.3-bo'lim "Natija obyekti"). */

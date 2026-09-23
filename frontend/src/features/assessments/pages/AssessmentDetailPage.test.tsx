@@ -245,6 +245,11 @@ describe('AssessmentDetailPage', () => {
       'href',
       '/admin/students/student-1',
     );
+    // "Orqaga" — o'quvchi ma'lum, shu sabab uning profiliga (sessiyalar ro'yxati yo'q).
+    expect(screen.getByRole('link', { name: "O'quvchi profiliga" })).toHaveAttribute(
+      'href',
+      '/admin/students/student-1',
+    );
     expect(screen.getByText("12-son maktab, Qo'qon")).toBeInTheDocument();
     expect(screen.getByText('30.08.2026 09:00')).toBeInTheDocument();
     expect(screen.getByText('30.08.2026 09:29')).toBeInTheDocument();
@@ -273,15 +278,17 @@ describe('AssessmentDetailPage', () => {
    * berganini ko'rish" — bu ekranda ham (`AssessmentHistoryTable`dan kelib) xuddi profildagi
    * kabi `AnswersSection` widgeti ochilishi kerak, nusxa emas — bitta widget.
    */
-  it("savolma-savol javoblar bo'limi shu sahifada ham ochiladi (widgets/AnswersSection qayta ishlatiladi)", async () => {
-    const user = userEvent.setup();
-    renderPage([FULL_DETAIL], { state: { assessment: LIST_ROW } });
+  it("savolma-savol javoblar bo'limi shu sahifada ham YIG'ILMAGAN holda ko'rinadi (widgets/AnswersSection qayta ishlatiladi)", async () => {
+    renderPage([{ ...FULL_DETAIL, tests: [testItem({ testCode: 'MBTI16' })] }], {
+      state: { assessment: LIST_ROW },
+    });
 
     await screen.findByText('Tahlil qilingan');
-    await user.click(screen.getByRole('button', { name: /Savolma-savol javoblar/i }));
-    await user.click(await screen.findByRole('button', { name: /MBTI16/ }));
-
+    // Hech narsa bosilmaydi — savol darhol ko'rinadi, blok sarlavhasi katalog nomi bilan.
     expect(await screen.findByText("Men odamlar bilan bo'lishni yaxshi ko'raman")).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 4, name: 'Shaxsiyat tipi (1 ta javob)' }),
+    ).toBeInTheDocument();
   });
 
   it("axe a11y tekshiruvi buzilishsiz o'tadi", async () => {
@@ -293,7 +300,13 @@ describe('AssessmentDetailPage', () => {
   it("ma'lumot yo'q bo'lganda `0` emas, aniq holat ko'rsatiladi", async () => {
     renderPage([EMPTY_DETAIL]);
 
-    expect(await screen.findByText(/faqat sessiyalar ro'yxatidan ochilganda/)).toBeInTheDocument();
+    expect(await screen.findByText(/Server bu sessiyaning holati/)).toBeInTheDocument();
+    // O'quvchi noma'lum — "orqaga" O'quvchilar ro'yxatiga (sessiyalar ro'yxati 2026-09-23 da
+    // olib tashlangan).
+    expect(screen.getByRole('link', { name: "O'quvchilar ro'yxatiga" })).toHaveAttribute(
+      'href',
+      '/admin/students',
+    );
     expect(screen.getAllByText("Ma'lumot yo'q").length).toBeGreaterThan(0);
     expect(screen.getByText('Ishonchlilik hali hisoblanmagan')).toBeInTheDocument();
     expect(screen.getByText('Bu sessiya uchun AI tahlil hali mavjud emas.')).toBeInTheDocument();

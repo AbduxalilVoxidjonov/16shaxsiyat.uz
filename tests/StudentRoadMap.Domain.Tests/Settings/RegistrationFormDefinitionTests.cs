@@ -23,8 +23,13 @@ public sealed class RegistrationFormDefinitionTests
         d.CoreFields.Gender.Requirement.Should().Be(RegistrationFieldRequirement.Required);
         d.CoreFields.Grade.Requirement.Should().Be(RegistrationFieldRequirement.Required);
         d.CoreFields.ClassLetter.Requirement.Should().Be(RegistrationFieldRequirement.Optional);
-        d.CoreFields.Phone.Requirement.Should().Be(RegistrationFieldRequirement.Required);
-        d.CoreFields.ParentPhone.Requirement.Should().Be(RegistrationFieldRequirement.Optional);
+        // 2026-09-23 egasi qarori: ota-ona telefoni birinchi va majburiy, o'z telefoni ixtiyoriy.
+        d.CoreFields.ParentPhone.Requirement.Should().Be(RegistrationFieldRequirement.Required);
+        d.CoreFields.ParentPhone.LabelUz.Should().Be("Ota-ona telefoni");
+        d.CoreFields.ParentPhone.Order.Should().Be(6);
+        d.CoreFields.Phone.Requirement.Should().Be(RegistrationFieldRequirement.Optional);
+        d.CoreFields.Phone.LabelUz.Should().Be("Shaxsiy raqamingiz (bo'lsa)");
+        d.CoreFields.Phone.Order.Should().Be(7);
         d.CoreFields.Email.Requirement.Should().Be(RegistrationFieldRequirement.Optional);
         d.CustomFields.Should().BeEmpty();
     }

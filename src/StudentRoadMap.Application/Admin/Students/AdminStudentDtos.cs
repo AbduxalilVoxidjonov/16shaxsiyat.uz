@@ -66,6 +66,10 @@ public sealed record AdminStudentDetailDto(
 public sealed record AdminStudentSchoolRefDto(Guid Id, string Name);
 
 /// <summary>`docs/07` 3.2-bo'lim `assessments[]` — sessiyalar ro'yxati (eng yangisi birinchi).</summary>
+/// <param name="ProgramNameUz">
+/// Sessiya topshirilgan dasturning katalogdagi nomi (2026-09-23): profil "Savolma-savol
+/// javoblar" bo'limida har urinish sarlavhasida ko'rsatiladi. Dastur topilmasa `null`.
+/// </param>
 public sealed record AdminAssessmentSummaryDto(
     Guid Id,
     string Status,
@@ -74,7 +78,8 @@ public sealed record AdminAssessmentSummaryDto(
     int? DurationMinutes,
     double? ReliabilityScore,
     string? ReliabilityFlag,
-    bool IsLatest);
+    bool IsLatest,
+    string? ProgramNameUz = null);
 
 /// <summary>`docs/07` 3.2-bo'lim to'liq javobi: `student`, `assessments`, `latestAssessment`.</summary>
 public sealed record AdminStudentProfileDto(

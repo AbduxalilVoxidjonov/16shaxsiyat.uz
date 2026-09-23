@@ -2,6 +2,7 @@ import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/shared/lib/cn';
 import type { BranchingQuestion } from '@/shared/api/branchingTypes';
+import { RequiredMark } from '@/shared/ui/RequiredMark';
 
 export interface LongTextQuestionProps {
   /** `type === 'LongText'` (`docs/18` §6.2). */
@@ -57,6 +58,7 @@ export function LongTextQuestion({
           {question.order}
         </span>
         {question.text}
+        {question.isRequired && <RequiredMark />}
       </label>
 
       <div
@@ -71,6 +73,7 @@ export function LongTextQuestion({
           maxLength={maxLength}
           placeholder={question.placeholder ?? undefined}
           rows={4}
+          aria-required={question.isRequired || undefined}
           aria-invalid={invalid || undefined}
           aria-describedby={[invalid ? errorId : null, counterId].filter(Boolean).join(' ')}
           onChange={(event) => {

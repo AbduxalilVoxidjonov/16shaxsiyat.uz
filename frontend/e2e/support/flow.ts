@@ -17,7 +17,7 @@ export const UI = {
   next: 'Keyingi',
   back: 'Orqaga',
   continueBlock: 'Davom etish',
-  finishHeading: 'Rahmat! Barcha savollarga javob berding.',
+  finishHeading: 'Rahmat! Barcha savollarga javob berdingiz.',
   blockDoneHeading: 'Ajoyib! Blok tugadi',
 } as const;
 
@@ -48,7 +48,8 @@ export async function fillRegistration(page: Page, input: RegistrationInput): Pr
 
   await page.getByLabel('Sinf', { exact: true }).selectOption(input.grade ?? '9');
   await page.getByLabel('Sinf harfi').fill(input.classLetter ?? 'B');
-  await page.getByLabel('Telefon raqami', { exact: true }).fill(input.phone ?? '901234567');
+  // 2026-09-23 egasi qarori: standartda ota-ona telefoni MAJBURIY (birinchi), shaxsiy raqam ixtiyoriy.
+  await page.getByLabel('Ota-ona telefoni', { exact: true }).fill(input.phone ?? '901234567');
   await page.getByLabel("Ma'lumotlarim ta'lim maqsadida ishlatilishiga roziman").check();
 
   await page.getByRole('button', { name: UI.submitRegistration }).click();

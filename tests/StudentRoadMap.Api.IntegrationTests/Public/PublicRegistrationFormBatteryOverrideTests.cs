@@ -70,6 +70,7 @@ public sealed class PublicRegistrationFormBatteryOverrideTests : IClassFixture<P
             accessToken,
             fullName = "Sobirova Kamola",
             phone = "+998901234573",
+            parentPhone = "+998909998877",
             consentAccepted = true,
             languageCode = "uz",
             programCode = program.Code,

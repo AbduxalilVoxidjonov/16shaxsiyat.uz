@@ -55,12 +55,9 @@ export const ROUTES = {
     publicSpace: '/admin/ommaviy',
     students: '/admin/students',
     studentProfile: (id: string) => `/admin/students/${id}`,
-    assessments: '/admin/assessments',
     assessmentDetail: (id: string) => `/admin/assessments/${id}`,
     catalog: '/admin/catalog',
     catalogTestDetail: (id: string) => `/admin/catalog/tests/${id}`,
-    programs: '/admin/programs',
-    programDetail: (id: string) => `/admin/programs/${id}`,
     ai: '/admin/ai',
     audit: '/admin/audit',
     settings: '/admin/settings',
@@ -98,12 +95,22 @@ export const ROUTE_PATTERNS = {
     publicSpace: '/admin/ommaviy',
     students: '/admin/students',
     studentProfile: '/admin/students/:id',
-    assessments: '/admin/assessments',
+    /**
+     * Eski sessiyalar ro'yxati — sahifa 2026-09-23 da olib tashlandi (egasining qarori:
+     * "O'quvchilar" bilan bir xil). Marshrut faqat eski bookmark'lar uchun qoladi va
+     * `/admin/students` ga yo'naltiradi (`app/router.tsx`, `LegacyAssessmentsRedirect`).
+     */
+    legacyAssessments: '/admin/assessments',
     assessmentDetail: '/admin/assessments/:id',
     catalog: '/admin/catalog',
     catalogTestDetail: '/admin/catalog/tests/:id',
-    programs: '/admin/programs',
-    programDetail: '/admin/programs/:id',
+    /**
+     * Eski "Dasturlar" bo'limi — 2026-09-23 da olib tashlandi (egasining qarori: "Testlar
+     * katalogi" bilan bir xil). Marshrutlar faqat eski bookmark'lar uchun qoladi va
+     * `/admin/catalog` ga yo'naltiradi (`app/LegacyProgramsRedirect.tsx`).
+     */
+    legacyPrograms: '/admin/programs',
+    legacyProgramDetail: '/admin/programs/*',
     ai: '/admin/ai',
     audit: '/admin/audit',
     settings: '/admin/settings',

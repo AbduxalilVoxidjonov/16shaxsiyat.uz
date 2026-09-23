@@ -20,9 +20,15 @@ public sealed partial record RegistrationFormDefinition(
     IReadOnlyList<RegistrationCustomField> CustomFields)
 {
     /// <summary>
-    /// `docs/18` §9.6 jadvali — 2026-09-11 gacha bo'lgan `RegistrationFields.Default` bilan
-    /// BAYT-BAYT mos (`gender` ham `Required`, o'sha kuni qilingan tuzatish bilan bir xil).
+    /// `docs/18` §9.6 jadvali. 2026-09-23 gacha 2026-09-11 dagi `RegistrationFields.Default` bilan
+    /// BAYT-BAYT mos edi (`gender` ham `Required`); endi telefonlar bo'yicha farq qiladi (pastga qarang).
     /// Sozlama umuman yaratilmagan bo'lsa ("NULL = standart" naqshi) shu qiymat ishlatiladi.
+    /// <para>
+    /// <b>2026-09-23 egasi qarori:</b> telefonlar ichida ota-ona telefoni BIRINCHI (order 6) va
+    /// MAJBURIY; o'quvchining o'z telefoni undan keyin (order 7), IXTIYORIY, yorlig'i
+    /// "Shaxsiy raqamingiz (bo'lsa)". Identifikatsiya (BR-1/BR-5) FISH + tug'ilgan sana bo'yicha
+    /// qolaveradi (`StartSessionCommandHandler`).
+    /// </para>
     /// </summary>
     public static readonly RegistrationFormDefinition Default = new(
         CoreFields: new RegistrationCoreFields(
@@ -31,8 +37,8 @@ public sealed partial record RegistrationFormDefinition(
             Gender: new RegistrationCoreField(RegistrationFieldRequirement.Required, "Jins", null, 3),
             Grade: new RegistrationCoreField(RegistrationFieldRequirement.Required, "Sinf", null, 4),
             ClassLetter: new RegistrationCoreField(RegistrationFieldRequirement.Optional, "Sinf harfi", null, 5),
-            Phone: new RegistrationCoreField(RegistrationFieldRequirement.Required, "Telefon raqami", null, 6),
-            ParentPhone: new RegistrationCoreField(RegistrationFieldRequirement.Optional, "Ota-ona telefoni", null, 7),
+            Phone: new RegistrationCoreField(RegistrationFieldRequirement.Optional, "Shaxsiy raqamingiz (bo'lsa)", null, 7),
+            ParentPhone: new RegistrationCoreField(RegistrationFieldRequirement.Required, "Ota-ona telefoni", null, 6),
             Email: new RegistrationCoreField(RegistrationFieldRequirement.Optional, "Email", null, 8)),
         CustomFields: []);
 

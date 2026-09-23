@@ -79,7 +79,13 @@ public sealed record AdminSchoolDetailDto(
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     AdminSchoolStatsDto Stats,
-    AdminSchoolLinkHealthDto LinkHealth);
+    AdminSchoolLinkHealthDto LinkHealth,
+    /// <summary>
+    /// 2026-09-23 (`docs/18` §9.7): shu maktabga ANIQ biriktirilgan testlar (`school_programs`
+    /// orqali test dasturlari). Ommaviy (`isPublic`) testlar bu ro'yxatga kirmaydi — ular
+    /// barcha maktabda baribir ko'rinadi. Eski (ko'p testli) dastur biriktirmalari ham kirmaydi.
+    /// </summary>
+    IReadOnlyList<Guid> TestIds);
 
 /// <summary>
 /// Maktab ichki sahifasidagi ishtirok statistikasi (`docs/07` 3.1-bo'lim).

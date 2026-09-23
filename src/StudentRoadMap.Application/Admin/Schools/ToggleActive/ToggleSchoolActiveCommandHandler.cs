@@ -76,6 +76,8 @@ internal sealed class ToggleSchoolActiveCommandHandler : IRequestHandler<ToggleS
         var linkHealth = await SchoolLinkHealthEvaluator.EvaluateOneAsync(_context, _executor, school.Id, cancellationToken).ConfigureAwait(false);
 
 
-        return Result.Success(SchoolMapping.ToDetailDto(school, _appSettings, _qrCodeGenerator, stats, linkHealth));
+        var testIds = await SchoolTestAssignment.GetTestIdsAsync(_context, _executor, school.Id, cancellationToken).ConfigureAwait(false);
+
+        return Result.Success(SchoolMapping.ToDetailDto(school, _appSettings, _qrCodeGenerator, stats, linkHealth, testIds));
     }
 }

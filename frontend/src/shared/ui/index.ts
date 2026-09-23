@@ -15,6 +15,7 @@ export * from './Input';
 export * from './PhoneField';
 export * from './PlaceholderPage';
 export * from './RegistrationCustomFieldInput';
+export * from './RequiredMark';
 export * from './Select';
 export * from './Skeleton';
 export * from './Spinner';

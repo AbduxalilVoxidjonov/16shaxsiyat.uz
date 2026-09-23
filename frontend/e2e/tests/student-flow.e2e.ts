@@ -36,7 +36,7 @@ test('E2E-1: maktab havolasi → anketa → barcha bloklar → yakuniy ekran', a
   await page.getByRole('button', { name: UI.start }).click();
   await fillRegistration(page, { fullName: studentName });
 
-  await expect(page.getByRole('alert')).toContainText('Sen allaqachon testni topshirgansan');
+  await expect(page.getByRole('alert')).toContainText('Siz allaqachon testni topshirgansiz');
 });
 
 /** E2E-4 — nofaol maktab havolasi tushunarli xato ekranini ko'rsatadi (`410 SCHOOL_INACTIVE`). */
@@ -77,5 +77,5 @@ test('E2E-5: tugallanmagan sessiyasi bor o\'quvchi o\'sha sessiyaga qaytadi', as
 
   await expect(page.getByRole('progressbar')).toBeVisible();
   expect(new URL(page.url()).pathname).toBe(firstUrl);
-  await expect(page.getByText('Boshlagan testingni davom ettiramiz.')).toBeVisible();
+  await expect(page.getByText('Boshlagan testingizni davom ettiramiz.')).toBeVisible();
 });

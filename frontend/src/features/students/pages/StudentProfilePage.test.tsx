@@ -6,6 +6,7 @@ import axe from 'axe-core';
 import { ToastProvider } from '@/shared/ui/Toast';
 import { jsonResponse, problemResponse, typedResponse } from '@/test/apiMock';
 import type { AssessmentBatteryTestBlock } from '@/shared/api/assessmentBatteryTypes';
+import type { AssessmentAnswersDto, RawAnswerDto } from '@/shared/api/assessmentAnswersTypes';
 import StudentProfilePage from './StudentProfilePage';
 import type {
   ActivityResult,
@@ -199,6 +200,7 @@ function isProblemEnvelope(value: ProfileFetchResult | undefined): value is Prob
 function renderPage(
   profileResponses: ProfileFetchResult[],
   initialEntry = '/admin/students/student-1',
+  answers: RawAnswerDto[] = [],
 ) {
   const responses = [...profileResponses];
   let lastResponse: ProfileFetchResult | undefined = responses[0];
@@ -214,6 +216,26 @@ function renderPage(
           { assessmentId: 'assessment-1', status: 'Analyzing' },
           202,
         ),
+      );
+    }
+    // `AnswersSection` yig'ilmagan — profil ochilishi bilan javoblarni ham so'raydi.
+    if (url.includes('/api/admin/assessments/') && url.includes('/answers')) {
+      return Promise.resolve(
+        typedResponse<AssessmentAnswersDto>({
+          answers,
+          session: {
+            answeredCount: 0,
+            fastAnswerCount: 0,
+            straightLiningBlockCount: 0,
+            allSameAnswer: false,
+            shortSession: false,
+            totalDurationSeconds: null,
+            reliabilityScore: null,
+            reliabilityFlag: null,
+          },
+          scales: [],
+          thresholds: { fastAnswerDurationMs: 900, straightLiningMinRunLength: 12, shortSessionMinutes: 6 },
+        }),
       );
     }
     if (url.includes('/api/admin/students/student-1')) {
@@ -327,6 +349,69 @@ describe('StudentProfilePage', () => {
         ),
       ).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /AI tahlil qilish/ })).not.toBeInTheDocument();
+    });
+
+    /**
+     * Egasining talabi (2026-09-23): savolma-savol javoblar "juda ichkariga ketib qolgan" edi.
+     * So'rovnoma-only sessiyada kartalar/diagrammalar yo'q — javoblar bo'limi sarlavhadan
+     * keyingi BIRINCHI kontent (AI bo'limidan oldin), bloklar yig'ilmagan, sarlavhada test nomi.
+     */
+    it("so'rovnoma-only sessiyada javoblar AI bo'limidan OLDIN, yig'ilmagan holda, test nomi bilan chiqadi", async () => {
+      renderPage(
+        [
+          buildProfileResponse({
+            latestAssessment: {
+              id: 'assessment-1',
+              results: {},
+              aiAnalysis: null,
+              aiHistory: [],
+              tests: SURVEY_ONLY_TESTS,
+              hasPersonalityBattery: false,
+            },
+          }),
+        ],
+        '/admin/students/student-1',
+        [
+          {
+            questionId: 'q-1',
+            questionCode: 'IS-Q01',
+            testCode: 'INTELLECT-SURVEY',
+            questionText: 'Sevimli faningiz qaysi?',
+            rawValue: null,
+            selectedOptionText: 'Matematika',
+            selectedOptionTexts: null,
+            selectedValues: null,
+            textValue: null,
+            durationMs: 2500,
+            revisionCount: 0,
+            answeredAt: '2026-08-30T09:10:00Z',
+            questionType: 'SingleChoice',
+            scoringMode: 'Survey',
+            scale: 'SURVEY',
+            scaleNameUz: null,
+            scaleDirection: 1,
+            weight: 1,
+            effectiveValue: null,
+            isFastAnswer: null,
+            straightLiningBlockIndex: null,
+          },
+        ],
+      );
+
+      // Hech narsa bosilmaydi — savol va javob darhol ko'rinadi.
+      expect(await screen.findByText('Sevimli faningiz qaysi?')).toBeInTheDocument();
+      expect(screen.getByText('Matematika')).toBeInTheDocument();
+      const blockHeading = screen.getByRole('heading', {
+        level: 4,
+        name: "Qiziqishlar so'rovnomasi (1 ta javob)",
+      });
+
+      // Javoblar bo'limi AI bo'limidan OLDIN turadi (hujjat tartibida).
+      const aiHeading = screen.getByText('AI tahlil');
+      expect(
+        blockHeading.compareDocumentPosition(aiHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      expect(screen.queryByText(/Ishonchlilik:/)).not.toBeInTheDocument();
     });
 
     /**

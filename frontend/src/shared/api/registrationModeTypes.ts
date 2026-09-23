@@ -10,27 +10,14 @@
  * generate:api` bu sessiyada ISHGA TUSHIRILMAGAN (API ko'tarilmagan) — shu sabab
  * `schema.d.ts` hali eski holatda. Naqsh `shared/api/branchingTypes.ts`dagi bilan AYNAN bir
  * xil: backend chiqib generatsiya ishga tushgach bu fayl o'chiriladi, ishlatuvchi joylar
- * (`useSchoolInfo`, `useStartSession`, `features/programs/model/types.ts`) generatsiya
+ * (`useSchoolInfo`, `useStartSession`, `features/catalog/model/assignmentTypes.ts`) generatsiya
  * qilingan tiplarga qaytariladi.
  */
-import type { components } from './schema';
 import type { Gender, PublicSchoolInfo, PublicTestCatalogItem } from './types';
 import type {
   RegistrationCustomFieldAnswers,
   RegistrationFormDefinition,
 } from './registrationFormSettingsTypes';
-
-/**
- * Admin dastur DTO'lari — `shared/` `features/*`ni import QILMAYDI (`docs/10` §2 "features
- * bir-birini import qilmaydi, umumiy narsa shared'ga chiqadi" qoidasining teskarisi ham rost:
- * shared ham feature'ga qaram bo'lmaydi). Shu sabab bu yerda ham `features/programs/model/
- * types.ts`dagi kabi to'g'ridan-to'g'ri sxemadan olinadi — feature keyin shu yerdan qayta
- * eksport qiladi (`AdminProgramListItem`/`AdminProgramDetail`bilan bir xil manba).
- */
-type AdminProgramListItem = components['schemas']['AdminProgramListItemDto'];
-type AdminProgramDetail = components['schemas']['AdminProgramDetailDto'];
-type CreateProgramRequestBody = components['schemas']['CreateProgramRequest'];
-type UpdateProgramRequestBody = components['schemas']['UpdateProgramRequest'];
 
 /** `docs/18` §9 — `AssessmentProgram.RegistrationMode`. */
 export const REGISTRATION_MODE_VALUES = ['Full', 'None'] as const;
@@ -186,52 +173,8 @@ export interface StartSessionRegistrationRequestBody {
  */
 export type StartSessionPayload = StartSessionRegistrationRequestBody | StartSessionAnonymousRequestBody;
 
-/**
- * ============================================================================
- * ADMIN QATLAMI — `docs/07` §3.5 ("Dastur `registrationMode` — admin CRUD").
- * ============================================================================
+/*
+ * ADMIN QATLAMI (`AdminProgram*WithRegistration`) 2026-09-23 da olib tashlandi: "Dasturlar"
+ * bo'limi va `/api/admin/programs/*` yo'q (`docs/07` §3.4.1). Test biriktirmasidagi
+ * `registrationMode` — `features/catalog/model/assignmentTypes.ts`.
  */
-
-/**
- * `AdminProgramListItemDto`/`AdminProgramDetailDto`ga qo'shiladigan yangi maydonlar.
- * `hasPersonalityBattery` (P52, 2026-09-11, `docs/07` §3.5 "Dastur `hasPersonalityBattery` —
- * admin ham") — backend `Domain.Catalog.PersonalityBattery` qoidasidan hisoblab beradi
- * (`Kind == Standard && ScoringMode == Scored`), N+1 yo'q batch so'rov bilan. Frontend endi
- * kod ro'yxati (`"MBTI16"`/`"BIG5"`/...) bilan TAXMIN QILMAYDI — shu bayroqqa ishonadi
- * (`features/programs/model/programComputations.ts`dagi eski `PERSONALITY_BATTERY_TEST_CODES`
- * o'chirildi).
- */
-export interface AdminProgramRegistrationModeFields {
-  registrationMode: RegistrationMode;
-  hasPersonalityBattery: boolean;
-  /**
-   * P52 kengaytmasi — `docs/18` §9, faqat `AdminProgramDetailDto`da mazmunli. Ixtiyoriy —
-   * `ProgramFormDialog` `resolveRegistrationFields()` bilan standartga to'ldiradi (mavjud
-   * `ProgramDetailPage.test.tsx` o'rnaklari bu maydonsiz ham to'g'ri kompilyatsiya bo'lsin).
-   */
-  registrationFields?: RegistrationFields;
-}
-
-/** `AdminProgramListItemDto` (generatsiya qilingan) + `registrationMode`. */
-export type AdminProgramListItemWithRegistration = AdminProgramListItem &
-  AdminProgramRegistrationModeFields;
-
-/** `AdminProgramDetailDto` (generatsiya qilingan) + `registrationMode`. */
-export type AdminProgramDetailWithRegistration = AdminProgramDetail &
-  AdminProgramRegistrationModeFields;
-
-/**
- * `POST`/`PUT /api/admin/programs` so'rov tanasiga qo'shiladigan ixtiyoriy maydon — standart
- * `"Full"` (`docs/07` §3.5: "ixtiyoriy `registrationMode`, standart `"Full"`").
- */
-export interface AdminProgramRegistrationModePayload {
-  registrationMode?: RegistrationMode;
-  /** Standart — `DEFAULT_REGISTRATION_FIELDS` (`docs/18` §9). */
-  registrationFields?: RegistrationFields;
-}
-
-export type CreateProgramRequestWithRegistration = CreateProgramRequestBody &
-  AdminProgramRegistrationModePayload;
-
-export type UpdateProgramRequestWithRegistration = UpdateProgramRequestBody &
-  AdminProgramRegistrationModePayload;

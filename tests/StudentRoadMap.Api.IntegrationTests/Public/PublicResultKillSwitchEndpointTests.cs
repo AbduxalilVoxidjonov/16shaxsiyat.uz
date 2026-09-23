@@ -44,7 +44,7 @@ public sealed class PublicResultKillSwitchEndpointTests : IClassFixture<ResultKi
         using var client = _factory.CreateClient();
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, "Ismoilova Zarina Otabekovna", new DateOnly(2010, 6, 6),
-            Gender.Female, 9, "A", "+998901234567", null, null, true, "uz", TestDataFactory.DefaultProgramCode);
+            Gender.Female, 9, "A", "+998901234567", "+998909998877", null, true, "uz", TestDataFactory.DefaultProgramCode);
 
         var startResponse = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
         startResponse.EnsureSuccessStatusCode();
@@ -72,7 +72,7 @@ public sealed class PublicResultKillSwitchEndpointTests : IClassFixture<ResultKi
         using var client = _factory.CreateClient();
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, "Ismoilova Nodira Otabekovna", new DateOnly(2010, 6, 7),
-            Gender.Female, 9, "A", "+998901234568", null, null, true, "uz", TestDataFactory.DefaultProgramCode);
+            Gender.Female, 9, "A", "+998901234568", "+998909998877", null, true, "uz", TestDataFactory.DefaultProgramCode);
 
         var startResponse = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
         startResponse.EnsureSuccessStatusCode();

@@ -1523,113 +1523,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/programs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: {
-                    search?: string;
-                    state?: string;
-                    page?: number;
-                    pageSize?: number;
-                    sort?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["AdminProgramListItemDtoPagedResult"];
-                        "application/json": components["schemas"]["AdminProgramListItemDtoPagedResult"];
-                        "text/json": components["schemas"]["AdminProgramListItemDtoPagedResult"];
-                    };
-                };
-                /** @description Unauthorized */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Forbidden */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["CreateProgramRequest"];
-                    "text/json": components["schemas"]["CreateProgramRequest"];
-                    "application/*+json": components["schemas"]["CreateProgramRequest"];
-                };
-            };
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
-                        "application/json": components["schemas"]["AdminProgramDetailDto"];
-                        "text/json": components["schemas"]["AdminProgramDetailDto"];
-                    };
-                };
-                /** @description Bad Request */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/programs/{id}": {
+    "/api/admin/catalog/tests/{id}/assignment": {
         parameters: {
             query?: never;
             header?: never;
@@ -1653,9 +1547,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
-                        "application/json": components["schemas"]["AdminProgramDetailDto"];
-                        "text/json": components["schemas"]["AdminProgramDetailDto"];
+                        "text/plain": components["schemas"]["AdminTestAssignmentDto"];
+                        "application/json": components["schemas"]["AdminTestAssignmentDto"];
+                        "text/json": components["schemas"]["AdminTestAssignmentDto"];
                     };
                 };
                 /** @description Not Found */
@@ -1680,9 +1574,9 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/json": components["schemas"]["UpdateProgramRequest"];
-                    "text/json": components["schemas"]["UpdateProgramRequest"];
-                    "application/*+json": components["schemas"]["UpdateProgramRequest"];
+                    "application/json": components["schemas"]["UpdateTestAssignmentRequest"];
+                    "text/json": components["schemas"]["UpdateTestAssignmentRequest"];
+                    "application/*+json": components["schemas"]["UpdateTestAssignmentRequest"];
                 };
             };
             responses: {
@@ -1692,9 +1586,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
-                        "application/json": components["schemas"]["AdminProgramDetailDto"];
-                        "text/json": components["schemas"]["AdminProgramDetailDto"];
+                        "text/plain": components["schemas"]["AdminTestAssignmentDto"];
+                        "application/json": components["schemas"]["AdminTestAssignmentDto"];
+                        "text/json": components["schemas"]["AdminTestAssignmentDto"];
                     };
                 };
                 /** @description Bad Request */
@@ -1708,6 +1602,15 @@ export interface paths {
                 };
                 /** @description Not Found */
                 404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1719,586 +1622,6 @@ export interface paths {
         };
         post?: never;
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/programs/{id}/impact": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: {
-                    action?: string;
-                };
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["AdminProgramImpactDto"];
-                        "application/json": components["schemas"]["AdminProgramImpactDto"];
-                        "text/json": components["schemas"]["AdminProgramImpactDto"];
-                    };
-                };
-                /** @description Bad Request */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/programs/{id}/publish": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
-                        "application/json": components["schemas"]["AdminProgramDetailDto"];
-                        "text/json": components["schemas"]["AdminProgramDetailDto"];
-                    };
-                };
-                /** @description Bad Request */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/programs/{id}/archive": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
-                        "application/json": components["schemas"]["AdminProgramDetailDto"];
-                        "text/json": components["schemas"]["AdminProgramDetailDto"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/programs/{id}/restore": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
-                        "application/json": components["schemas"]["AdminProgramDetailDto"];
-                        "text/json": components["schemas"]["AdminProgramDetailDto"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/programs/{id}/toggle-active": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
-                        "application/json": components["schemas"]["AdminProgramDetailDto"];
-                        "text/json": components["schemas"]["AdminProgramDetailDto"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/programs/{id}/tests": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["AddProgramTestRequest"];
-                    "text/json": components["schemas"]["AddProgramTestRequest"];
-                    "application/*+json": components["schemas"]["AddProgramTestRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
-                        "application/json": components["schemas"]["AdminProgramDetailDto"];
-                        "text/json": components["schemas"]["AdminProgramDetailDto"];
-                    };
-                };
-                /** @description Bad Request */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/programs/{id}/tests/{testDefinitionId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                    testDefinitionId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
-                        "application/json": components["schemas"]["AdminProgramDetailDto"];
-                        "text/json": components["schemas"]["AdminProgramDetailDto"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/programs/{id}/tests/reorder": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["ReorderProgramTestsRequest"];
-                    "text/json": components["schemas"]["ReorderProgramTestsRequest"];
-                    "application/*+json": components["schemas"]["ReorderProgramTestsRequest"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
-                        "application/json": components["schemas"]["AdminProgramDetailDto"];
-                        "text/json": components["schemas"]["AdminProgramDetailDto"];
-                    };
-                };
-                /** @description Bad Request */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/programs/{id}/schools/{schoolId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                    schoolId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
-                        "application/json": components["schemas"]["AdminProgramDetailDto"];
-                        "text/json": components["schemas"]["AdminProgramDetailDto"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                    schoolId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": components["schemas"]["AdminProgramDetailDto"];
-                        "application/json": components["schemas"]["AdminProgramDetailDto"];
-                        "text/json": components["schemas"]["AdminProgramDetailDto"];
-                    };
-                };
-                /** @description Not Found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
         options?: never;
         head?: never;
         patch?: never;
@@ -4849,6 +4172,104 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/public-space/tests/{testId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    testId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminPublicSpaceDto"];
+                        "application/json": components["schemas"]["AdminPublicSpaceDto"];
+                        "text/json": components["schemas"]["AdminPublicSpaceDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    testId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AdminPublicSpaceDto"];
+                        "application/json": components["schemas"]["AdminPublicSpaceDto"];
+                        "text/json": components["schemas"]["AdminPublicSpaceDto"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/public-space/programs/{programId}": {
         parameters: {
             query?: never;
@@ -5590,12 +5011,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        AddProgramTestRequest: {
-            /** Format: uuid */
-            testDefinitionId: string;
-            /** Format: int32 */
-            displayOrder: number;
-        };
         AdminActivityDto: {
             scales: {
                 [key: string]: number;
@@ -6049,67 +5464,6 @@ export interface components {
             };
             borderlineAxes: string[];
         };
-        AdminProgramDetailDto: {
-            /** Format: uuid */
-            id: string;
-            code: string;
-            nameUz: string;
-            descriptionUz?: string | null;
-            kind: string;
-            visibility: string;
-            state: string;
-            isSystem: boolean;
-            /** Format: int32 */
-            displayOrder: number;
-            tests: components["schemas"]["AdminProgramTestItemDto"][];
-            assignedSchoolIds: string[];
-            isAssignedToPublicSpace: boolean;
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
-        };
-        AdminProgramImpactDto: {
-            action: string;
-            /** Format: int32 */
-            affectedSchoolCount: number;
-            schools: components["schemas"]["AdminImpactedSchoolDto"][];
-        };
-        AdminProgramListItemDto: {
-            /** Format: uuid */
-            id: string;
-            code: string;
-            nameUz: string;
-            kind: string;
-            visibility: string;
-            state: string;
-            isSystem: boolean;
-            /** Format: int32 */
-            displayOrder: number;
-            /** Format: int32 */
-            testCount: number;
-        };
-        AdminProgramListItemDtoPagedResult: {
-            items: components["schemas"]["AdminProgramListItemDto"][];
-            /** Format: int32 */
-            page: number;
-            /** Format: int32 */
-            pageSize: number;
-            /** Format: int32 */
-            totalCount: number;
-            /** Format: int32 */
-            readonly totalPages: number;
-            readonly hasNext: boolean;
-            readonly hasPrevious: boolean;
-        };
-        AdminProgramTestItemDto: {
-            /** Format: uuid */
-            testDefinitionId: string;
-            code: string;
-            nameUz: string;
-            /** Format: int32 */
-            displayOrder: number;
-        };
         AdminPromptTemplateDto: {
             /** Format: uuid */
             id: string;
@@ -6153,6 +5507,11 @@ export interface components {
             /** Format: int32 */
             testCount: number;
             hasUsableTest: boolean;
+            /**
+             * Format: uuid
+             * @description 2026-09-23: test dasturi bo'lsa uning testi; eski dasturda `null`.
+             */
+            testDefinitionId?: string | null;
         };
         AdminPublicSpaceStatsDto: {
             /** Format: int32 */
@@ -6286,6 +5645,8 @@ export interface components {
             updatedAt: string;
             stats: components["schemas"]["AdminSchoolStatsDto"];
             linkHealth: components["schemas"]["AdminSchoolLinkHealthDto"];
+            /** @description 2026-09-23: shu maktabga ANIQ biriktirilgan testlar (`docs/07` 3.1). */
+            testIds: string[];
         };
         AdminSchoolLinkHealthDto: {
             status: string;
@@ -6407,6 +5768,22 @@ export interface components {
             /** Format: uuid */
             id: string;
             name: string;
+        };
+        AdminTestAssignmentDto: {
+            /** Format: uuid */
+            testDefinitionId: string;
+            testStatus: string;
+            testIsActive: boolean;
+            isConfigured: boolean;
+            isPublic: boolean;
+            schoolIds: string[];
+            isInPublicSpace: boolean;
+            registrationMode: string;
+            state?: string | null;
+            isAvailable: boolean;
+            hasPersonalityBattery: boolean;
+            /** Format: int32 */
+            sessionCount: number;
         };
         AdminTestResultsDto: {
             MBTI16?: components["schemas"]["AdminMbti16Dto"];
@@ -6617,14 +5994,6 @@ export interface components {
             displayOrder?: number | null;
             scoringMode?: string | null;
         };
-        CreateProgramRequest: {
-            code: string;
-            nameUz: string;
-            descriptionUz?: string | null;
-            /** Format: int32 */
-            displayOrder: number;
-            visibility: string;
-        };
         CreatePromptTemplateRequest: {
             key: string;
             version: string;
@@ -6643,6 +6012,8 @@ export interface components {
             /** Format: int32 */
             dailyRegistrationLimit?: number | null;
             notes?: string | null;
+            /** @description 2026-09-23: `null` — o'zgarmaydi; `[]` — hammasi olib tashlanadi (`docs/07` 3.1). */
+            testIds?: string[] | null;
         };
         CreateTestQuestionRequest: {
             code: string;
@@ -6873,6 +6244,7 @@ export interface components {
         PublicTestCatalogItemDto: {
             code: string;
             name: string;
+            description?: string | null;
             /** Format: int32 */
             questionCount: number;
             /** Format: int32 */
@@ -6925,9 +6297,6 @@ export interface components {
         RegenerateSchoolLinkResult: {
             publicUrl: string;
             qrCodeBase64: string;
-        };
-        ReorderProgramTestsRequest: {
-            testDefinitionIds: string[];
         };
         ReorderQuestionItem: {
             /** Format: uuid */
@@ -7067,13 +6436,6 @@ export interface components {
             /** Format: int32 */
             pageSize: number;
         };
-        UpdateProgramRequest: {
-            nameUz: string;
-            descriptionUz?: string | null;
-            /** Format: int32 */
-            displayOrder: number;
-            visibility: string;
-        };
         UpdateSchoolRequest: {
             name: string;
             region: string;
@@ -7085,6 +6447,8 @@ export interface components {
             /** Format: int32 */
             dailyRegistrationLimit?: number | null;
             notes?: string | null;
+            /** @description 2026-09-23: `null` — o'zgarmaydi; `[]` — hammasi olib tashlanadi (`docs/07` 3.1). */
+            testIds?: string[] | null;
         };
         UpdateStudentProfileRequest: {
             fullName?: string | null;
@@ -7097,6 +6461,12 @@ export interface components {
             /** Format: int32 */
             grade?: number | null;
             email?: string | null;
+        };
+        UpdateTestAssignmentRequest: {
+            isPublic: boolean;
+            schoolIds?: string[] | null;
+            registrationMode?: string | null;
+            isInPublicSpace?: boolean | null;
         };
         UpdateTestQuestionRequest: {
             textUz: string;

@@ -12,7 +12,8 @@ public sealed record UpdateSchoolRequest(
     string? ContactPhone,
     string? AccessCode,
     int? DailyRegistrationLimit,
-    string? Notes)
+    string? Notes,
+    IReadOnlyList<Guid>? TestIds = null)
 {
     public UpdateSchoolCommand ToCommand(Guid id, Guid adminUserId, string? ipAddress, string? userAgent) =>
         new(
@@ -28,5 +29,6 @@ public sealed record UpdateSchoolRequest(
             Notes,
             adminUserId,
             ipAddress,
-            userAgent);
+            userAgent,
+            TestIds);
 }

@@ -97,7 +97,7 @@
 | № | Savol | Kerak bo'ladigan vazifa | Holat |
 |---|-------|-------------------------|-------|
 | 1 | O'quvchiga natija ko'rsatiladimi (qisqa versiya)? | P12, P21 | ⏳ |
-| 2 | Maktab bilan rozilik matni (`consentText`) | P10, P20 | ⏳ |
+| 2 | Maktab bilan rozilik matni (`consentText`) | P10, P20 | ✅ 2026-09-23: "Ma'lumotlarim ta'lim maqsadida ishlatilishiga roziman." |
 | 3 | Qaysi sinflar qamraladi (hozir 5–11 mo'ljallangan)? | P05–P08 savol tili | ⏳ |
 | 4 | Qayta topshirishga necha oydan keyin ruxsat (hozir 90 kun)? | P10 (BR-1) | ⏳ |
 | 5 | Birinchi AI provider va byudjet | P17 | ⏳ |

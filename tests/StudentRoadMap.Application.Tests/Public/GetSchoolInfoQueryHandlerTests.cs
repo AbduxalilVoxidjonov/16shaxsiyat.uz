@@ -54,6 +54,54 @@ public sealed class GetSchoolInfoQueryHandlerTests
         logger.Entries.Should().ContainSingle(e => e.Level == LogLevel.Warning && e.Exception is InvalidOperationException);
     }
 
+    /// <summary>
+    /// `docs/07` 1.1 — `tests[].description` katalogdagi `TestDefinition.DescriptionUz`dan keladi
+    /// (landing kartasi uni i18n matnidan ustun qo'yadi). Bo'sh/faqat bo'shliqdan iborat tavsif
+    /// `null` bo'lib qaytadi — frontend izoh qatorini umuman chiqarmasin.
+    /// </summary>
+    [Fact]
+    public async Task Handle_TestTavsifiKatalogdanKeladi_BoshTavsifNullBoladi()
+    {
+        var now = DateTimeOffset.UtcNow;
+        const string token = "access-token-test-description-0123456789ab";
+        var slug = SchoolSlug.Create("maktab-test-description").Value;
+        var school = School.Create(Guid.NewGuid(), "Maktab Tavsif", "Toshkent", "Chilonzor", slug, token, "FAXD2345", now);
+
+        var describedTest = CreatePublishedTest("DESCRIBED", "  Maktab o'quvchilari uchun qisqa so'rovnoma.  ", now);
+        var blankTest = CreatePublishedTest("BLANK", "   ", now);
+        var program = AssessmentProgram.CreateSystemPublished(
+            Guid.NewGuid(), "DESCRIPTION_PROGRAM", "Tavsif dasturi", null, 1,
+            [(describedTest.Id, 1), (blankTest.Id, 2)], now);
+
+        var context = new ThrowingIncrementFakeDbContext(
+            [school],
+            [program],
+            [describedTest, blankTest],
+            [.. describedTest.Questions, .. blankTest.Questions],
+            [.. program.Tests]);
+        var handler = new GetSchoolInfoQueryHandler(
+            context, new LinqToObjectsAsyncQueryExecutor(), new FakeDateTime(now), new RecordingLogger<GetSchoolInfoQueryHandler>());
+
+        var result = await handler.Handle(new GetSchoolInfoQuery(slug.Value, token), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        var programTests = result.Value.Programs.Should().ContainSingle().Subject.Tests;
+        programTests.Single(t => t.Code == "DESCRIBED").Description.Should().Be("Maktab o'quvchilari uchun qisqa so'rovnoma.");
+        programTests.Single(t => t.Code == "BLANK").Description.Should().BeNull();
+        result.Value.Tests.Single(t => t.Code == "DESCRIBED").Description.Should().Be("Maktab o'quvchilari uchun qisqa so'rovnoma.");
+        result.Value.Tests.Single(t => t.Code == "BLANK").Description.Should().BeNull();
+    }
+
+    private static TestDefinition CreatePublishedTest(string code, string? descriptionUz, DateTimeOffset now)
+    {
+        var id = Guid.NewGuid();
+        var question = Question.Create(
+            Guid.NewGuid(), id, $"{code}_Q1", 1, "Savol matni", QuestionType.Likert5, "S", 1, 1m, isSystem: true);
+        return TestDefinition.CreateSystemPublished(
+            id, code, $"{code} nomi", descriptionUz, 1, 5, shuffleQuestions: false, pageSize: 10,
+            scoringStrategyCode: code, [question], now);
+    }
+
     private sealed class FakeDateTime : IDateTime
     {
         public FakeDateTime(DateTimeOffset utcNow) => UtcNow = utcNow;
@@ -118,11 +166,22 @@ public sealed class GetSchoolInfoQueryHandlerTests
     {
         private readonly List<School> _schools;
         private readonly List<AssessmentProgram> _programs;
+        private readonly List<TestDefinition> _testDefinitions;
+        private readonly List<Question> _questions;
+        private readonly List<ProgramTest> _programTests;
 
-        public ThrowingIncrementFakeDbContext(List<School> schools, List<AssessmentProgram> programs)
+        public ThrowingIncrementFakeDbContext(
+            List<School> schools,
+            List<AssessmentProgram> programs,
+            List<TestDefinition>? testDefinitions = null,
+            List<Question>? questions = null,
+            List<ProgramTest>? programTests = null)
         {
             _schools = schools;
             _programs = programs;
+            _testDefinitions = testDefinitions ?? [];
+            _questions = questions ?? [];
+            _programTests = programTests ?? [];
         }
 
         public IQueryable<School> Schools => _schools.AsQueryable();
@@ -137,9 +196,9 @@ public sealed class GetSchoolInfoQueryHandlerTests
 
         public IQueryable<TestResult> TestResults => Enumerable.Empty<TestResult>().AsQueryable();
 
-        public IQueryable<TestDefinition> TestDefinitions => Enumerable.Empty<TestDefinition>().AsQueryable();
+        public IQueryable<TestDefinition> TestDefinitions => _testDefinitions.AsQueryable();
 
-        public IQueryable<Question> Questions => Enumerable.Empty<Question>().AsQueryable();
+        public IQueryable<Question> Questions => _questions.AsQueryable();
 
         public IQueryable<TestScale> TestScales => Enumerable.Empty<TestScale>().AsQueryable();
 
@@ -153,7 +212,7 @@ public sealed class GetSchoolInfoQueryHandlerTests
 
         public IQueryable<AssessmentProgram> AssessmentPrograms => _programs.AsQueryable();
 
-        public IQueryable<ProgramTest> ProgramTests => Enumerable.Empty<ProgramTest>().AsQueryable();
+        public IQueryable<ProgramTest> ProgramTests => _programTests.AsQueryable();
 
         public IQueryable<SchoolProgram> SchoolPrograms => Enumerable.Empty<SchoolProgram>().AsQueryable();
 

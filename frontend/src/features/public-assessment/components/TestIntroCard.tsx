@@ -6,13 +6,30 @@ export type TestIntroCardProps = PublicTestCatalogItem;
 
 /**
  * Landing (E-1) test kartasi: nomi, nima o'lchaydi, savol soni, vaqti (`docs/11` E-1).
- * "Nima o'lchaydi" ta'rifi API'da yo'q (`docs/07` 1.1 javob shaklida faqat kod/nom/son bor) —
- * shu sabab test kodi bo'yicha i18n matni bilan to'ldiriladi; noma'lum kod (masalan superadmin
- * yaratgan `Custom` anketalar) uchun izoh qatori chiqmaydi (`defaultValue: ''`).
+ *
+ * "Nima o'lchaydi" izohi manbalari (ustunlik tartibida):
+ * 1. `description` — katalogdagi anketa tavsifi (`TestDefinition.DescriptionUz`, `docs/07` 1.1);
+ *    superadmin anketa sozlamalarida to'ldiradi.
+ * 2. Test kodi bo'yicha i18n matni (`pages.landing.testDescriptions.<code>`) — faqat zaxira,
+ *    tizim metodikalari uchun.
+ * 3. Ikkalasi ham bo'lmasa (masalan superadmin yaratgan `Custom` anketa tavsifsiz) — izoh qatori
+ *    UMUMAN chiqmaydi.
+ *
+ * Kalit mavjudligi `i18n.exists` bilan tekshiriladi: `defaultValue: ''` ishlamaydi, chunki
+ * `returnEmptyString: false` (`shared/lib/i18n.ts`) bo'sh qiymatni "yo'q" deb hisoblaydi va
+ * i18next xom kalitni (`pages.landing.testDescriptions.INTELLECT-SURVEY`) qaytaradi.
  */
-export function TestIntroCard({ code, name, questionCount, estimatedMinutes }: TestIntroCardProps) {
-  const { t } = useTranslation();
-  const description = t(`pages.landing.testDescriptions.${code}`, { defaultValue: '' });
+export function TestIntroCard({
+  code,
+  name,
+  description: catalogDescription,
+  questionCount,
+  estimatedMinutes,
+}: TestIntroCardProps) {
+  const { t, i18n } = useTranslation();
+  const descriptionKey = `pages.landing.testDescriptions.${code}`;
+  const description =
+    catalogDescription?.trim() || (i18n.exists(descriptionKey) ? t(descriptionKey) : null);
 
   return (
     <div className="card card-hover flex items-start gap-4 rounded-3xl p-5">

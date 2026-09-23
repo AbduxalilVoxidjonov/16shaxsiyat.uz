@@ -55,6 +55,7 @@ internal sealed class GetAssessmentAnswersQueryHandler : IRequestHandler<GetAsse
         Guid QuestionId,
         Guid AssessmentTestId,
         string TestCode,
+        string? TestNameUz,
         int SessionOrder,
         int QuestionOrder,
         string QuestionCode,
@@ -170,7 +171,9 @@ internal sealed class GetAssessmentAnswersQueryHandler : IRequestHandler<GetAsse
                 r.IsScored ? r.DurationMs < ScoringConstants.FastAnswerDurationThresholdMs : null,
                 blockIndexByQuestionId.TryGetValue(r.QuestionId, out var blockIndex) ? blockIndex : null,
                 r.TextValue,
-                r.SelectedValues.Count > 0 ? r.SelectedValues : null))
+                r.SelectedValues.Count > 0 ? r.SelectedValues : null,
+                // Katalogdagi test nomi (2026-09-23) — blok sarlavhasi kod emas, NOM bilan.
+                r.TestNameUz))
             .ToList();
 
         return Result.Success(new AdminAssessmentAnswersDto(answers, signals, scaleSignals, Thresholds));
@@ -339,7 +342,7 @@ internal sealed class GetAssessmentAnswersQueryHandler : IRequestHandler<GetAsse
         var testDefinitions = await _executor.ToListAsync(
             _context.AsNoTracking(_context.TestDefinitions)
                 .Where(t => testDefinitionIds.Contains(t.Id))
-                .Select(t => new { t.Id, t.Code, t.ScoringStrategyCode, t.ScoringMode }),
+                .Select(t => new { t.Id, t.Code, t.NameUz, t.ScoringStrategyCode, t.ScoringMode }),
             cancellationToken).ConfigureAwait(false);
         var testDefinitionById = testDefinitions.ToDictionary(t => t.Id);
 
@@ -438,6 +441,7 @@ internal sealed class GetAssessmentAnswersQueryHandler : IRequestHandler<GetAsse
                 answer.QuestionId,
                 answer.AssessmentTestId,
                 definition?.Code ?? string.Empty,
+                definition?.NameUz,
                 assessmentTest.DisplayOrder,
                 question.DisplayOrder,
                 question.Code,

@@ -26,10 +26,16 @@ public sealed record GetSchoolInfoResult(
     string ConsentText,
     IReadOnlyList<PublicProgramSummaryDto> Programs);
 
-/// <summary>Boshlanish ekranidagi bitta test bloki haqida ma'lumot (savol soni, taxminiy vaqt).</summary>
+/// <summary>
+/// Boshlanish ekranidagi bitta test bloki haqida ma'lumot (savol soni, taxminiy vaqt).
+/// `Description` — katalogdagi `TestDefinition.DescriptionUz` (superadmin anketa
+/// sozlamalarida to'ldiradi); bo'sh bo'lsa <c>null</c>. Frontend kartada shuni ustun
+/// qo'yadi, i18n matni faqat zaxira (`docs/07` 1.1).
+/// </summary>
 public sealed record PublicTestCatalogItemDto(
     string Code,
     string Name,
+    string? Description,
     int QuestionCount,
     int EstimatedMinutes,
     int Order);

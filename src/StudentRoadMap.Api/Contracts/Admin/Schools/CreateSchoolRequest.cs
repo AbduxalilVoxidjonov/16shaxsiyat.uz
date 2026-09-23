@@ -15,7 +15,8 @@ public sealed record CreateSchoolRequest(
     string? ContactPhone,
     string? AccessCode,
     int? DailyRegistrationLimit,
-    string? Notes)
+    string? Notes,
+    IReadOnlyList<Guid>? TestIds = null)
 {
     public CreateSchoolCommand ToCommand(Guid adminUserId, string? ipAddress, string? userAgent) =>
         new(
@@ -30,5 +31,6 @@ public sealed record CreateSchoolRequest(
             Notes,
             adminUserId,
             ipAddress,
-            userAgent);
+            userAgent,
+            TestIds);
 }

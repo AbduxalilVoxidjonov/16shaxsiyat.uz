@@ -117,8 +117,9 @@ export const REGISTRATION_FORM_DEFAULT_DEFINITION: RegistrationFormDefinition = 
     gender: { requirement: 'Required', labelUz: 'Jins', placeholderUz: null, order: 3 },
     grade: { requirement: 'Required', labelUz: 'Sinf', placeholderUz: null, order: 4 },
     classLetter: { requirement: 'Optional', labelUz: 'Sinf harfi', placeholderUz: null, order: 5 },
-    phone: { requirement: 'Required', labelUz: 'Telefon raqami', placeholderUz: null, order: 6 },
-    parentPhone: { requirement: 'Optional', labelUz: "Ota-ona telefoni", placeholderUz: null, order: 7 },
+    // 2026-09-23 egasi qarori: ota-ona telefoni BIRINCHI va majburiy, o'z telefoni ixtiyoriy.
+    phone: { requirement: 'Optional', labelUz: "Shaxsiy raqamingiz (bo'lsa)", placeholderUz: null, order: 7 },
+    parentPhone: { requirement: 'Required', labelUz: 'Ota-ona telefoni', placeholderUz: null, order: 6 },
     email: { requirement: 'Optional', labelUz: 'Email', placeholderUz: null, order: 8 },
   },
   customFields: [],

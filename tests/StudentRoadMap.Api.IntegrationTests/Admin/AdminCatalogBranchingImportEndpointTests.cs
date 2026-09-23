@@ -112,7 +112,7 @@ public sealed class AdminCatalogBranchingImportEndpointTests : IClassFixture<Pub
         using var publicClient = _factory.CreateClient();
         var sessionCommand = new StartSessionCommand(
             "maktab-intellect-seed", accessToken, null, "Test O'quvchi Seed", new DateOnly(2011, 3, 3),
-            Gender.Female, 8, "B", "+998901234567", null, null, true, "uz");
+            Gender.Female, 8, "B", "+998901234567", "+998909998877", null, true, "uz");
         var sessionResponse = await publicClient.PostAsJsonAsync("/api/public/sessions", sessionCommand, TestJson.Options);
         sessionResponse.StatusCode.Should().Be(HttpStatusCode.Created, await sessionResponse.Content.ReadAsStringAsync());
         var session = await sessionResponse.Content.ReadFromJsonAsync<StartSessionResult>(TestJson.Options);

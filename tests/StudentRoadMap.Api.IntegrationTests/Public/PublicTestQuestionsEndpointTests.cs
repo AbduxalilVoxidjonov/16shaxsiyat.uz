@@ -32,7 +32,7 @@ public sealed class PublicTestQuestionsEndpointTests : IClassFixture<PublicApiTe
     {
         var command = new StartSessionCommand(
             school.Slug.Value, accessToken, null, fullName, birthDate, Gender.Male, 9, "A",
-            "+998901234567", null, null, true, languageCode);
+            "+998901234567", "+998909998877", null, true, languageCode);
 
         var response = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
         response.EnsureSuccessStatusCode();

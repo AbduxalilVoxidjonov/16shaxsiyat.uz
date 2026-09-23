@@ -185,4 +185,17 @@ describe('RegistrationCustomFieldInput', () => {
     );
     expect(screen.getByRole('alert')).toHaveTextContent('Variantni tanlang.');
   });
+
+  it("Required maydonda yorliq oxirida qizil * va aria-required, Optional'da yo'q", () => {
+    const { container, unmount } = render(
+      <Harness field={{ ...SHORT_TEXT, requirement: 'Required' }} onSubmit={vi.fn()} />,
+    );
+    expect(screen.getByLabelText('Ota-onangiz kasbi')).toHaveAttribute('aria-required', 'true');
+    expect(container.querySelector('label [data-required-mark]')).not.toBeNull();
+    unmount();
+
+    const optional = render(<Harness field={SHORT_TEXT} onSubmit={vi.fn()} />);
+    expect(screen.getByLabelText('Ota-onangiz kasbi')).not.toHaveAttribute('aria-required');
+    expect(optional.container.querySelector('[data-required-mark]')).toBeNull();
+  });
 });

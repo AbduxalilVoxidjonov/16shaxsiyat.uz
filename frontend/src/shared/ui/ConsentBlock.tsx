@@ -22,12 +22,19 @@ export interface ConsentBlockProps {
  */
 export function ConsentBlock({ consentText, checked, onChange, onBlur, error }: ConsentBlockProps) {
   const { t } = useTranslation();
+  const label = t('register.consentLabel');
+  // Matn checkbox yorlig'i bilan bir xil bo'lsa (oxiridagi nuqta hisobga olinmaydi),
+  // ikki marta ko'rinmasligi uchun faqat checkbox qoldiriladi (2026-09-23 egasi qarori).
+  const normalize = (value: string) => value.trim().replace(/[.!]+$/, '').toLowerCase();
+  const showText = consentText.trim() !== '' && normalize(consentText) !== normalize(label);
 
   return (
     <div className="rounded-3xl border border-line bg-paper-deep/60 p-5">
-      <p className="mb-3 text-sm leading-relaxed text-ink-soft">{consentText}</p>
+      {showText && <p className="mb-3 text-sm leading-relaxed text-ink-soft">{consentText}</p>}
+      {/* Rozilik — submit sharti (tugma belgilanmaguncha o'chiq), shu sabab doim majburiy `*`. */}
       <Checkbox
-        label={t('register.consentLabel')}
+        label={label}
+        isRequired
         checked={checked}
         onChange={(event) => {
           onChange(event.target.checked);

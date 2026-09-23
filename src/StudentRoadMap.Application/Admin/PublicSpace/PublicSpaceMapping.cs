@@ -132,7 +132,8 @@ internal static class PublicSpaceMapping
                 p.State.ToString(),
                 p.Visibility.ToString(),
                 testCountByProgramId.GetValueOrDefault(p.Id),
-                snapshot.ProgramIdsWithUsableTest.Contains(p.Id)))
+                snapshot.ProgramIdsWithUsableTest.Contains(p.Id),
+                p.OwnerTestDefinitionId))
             .ToList();
     }
 

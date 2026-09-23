@@ -10,6 +10,7 @@ using StudentRoadMap.Application.Admin.PublicSpace.AssignProgram;
 using StudentRoadMap.Application.Admin.PublicSpace.Get;
 using StudentRoadMap.Application.Admin.PublicSpace.ListUsers;
 using StudentRoadMap.Application.Admin.PublicSpace.SetShowResult;
+using StudentRoadMap.Application.Admin.PublicSpace.SetTest;
 using StudentRoadMap.Application.Admin.PublicSpace.UnassignProgram;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
@@ -105,6 +106,35 @@ public sealed class PublicSpaceController : ControllerBase
     public async Task<ActionResult<AdminPublicSpaceDto>> UnassignProgram(Guid programId, CancellationToken cancellationToken)
     {
         var command = new UnassignPublicSpaceProgramCommand(programId, RequireAdminUserId(), ClientIp(), UserAgent());
+        var result = await _sender.Send(command, cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>
+    /// `POST /api/admin/public-space/tests/{testId}` — testni ommaviy makonga biriktiradi
+    /// (idempotent; 2026-09-23, "Dasturlar" bo'limi o'rniga). Test dasturi bo'lmasa yaratiladi.
+    /// </summary>
+    [HttpPost("tests/{testId:guid}")]
+    [ProducesResponseType(typeof(AdminPublicSpaceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
+    public async Task<ActionResult<AdminPublicSpaceDto>> AssignTest(Guid testId, CancellationToken cancellationToken)
+    {
+        var command = new SetPublicSpaceTestCommand(testId, Linked: true, RequireAdminUserId(), ClientIp(), UserAgent());
+        var result = await _sender.Send(command, cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>`DELETE /api/admin/public-space/tests/{testId}` — testni ommaviy makondan olib tashlaydi (idempotent).</summary>
+    [HttpDelete("tests/{testId:guid}")]
+    [ProducesResponseType(typeof(AdminPublicSpaceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
+    public async Task<ActionResult<AdminPublicSpaceDto>> UnassignTest(Guid testId, CancellationToken cancellationToken)
+    {
+        var command = new SetPublicSpaceTestCommand(testId, Linked: false, RequireAdminUserId(), ClientIp(), UserAgent());
         var result = await _sender.Send(command, cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);

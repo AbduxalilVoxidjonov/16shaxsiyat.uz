@@ -22,7 +22,7 @@ export interface PublicSpaceAvailabilityAlertProps {
  * panelda esa hech qanday belgi yo'q edi. Shu sabab bu yerda holat ANIQ ko'rsatiladi va
  * to'sqinlik qilayotgan dasturga TO'G'RIDAN-TO'G'RI havola beriladi.
  *
- * Dastur bu yerdan YOQILMAYDI — faollashtirish egasining qarori (vazifa ko'rsatmasi);
+ * Test bu yerdan YOQILMAYDI — faollashtirish egasining qarori (vazifa ko'rsatmasi);
  * panel faqat holatni ko'rsatadi va kerakli sahifaga olib boradi.
  */
 export function PublicSpaceAvailabilityAlert({
@@ -66,11 +66,19 @@ export function PublicSpaceAvailabilityAlert({
           <span>
             {t('publicSpace.availability.inactiveProgramNotice', { name: program.nameUz })}
           </span>
+          {/* 2026-09-23: "Dasturlar" bo'limi yo'q — test dasturida testning o'z sahifasiga,
+              eski dasturda (`testDefinitionId == null`) Testlar katalogiga olib boradi. */}
           <Link
-            to={ROUTES.admin.programDetail(program.id)}
+            to={
+              program.testDefinitionId
+                ? ROUTES.admin.catalogTestDetail(program.testDefinitionId)
+                : ROUTES.admin.catalog
+            }
             className="font-semibold underline underline-offset-2"
           >
-            {t('publicSpace.availability.goToProgram')}
+            {program.testDefinitionId
+              ? t('publicSpace.availability.goToProgram')
+              : t('publicSpace.availability.goToPrograms')}
           </Link>
         </p>
       ))}
@@ -78,7 +86,7 @@ export function PublicSpaceAvailabilityAlert({
       {blockedPrograms.length === 0 && (
         <p>
           <Link
-            to={ROUTES.admin.programs}
+            to={ROUTES.admin.catalog}
             className="font-semibold underline underline-offset-2"
           >
             {t('publicSpace.availability.goToPrograms')}

@@ -16,6 +16,7 @@ import { useStartSession } from '../api/useStartSession';
 import { useSessionStore } from '../store/sessionStore';
 import { beginFreshVisit } from '../lib/freshVisit';
 import { TestIntroCard } from '../components/TestIntroCard';
+import { SchoolNameBadge } from '../components/SchoolNameBadge';
 import { ProgramSelectCard } from '../components/ProgramSelectCard';
 import { publicButtonClass } from '../components/publicStyles';
 
@@ -63,6 +64,24 @@ function FlowSteps() {
       ))}
     </ol>
   );
+}
+
+/**
+ * Landing sarlavhasi — o'quvchi katalogda qaysi nom bilan ochilgan test/so'rovnomaga kirganini
+ * AYNAN o'sha nom bilan ko'radi (egasining talabi, 2026-09-23):
+ * - bitta dastur va unda bitta test — test katalog nomi (`programs[0].tests[0].name`);
+ * - bitta dastur, bir nechta test — dastur nomi (`programs[0].nameUz`);
+ * - bir nechta dastur yoki dastur yo'q — neytral umumiy sarlavha (`fallback`, "Testlar").
+ * Bo'sh/faqat bo'shliqdan iborat nom kelsa ham `fallback`ga tushadi.
+ */
+function resolveLandingHeading(
+  programs: readonly PublicProgramWithRegistration[],
+  fallback: string,
+): string {
+  if (programs.length !== 1) return fallback;
+  const program = programs[0]!;
+  const name = program.tests.length === 1 ? program.tests[0]!.name : program.nameUz;
+  return name.trim() || fallback;
 }
 
 /**
@@ -173,7 +192,15 @@ export default function LandingPage() {
     storedSelectedProgramSlug === slug ? storedSelectedProgramCode : null,
   );
 
-  usePageTitle(schoolInfoQuery.data?.name ?? t('pages.landing.title'));
+  // Sarlavha (`h1`) va brauzer yorlig'i bir xil manbadan: "<test/dastur nomi> — <maktab>".
+  const heading = schoolInfoQuery.data
+    ? resolveLandingHeading(schoolInfoQuery.data.programs, t('pages.landing.heading'))
+    : null;
+  usePageTitle(
+    schoolInfoQuery.data && heading
+      ? `${heading} — ${schoolInfoQuery.data.name}`
+      : t('pages.landing.title'),
+  );
 
   // docs/10, 4.1-bo'lim: "410 kelsa store tozalanadi" — sessiya muddati tugagan bo'lsa.
   // `clear()` "Davom ettirish" taklifini (`resumable`) ham olib tashlaydi.
@@ -243,7 +270,9 @@ export default function LandingPage() {
   // "Boshlash" bosilganda haqiqatda ishga tushadigan dastur — bitta bo'lsa avtomatik, bir
   // nechtasi bo'lsa o'quvchi tanlagani (hali tanlanmagan bo'lsa `undefined`, tugma o'chiq).
   const activeProgram: PublicProgramWithRegistration | undefined =
-    programs.length === 1 ? programs[0] : programs.find((program) => program.code === selectedProgramCode);
+    programs.length === 1
+      ? programs[0]
+      : programs.find((program) => program.code === selectedProgramCode);
   const isAnonymousStart = activeProgram?.registrationMode === 'None';
 
   async function startAnonymousSession(program: PublicProgramWithRegistration) {
@@ -291,9 +320,9 @@ export default function LandingPage() {
             withCircle={false}
           />
         </span>
-        <p className="eyebrow text-firuza-700">{school.name}</p>
+        <SchoolNameBadge name={school.name} />
         <h1 className="font-display text-3xl font-extrabold tracking-tight text-balance text-ink sm:text-4xl">
-          {t('pages.landing.heading')}
+          {heading}
         </h1>
         {programs.length === 1 && (
           <p className="lead text-balance">

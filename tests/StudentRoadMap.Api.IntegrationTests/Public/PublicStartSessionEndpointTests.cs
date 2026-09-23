@@ -52,7 +52,7 @@ public sealed class PublicStartSessionEndpointTests : IClassFixture<PublicApiTes
             Grade: 9,
             ClassLetter: "B",
             Phone: "+998901234567",
-            ParentPhone: null,
+            ParentPhone: "+998909998877",
             Email: null,
             ConsentAccepted: true,
             LanguageCode: "uz");

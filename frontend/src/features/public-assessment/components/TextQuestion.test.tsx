@@ -140,4 +140,36 @@ describe('TextQuestion', () => {
     renderQuestion({ question: { ...BASE_QUESTION, maxLength: 20 } });
     expect(screen.getByLabelText(/Telefon raqamingiz/)).toHaveAttribute('maxlength', '20');
   });
+
+  it("majburiy savolda matn oxirida qizil * (aria-hidden) va input'da aria-required", () => {
+    const { container } = render(
+      <TextQuestion
+        question={BASE_QUESTION}
+        value={null}
+        invalid={false}
+        onAnswer={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('textbox', { name: /Telefon raqamingiz$/ })).toHaveAttribute(
+      'aria-required',
+      'true',
+    );
+    const mark = container.querySelector('label [data-required-mark]');
+    expect(mark).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it("ixtiyoriy savolda * ko'rsatilmaydi", () => {
+    const { container } = render(
+      <TextQuestion
+        question={{ ...BASE_QUESTION, isRequired: false }}
+        value={null}
+        invalid={false}
+        onAnswer={vi.fn()}
+        onAdvance={vi.fn()}
+      />,
+    );
+    expect(container.querySelector('[data-required-mark]')).toBeNull();
+    expect(screen.getByLabelText(/Telefon raqamingiz/)).not.toHaveAttribute('aria-required');
+  });
 });

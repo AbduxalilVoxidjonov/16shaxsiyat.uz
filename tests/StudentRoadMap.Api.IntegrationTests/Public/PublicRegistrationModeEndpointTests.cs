@@ -115,6 +115,7 @@ public sealed class PublicRegistrationModeEndpointTests : IClassFixture<PublicAp
             gender = "Male",
             grade = 9,
             phone = "+998901234567",
+            parentPhone = "+998909998877",
             consentAccepted = true,
             languageCode = "uz",
             programCode,
@@ -198,7 +199,7 @@ public sealed class PublicRegistrationModeEndpointTests : IClassFixture<PublicAp
     /// HAMON majburiy — validator o'zgarishi (`When`-shartli) buni bo'shatib qo'ymasligi kerak.
     /// </summary>
     [Fact]
-    public async Task StartSession_RegistrationModeFull_FishVaTelefonsiz400()
+    public async Task StartSession_RegistrationModeFull_FishVaOtaOnaTelefonisiz400()
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -226,6 +227,8 @@ public sealed class PublicRegistrationModeEndpointTests : IClassFixture<PublicAp
         problem.GetProperty("code").GetString().Should().Be("VALIDATION_ERROR");
         var errors = problem.GetProperty("errors");
         errors.TryGetProperty("fullName", out _).Should().BeTrue();
-        errors.TryGetProperty("phone", out _).Should().BeTrue();
+        // 2026-09-23 egasi qarori: standartda ota-ona telefoni majburiy, o'z telefoni ixtiyoriy.
+        errors.TryGetProperty("parentPhone", out _).Should().BeTrue();
+        errors.TryGetProperty("phone", out _).Should().BeFalse();
     }
 }

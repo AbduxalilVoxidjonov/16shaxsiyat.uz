@@ -206,8 +206,9 @@ export type AssessmentDetailDto = Omit<
 };
 
 /**
- * Sessiyalar ro'yxatidan (`GET /api/admin/assessments`, `AdminAssessmentListItemDto`) detal
- * sahifasiga `Link state` orqali uzatiladigan qator. Detal endpointi endi sarlavha
+ * Detal sahifasiga `Link state` orqali uzatiladigan qator (`AdminAssessmentListItemDto`
+ * shakli; ilgari sessiyalar ro'yxati uzatardi — ro'yxat 2026-09-23 da olib tashlangan, hozir
+ * hech bir ekran uzatmaydi). Detal endpointi endi sarlavha
  * maydonlarini o'zi ham qaytaradi (yuqoridagi izoh), shu sabab bu — ZAXIRA manba: detal
  * javobi eski/chala bo'lganda sahifa holat/vaqt/maktab/o'quvchini shundan oladi.
  */
@@ -240,37 +241,12 @@ export interface AssessmentSessionMeta {
   program: AssessmentProgramRefDto | null;
 }
 
-/** `value` — haqiqiy `AssessmentStatus` qiymatimi (backend `string` yuboradi). */
-export function isAssessmentStatus(value: string | null | undefined): value is AssessmentStatus {
-  return (
-    typeof value === 'string' && (ASSESSMENT_STATUS_VALUES as readonly string[]).includes(value)
-  );
-}
-
-/** `value` — haqiqiy `ReliabilityFlag` qiymatimi. */
-export function isReliabilityFlag(value: string | null | undefined): value is ReliabilityFlag {
-  return (
-    typeof value === 'string' && (RELIABILITY_FLAG_VALUES as readonly string[]).includes(value)
-  );
-}
-
 /**
  * `GET /api/admin/assessments` ro'yxat elementi — backend `AdminAssessmentListItemDto`
  * (`Application/Admin/Assessments/AdminAssessmentDtos.cs`) dan to'liq re-export.
- * `programId`/`programName` endi sxemada BOR — qo'lda qo'shilgan `&` bloki olib tashlandi.
  *
- * Ro'yxat FAQAT maktab sessiyalarini qaytaradi (egasining qarori, 2026-09-07; ommaviy makon
- * sessiyalari `/admin/ommaviy` bo'limida), shu sabab 2026-09-06 dagi `source` ustuni yo'q.
+ * Mijozdagi sessiyalar ro'yxati sahifasi 2026-09-23 da olib tashlandi (egasining qarori —
+ * "O'quvchilar" bilan bir xil edi); endpoint backendda qoladi. Tip faqat detal sahifa
+ * testlarida `location.state` zaxira manbasining shaklini sxemaga bog'lash uchun turibdi.
  */
 export type AssessmentListItemDto = components['schemas']['AdminAssessmentListItemDto'];
-
-/** `GET /api/admin/assessments` query parametrlari — `ListAssessmentsQuery` bilan bir xil. */
-export interface AssessmentsListQuery {
-  schoolId?: string;
-  status?: string;
-  from?: string;
-  to?: string;
-  page: number;
-  pageSize: number;
-  sort?: string;
-}

@@ -756,7 +756,9 @@ yozilmaydi, shu sabab alohida `CHECK`/unique indeks shart emas. Jadvalda umuman 
 bo'lmasligi ("hali hech kim `PUT` qilmagan") ham to'g'ri holat — bu holda
 `RegistrationFormDefinition.Default` ishlatiladi ("`NULL` = standart" naqshi).
 
-**`definition` jsonb shakli** (camelCase, enumlar — satr, `docs/18` §9.6.1):
+**`definition` jsonb shakli** (camelCase, enumlar — satr, `docs/18` §9.6.1; misoldagi
+`coreFields` — `RegistrationFormDefinition.Default`, **2026-09-23 egasi qarori** bilan
+`parentPhone` `Required`/6, `phone` `Optional`/7, `docs/18` §9.6.4):
 
 ```json
 {
@@ -766,8 +768,8 @@ bo'lmasligi ("hali hech kim `PUT` qilmagan") ham to'g'ri holat — bu holda
     "gender":      { "requirement": "Required", "labelUz": "Jins", "placeholderUz": null, "order": 3 },
     "grade":       { "requirement": "Required", "labelUz": "Sinf", "placeholderUz": null, "order": 4 },
     "classLetter": { "requirement": "Optional", "labelUz": "Sinf harfi", "placeholderUz": null, "order": 5 },
-    "phone":       { "requirement": "Required", "labelUz": "Telefon raqami", "placeholderUz": null, "order": 6 },
-    "parentPhone": { "requirement": "Optional", "labelUz": "Ota-ona telefoni", "placeholderUz": null, "order": 7 },
+    "parentPhone": { "requirement": "Required", "labelUz": "Ota-ona telefoni", "placeholderUz": null, "order": 6 },
+    "phone":       { "requirement": "Optional", "labelUz": "Shaxsiy raqamingiz (bo'lsa)", "placeholderUz": null, "order": 7 },
     "email":       { "requirement": "Optional", "labelUz": "Email", "placeholderUz": null, "order": 8 }
   },
   "customFields": [
@@ -816,6 +818,35 @@ Telegram oqimida "bir marta so'raladi" naqshi (`existing is null` bo'lgandagina 
 o'z maydonlariga ham qo'llanadi.
 
 ---
+
+### 2026-09-23 da qo'shilgan — test dasturi (migratsiya `AddTestProgramOwner`)
+
+**Egasi qarori (2026-09-23, `docs/18` §9.7):** admin UI'dan "Dasturlar" bo'limi olib tashlandi,
+biriktirish (ommaviy / maktablar) TEST ichida qilinadi. `assessment_programs` ICHKI biriktirish
+qatlami bo'lib qoladi — har test uchun ko'pi bilan BITTA "test dasturi" (tarkibida faqat shu
+test), uni tizim avtomatik yaratadi (`TestPrograms`). Faqat qo'shish, destruktiv qadam yo'q.
+
+```sql
+alter table assessment_programs
+    add column owner_test_definition_id uuid null
+        references test_definitions(id) on delete restrict;  -- NULL = eski/tizim dasturi
+create unique index ux_assessment_programs_owner_test
+    on assessment_programs(owner_test_definition_id)
+    where owner_test_definition_id is not null;             -- bitta test — bitta test dasturi
+```
+
+- **`RESTRICT`:** testni o'chirishda handler test dasturini O'ZI o'chiradi (sessiyasi bo'lmasa;
+  `program_tests`/`school_programs` kaskad), sessiyasi bo'lsa `409 TEST_IN_USE`.
+- **Sinxron maydonlar:** `code` = test kodi (band bo'lsa `T-{kod}`), `name_uz`/`description_uz`/
+  `display_order` = testniki; `status`/`is_active` testga ergashadi (`Published`+faol ⟺ `Active`).
+- **Ma'lumot migratsiyasi (idempotent, yangi qator YARATILMAYDI):** `kind = 2` (Custom),
+  `is_system = false`, `status = 2`, `is_active = true`, AYNAN 1 ta `program_tests` qatori bor va
+  shu test uchun hali egasi yo'q dastur → o'sha testning test dasturi (bir testga bir nechta
+  nomzod bo'lsa — eng avval yaratilgani). Nom/tavsif/tartib testdan, kod — test kodi (band
+  bo'lmasa); test o'zi ochiq bo'lmasa `is_active = false`. Jonli bazada: `FORMS` →
+  `INTELLECT-SURVEY` (2 maktab biriktirmasi va 4 sessiya saqlanadi). Ko'p testli / arxivlangan
+  dasturlar (`PERSONALITY_PROFILE`, `1`) TEGILMAYDI — sessiya tarixi uchun qoladi, admin UI'da
+  ko'rinmaydi. Qulflangan: `TestProgramOwnerMigrationTests`.
 
 ## 4. Migratsiya siyosati
 

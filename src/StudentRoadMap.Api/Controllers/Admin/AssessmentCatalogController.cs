@@ -22,6 +22,7 @@ using StudentRoadMap.Application.Admin.Catalog.Scales.Delete;
 using StudentRoadMap.Application.Admin.Catalog.Scales.List;
 using StudentRoadMap.Application.Admin.Catalog.Scales.Update;
 using StudentRoadMap.Application.Admin.Catalog.Tests.Archive;
+using StudentRoadMap.Application.Admin.Catalog.Tests.Assignment;
 using StudentRoadMap.Application.Admin.Catalog.Tests.Create;
 using StudentRoadMap.Application.Admin.Catalog.Tests.Delete;
 using StudentRoadMap.Application.Admin.Catalog.Tests.Duplicate;
@@ -126,6 +127,40 @@ public sealed class AssessmentCatalogController : ControllerBase
     public async Task<ActionResult<CatalogTestDetailDto>> Publish(Guid id, CancellationToken cancellationToken)
     {
         var result = await _sender.Send(new PublishCatalogTestCommand(id, RequireAdminUserId(), ClientIp(), UserAgent()), cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>
+    /// `GET /api/admin/catalog/tests/{id}/assignment` — test kimga ochiq: ommaviy yoki
+    /// maktablar (2026-09-23, `docs/07` §3.4.1). Biriktirilmagan testda standart bo'sh qiymatlar.
+    /// </summary>
+    [HttpGet("tests/{id:guid}/assignment")]
+    [ProducesResponseType(typeof(AdminTestAssignmentDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    public async Task<ActionResult<AdminTestAssignmentDto>> GetTestAssignment(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _sender.Send(new GetTestAssignmentQuery(id), cancellationToken).ConfigureAwait(false);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
+    }
+
+    /// <summary>
+    /// `PUT /api/admin/catalog/tests/{id}/assignment` — ommaviy qilish / maktablar to'plamini
+    /// to'liq almashtirish / ro'yxatdan o'tish rejimi (2026-09-23, `docs/07` §3.4.1).
+    /// </summary>
+    [HttpPut("tests/{id:guid}/assignment")]
+    [ProducesResponseType(typeof(AdminTestAssignmentDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
+    public async Task<ActionResult<AdminTestAssignmentDto>> UpdateTestAssignment(
+        Guid id,
+        [FromBody] UpdateTestAssignmentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = request.ToCommand(id, RequireAdminUserId(), ClientIp(), UserAgent());
+        var result = await _sender.Send(command, cancellationToken).ConfigureAwait(false);
 
         return result.IsSuccess ? Ok(result.Value) : this.ToProblem(result.Error);
     }

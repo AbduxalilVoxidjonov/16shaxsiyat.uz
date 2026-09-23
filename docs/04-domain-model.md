@@ -415,6 +415,29 @@ sessiyaga faqat shu dasturning testlari qo'shiladi (`Assessment.ProgramId`).
 | `IsActive` | `bool` | **saqlash maydoni** |
 | `IsSystem` | `bool` | Seed'dan kelgan tizim dasturi; tarkibi qulflangan (`SYSTEM_PROGRAM_LOCKED`) |
 | `DisplayOrder` | `int` | |
+| `OwnerTestDefinitionId` | `Guid?` | **2026-09-23** — test dasturi bo'lsa o'sha test (quyiga qarang); `NULL` — eski/tizim dasturi. Unikal (qisman indeks) |
+
+#### Test dasturi — admin UI'da "dastur" yo'q (2026-09-23 egasi qarori, `docs/18` §9.7)
+
+"Dasturlar" bo'limi olib tashlandi: biriktirish (ommaviy / maktablar) TEST ichida qilinadi.
+`AssessmentProgram` o'chirilmadi — u ICHKI biriktirish qatlami (sessiya tarixi,
+`school_programs`, ommaviy oqim, `RegistrationMode` unga tayanadi). Har `TestDefinition` uchun
+ko'pi bilan BITTA **test dasturi** (`IsTestProgram` ⟺ `OwnerTestDefinitionId != null`):
+
+- `CreateForTest(...)` — `Custom`, `Assigned`, `Full`, `Draft`, tarkibida AYNAN shu test
+  (`DisplayOrder = 1`). Tarkib qulflangan: `AddTest`/`RemoveTest`/`ReorderTests` →
+  `TEST_PROGRAM_LOCKED`.
+- `SyncDetailsFromTest(code, name, description, displayOrder)` — nom va h.k. testdan
+  (ommaviy landing/kabinetda test nomi ko'rinadi). Faqat test dasturida (`TEST_PROGRAM_REQUIRED`).
+- `SyncStateWithTest(testStatus, testIsActive, hasBattery)` — holat testga ergashadi, faqat
+  mavjud o'tishlar orqali: test `Draft` → dastur `Draft` (nashr qilingan bo'lsa `Paused`);
+  `Published`+faol → `Active`; `Published`+nofaol → `Paused`; `Archived` → `Archived`.
+- `SetPublic(bool)` — `Visibility` `Public`/`Assigned`.
+- Application'dagi yagona boshqaruvchi — `Admin/Catalog/Tests/Assignment/TestPrograms`
+  (topish/yaratish/sinxron, maktab va ommaviy makon biriktirmalari).
+
+Eski dasturlar (`PERSONALITY_PROFILE`, ko'p testli yoki arxivlangan Custom) admin UI'da
+ko'rinmaydi, lekin sessiya tarixi va ommaviy oqim uchun saqlanadi.
 
 #### Dastur holati — TASHQARIGA BITTA qiymat (`ProgramState`)
 

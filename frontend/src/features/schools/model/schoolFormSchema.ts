@@ -85,6 +85,11 @@ export const schoolFormSchema = z.object({
     MAX_NOTES_LENGTH,
     `Izoh ko'pi bilan ${String(MAX_NOTES_LENGTH)} belgidan iborat bo'lishi kerak.`,
   ),
+  /**
+   * Biriktirilgan testlar (`docs/07` §3.1, 2026-09-23) — to'plam saqlashda TO'LIQ
+   * almashtiriladi. Backend chegarasi `≤ 500` — UI'da amalda yetib bo'lmaydi.
+   */
+  testIds: z.array(z.string()).max(500, "Ko'pi bilan 500 ta test tanlash mumkin."),
 });
 
 export type SchoolFormValues = z.infer<typeof schoolFormSchema>;
@@ -98,4 +103,5 @@ export const SCHOOL_FORM_DEFAULT_VALUES: SchoolFormValues = {
   contactPhone: '',
   dailyRegistrationLimit: DEFAULT_DAILY_LIMIT,
   notes: '',
+  testIds: [],
 };

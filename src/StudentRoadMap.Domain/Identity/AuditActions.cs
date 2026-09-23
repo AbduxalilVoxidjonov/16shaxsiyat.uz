@@ -82,6 +82,13 @@ public static class AuditActions
     public const string CatalogTestDeleted = "Catalog.TestDeleted";
     public const string CatalogTestDuplicated = "Catalog.TestDuplicated";
     public const string CatalogTestToggledActive = "Catalog.TestToggledActive";
+
+    /// <summary>
+    /// 2026-09-23 (`docs/18` §9.7): test biriktirmasi (ommaviy / maktablar / ro'yxatdan o'tish
+    /// rejimi) o'zgartirildi — `PUT /api/admin/catalog/tests/{id}/assignment`, maktab formasi
+    /// (`testIds`) va ommaviy makon `tests/{testId}` orqali.
+    /// </summary>
+    public const string CatalogTestAssignmentUpdated = "Catalog.TestAssignmentUpdated";
     public const string CatalogScaleChanged = "Catalog.ScaleChanged";
     public const string CatalogQuestionAdded = "Catalog.QuestionAdded";
     public const string CatalogQuestionRemoved = "Catalog.QuestionRemoved";

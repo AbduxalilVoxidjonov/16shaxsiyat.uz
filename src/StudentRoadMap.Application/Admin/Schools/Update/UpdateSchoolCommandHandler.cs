@@ -73,6 +73,19 @@ internal sealed class UpdateSchoolCommandHandler : IRequestHandler<UpdateSchoolC
             request.Notes,
             now);
 
+        if (request.TestIds is not null)
+        {
+            // 2026-09-23 (`docs/18` §9.7): maktab formasida endi TESTLAR tanlanadi.
+            var assignResult = await SchoolTestAssignment
+                .ReplaceAsync(_context, _executor, school.Id, request.TestIds, request.AdminUserId, now, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (assignResult.IsFailure)
+            {
+                return Result.Failure<AdminSchoolDetailDto>(assignResult.Error);
+            }
+        }
+
         var after = AuditSnapshot.Serialize(new
         {
             school.Id,
@@ -85,6 +98,7 @@ internal sealed class UpdateSchoolCommandHandler : IRequestHandler<UpdateSchoolC
             HasAccessCode = school.AccessCode is not null,
             school.DailyRegistrationLimit,
             school.Notes,
+            request.TestIds,
         });
 
         _context.Add(AuditLog.Create(
@@ -105,6 +119,8 @@ internal sealed class UpdateSchoolCommandHandler : IRequestHandler<UpdateSchoolC
         var linkHealth = await SchoolLinkHealthEvaluator.EvaluateOneAsync(_context, _executor, school.Id, cancellationToken).ConfigureAwait(false);
 
 
-        return Result.Success(SchoolMapping.ToDetailDto(school, _appSettings, _qrCodeGenerator, stats, linkHealth));
+        var testIds = await SchoolTestAssignment.GetTestIdsAsync(_context, _executor, school.Id, cancellationToken).ConfigureAwait(false);
+
+        return Result.Success(SchoolMapping.ToDetailDto(school, _appSettings, _qrCodeGenerator, stats, linkHealth, testIds));
     }
 }

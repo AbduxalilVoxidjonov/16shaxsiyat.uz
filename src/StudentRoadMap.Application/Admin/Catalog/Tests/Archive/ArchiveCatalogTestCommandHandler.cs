@@ -1,4 +1,5 @@
 using MediatR;
+using StudentRoadMap.Application.Admin.Catalog.Tests.Assignment;
 using StudentRoadMap.Application.Admin.Common;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
@@ -40,6 +41,9 @@ internal sealed class ArchiveCatalogTestCommandHandler : IRequestHandler<Archive
         }
 
         test.Archive(now);
+
+        // 2026-09-23 (`docs/18` §9.7): test dasturi (bo'lsa) testga ergashadi — arxivlangan test dasturi ham arxivlanadi.
+        await TestPrograms.SyncIfExistsAsync(_context, _executor, test, now, cancellationToken).ConfigureAwait(false);
 
         _context.Add(AuditLog.Create(
             AuditActions.CatalogTestArchived,

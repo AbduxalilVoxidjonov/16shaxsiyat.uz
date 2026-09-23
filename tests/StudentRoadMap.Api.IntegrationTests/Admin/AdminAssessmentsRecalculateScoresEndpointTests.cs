@@ -105,7 +105,7 @@ public sealed class AdminAssessmentsRecalculateScoresEndpointTests : IClassFixtu
         using var publicClient = _factory.CreateClient();
         var startCommand = new StartSessionCommand(
             school.Slug.Value, accessToken, null, "Nabiyev Otabek Alisherovich", new DateOnly(2010, 5, 5), Gender.Male, 9, "A",
-            "+998907774002", null, null, true, "uz");
+            "+998907774002", "+998909998877", null, true, "uz");
         var startResponse = await publicClient.PostAsJsonAsync("/api/public/sessions", startCommand, TestJson.Options);
         startResponse.EnsureSuccessStatusCode();
         var sessionToken = (await startResponse.Content.ReadFromJsonAsync<StartSessionResult>(TestJson.Options))!.SessionToken;

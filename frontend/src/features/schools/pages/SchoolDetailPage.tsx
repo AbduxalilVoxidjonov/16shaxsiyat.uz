@@ -19,6 +19,7 @@ import { RegenerateLinkDialog } from '../components/RegenerateLinkDialog';
 import { RegenerateEntryCodeDialog } from '../components/RegenerateEntryCodeDialog';
 import { SchoolEntryCodeCell } from '../components/SchoolEntryCodeCell';
 import { SchoolStatsCards } from '../components/SchoolStatsCards';
+import { SchoolTestsCard } from '../components/SchoolTestsCard';
 
 /** Ma'lumot bo'lmagan matnli maydon uchun `—` (nol bilan chalkashmaydi — nol faqat sonlarda). */
 function orDash(value: string | null | undefined): string {
@@ -205,6 +206,9 @@ export default function SchoolDetailPage() {
           <InfoRow label={t('schools.detail.info.notes')}>{orDash(school.notes)}</InfoRow>
         </dl>
       </Card>
+
+      {/* 2026-09-23: "Dasturlar" bo'limi olib tashlandi — maktabga biriktirilgan TESTLAR. */}
+      <SchoolTestsCard testIds={school.testIds} />
 
       <Card title={t('schools.detail.students.heading')}>
         <p className="mb-3 text-sm text-neutral-600">

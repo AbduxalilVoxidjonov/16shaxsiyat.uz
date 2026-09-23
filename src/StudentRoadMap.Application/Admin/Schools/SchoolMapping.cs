@@ -17,7 +17,8 @@ internal static class SchoolMapping
         IAppSettings appSettings,
         IQrCodeGenerator qrCodeGenerator,
         AdminSchoolStatsDto stats,
-        AdminSchoolLinkHealthDto linkHealth)
+        AdminSchoolLinkHealthDto linkHealth,
+        IReadOnlyList<Guid> testIds)
     {
         var publicUrl = BuildPublicUrl(school, appSettings);
 
@@ -40,7 +41,8 @@ internal static class SchoolMapping
             school.CreatedAt,
             school.UpdatedAt,
             stats,
-            linkHealth);
+            linkHealth,
+            testIds);
     }
 
     public static string BuildPublicUrl(School school, IAppSettings appSettings) =>

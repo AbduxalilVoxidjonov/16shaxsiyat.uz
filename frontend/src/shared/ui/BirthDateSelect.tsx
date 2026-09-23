@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { BirthDateValue } from '@/shared/lib/birthDate';
+import { RequiredMark } from './RequiredMark';
 import { Select, type SelectOption } from './Select';
 
 export type { BirthDateValue };
@@ -17,6 +18,8 @@ export interface BirthDateSelectProps {
    * `docs/18` §9.6.2) — berilmasa standart i18n matni (`register.fields.birthDate`) ishlatiladi.
    */
   label?: string;
+  /** Majburiy: legend oxirida qizil `*` va har bir select'da `aria-required`. */
+  isRequired?: boolean;
 }
 
 const MONTH_KEYS = [
@@ -48,6 +51,7 @@ export function BirthDateSelect({
   minAge,
   maxAge,
   label,
+  isRequired,
 }: BirthDateSelectProps) {
   const { t } = useTranslation();
 
@@ -84,9 +88,11 @@ export function BirthDateSelect({
     <fieldset className="flex flex-col gap-1.5">
       <legend className="mb-1.5 text-sm font-medium text-ink-soft">
         {label || t('register.fields.birthDate')}
+        {isRequired && <RequiredMark />}
       </legend>
       <div className="grid grid-cols-3 gap-2">
         <Select
+          isRequired={isRequired}
           aria-label={t('register.fields.birthDay')}
           placeholder={t('register.fields.birthDayPlaceholder')}
           options={dayOptions}
@@ -98,6 +104,7 @@ export function BirthDateSelect({
           onBlur={onBlur}
         />
         <Select
+          isRequired={isRequired}
           aria-label={t('register.fields.birthMonth')}
           placeholder={t('register.fields.birthMonthPlaceholder')}
           options={monthOptions}
@@ -109,6 +116,7 @@ export function BirthDateSelect({
           onBlur={onBlur}
         />
         <Select
+          isRequired={isRequired}
           aria-label={t('register.fields.birthYear')}
           placeholder={t('register.fields.birthYearPlaceholder')}
           options={yearOptions}

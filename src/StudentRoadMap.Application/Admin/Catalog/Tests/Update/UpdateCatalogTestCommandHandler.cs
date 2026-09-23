@@ -1,4 +1,5 @@
 using MediatR;
+using StudentRoadMap.Application.Admin.Catalog.Tests.Assignment;
 using StudentRoadMap.Application.Admin.Common;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
@@ -44,6 +45,9 @@ internal sealed class UpdateCatalogTestCommandHandler : IRequestHandler<UpdateCa
         }
 
         test.UpdateMetadata(request.NameUz, request.DescriptionUz, request.DisplayOrder, request.EstimatedMinutes, request.ShuffleQuestions, request.PageSize, now);
+
+        // 2026-09-23 (`docs/18` §9.7): test dasturi (bo'lsa) testga ergashadi — ommaviy landing/kabinetda yangi nom va tavsif ko'rinsin.
+        await TestPrograms.SyncIfExistsAsync(_context, _executor, test, now, cancellationToken).ConfigureAwait(false);
 
         _context.Add(AuditLog.Create(
             AuditActions.CatalogTestUpdated,

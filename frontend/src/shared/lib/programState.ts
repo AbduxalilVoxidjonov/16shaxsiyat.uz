@@ -6,11 +6,13 @@
  * bo'lib keladi — frontend uni QAYTA HISOBLAMAYDI. Bu fayl faqat "qaysi qiymat qanday
  * ko'rinadi" savoliga javob beradi.
  *
- * **Nega `shared/lib`:** holatni ikki feature ko'rsatadi — `features/programs` (ro'yxat va
- * detal) hamda `features/public-space` (biriktirilgan dasturlar) — feature'lar esa
- * bir-birini import qila olmaydi (`docs/10` 2-bo'lim). Ikki joyda takrorlansa, ular
- * muqarrar ravishda ajralib ketadi: 2026-09-06 gacha aynan shunday bo'lgan edi va bitta
- * dastur bir joyda "Arxiv", boshqasida "Faol" bo'lib ko'rinardi.
+ * **Nega `shared/lib`:** holatni ikki feature ko'rsatadi — `features/catalog` (test ichidagi
+ * "Biriktirish" kartasi, `AdminTestAssignmentDto.state`) hamda `features/public-space`
+ * (biriktirilgan testlar) — feature'lar esa bir-birini import qila olmaydi (`docs/10`
+ * 2-bo'lim). Ikki joyda takrorlansa, ular muqarrar ravishda ajralib ketadi: 2026-09-06 gacha
+ * aynan shunday bo'lgan edi va bitta dastur bir joyda "Arxiv", boshqasida "Faol" bo'lib
+ * ko'rinardi. (2026-09-23: "Dasturlar" bo'limi olib tashlandi — i18n kalitlari
+ * `programs.state.*` dan `programState.*` ga ko'chdi.)
  */
 import type { BadgeVariant } from '@/shared/ui/Badge';
 
@@ -39,9 +41,9 @@ export function programStateBadgeVariant(state: string): BadgeVariant {
 }
 
 /**
- * i18n kaliti. Noma'lum qiymat kelsa `programs.state.unknown` — jimgina BO'SH belgi EMAS
+ * i18n kaliti. Noma'lum qiymat kelsa `programState.unknown` — jimgina BO'SH belgi EMAS
  * ("ma'lumot yo'q ≠ nol", `docs/06` qarorlar jurnali).
  */
 export function programStateLabelKey(state: string): string {
-  return isProgramState(state) ? `programs.state.${state.toLowerCase()}` : 'programs.state.unknown';
+  return isProgramState(state) ? `programState.${state.toLowerCase()}` : 'programState.unknown';
 }

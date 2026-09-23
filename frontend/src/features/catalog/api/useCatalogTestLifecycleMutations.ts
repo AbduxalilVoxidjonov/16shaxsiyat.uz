@@ -14,6 +14,8 @@ function useCatalogTestAction(action: 'publish' | 'toggle-active' | 'archive') {
     onSuccess: (_data, id) => {
       void queryClient.invalidateQueries({ queryKey: CATALOG_QUERY_KEYS.list() });
       void queryClient.invalidateQueries({ queryKey: CATALOG_QUERY_KEYS.detail(id) });
+      // Biriktirma holati (`state`) testga ergashadi (`docs/07` §3.4.1).
+      void queryClient.invalidateQueries({ queryKey: CATALOG_QUERY_KEYS.assignment(id) });
     },
   });
 }

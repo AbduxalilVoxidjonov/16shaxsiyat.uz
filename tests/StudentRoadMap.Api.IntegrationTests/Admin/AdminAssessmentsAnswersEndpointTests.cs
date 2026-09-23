@@ -102,6 +102,9 @@ public sealed class AdminAssessmentsAnswersEndpointTests : IClassFixture<PublicA
             $"/api/admin/assessments/{assessment.Id}/answers", TestJson.Options);
         all!.Answers.Should().HaveCount(3);
         all.Answers.Select(a => a.TestCode).Should().Contain(["ANS-A", "ANS-B"]);
+        // Katalogdagi test nomi (2026-09-23) — UI blok sarlavhasida kod o'rniga shu chiqadi.
+        all.Answers.Where(a => a.TestCode == "ANS-A").Should().OnlyContain(a => a.TestNameUz == testA.NameUz);
+        all.Answers.Single(a => a.TestCode == "ANS-B").TestNameUz.Should().Be(testB.NameUz);
 
         var revisedAnswer = all.Answers.Single(a => a.QuestionId == questionsA[1].Id);
         revisedAnswer.RawValue.Should().Be(4);

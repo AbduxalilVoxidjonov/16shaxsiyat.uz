@@ -29,6 +29,7 @@ import { ScalesSection } from '../components/ScalesSection';
 import { SectionsSection } from '../components/SectionsSection';
 import { SystemScalesInfoSection } from '../components/SystemScalesInfoSection';
 import { TestMetaDialog } from '../components/TestMetaDialog';
+import { TestAssignmentCard } from '../components/TestAssignmentCard';
 
 /**
  * Test ko'rish va TAHRIRLASH sahifasi.
@@ -257,6 +258,10 @@ export default function CatalogTestDetailPage() {
           </div>
         )}
       </Card>
+
+      {/* Biriktirish — test KIMGA ochiq (`docs/07` §3.4.1, 2026-09-23 egasi qarori: "Dasturlar"
+          bo'limi olib tashlandi, ommaviy qilish/maktablarga biriktirish endi test ichida). */}
+      <TestAssignmentCard testId={test.id} />
 
       {/* Bo'limlar — `docs/18` §6.3. `Scored` anketalarda `SectionsSection` o'zi B-2
           tushuntirishini ko'rsatadi (bloklanmaydi, faqat yashiriladi). */}

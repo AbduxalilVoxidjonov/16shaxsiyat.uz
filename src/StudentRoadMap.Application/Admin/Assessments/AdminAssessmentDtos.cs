@@ -220,7 +220,8 @@ public sealed record AdminAssessmentAnswerDto(
     bool? IsFastAnswer,
     int? StraightLiningBlockIndex,
     string? TextValue,
-    IReadOnlyList<int>? SelectedValues);
+    IReadOnlyList<int>? SelectedValues,
+    string? TestNameUz = null);
 
 /// <summary>
 /// Sessiya darajasidagi ishonchlilik signallari (`docs/03` §7) — bo'lim boshida ko'rsatiladi.

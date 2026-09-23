@@ -385,7 +385,7 @@ describe('DashboardPage', () => {
     const banner = await screen.findByRole('alert');
     expect(within(banner).getByText('2 ta maktab havolasi ishlamaydi')).toBeInTheDocument();
     expect(within(banner).getByText(/12-son maktab/)).toBeInTheDocument();
-    expect(within(banner).getByText(/Maktabga dastur biriktirilmagan/)).toBeInTheDocument();
+    expect(within(banner).getByText(/Maktabga test biriktirilmagan/)).toBeInTheDocument();
     expect(within(banner).getByText('va yana 1 ta')).toBeInTheDocument();
   });
 

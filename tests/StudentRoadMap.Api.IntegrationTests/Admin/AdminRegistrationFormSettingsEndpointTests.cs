@@ -63,8 +63,10 @@ public sealed class AdminRegistrationFormSettingsEndpointTests : IClassFixture<P
         dto.CoreFields.Gender.Requirement.Should().Be("Required");
         dto.CoreFields.Grade.Requirement.Should().Be("Required");
         dto.CoreFields.ClassLetter.Requirement.Should().Be("Optional");
-        dto.CoreFields.Phone.Requirement.Should().Be("Required");
-        dto.CoreFields.ParentPhone.Requirement.Should().Be("Optional");
+        dto.CoreFields.Phone.Requirement.Should().Be("Optional");
+        dto.CoreFields.Phone.Order.Should().Be(7);
+        dto.CoreFields.ParentPhone.Requirement.Should().Be("Required");
+        dto.CoreFields.ParentPhone.Order.Should().Be(6);
         dto.CoreFields.Email.Requirement.Should().Be("Optional");
         dto.CustomFields.Should().BeEmpty();
     }

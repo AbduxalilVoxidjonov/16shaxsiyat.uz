@@ -761,6 +761,10 @@ namespace StudentRoadMap.Infrastructure.Migrations
                         .HasColumnType("character varying(150)")
                         .HasColumnName("name_uz");
 
+                    b.Property<Guid?>("OwnerTestDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_test_definition_id");
+
                     b.Property<string>("RegistrationFields")
                         .HasColumnType("jsonb")
                         .HasColumnName("registration_fields");
@@ -795,6 +799,11 @@ namespace StudentRoadMap.Infrastructure.Migrations
                     b.HasIndex("Code")
                         .IsUnique()
                         .HasDatabaseName("ux_assessment_programs_code");
+
+                    b.HasIndex("OwnerTestDefinitionId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_assessment_programs_owner_test")
+                        .HasFilter("owner_test_definition_id IS NOT NULL");
 
                     b.HasIndex("IsActive", "DisplayOrder")
                         .HasDatabaseName("ix_assessment_programs_active")
@@ -2275,6 +2284,15 @@ namespace StudentRoadMap.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_answer_options_questions_question_id");
+                });
+
+            modelBuilder.Entity("StudentRoadMap.Domain.Catalog.AssessmentProgram", b =>
+                {
+                    b.HasOne("StudentRoadMap.Domain.Catalog.TestDefinition", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerTestDefinitionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_assessment_programs_test_definitions_owner_test_definition_");
                 });
 
             modelBuilder.Entity("StudentRoadMap.Domain.Catalog.ProgramTest", b =>

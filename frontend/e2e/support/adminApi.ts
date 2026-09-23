@@ -204,7 +204,7 @@ export interface BranchingSurveyInput {
  * yaratish → bo'limlar → savollar (`.../questions/import`) → nashr. E2E uchun (P52) —
  * tarmoqlanuvchi so'rovnoma stsenariysida haqiqiy UI konstruktorini emas (u alohida,
  * og'ir oqim), aynan `AdminCatalogBranchingImportEndpointTests` bilan bir xil API
- * ketma-ketligini ishlatadi. Natijada qaytadigan `id` — `POST .../programs/{id}/tests`ga.
+ * ketma-ketligini ishlatadi. Natijada qaytadigan `id` — `assignTestToSchool`ga.
  */
 export async function createAndPublishBranchingSurvey(
   token: string,
@@ -252,41 +252,26 @@ export async function createAndPublishBranchingSurvey(
 }
 
 /**
- * Yangi (`Custom`/`Assigned`) dastur yaratadi, testni biriktiradi, nashr qiladi va FAQAT
- * berilgan maktabga tayinlaydi — `Public` visibility ATAYLAB ishlatilmaydi (aks holda
- * dastur BARCHA maktablarda, jumladan parallel ishlayotgan boshqa E2E testlarining
- * maktablarida ham ko'rinib qolardi — `docs/18` bilan bog'liq emas, E2E izolyatsiyasi).
+ * Testni FAQAT berilgan maktabga biriktiradi — `PUT /api/admin/catalog/tests/{id}/assignment`
+ * (`docs/07` §3.4.1, 2026-09-23 egasi qarori: "Dasturlar" bo'limi va `/api/admin/programs/*`
+ * olib tashlandi; test dasturini backend o'zi yaratadi, nomi = test nomi). `isPublic: false`
+ * ATAYLAB — aks holda test BARCHA maktablarda, jumladan parallel ishlayotgan boshqa E2E
+ * testlarining maktablarida ham ko'rinib qolardi (E2E izolyatsiyasi).
  */
-export async function createProgramWithTest(
+export async function assignTestToSchool(
   token: string,
   clientIp: string,
-  options: { code: string; nameUz: string; testDefinitionId: string; schoolId: string },
-): Promise<{ id: string }> {
-  const program = await callApi<{ id: string }>('POST', '/api/admin/programs', {
+  options: { testDefinitionId: string; schoolId: string },
+): Promise<{ testDefinitionId: string; isConfigured: boolean; schoolIds: string[] }> {
+  return callApi('PUT', `/api/admin/catalog/tests/${options.testDefinitionId}/assignment`, {
     token,
     clientIp,
     body: {
-      code: options.code,
-      nameUz: options.nameUz,
-      descriptionUz: null,
-      displayOrder: 1,
-      visibility: 'Assigned',
+      isPublic: false,
+      schoolIds: [options.schoolId],
+      registrationMode: 'Full',
     },
   });
-
-  await callApi('POST', `/api/admin/programs/${program.id}/tests`, {
-    token,
-    clientIp,
-    body: { testDefinitionId: options.testDefinitionId, displayOrder: 1 },
-  });
-
-  await callApi('POST', `/api/admin/programs/${program.id}/publish`, { token, clientIp });
-  await callApi('POST', `/api/admin/programs/${program.id}/schools/${options.schoolId}`, {
-    token,
-    clientIp,
-  });
-
-  return program;
 }
 
 /**

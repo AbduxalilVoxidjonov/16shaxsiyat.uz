@@ -54,11 +54,10 @@ function KpiCard({
  * KPI kartalar — docs/11 A-2 wireframe (4 karta) + vazifa ko'rsatmasi 1-band: "maktablar
  * (faol/jami), o'quvchilar, yakunlangan sessiyalar, tahlil navbatida, e'tibor talab
  * qiladiganlar" (5 karta — wireframe eskirgan, ko'rsatma to'liqroq). "Tahlil navbatida"
- * va "e'tibor talab qiladi" kartalari bosilganda tegishli ro'yxatga o'tadi (docs/11 A-2:
- * "'Tahlil kutilmoqda: 12' — bosilsa AnalysisFailed/Analyzing filtri bilan sessiyalarga
- * o'tadi"; e'tibor uchun shunga o'xshash — `StudentsPage`ning mavjud `needsAttention`
- * filtriga, chunki sessiyalar sahifasi hali qurilmagan bo'lsa ham query-parametr URL'da
- * saqlanadi va sahifa qurilganda ishlab ketadi).
+ * va "e'tibor talab qiladi" kartalari bosilganda O'quvchilar ro'yxatiga tegishli filtr bilan
+ * o'tadi: `?status=Analyzing` ("shu holatdagi sessiyasi BOR o'quvchilar", `docs/07` 3.2) va
+ * `?needsAttention=true`. Sessiyalar ro'yxati sahifasi 2026-09-23 da olib tashlangan
+ * (egasining qarori — O'quvchilar bilan bir xil edi), shu sabab ikkala karta ham shu yerga.
  */
 export function KpiCards({ totals, isLoading }: KpiCardsProps) {
   const { t } = useTranslation();
@@ -101,7 +100,7 @@ export function KpiCards({ totals, isLoading }: KpiCardsProps) {
         value={totals ? String(totals.pendingAnalysis) : '—'}
         hint={t('dashboard.kpi.pendingAnalysisHint')}
         isLoading={isLoading}
-        onClick={() => navigate(`${ROUTES.admin.assessments}?status=Analyzing`)}
+        onClick={() => navigate(`${ROUTES.admin.students}?status=Analyzing`)}
       />
       <KpiCard
         label={t('dashboard.kpi.needsAttention')}

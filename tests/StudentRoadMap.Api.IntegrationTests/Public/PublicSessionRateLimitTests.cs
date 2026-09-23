@@ -40,7 +40,7 @@ public sealed class PublicSessionRateLimitTests : IClassFixture<PublicApiTestFac
 
         StartSessionCommand Command(int i) => new(
             school.Slug.Value, token, null, $"Foydalanuvchi RateLimit Familiyasi{i}",
-            new DateOnly(2010, 1, 1), Gender.Male, 9, "A", "+998901234567", null, null, true, "uz");
+            new DateOnly(2010, 1, 1), Gender.Male, 9, "A", "+998901234567", "+998909998877", null, true, "uz");
 
         var statuses = new List<HttpStatusCode>();
         for (var i = 1; i <= 11; i++)
