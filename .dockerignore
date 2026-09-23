@@ -20,6 +20,10 @@ frontend/.vite/
 frontend/coverage/
 frontend/playwright-report/
 frontend/test-results/
+# Lokal Vite muhit fayllari — build-vaqt qiymatlari compose `build.args` orqali beriladi
+# (`docker/Dockerfile.web` izohi). `frontend/.env.example` kerak emas, lekin zarari yo'q.
+frontend/.env
+frontend/.env.*
 
 # Versiya nazorati va IDE
 .git/

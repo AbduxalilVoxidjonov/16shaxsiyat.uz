@@ -1,7 +1,7 @@
 # 13 — Deploy va infratuzilma
 
 > Bu hujjat **hozirgi ishlab turgan compose tuzilishiga** mos (P32 yakuniy tekshiruvi,
-> 2026-09-02). Haqiqat manbai — repo ildizidagi `docker-compose.yml`, `docker/*` va
+> 2026-09-02; serverga ko'chirish uchun yangilangan — 2026-09-23, §13). Haqiqat manbai — repo ildizidagi `docker-compose.yml`, `docker/*` va
 > `.env.example`; bu yerda faqat ular tushuntiriladi. Ular bilan farq chiqsa — fayllar
 > to'g'ri, shu hujjat yangilanadi (`docs/00-README.md` §4-qoida).
 
@@ -15,8 +15,8 @@
 
 Hozircha alohida "staging" muhiti yo'q — repo `origin`ga ulanmagan (egasining qarori,
 `PROGRESS.md`), shuning uchun 5-bo'limdagi CD (avtomatik deploy) ham hali ishga tushirilmagan.
-Production serveri **qo'lda**, shu repo nusxasidan `docker compose up -d --build` bilan
-boshqariladi.
+Production serveri **qo'lda**, shu repo nusxasidan (`git pull` + `docker compose`) boshqariladi —
+aniq buyruqlar §13 da.
 
 ---
 
@@ -42,6 +42,7 @@ docker compose up -d --build
         │  depends_on
         ▼
    tunnel (cloudflared — `app:8080`ni `16shaxsiyat.uz`ga ulaydi, TOKEN orqali)
+            ↑ faqat `--profile tunnel` bilan (profilsiz `up` uni ko'tarmaydi)
 ```
 
 **Bitta buyruq — butun oqim.** `docker compose up -d --build` shu zanjirni ketma-ket
@@ -87,11 +88,12 @@ Muhim tafsilotlar:
   alohida qadam bo'lishi shart — avtomatik ishga tushsa, noto'g'ri versiyaga tasodifan
   migratsiya qilib qo'yish xavfi bor). `restart: "no"` — muvaffaqiyatli tugagach o'chib
   qoladi, qayta ishga tushmaydi.
-- **`app` xost'ga port CHIQARMAYDI.** Ilova faqat Cloudflare Tunnel orqali, o'z domenida
-  ochiladi — mashinada tashqi tarmoqdan kirsa bo'ladigan hech qanday port yo'q (`api` ham
-  xost portiga chiqmagan; faqat ichki compose tarmog'ida `app` unga murojaat qiladi).
-  Lokal tekshiruv kerak bo'lsa: `docker compose port app 8080` yoki `docker-compose.yml`
-  dagi izohlangan `ports:` qatorini vaqtincha oching.
+- **`app` xost'ga faqat `127.0.0.1:${WEB_PORT:-8090}` da chiqadi** — diagnostika uchun
+  (`curl http://127.0.0.1:8090/health`); tashqi tarmoqdan ko'rinmaydi. Ommaviy trafik
+  Cloudflare Tunnel orqali keladi: ingress `http://app:8080` — bu docker **ichki** tarmog'idagi
+  konteyner porti, host portiga aloqasi yo'q, shuning uchun `WEB_PORT` ni o'zgartirish tunnelga
+  ta'sir qilmaydi. Host'da hech bir servis 8080 ga bog'lanmaydi (Mac'da ham, serverda ham 8080
+  boshqa dasturlar bilan band bo'lishi mumkin). `api` host portiga umuman chiqmagan.
 - **`app` — "same-origin" arxitektura**: frontend `/api/...` ga NISBIY yo'l bilan so'rov
   yuboradi (alohida `api.16shaxsiyat.uz` subdomeni YO'Q — dastlabki reja shu edi, lekin
   amalda soddalashtirildi: bitta domen, bitta sertifikat, CORS umuman kerak emas).
@@ -106,7 +108,7 @@ Muhim tafsilotlar:
   bilan ko'tarilmay qolgan edi — shu mashinadagi boshqa loyihaning Postgres'i 5432 ni
   egallab turgan. Konteynerlararo aloqaga ta'sir qilmaydi (ular `Host=db;Port=5432`
   ishlatadi). Kerak bo'lsa `.env` da `DB_PORT` bilan o'zgartiriladi.
-- **Tarmoq subneti QAT'IY belgilangan** — 5-bo'lim, MAXSUS DIQQAT.
+- **Tarmoq subneti QAT'IY belgilangan** — §7, MAXSUS DIQQAT.
 
 ---
 
@@ -126,6 +128,10 @@ Qisqacha:
 **`docker/Dockerfile.web`** — `node:22-alpine` (build) → `nginx:alpine` (ishga tushirish):
 - `VITE_API_BASE_URL` ATAYLAB berilmaydi — build "same-origin" rejimida bo'ladi
   (`frontend/src/shared/config/env.ts`: bo'sh qiymat → `/api/...` nisbiy yo'l).
+- Build-vaqt qiymatlari FAQAT compose `app.build.args` dan (`VITE_TELEGRAM_BOT`, standart
+  `shaxsiyat16_bot`). `frontend/.env*` build kontekstiga KIRMAYDI (`.dockerignore`,
+  2026-09-23): ilgari lokal `frontend/.env` image'ga jimgina tushardi, `git clone` qilingan
+  serverda esa fayl yo'q — Telegram tugmasi faqat lokal build'da ishlardi.
 - **MUHIM (`.dockerignore`, repo ildizida):** `COPY frontend/ ./` `npm ci`dan KEYIN keladi.
   Agar dasturchi mashinasida `frontend/node_modules`/`dist` mavjud bo'lsa va `.dockerignore`
   ularni chetlab o'tmasa, bu buyruq konteyner ichida to'g'ri o'rnatilgan (Linux) modullarni
@@ -136,7 +142,10 @@ Qisqacha:
 
 **`docker/web-nginx.conf`** (8080-portda tinglaydi — `EXPOSE 8080`, host portiga emas,
 compose ichidagi `app:8080`ga bog'lanadi):
-- `/api/` → `api:8080`ga proksi (Host/X-Forwarded-* header'lari bilan).
+- `/api/` → `api:8080`ga proksi (Host/X-Forwarded-* header'lari bilan). `X-Forwarded-Proto`
+  cloudflared bergan qiymatdan (`https`) o'tkaziladi, bo'lmasa `$scheme` (`map
+  $forwarded_proto`, 2026-09-23). Ilgari doim `http` ketardi — API HTTPS'ni bilmay,
+  "Failed to determine the https port for redirect" deb yozardi va HSTS yubormasdi.
 - `/swagger`, `/health` → shuningdek `api:8080`ga proksi (diagnostika uchun).
 - `/assets/` — 1 yil kesh (`immutable`, fayl nomida xesh bor); `index.html` — `no-cache`.
 - SPA fallback: noma'lum yo'llar `index.html`ga (`try_files`).
@@ -182,7 +191,7 @@ Farqlar sababi va oqibati:
   Tunnel ulanishi CNAME orqali avtomatik sozlanadi (Zero Trust > Tunnels > Public Hostname).
 - **Kiruvchi port yo'q**: serverning firewall'ida hech qanday portni ochish shart emas
   (80/443 ham) — bu klassik reverse-proksi sxemasidan ko'ra kichikroq hujum yuzasi.
-  Faqat `db` porti host'ga chiqqan va u ham `127.0.0.1` ga bog'langan (§2) — tashqi
+  Faqat `db` va `app` portlari host'ga chiqqan, ikkalasi ham `127.0.0.1` ga bog'langan (§2) — tashqi
   tarmoqdan ko'rinmaydi.
 - **`.uz` domeni**: yillik uzaytirish eslatmasi hali kuchda — muddat o'tsa Tunnel'ning o'zi
   ishlaydi, lekin domen hech kimga ko'rsatmaydi.
@@ -239,10 +248,11 @@ Hozircha production **qo'lda** yangilanadi, to'g'ridan-to'g'ri serverda:
 cd /opt/16shaxsiyat            # yoki repo qayerda joylashgan bo'lsa
 git pull
 docker compose build api app
-docker compose run --rm migrate     # yangi migratsiya bo'lsa
-docker compose up -d --no-deps api app
-curl -sf http://localhost/health || echo "OLDINGI IMAGE'GA QAYTARILSIN"
+docker compose run --rm migrate     # yangi migratsiya bo'lsa (bo'lmasa bir soniyada tugaydi)
+docker compose --profile tunnel up -d
+curl -fsS http://127.0.0.1:${WEB_PORT:-8090}/health || echo "OLDINGI IMAGE'GA QAYTARILSIN"
 ```
+(Batafsil — §13.8.)
 
 Egasi `origin`ni ulashga qaror qilganda, ushbu qo'lda qadamlar `.github/workflows/deploy.yml`
 ga ko'chiriladi (SSH + health check + rollback, sirlar GitHub Secrets'da:
@@ -262,15 +272,19 @@ To'liq va izohli ro'yxat — `.env.example` (repo ildizida). Qisqacha jadval:
 | `Jwt__Key` | `api`/`migrate`/`seed` | ≥ 32 bayt tasodifiy (`openssl rand -base64 48`) |
 | `Security__EncryptionKey` | `api`/`migrate`/`seed` | Aynan 32 bayt, base64 (`openssl rand -base64 32`) — AI kalitlarini shifrlaydi |
 | `Security__IpHashSalt` | `api` | IP xeshlash tuzi (audit/rate-limit) |
-| `App__KnownProxies` | `api` | Ishonchli proksi subneti — §7 MAXSUS DIQQAT |
-| `App__FrontendUrl` | `api` | CORS va havola generatsiyasi |
+| `App__KnownProxies` | `api` | Ishonchli proksi subneti — §7 MAXSUS DIQQAT. Compose standarti `172.26.0.0/16` |
+| `App__FrontendUrl` | `api` | CORS va maktab havolalari (`{FrontendUrl}/t/{slug}?k=`). Compose standarti `https://16shaxsiyat.uz` (2026-09-23 gacha `http://localhost:8080` edi) |
 | `App__SeedOnStartup` | `api` | Production'da `false` — seed alohida `seed` konteyneri bilan |
 | `Ai__AutoAnalyzeOnCompletion` | `api` | Sessiya yakunlangach AI tahlilini AVTOMATIK navbatga qo'yish. Standart **`false`** (AI xarajati nazorati, 2026-09-03 egasi qarori) — tahlil admin paneldagi tugma bilan qo'lda ishga tushiriladi. Pastda §6.1 |
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` / `ADMIN_EMAIL` | `seed` | Yagona superadmin — bo'lmasa seed uni yaratmaydi |
-| `FRONTEND_URL` | (hujjat/eslatma) | `docs`/skriptlarda ishlatiladigan haqiqiy domen |
-| `API_URL` | (hujjat/eslatma) | `frontend/package.json` dagi `generate:api` standart manzili |
-| `TUNNEL_TOKEN` | `tunnel` | Cloudflare Zero Trust > Tunnels > connector token |
-| `WEB_PORT` | (ixtiyoriy, lokal) | `app` xizmatini vaqtincha xostga chiqarish uchun |
+| `Telegram__BotToken` | `api` | Telegram Login imzosi (sir). Bo'sh — Telegram kirishi o'chiq |
+| `VITE_TELEGRAM_BOT` | `app` (build arg) | Bot nomi, SIR EMAS; compose standarti `shaxsiyat16_bot`. Build vaqtida bundle'ga yoziladi — `frontend/.env` Docker build'ga KIRMAYDI (`.dockerignore`) |
+| `TUNNEL_TOKEN` | `tunnel` | Cloudflare Zero Trust > Tunnels > connector token. Konteynerga env orqali (argv'da emas) |
+| `WEB_PORT` | `app` (host porti) | `127.0.0.1:${WEB_PORT}` → `app:8080`. Standart **8090**; host'da 8080 ishlatilmaydi. Tunnelga ta'siri yo'q |
+
+`FRONTEND_URL` va `API_URL` (eski `.env.example` qatorlari) hech bir servisda ishlatilmas edi —
+2026-09-23 da namunadan olib tashlandi (`API_URL` faqat lokal `npm run generate:api` uchun,
+standarti `http://localhost:5402`).
 
 Kalit almashtirish (`Security__EncryptionKey` rotatsiyasi): admin panel orqali AI
 kalitlarini qayta kiritish eng sodda yo'l; avtomatik re-encrypt skripti v2.
@@ -329,7 +343,31 @@ grep -A2 "subnet:" docker-compose.yml
 
 Agar kimdir kelajakda `docker-compose.yml`dagi subnetni o'zgartirsa — `.env.example` VA
 serverdagi haqiqiy `.env` shu qatorni birga yangilashi SHART, aks holda yuqoridagi jim
-buzilish qaytadan yuz beradi.
+buzilish qaytadan yuz beradi. (2026-09-23 dan subnet `COMPOSE_SUBNET` o'zgaruvchisidan olinadi, standart
+`172.26.0.0/16`; `App__KnownProxies` berilmasa compose uni AYNAN shu o'zgaruvchidan oladi —
+`${App__KnownProxies:-${COMPOSE_SUBNET:-172.26.0.0/16}}`, ya'ni ikkalasi doim mos. `.env` da
+`App__KnownProxies` ni alohida BERMASLIK tavsiya etiladi.)
+
+**Subnet o'zgartirilsa** (masalan, serverda 172.26.0.0/16 band): mavjud tarmoq ipam'ini Docker
+joyida o'zgartirmaydi — bir marta `docker compose down` (**`-v` YO'Q**, aks holda `pgdata`
+o'chadi) + `docker compose --profile tunnel up -d` kerak. Qiymat o'zgarmasa (lokal Mac, standart
+172.26.0.0/16 — tarmoq allaqachon shu subnet bilan yaratilgan) qayta yaratish SHART EMAS; agar
+`up` "network ... needs to be recreated" desa — xuddi shu `down` + `up`.
+
+### 7.1 Ikki hop'li zanjir — `ForwardLimit` (2026-09-23 topilmasi)
+
+Tunnel ulangach `api` ga keladigan zanjir: Cloudflare edge → `tunnel` (cloudflared) → `app`
+(nginx) → `api`. nginx `$proxy_add_x_forwarded_for` bilan cloudflared'ning docker IP'sini
+qo'shadi, ya'ni `api` ko'radigan header: `X-Forwarded-For: <mijoz>, <cloudflared>`.
+ASP.NET Core standarti `ForwardLimit = 1` faqat eng o'ng yozuvni o'qiydi — natijada
+`RemoteIpAddress` **cloudflared konteyneri** bo'lib qolardi: BARCHA foydalanuvchi bitta IP
+ostida, IP rate-limit (masalan, `PublicStartSession` 10/soat) butun sayt uchun umumiy. nginx
+logida tasdiqlangan (`$remote_addr` = docker IP, XFF = tashqi IP).
+
+Tuzatish: `ForwardedHeadersSetup` da `ForwardLimit = null`. Xavfsiz, chunki middleware
+o'ngdan chapga faqat joriy manzil `KnownIPNetworks` (docker subnet) ichida bo'lgan paytgacha
+yuradi: mijoz yuborgan soxta yozuvlar Cloudflare qo'shgan haqiqiy IP'dan CHAPDA turadi va
+o'qilmaydi. Test: `PublicForwardedHeadersTunnelChainTests` (fix'siz qizil bo'lishi tekshirilgan).
 
 ---
 
@@ -499,15 +537,19 @@ RPO: 24 soat · RTO: 2 soat.
 
 ## 11. Ishga tushirish tartibi
 
-### 11.1 Docker compose bilan (tavsiya etiladi — bitta buyruq)
+### 11.1 Docker compose bilan (tavsiya etiladi)
+
+Server uchun to'liq, tartiblangan yo'riqnoma — **§13**. Qisqasi (bo'sh baza bilan):
 
 ```bash
-git clone <repo> && cd StudentRoadMap
-cp .env.example .env            # BARCHA CHANGE_ME qiymatlarni to'ldiring
-docker compose up -d --build    # db → migrate → seed → api → app → tunnel — ketma-ket
-docker compose logs -f migrate seed   # ikkalasi ham "0" kod bilan tugashini kuzating
-curl -sf http://localhost/health   # agar `app` porti vaqtincha ochilgan bo'lsa
-# tunnel ishlayotgan bo'lsa: https://<sizning domeningiz>/health
+git clone https://github.com/AbduxalilVoxidjonov/16shaxsiyat.uz.git 16shaxsiyat && cd 16shaxsiyat
+cp .env.example .env                          # BARCHA CHANGE_ME qiymatlarni to'ldiring
+docker compose build api app
+docker compose up -d db
+docker compose run --rm migrate
+docker compose --profile init run --rm seed   # faqat BO'SH bazada (seed zanjirda YO'Q, §2)
+docker compose --profile tunnel up -d         # api, app, tunnel
+curl -fsS http://127.0.0.1:${WEB_PORT:-8090}/health
 ```
 
 Superadmin: `.env`dagi `ADMIN_USERNAME`/`ADMIN_PASSWORD` — birinchi kirishda parolni
@@ -557,3 +599,193 @@ cd frontend && npm install && npm run dev        # http://localhost:5173
 - DB migratsiyasi bo'lgan reliz — **oldindan backup** (`./scripts/backup.sh`), keyin deploy.
 - Rollback: oldingi image tag + (agar migratsiya destruktiv bo'lsa) backupdan tiklash
   (§9.2). Shuning uchun destruktiv migratsiyalar ikki bosqichda (`docs/05` §4).
+
+---
+
+## 13. Serverga ko'chirish (2026-09-23)
+
+Maqsad: saytni lokal Mac'dan (Cloudflare tunnel orqali `16shaxsiyat.uz` ga ulangan) Linux
+serverga ko'chirish. Tunnel **remote-managed** — ingress Cloudflare panelida
+(`16shaxsiyat.uz → http://app:8080`), serverda faqat token kerak. Kiruvchi port ochilmaydi.
+
+### 13.1 Talablar
+
+- Linux server (Ubuntu 22.04/24.04 tavsiya), ≥ 2 GB RAM (ikkala image'ni qurish uchun),
+  ≥ 20 GB disk; faqat SSH ochiq (80/443 SHART EMAS — trafik chiquvchi tunnel orqali).
+- Docker Engine + compose plugin (v2):
+
+```bash
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker "$USER"      # qayta SSH login qiling
+docker compose version               # v2.x chiqishi kerak
+sudo ufw allow OpenSSH && sudo ufw enable   # ixtiyoriy; 5433/8090 baribir faqat 127.0.0.1 da
+```
+
+### 13.2 Kod va `.env`
+
+```bash
+sudo mkdir -p /opt/16shaxsiyat && sudo chown "$USER" /opt/16shaxsiyat
+git clone https://github.com/AbduxalilVoxidjonov/16shaxsiyat.uz.git /opt/16shaxsiyat
+cd /opt/16shaxsiyat
+git checkout main                    # deploy qilinadigan branch
+cp .env.example .env && chmod 600 .env
+nano .env                            # har CHANGE_ME ni almashtiring (izohlarda generatsiya buyruqlari)
+```
+
+Repo private bo'lsa — serverga faqat o'qish huquqli **deploy key** (GitHub → Settings →
+Deploy keys) qo'shib, `git@github.com:AbduxalilVoxidjonov/16shaxsiyat.uz.git` bilan klonlang.
+
+`.env` bo'yicha muhim:
+- **Lokal bazani ko'chirsangiz (13.4 B-yo'l)**: `Security__EncryptionKey` va
+  `Security__IpHashSalt` ni lokal `.env` dan AYNAN nusxalang (xavfsiz kanal orqali — masalan
+  parol menejeri yoki `scp`, chat/email EMAS). Aks holda bazadagi AI kalitlari va TOTP sirlari
+  o'qilmaydi. `DB_PASSWORD`, `Jwt__Key` yangi bo'lishi mumkin.
+- **Subnet:** `docker network inspect $(docker network ls -q) --format '{{.Name}} {{range .IPAM.Config}}{{.Subnet}}{{end}}'`
+  bilan band diapazonlarni ko'ring; 172.26.0.0/16 band bo'lsa `.env` da `COMPOSE_SUBNET=172.30.0.0/16`
+  (bo'sh diapazon). `App__KnownProxies` ni BERMANG — compose uni `COMPOSE_SUBNET` dan oladi.
+- `App__FrontendUrl=https://16shaxsiyat.uz`,
+  `TUNNEL_TOKEN` — lokal bilan bir xil token (bir tunnel, konnektor ko'chadi).
+- **Host porti:** `app` host'da `127.0.0.1:${WEB_PORT}` ga chiqadi (standart **8090**, host'da
+  8080 ishlatilmaydi). Band bo'lsa `ss -ltn | grep ':8090 '` bilan tekshirib, `.env` da
+  boshqasini bering (`WEB_PORT=8091`). Bu port faqat serverning o'zidan diagnostika uchun;
+  tunnel `http://app:8080` — docker ichki tarmog'idagi konteyner portiga boradi, host portiga
+  bog'liq emas.
+
+### 13.3 Image'larni qurish va bazani ko'tarish
+
+```bash
+docker compose build api app
+docker compose up -d db              # FAQAT db — `api` ni hali ko'tarmang (u migrate'ni tortadi)
+docker compose ps db                 # "healthy" bo'lguncha kuting
+```
+
+### 13.4 Ma'lumot: A-yo'l (yangi baza) YOKI B-yo'l (lokal bazani ko'chirish)
+
+**A-yo'l — bo'sh baza:**
+```bash
+docker compose run --rm migrate
+docker compose --profile init run --rm seed      # katalog + superadmin (ADMIN_* dan)
+```
+
+**B-yo'l — lokal bazani ko'chirish (real ma'lumot saqlanadi).**
+
+Tartib: **restore → migrate** (migratsiyadan OLDIN tiklanadi). Sabab: dump sxemani ham,
+`__EFMigrationsHistory` jadvalini ham o'z ichiga oladi. Bo'sh bazaga tiklangach `migrate`
+tarixni solishtirib faqat YETISHMAYOTGAN migratsiyalarni qo'llaydi (server kodi lokal bazadan
+yangiroq bo'lsa) yoki bir soniyada "yangilik yo'q" deb tugaydi. Teskari tartibda (avval
+`migrate`, keyin `pg_restore --clean`) restore migratsiya yaratgan obyektlarni o'chirib qayta
+yozadi — dumpda yo'q, lekin migratsiya yaratgan jadval/indeks "yetim" qolib, keyingi
+`migrate` `already exists` bilan yiqilishi mumkin. `seed` B-yo'lda ISHLATILMAYDI (katalog va
+superadmin bazada bor; boshqa `ADMIN_USERNAME` bilan seed IKKINCHI superadmin yaratadi).
+
+Ko'chirish oynasi (bir necha daqiqa uzilish; shu paytda yozilgan ma'lumot yo'qolmasligi uchun
+lokal yozuvlar to'xtatiladi):
+
+```bash
+# --- LOKAL Mac'da (repo papkasida) ---
+docker compose stop tunnel api                  # sayt "offline", yangi yozuv tushmaydi
+docker compose exec -T db pg_dump -U srm -d studentroadmap -Fc > backups/prod-transfer.dump
+ls -lh backups/prod-transfer.dump               # hajm 0 emasligini tekshiring
+scp backups/prod-transfer.dump user@SERVER:/opt/16shaxsiyat/backups/
+
+# --- SERVERDA (/opt/16shaxsiyat) ---
+mkdir -p backups                                # scp'dan oldin kerak bo'lsa
+docker compose exec -T db pg_restore -U srm -d studentroadmap \
+    --clean --if-exists --no-owner < backups/prod-transfer.dump
+docker compose run --rm migrate                 # restore'dan KEYIN
+# pg_restore xato chiqarsa (bo'sh bazada kutilmaydi): toza bazadan qayta urinish —
+#   docker compose exec -T db dropdb -U srm studentroadmap && docker compose exec -T db createdb -U srm studentroadmap
+docker compose exec -T db psql -U srm -d studentroadmap -c \
+    'SELECT count(*) AS migrations FROM "__EFMigrationsHistory";'
+```
+
+`backups/` `.gitignore` da (shaxsiy ma'lumot) — dump faylini ko'chirgach lokalda ham,
+serverda ham kerak bo'lmasa o'chiring yoki `chmod 600` qiling.
+
+### 13.5 Stekni ishga tushirish
+
+```bash
+docker compose --profile tunnel up -d           # db, migrate (tez tugaydi), api, app, tunnel
+```
+
+### 13.6 DIQQAT — lokal tunnelni to'xtatish
+
+Bitta tunnelga IKKI konnektor (Mac + server) ulansa, Cloudflare trafikni ular orasida
+**bo'ladi**: foydalanuvchilarning bir qismi eski lokal saytga (eski baza!) tushadi — ma'lumot
+ikki bazaga tarqaladi. Server tunneli `Registered` bo'lishi bilan LOKAL Mac'da:
+
+```bash
+docker compose stop tunnel                      # (B-yo'lda 13.4 da allaqachon to'xtatilgan)
+docker compose stop api app                     # ixtiyoriy: lokal stek endi kerak emas
+```
+
+Cloudflare Zero Trust → Networks → Tunnels → (tunnel) → **Connectors**: faqat server IP'si
+qolganini tasdiqlang. Keyin Mac'da `--profile tunnel` bilan `up` QILMANG (u yana ulanadi).
+
+### 13.7 Tekshirish
+
+```bash
+docker compose ps                                          # api/app/tunnel "Up", migrate "Exited (0)"
+docker compose logs tunnel | grep -i "Registered tunnel connection"   # odatda 4 ta ulanish
+curl -fsS http://127.0.0.1:${WEB_PORT:-8090}/health        # server ichidan → "Healthy"
+curl -I https://16shaxsiyat.uz                             # HTTP/2 200 (Cloudflare orqali)
+curl -fsS https://16shaxsiyat.uz/health                    # "Healthy"
+docker compose logs api --since 10m | grep -iE "fail|error" # bo'sh bo'lishi kerak
+docker network inspect 16shaxsiyat_default --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}'  # = COMPOSE_SUBNET (§7)
+docker compose exec api printenv App__KnownProxies                                              # xuddi shu qiymat
+```
+
+Qo'lda: superadmin bilan kiring, maktab havolasini nusxalang — `https://16shaxsiyat.uz/t/...`
+bo'lishi kerak (`localhost` emas → `App__FrontendUrl` to'g'ri).
+
+Kutilgan (zararsiz) log ogohlantirishlari:
+- `Storing keys in a directory ... that may not be persisted` (DataProtection) — loyiha
+  DataProtection'ga tayanadigan funksiya ishlatmaydi: auth — JWT (o'z `Jwt__Key` i), refresh
+  token — oddiy httpOnly cookie (ichida tasodifiy token, shifrlanmaydi), AI kalit/TOTP
+  shifrlash — o'z `AesEncryptionService` (`Security__EncryptionKey`). Cookie auth, antiforgery,
+  session, TempData yo'q. Shu sabab kalitlarni volume'da saqlash SHART EMAS; kelajakda
+  cookie-auth/antiforgery qo'shilsa — `AddDataProtection().PersistKeysToFileSystem(...)` +
+  named volume (Dockerfile'da katalogni `app` user'ga `chown` qilib) kerak bo'ladi.
+- MediatR litsenziya ogohlantirishi — ishlashga ta'sir qilmaydi (litsenziya masalasi, §13.10).
+
+### 13.8 Yangilash (keyingi deploy'lar)
+
+```bash
+cd /opt/16shaxsiyat
+./scripts/backup.sh                             # migratsiyali relizdan oldin SHART (§12)
+git pull
+docker compose build api app
+docker compose run --rm migrate
+docker compose --profile tunnel up -d           # o'zgargan konteynerlarni qayta yaratadi
+curl -fsS http://127.0.0.1:${WEB_PORT:-8090}/health && curl -fsS https://16shaxsiyat.uz/health
+docker image prune -f                           # eski image qatlamlari (disk)
+```
+
+`--profile tunnel` ni UNUTMANG: profilsiz `up -d` tunnelga tegmaydi (ishlayotgan bo'lsa ishlab
+turaveradi), lekin `docker compose down` dan keyin profilsiz `up` saytni tunnelsiz qoldiradi.
+
+### 13.9 Zaxira (cron)
+
+`scripts/backup.sh` (§9.1) — `backups/srm_<sana>_<vaqt>.dump`, 30 kunlik rotatsiya:
+
+```bash
+crontab -e
+# har kuni 03:00 (server vaqti; `timedatectl set-timezone Asia/Tashkent`)
+0 3 * * * cd /opt/16shaxsiyat && ./scripts/backup.sh >> /var/log/srm-backup.log 2>&1
+```
+
+`/var/log/srm-backup.log` ga yozish huquqi bo'lmasa — `$HOME/srm-backup.log`. Zaxirani
+serverdan TASHQARIGA ham nusxalang (offsite — §9 jadvali; server diski bilan birga yo'qolmasin),
+va har chorakda `./scripts/restore-test.sh` bilan tiklanishini sinang.
+
+### 13.10 Qolgan ochiq masalalar (2026-09-23)
+
+- `cloudflare/cloudflared:latest` — versiya qotirilmagan; `git pull && up` kutilmagan yangilanish
+  olib kelishi mumkin. Aniq teg (masalan `cloudflare/cloudflared:2025.x.y`) tavsiya etiladi.
+- MediatR 14 — tijoriy litsenziyali (Lucky Penny); kichik tashkilotlar uchun bepul
+  "Community" kalit bor. Kalit olinsa `cfg.LicenseKey` (env orqali) bilan beriladi.
+- `api` uchun compose `healthcheck` yo'q — `app` faqat `depends_on: api` (ishga tushgan) kutadi.
+- Lokal Docker'da ishlab chiqish uchun (masalan, `App__FrontendUrl=http://127.0.0.1:8090`)
+  qiymatlar `.env` dan beriladi; boshqa port/servis farqlari kerak bo'lsa
+  `docker-compose.override.yml` naqshi (compose uni avtomatik birlashtiradi; `.gitignore` ga
+  qo'shilib, faqat lokal mashinada turadi) ishlatiladi — hozircha shart emas.

@@ -40,6 +40,19 @@ public static class ForwardedHeadersSetup
         var options = new ForwardedHeadersOptions
         {
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+            // Standart `ForwardLimit = 1` — faqat ENG O'NG (oxirgi) yozuv o'qiladi. Production
+            // zanjirida IKKI ishonchli hop bor: Cloudflare edge → `tunnel` (cloudflared) →
+            // `app` (nginx) → `api`. nginx `$proxy_add_x_forwarded_for` bilan cloudflared'ning
+            // docker IP'sini qo'shadi, ya'ni `api` ko'radigan header: `<mijoz>, <cloudflared>`.
+            // Limit 1 bo'lsa `RemoteIpAddress` = cloudflared konteyneri — BARCHA foydalanuvchi
+            // bitta "IP" ostida yig'ilib, IP rate-limit butun sayt uchun umumiy bo'lib qolardi
+            // (2026-09-23 da nginx logidan tasdiqlangan: `remote=docker`, XFF = tashqi IP).
+            //
+            // `null` — cheklovsiz, LEKIN xavfsiz: middleware o'ngdan chapga faqat joriy manzil
+            // `KnownProxies`/`KnownIPNetworks` ichida bo'lgan paytgacha yuradi va birinchi
+            // ishonchsiz manzilda to'xtaydi. Mijoz o'zi yuborgan soxta yozuvlar (Cloudflare
+            // ularni haqiqiy IP'dan CHAPGA qo'yadi) shu sabab hech qachon o'qilmaydi.
+            ForwardLimit = null,
         };
 
         // Standart ro'yxatlar (loopback) tozalanadi — faqat konfiguratsiyadagi manzillarga ishoniladi.

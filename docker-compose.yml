@@ -50,8 +50,16 @@ services:
       # Natijani foydalanuvchiga ko'rsatish — GLOBAL kill-switch, standart `true` (P47).
       # Haqiqiy qaror makon darajasida (`schools.show_result_to_student`).
       App__ShowResultToStudent: ${App__ShowResultToStudent:-true}
-      App__KnownProxies: ${App__KnownProxies:-}
-      App__FrontendUrl: ${App__FrontendUrl:-http://localhost:8080}
+      # Ishonchli proksi subneti — pastdagi `networks.default` bilan BIR XIL (`docs/13` §7).
+      # Standart `COMPOSE_SUBNET` (tarmoq subneti bilan AYNAN bitta o'zgaruvchi): `.env` da qator unutilsa ham production zanjiri (cloudflared →
+      # nginx → api) haqiqiy mijoz IP'sini beradi. Faqat docker ichki tarmog'i, tashqi manzil
+      # emas — spoofing himoyasi saqlanadi (`ForwardedHeadersSetup`).
+      App__KnownProxies: ${App__KnownProxies:-${COMPOSE_SUBNET:-172.26.0.0/16}}
+      # Maktab havolalari (`{FrontendUrl}/t/{slug}?k=...`) va CORS origin'i. Standart —
+      # production domeni (2026-09-23: serverga ko'chirish). Ilgari `http://localhost:8080`
+      # edi: `.env` da qator unutilsa, admin paneldan nusxalangan havolalar o'quvchiga
+      # ochilmaydigan localhost manzilni ko'rsatardi. Lokal sinovda `.env` da bering.
+      App__FrontendUrl: ${App__FrontendUrl:-https://16shaxsiyat.uz}
       App__SeedOnStartup: "false"
       # AI tahlilini o'quvchi sessiyani yakunlashi bilan AVTOMATIK navbatga qo'yish.
       # Standart `false` (2026-09-03 egasi qarori, `docs/06` 8-bo'lim): har tahlil AI
@@ -107,25 +115,42 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.web
+      args:
+        # Telegram Login Widget bot nomi (`@`siz) — Vite uni BUILD vaqtida bundle'ga yozadi.
+        # Ilgari faqat `frontend/.env` (gitignore'da) dan olinardi: `git clone` qilingan
+        # serverda fayl yo'q → `/kirish` "Telegram kirishi sozlanmagan" deb chiqardi.
+        # SIR EMAS (widget sahifada ochiq ko'rinadi). Server tomondagi juft sozlama —
+        # `Telegram__BotToken` (sir, `.env` da).
+        VITE_TELEGRAM_BOT: ${VITE_TELEGRAM_BOT:-shaxsiyat16_bot}
     depends_on:
       - api
-    # Port FAQAT lokal interfeysga chiqariladi (2026-09-15 egasi qarori: Cloudflare tunnel
-    # hozircha ishlatilmaydi, sayt faqat shu mashinada `http://localhost:${WEB_PORT}` da
-    # ochiladi). `127.0.0.1` — bir xil Wi-Fi'dagi boshqa qurilmalar ko'ra olmaydi.
-    # Standart 8090, 8080 EMAS: shu mashinada boshqa loyiha 8080 ni egallab turadi.
+    # Host porti FAQAT `127.0.0.1` ga bog'lanadi va FAQAT diagnostika uchun (masalan,
+    # serverda `curl http://127.0.0.1:${WEB_PORT}/health`). Ommaviy trafik bu portdan
+    # O'TMAYDI: Cloudflare ingress `http://app:8080` — bu docker ICHKI tarmog'idagi
+    # konteyner porti, host portiga aloqasi yo'q. Shu sabab host portini istalgancha
+    # o'zgartirish tunnelga ta'sir qilmaydi.
+    # Standart 8090, 8080 EMAS: host'da 8080 boshqa servis bilan band bo'lishi mumkin
+    # (Mac'da ham, serverda ham) — host'da hech narsa 8080 ga bog'lanmaydi. Boshqa port
+    # kerak bo'lsa `.env` da `WEB_PORT=...`.
     ports:
       - "127.0.0.1:${WEB_PORT:-8090}:8080"
     restart: unless-stopped
 
-  # Cloudflare tunnel — IXTIYORIY (`profiles: [tunnel]`): oddiy `docker compose up -d`
-  # uni KO'TARMAYDI (2026-09-15 egasi qarori — hozircha faqat localhost). Kerak bo'lganda:
-  #     docker compose --profile tunnel up -d tunnel
+  # Cloudflare tunnel — `profiles: [tunnel]`: oddiy `docker compose up -d` uni KO'TARMAYDI,
+  # production'da har doim profil bilan ishga tushiriladi (`docs/13` §13):
+  #     docker compose --profile tunnel up -d
+  # DIQQAT: tunnel remote-managed — bitta token bilan IKKI mashinada ishga tushirilsa
+  # (masalan, eski lokal Mac + yangi server) Cloudflare trafikni ular orasida BO'LADI.
   # Token SIR: faqat `.env` da (`TUNNEL_TOKEN`), repoga tushmaydi (CLAUDE.md 4-qoida).
   # `:-` (majburiy emas): compose faylni o'qishdayoq interpolyatsiya qiladi, `:?` bo'lsa
   # profil o'chiq bo'lsa ham token yo'qligida butun stek ko'tarilmas edi.
   tunnel:
     image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN:-}
+    # Token `--token` argumenti EMAS, muhit o'zgaruvchisi orqali (cloudflared `TUNNEL_TOKEN`
+    # ni o'zi o'qiydi): argv host'dagi har qanday foydalanuvchiga `ps aux` da ko'rinadi.
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
     profiles: ["tunnel"]
     depends_on:
       - app
@@ -146,4 +171,7 @@ networks:
   default:
     ipam:
       config:
-        - subnet: 172.26.0.0/16
+        # Server'da bu subnet band bo'lsa (`docker network ls` / `ip route`) — `.env` da
+        # `COMPOSE_SUBNET=172.30.0.0/16` kabi bo'sh diapazon bering; `App__KnownProxies`
+        # (alohida berilmagan bo'lsa) avtomatik shu qiymatni oladi.
+        - subnet: ${COMPOSE_SUBNET:-172.26.0.0/16}

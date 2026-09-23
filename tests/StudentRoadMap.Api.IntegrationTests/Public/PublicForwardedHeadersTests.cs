@@ -31,7 +31,7 @@ public static class PublicForwardedHeadersTests
             Grade: 9,
             ClassLetter: "B",
             Phone: "+998901234567",
-            ParentPhone: null,
+            ParentPhone: "+998909998877",
             Email: null,
             ConsentAccepted: true,
             LanguageCode: "uz");
@@ -164,5 +164,50 @@ public sealed class PublicForwardedHeadersTrustedProxyTests : IClassFixture<Trus
 
         var ipHasher = verifyScope.ServiceProvider.GetRequiredService<IIpHasher>();
         assessment.IpHash.Should().Be(ipHasher.Hash("198.51.100.42"));
+    }
+}
+
+/// <summary>
+/// Ikki hop'li zanjir (cloudflared + nginx, ikkalasi docker subnetida) — mijoz IP'si
+/// cloudflared IP'si emas, haqiqiy mijoz bo'lishi; mijoz yuborgan soxta yozuv esa o'qilmasligi.
+/// `ForwardLimit = 1` (standart) bo'lganda bu testlar cloudflared IP'sini olardi (2026-09-23 xatosi).
+/// </summary>
+public sealed class PublicForwardedHeadersTunnelChainTests : IClassFixture<TunnelChainApiTestFactory>
+{
+    private readonly TunnelChainApiTestFactory _factory;
+
+    public PublicForwardedHeadersTunnelChainTests(TunnelChainApiTestFactory factory)
+    {
+        _factory = factory;
+    }
+
+    [Theory]
+    [InlineData("198.51.100.77, " + TunnelChainApiTestFactory.CloudflaredIp, "198.51.100.77", "fwd-chain1", "Karimov Aziz Botirovich")]
+    [InlineData("6.6.6.6, 198.51.100.78, " + TunnelChainApiTestFactory.CloudflaredIp, "198.51.100.78", "fwd-chain2", "Karimova Aziza Botirovna")]
+    public async Task CloudflaredVaNginxOrtida_HaqiqiyMijozIpsiOlinadi(string forwardedFor, string expectedClientIp, string key, string fullName)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var now = DateTimeOffset.UtcNow;
+        var token = TestDataFactory.NewAccessToken(key);
+        var school = await TestDataFactory.CreateSchoolAsync(db, now, "maktab-" + key, token);
+        await TestDataFactory.CreatePublishedTestAsync(db, now, key.ToUpperInvariant().Replace("-", string.Empty), 1, questionCount: 1);
+
+        using var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Forwarded-For", forwardedFor);
+
+        var command = PublicForwardedHeadersTests.ValidCommand(school.Slug.Value, token, fullName, new DateOnly(2011, 4, 4));
+        var response = await client.PostAsJsonAsync("/api/public/sessions", command, TestJson.Options);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var body = await response.Content.ReadFromJsonAsync<StartSessionResult>(TestJson.Options);
+
+        using var verifyScope = _factory.Services.CreateScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var assessment = await verifyDb.Assessments.SingleAsync(a => a.Id == body!.AssessmentId);
+
+        var ipHasher = verifyScope.ServiceProvider.GetRequiredService<IIpHasher>();
+        assessment.IpHash.Should().Be(ipHasher.Hash(expectedClientIp));
+        assessment.IpHash.Should().NotBe(ipHasher.Hash(TunnelChainApiTestFactory.CloudflaredIp));
     }
 }
