@@ -73,8 +73,9 @@ export function StudentProfileHeader({
         <div>
           <h1 className="text-xl font-semibold text-neutral-900">{student.fullName}</h1>
           <p className="text-sm text-neutral-600">
-            {student.school.name} · {classInfo}-sinf · {student.age} {t('studentProfile.yearsShort')}{' '}
-            · {GENDER_SYMBOL[student.gender]}
+            {student.school.name} · {classInfo}-sinf
+            {student.age != null && ` · ${String(student.age)} ${t('studentProfile.yearsShort')}`}
+            {' '}· {GENDER_SYMBOL[student.gender]}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {latestAssessmentStatus && (

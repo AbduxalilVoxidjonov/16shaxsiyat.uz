@@ -16,6 +16,7 @@ import { useDownloadReportPdfMutation } from '../api/useDownloadReportPdfMutatio
 import { useRerunAnalysisMutation } from '../api/useRerunAnalysisMutation';
 import { useDeleteStudentMutation } from '../api/useDeleteStudentMutation';
 import { StudentProfileHeader } from '../components/StudentProfileHeader';
+import { StudentRegistrationInfo } from '../components/StudentRegistrationInfo';
 import { StudentSummaryCards } from '../components/StudentSummaryCards';
 import { StudentDiagramsSection } from '../components/StudentDiagramsSection';
 import { AiReportSection } from '../components/AiReportSection';
@@ -176,6 +177,10 @@ export default function StudentProfilePage() {
         onDelete={() => setDeleteOpen(true)}
         hasLatestAssessment={Boolean(latestAssessment)}
       />
+
+      {/* O'quvchi anketa boshida kiritgan ma'lumotlar (telefonlar, qo'shimcha maydonlar) —
+          sarlavhadan darhol keyin, natijalardan OLDIN (egasining talabi, 2026-09-26). */}
+      <StudentRegistrationInfo student={student} />
 
       {/* sr-only bo'lim sarlavhalari — h1 dan keyin to'g'ridan-to'g'ri Card'larning ichki
           h3'iga (`StudentDiagramsSection`) o'tib ketmasligi uchun (`axe` `heading-order`

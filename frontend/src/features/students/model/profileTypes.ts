@@ -31,13 +31,28 @@ export const AI_ANALYSIS_STATUS_VALUES = ['Pending', 'Running', 'Succeeded', 'Fa
 export type AiAnalysisStatus = (typeof AI_ANALYSIS_STATUS_VALUES)[number];
 
 /**
+ * Ro'yxatdan o'tish formasidagi "o'z maydoni" javobi — backend `AdminStudentExtraFieldDto`
+ * (2026-09-26). `value` — ko'rsatishga tayyor matn (tanlovlar variant matniga o'girilgan).
+ */
+export type StudentExtraFieldDto = components['schemas']['AdminStudentExtraFieldDto'];
+
+/**
  * `docs/07` 3.2 `student` bloki — backend `AdminStudentDetailDto`.
  * `gender` sxemada `string`, bu yerda ommaviy oqim bilan bir xil `Gender` union'iga toraytirilgan.
+ *
+ * `birthDate`/`age`/`phone` — backend P52 dan beri NULLABLE (anonim o'quvchi yoki forma
+ * maydonni `Optional`/`Hidden` qilgan), eski `schema.d.ts` esa ularni majburiy deb ko'rsatadi —
+ * shu sabab bu yerda toraytirish o'rniga KENGAYTIRILGAN.
  */
 export type StudentDetailDto = Omit<
   components['schemas']['AdminStudentDetailDto'],
-  'gender'
-> & { gender: Gender };
+  'gender' | 'birthDate' | 'age' | 'phone'
+> & {
+  gender: Gender;
+  birthDate?: string | null;
+  age?: number | null;
+  phone?: string | null;
+};
 
 /** `docs/07` 3.2 `assessments[]` — backend `AdminAssessmentSummaryDto`. */
 export type AssessmentSummaryDto = Omit<

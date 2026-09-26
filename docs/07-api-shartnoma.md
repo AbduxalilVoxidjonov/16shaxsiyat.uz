@@ -939,7 +939,8 @@ lastAssessmentAt`
 {
   "student": { "id":"…","fullName":"…","birthDate":"2010-04-17","age":16,"gender":"Male",
                "grade":9,"classLetter":"B","phone":"…","parentPhone":"…","email":null,
-               "school":{"id":"…","name":"…"},"consentGivenAt":"…","createdAt":"…" },
+               "school":{"id":"…","name":"…"},"consentGivenAt":"…","createdAt":"…",
+               "extraFields":[{"code":"PARENT_JOB","label":"Ota-ona kasbi","value":"O'qituvchi"}] },
   "assessments": [
     { "id":"…","status":"Analyzed","startedAt":"…","completedAt":"…",
       "durationMinutes":29,"reliabilityScore":82.5,"reliabilityFlag":"Reliable",
@@ -982,6 +983,13 @@ lastAssessmentAt`
   }
 }
 ```
+
+> `student.extraFields` (2026-09-26): ro'yxatdan o'tish formasidagi superadmin qo'shgan "o'z
+> maydonlari" javoblari (`Student.ProfileExtra`) — `label` global forma sozlamasidan, tanlov
+> javoblari variant matniga (`TextUz`) o'girilgan, ko'p tanlov vergul bilan. Sozlamadan
+> o'chirilgan maydonning eski javobi oxirida, `label = code` bilan. Javob yo'q bo'lsa `[]`.
+> Admin profil sahifasida "Ro'yxatdan o'tish ma'lumotlari" kartasida telefonlar bilan birga
+> ko'rsatiladi.
 
 > **`assessments[].programNameUz`** (2026-09-23, ixtiyoriy, `string?`) — sessiya topshirilgan
 > dasturning katalogdagi nomi (`AssessmentProgram.NameUz`); topilmasa `null`. Profildagi

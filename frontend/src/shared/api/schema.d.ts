@@ -5725,6 +5725,12 @@ export interface components {
             consentGivenAt: string;
             /** Format: date-time */
             createdAt: string;
+            extraFields: components["schemas"]["AdminStudentExtraFieldDto"][];
+        };
+        AdminStudentExtraFieldDto: {
+            code: string;
+            label: string;
+            value: string;
         };
         AdminStudentListItemDto: {
             /** Format: uuid */

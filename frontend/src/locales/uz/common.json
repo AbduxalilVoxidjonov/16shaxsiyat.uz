@@ -803,6 +803,18 @@
       "moreActionsCta": "Boshqa amallar",
       "deleteCta": "O'chirish"
     },
+    "registration": {
+      "heading": "Ro'yxatdan o'tish ma'lumotlari",
+      "phone": "Telefon",
+      "parentPhone": "Ota-ona telefoni",
+      "email": "Email",
+      "birthDate": "Tug'ilgan sana",
+      "gender": "Jinsi",
+      "registeredAt": "Ro'yxatdan o'tgan",
+      "copyCta": "{{label}} — nusxa olish",
+      "copied": "Nusxa olindi",
+      "copyError": "Nusxa olib bo'lmadi"
+    },
     "summarySectionHeading": "Yig'ma ko'rsatkichlar",
     "diagramsSectionHeading": "Diagrammalar",
     "cards": {

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import axe from 'axe-core';
@@ -40,6 +40,7 @@ const STUDENT = {
   school: { id: 'school-1', name: "12-son maktab, Qo'qon" },
   consentGivenAt: '2026-08-01T10:00:00Z',
   createdAt: '2026-08-01T10:00:00Z',
+  extraFields: [{ code: 'PARENT_JOB', label: 'Ota-ona kasbi', value: "O'qituvchi" }],
 } satisfies StudentDetailDto;
 
 const ASSESSMENT_SUMMARY = {
@@ -291,6 +292,24 @@ describe('StudentProfilePage', () => {
 
     // Har diagramma uchun yashirin jadval alternativi mavjud.
     expect(screen.getAllByRole('table', { hidden: true }).length).toBeGreaterThan(0);
+  });
+
+  it("ro'yxatdan o'tishda kiritilgan telefonlar va qo'shimcha maydonlar tepada ko'rinadi", async () => {
+    renderPage([buildProfileResponse()]);
+
+    const section = await screen.findByRole('region', { name: "Ro'yxatdan o'tish ma'lumotlari" });
+    const phoneLink = within(section).getByRole('link', { name: '+998 (90) 123-45-67' });
+    expect(phoneLink).toHaveAttribute('href', 'tel:+998901234567');
+    expect(within(section).getByText('Ota-ona telefoni')).toBeInTheDocument();
+    expect(within(section).getByRole('link', { name: /\+998 \(91\) 111-22-33/ })).toHaveAttribute(
+      'href',
+      'tel:+998911112233',
+    );
+    expect(within(section).getByText('17.04.2010')).toBeInTheDocument();
+    expect(within(section).getByText('Ota-ona kasbi')).toBeInTheDocument();
+    expect(within(section).getByText("O'qituvchi")).toBeInTheDocument();
+    // `email: null` — bo'sh maydon chizilmaydi.
+    expect(within(section).queryByText('Email')).not.toBeInTheDocument();
   });
 
   it('axe a11y tekshiruvi buzilishsiz o\'tadi', async () => {

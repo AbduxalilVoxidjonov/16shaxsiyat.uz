@@ -61,9 +61,18 @@ public sealed record AdminStudentDetailDto(
     string? Email,
     AdminStudentSchoolRefDto School,
     DateTimeOffset ConsentGivenAt,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    /// <summary>
+    /// Ro'yxatdan o'tish formasidagi superadmin qo'shgan "o'z maydonlari" javoblari
+    /// (`Student.ProfileExtra`) — yorliq va tanlov matni bilan (`StudentRegistrationExtraMapping`).
+    /// Javob bo'lmasa bo'sh ro'yxat.
+    /// </summary>
+    IReadOnlyList<AdminStudentExtraFieldDto> ExtraFields);
 
 public sealed record AdminStudentSchoolRefDto(Guid Id, string Name);
+
+/// <summary>Bitta "o'z maydoni" javobi — `Value` ko'rsatishga tayyor matn (tanlovlar variant matniga o'girilgan, ko'p tanlov vergul bilan).</summary>
+public sealed record AdminStudentExtraFieldDto(string Code, string Label, string Value);
 
 /// <summary>`docs/07` 3.2-bo'lim `assessments[]` — sessiyalar ro'yxati (eng yangisi birinchi).</summary>
 /// <param name="ProgramNameUz">

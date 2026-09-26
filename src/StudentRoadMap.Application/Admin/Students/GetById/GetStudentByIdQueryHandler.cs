@@ -1,6 +1,7 @@
 using MediatR;
 using StudentRoadMap.Application.Common.Interfaces;
 using StudentRoadMap.Application.Common.Models;
+using StudentRoadMap.Application.Public.Common;
 using StudentRoadMap.Domain.Catalog;
 using StudentRoadMap.Domain.Common;
 
@@ -39,6 +40,11 @@ internal sealed class GetStudentByIdQueryHandler : IRequestHandler<GetStudentByI
             _context.AsNoTracking(_context.Schools).Where(s => s.Id == student.SchoolId),
             cancellationToken).ConfigureAwait(false);
 
+        // Global forma ta'rifi faqat "o'z maydonlari" javobi bor bo'lsa o'qiladi (yorliqlar uchun).
+        var customFields = string.IsNullOrWhiteSpace(student.ProfileExtra)
+            ? []
+            : (await RegistrationFormResolver.GetGlobalDefinitionAsync(_context, _executor, cancellationToken).ConfigureAwait(false)).CustomFields;
+
         var now = _dateTime.UtcNow;
         var studentDto = new AdminStudentDetailDto(
             student.Id,
@@ -53,7 +59,8 @@ internal sealed class GetStudentByIdQueryHandler : IRequestHandler<GetStudentByI
             student.Email,
             new AdminStudentSchoolRefDto(student.SchoolId, school?.Name ?? "?"),
             student.ConsentGivenAt,
-            student.CreatedAt);
+            student.CreatedAt,
+            StudentRegistrationExtraMapping.Map(student.ProfileExtra, customFields));
 
         // Bir nechta sessiya bo'lishi mumkin, lekin odatda 1-2 ta — `ToListAsync` (ORDER BY'siz,
         // SQLite `DateTimeOffset` cheklovi) + xotirada tartiblash, `ListStudentsQueryHandler`dagi
